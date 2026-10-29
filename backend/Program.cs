@@ -1,4 +1,5 @@
 using Kafamdakiler.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,10 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.AddIdentityApiEndpoints<IdentityUser<Guid>>()
+    .AddRoles<IdentityRole<Guid>>()
+    .AddEntityFrameworkStores<AppDbContext>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>();
