@@ -41,19 +41,45 @@ dotnet user-secrets set "ConnectionStrings:Default" \
 
 On a server the same key is given as the environment variable `ConnectionStrings__Default`.
 
+The two seed accounts (roles `Sahip` and `Asistan`) are created on startup from these keys. The app does not start without them:
+
+```bash
+dotnet user-secrets set "Seed:SahipEmail" "<email>" --project backend
+dotnet user-secrets set "Seed:SahipPassword" "<password>" --project backend
+dotnet user-secrets set "Seed:AsistanEmail" "<email>" --project backend
+dotnet user-secrets set "Seed:AsistanPassword" "<password>" --project backend
+dotnet user-secrets list --project backend   # check that the keys exist
+```
+
+Uploaded photos are stored on disk, outside `wwwroot`. The folder comes from `Dosyalar:Klasor`: in development it is `.dosyalar/` at the repository root (git-ignored, set in `appsettings.Development.json`); on a server set it with the environment variable `Dosyalar__Klasor`.
+
+## Migrations
+The schema is created with EF Core migrations (Identity tables, then habits). Apply them before the first run and after pulling new ones:
+
+```bash
+dotnet tool install --global dotnet-ef   # once
+export DOTNET_ROOT=$HOME/.dotnet         # dotnet ef needs this when .NET is installed under ~/.dotnet
+dotnet ef database update --project backend
+```
+
 ## Run
 ```bash
 dotnet run --project backend
 ```
 
-Open the URL printed as `Now listening on`. Health check: `GET /saglik` returns `Healthy` when the database is reachable, `Unhealthy` (503) otherwise.
+Open the URL printed as `Now listening on` and log in with the `Sahip` account. Health check: `GET /saglik` returns `Healthy` when the database is reachable, `Unhealthy` (503) otherwise.
 
-## Migrations
-The schema is created with EF Core migrations. The first migration arrives with the Identity tables.
+## API documentation
+In development the API is documented with Scalar at `<url>/scalar` (the OpenAPI document is at `<url>/openapi/v1.json`). Get a token from `POST /api/hesap/login`, then paste the `accessToken` into the Bearer field. A ready-made scenario (a book habit, a water counter, error cases) is in `backend/Aliskanliklar/aliskanliklar.http`.
+
+## Mobile app
+The Flutter (Android) client lives in `mobile/`; see [`mobile/README.md`](mobile/README.md) for the details. Short version, with the backend running on port 5051 and a phone connected over USB:
 
 ```bash
-dotnet tool install --global dotnet-ef   # once
-dotnet ef database update --project backend
+cd mobile && flutter pub get
+dart run build_runner build
+adb reverse tcp:5051 tcp:5051
+flutter run --dart-define=API_URL=http://localhost:5051
 ```
 
 ## Tests

@@ -22,6 +22,232 @@ namespace Kafamdakiler.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Aliskanlik", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Ad")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("AltBaslikEtiketi")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<bool>("Arsivlendi")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Birim")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Gunler")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("GunlukHedef")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<int?>("HaftalikSayi")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HedefYonu")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Ikon")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("OgeEtiketi")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Olcu")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Renk")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Siklik")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Sira")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Aliskanliklar");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.AliskanlikKaydi", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AliskanlikId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Dakika")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Miktar")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateOnly>("Tarih")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AliskanlikId", "Tarih")
+                        .IsUnique();
+
+                    b.ToTable("AliskanlikKayitlari");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Oge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Ad")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("AliskanlikId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AltBaslik")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateOnly?>("BaslamaTarihi")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("BaslangicKonumu")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateOnly?>("BitisTarihi")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Durum")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("FotografId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Not")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("Puan")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("Toplam")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AliskanlikId");
+
+                    b.HasIndex("FotografId");
+
+                    b.ToTable("Ogeler");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Oturum", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BaslangicKonum")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<decimal>("BitisKonum")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Dakika")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OgeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Tarih")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OgeId", "BitisKonum");
+
+                    b.ToTable("Oturumlar");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Dosyalar.Dosya", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Boyut")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DiskAdi")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("IcerikTuru")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("YuklenmeAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Dosyalar");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -217,6 +443,44 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.AliskanlikKaydi", b =>
+                {
+                    b.HasOne("Kafamdakiler.Aliskanliklar.Aliskanlik", null)
+                        .WithMany("Kayitlar")
+                        .HasForeignKey("AliskanlikId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Oge", b =>
+                {
+                    b.HasOne("Kafamdakiler.Aliskanliklar.Aliskanlik", "Aliskanlik")
+                        .WithMany("Ogeler")
+                        .HasForeignKey("AliskanlikId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kafamdakiler.Dosyalar.Dosya", "Fotograf")
+                        .WithMany()
+                        .HasForeignKey("FotografId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Aliskanlik");
+
+                    b.Navigation("Fotograf");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Oturum", b =>
+                {
+                    b.HasOne("Kafamdakiler.Aliskanliklar.Oge", "Oge")
+                        .WithMany("Oturumlar")
+                        .HasForeignKey("OgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Oge");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -266,6 +530,18 @@ namespace Kafamdakiler.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Aliskanlik", b =>
+                {
+                    b.Navigation("Kayitlar");
+
+                    b.Navigation("Ogeler");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Aliskanliklar.Oge", b =>
+                {
+                    b.Navigation("Oturumlar");
                 });
 #pragma warning restore 612, 618
         }

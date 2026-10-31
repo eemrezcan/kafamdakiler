@@ -42,6 +42,31 @@ Kaynak: `Proje kuralları.pdf` (yolu `giris.md` içinde), 2026-2027 Güz. Tarihl
 
 Puanlama: vize = plan belgesi 15, hafta 1-4 videoları 30, GitHub düzenliliği 30, 1. gösterim 25; final = hafta 5-9 videoları 30, GitHub düzenliliği 15, teknik isterler 30, 2. gösterim 25.
 
+## BLM4587 proje kuralları (puanlanan şartlar)
+Kaynak: `Proje kuralları (Flutter).pdf` (yolu `giris.md` içinde), 2026-2027 Güz, 2026-10-31'de geldi. Takvim, plan belgesi, video, GitHub ve puanlama BLM4581 ile aynıdır (yukarıdaki S01-S08 bu derste de geçerli); farklar ve ek şartlar aşağıda.
+
+### Süreç farkları
+| No | Şart | Karşılandı mı | Kanıt |
+| --- | --- | --- | --- |
+| MS01 | Videoda mobil uygulama emülatörde ya da gerçek cihazda çalışırken gösterilir; ad `HaftaNN_AhmetEmreOzcan` | hayır | |
+| MS02 | Depoda Web API ve mobil ayrı klasörlerde (ör. `/api`, `/mobile`) | evet | `backend/`, `mobile/` |
+| MS03 | README: API için veritabanı kurulumu ve migration; mobil için Flutter sürümü, `flutter pub get`, `flutter run`, API adresinin nasıl ayarlanacağı | hayır | |
+
+### Teknik isterler
+| No | Şart | Karşılandı mı | Kanıt |
+| --- | --- | --- | --- |
+| M01 | Kendi yazdığımız Web API + onu kullanan Flutter uygulaması; en az Android | hayır | |
+| M02 | PostgreSQL ya da SQL Server; ORM ve migration; en az 4-5 tablo, en az bir bire-çok | hayır | T02-T04 ile ortak |
+| M03 | En az bir varlık için tam CRUD, Swagger/OpenAPI'den test edilebilir | hayır | T05 ile ortak |
+| M04 | Mobil veriye yalnız kendi API'miz üzerinden erişir; **CRUD işlemlerinin tamamı mobilden yapılabilir** | hayır | |
+| M05 | Mobil formlarda doğrulama; API'de de doğrulama | hayır | |
+| M06 | Giriş Web API üzerinden (ör. JWT) ve en az iki rol | hayır | Identity bearer token (K-0010) |
+| M07 | **Mobilde yalnız yönetici rolüne açık, içeriğin yönetildiği yönetim ekranları** | hayır | |
+| M08 | Mobilde en az 5-6 ekran ve aralarında gezinme | hayır | |
+| M09 | Arayüz farklı ekran boyutlarında düzgün | hayır | |
+
+Tasarımda hazır UI paketleri serbest; değerlendirme işlevsellik ve mühendislik üzerinden. Yapay zekâ serbest, her kod ve soru açıklanabilmeli (S07).
+
 ## Ürün kapsamı: Faz 1 (K-0004)
 
 | No | Madde | Karşılandı mı | Kanıt |

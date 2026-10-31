@@ -1,0 +1,216 @@
+### Habit API scenario: the book (Raf) and the water counter (Sayac).
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the two seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+
+@host = http://localhost:5071
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+
+# Client-made ids (Guid v7 style), so every POST below can be repeated safely.
+@kitapAliskanlikId = 019e0000-0000-7000-8000-000000000001
+@kitapId = 019e0000-0000-7000-8000-000000000002
+@oturum1Id = 019e0000-0000-7000-8000-000000000003
+@oturum2Id = 019e0000-0000-7000-8000-000000000004
+@suAliskanlikId = 019e0000-0000-7000-8000-000000000005
+# Habit day (05:00 Istanbul rule). Change it to today's habit day.
+@bugun = 2026-10-31
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 1b. Who am I -> { id, email, roller, izinler } (the mobile app reads the role from here)
+GET {{host}}/api/ben
+Authorization: Bearer {{token}}
+
+### 2. Create the Raf habit "Kitap okuma" -> 201 (again with the same id -> 200)
+POST {{host}}/api/aliskanliklar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{kitapAliskanlikId}}",
+  "ad": "Kitap okuma",
+  "tur": "raf",
+  "ikon": "book-open",
+  "renk": "violet",
+  "olcu": "sayili",
+  "hedefYonu": "enAz",
+  "gunlukHedef": 30,
+  "birim": "sayfa",
+  "ogeEtiketi": "Kitap",
+  "altBaslikEtiketi": "Yazar",
+  "siklik": "herGun"
+}
+
+### 3. Add the book, starting at page 12 -> 201
+POST {{host}}/api/aliskanliklar/{{kitapAliskanlikId}}/ogeler
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{kitapId}}",
+  "ad": "Kürk Mantolu Madonna",
+  "altBaslik": "Sabahattin Ali",
+  "toplam": 160,
+  "baslangicKonumu": 12,
+  "durum": "devam"
+}
+
+### 4. "I got to page 35" -> 201, miktar 23 (start = the item's start, 12)
+POST {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": "{{oturum1Id}}", "bitisKonum": 35, "dakika": 40 }
+
+### 4b. Same session id again -> 200, nothing is written twice
+POST {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": "{{oturum1Id}}", "bitisKonum": 35, "dakika": 40 }
+
+### 5. The item: guncelKonum 35, ilerleme 0.22, hiz and tahminiBitis filled
+GET {{host}}/api/ogeler/{{kitapId}}
+Authorization: Bearer {{token}}
+
+### 6. The "Today" screen: bugun (miktar 23, deger 0.77), guc, seri, devamEdenler
+GET {{host}}/api/aliskanliklar
+Authorization: Bearer {{token}}
+
+### 7. Days of the last 30 days (empty days come with 0)
+GET {{host}}/api/aliskanliklar/{{kitapAliskanlikId}}/gunler
+Authorization: Bearer {{token}}
+
+### 8. Sessions, newest first (the first one has "son": true)
+GET {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+
+### 9. Create the Sayac habit "Su iç" (8 glasses) -> 201
+POST {{host}}/api/aliskanliklar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{suAliskanlikId}}",
+  "ad": "Su iç",
+  "tur": "sayac",
+  "ikon": "droplet",
+  "renk": "blue",
+  "olcu": "sayili",
+  "hedefYonu": "enAz",
+  "gunlukHedef": 8,
+  "birim": "bardak",
+  "siklik": "herGun"
+}
+
+### 10. Write the day's total (not an increment); repeating it changes nothing -> 200
+### Quantities are decimals: 1.5 and 50.0 are valid.
+PUT {{host}}/api/aliskanliklar/{{suAliskanlikId}}/kayitlar/{{bugun}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "miktar": 6.5 }
+
+### 11. Photo upload -> 201 { id, url }. Put a jpg/png/webp next to this file as kapak.jpg first.
+POST {{host}}/api/dosyalar
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=sinir
+
+--sinir
+Content-Disposition: form-data; name="dosya"; filename="kapak.jpg"
+Content-Type: image/jpeg
+
+< ./kapak.jpg
+--sinir--
+
+### 12. Read the photo back (use the id from step 11)
+GET {{host}}/api/dosyalar/<dosya-id>
+Authorization: Bearer {{token}}
+
+### ---------------- Error examples ----------------
+
+### E0. 400: malformed JSON -> ProblemDetails (no exception page)
+POST {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "bitisKonum":
+
+### E1. 400: empty name -> errors: { ad: [...] } (camelCase keys, like the JSON field names)
+POST {{host}}/api/aliskanliklar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ad": "", "tur": "raf", "ikon": "book-open", "renk": "violet", "olcu": "evetHayir" }
+
+### E1b. 400: a Raf habit that is yes/no -> errors: { olcu: [...], ogeEtiketi: [...] }
+POST {{host}}/api/aliskanliklar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ad": "Kitap", "tur": "raf", "ikon": "book-open", "renk": "violet", "olcu": "evetHayir" }
+
+### E2. 400: end position not after the start (the item is at 35) -> errors: { bitisKonum: [...] }
+POST {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "bitisKonum": 30 }
+
+### E3. 401: no token
+GET {{host}}/api/aliskanliklar
+
+### E4. 403: log in as Asistan (no izin claim) and read
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+GET {{host}}/api/aliskanliklar
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}
+
+### E5. 409: add a second session, then try to change the first one (only the last one can change)
+POST {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": "{{oturum2Id}}", "bitisKonum": 50, "baslangicKonum": 35 }
+
+###
+DELETE {{host}}/api/oturumlar/{{oturum1Id}}
+Authorization: Bearer {{token}}
+
+### E6. 409: offline start position that does not match the server's (server says 50)
+POST {{host}}/api/ogeler/{{kitapId}}/oturumlar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "bitisKonum": 60, "baslangicKonum": 40 }
+
+### E7. 409: a daily entry for a Raf habit
+PUT {{host}}/api/aliskanliklar/{{kitapAliskanlikId}}/kayitlar/{{bugun}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "miktar": 10 }
+
+### Clean up: deleting a habit removes its items, sessions and photos
+DELETE {{host}}/api/aliskanliklar/{{kitapAliskanlikId}}
+Authorization: Bearer {{token}}
+
+###
+DELETE {{host}}/api/aliskanliklar/{{suAliskanlikId}}
+Authorization: Bearer {{token}}

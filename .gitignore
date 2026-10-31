@@ -495,3 +495,9 @@ docs/gundem.md
 
 # Secrets for Docker Compose (K-0012)
 .env
+
+# Uploaded files in development (K-0015)
+.dosyalar/
+
+# Flutter Android debug source set (the Visual Studio [Dd]ebug/ rule above would hide it)
+!mobile/android/app/src/debug/
