@@ -1,0 +1,22 @@
+@page
+@{
+    ViewData["Title"] = "Erişim reddedildi";
+}
+
+<canvas class="kd-synapse" aria-hidden="true"></canvas>
+
+<div class="kd-auth">
+    <div class="kd-auth-card kd-rise">
+        <div class="kd-auth-meta"><span>Erişim reddedildi</span></div>
+        <h1 class="kd-auth-title">Burası <em>sana kapalı.</em></h1>
+        <div class="kd-auth-status">
+            <p class="kd-auth-subtitle">Bu alan yalnız Sahip hesabına açık. Başka bir hesapla girmek için önce çıkış yap.</p>
+        </div>
+
+        <form method="post" asp-page="/Hesap/Cikis">
+            <button type="submit" class="btn btn-primary kd-btn-lg w-100 mt-3">
+                Çıkış yap <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#arrow-right"></use></svg>
+            </button>
+        </form>
+    </div>
+</div>

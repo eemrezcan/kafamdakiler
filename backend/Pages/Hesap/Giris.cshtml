@@ -1,0 +1,46 @@
+﻿@page
+@model Kafamdakiler.Pages.Hesap.GirisModel
+@{
+    ViewData["Title"] = "Giriş";
+}
+
+<canvas class="kd-synapse" aria-hidden="true"></canvas>
+
+<div class="kd-auth">
+    <div class="kd-auth-card kd-rise">
+        <div class="kd-auth-meta"><span>Oturum aç</span></div>
+        <h1 class="kd-auth-title">Kafandakilere <em>dön.</em></h1>
+        <div class="kd-auth-status">
+            <p class="kd-auth-subtitle">Devam etmek için hesabınla giriş yap.</p>
+            <div asp-validation-summary="ModelOnly" class="kd-form-error" role="alert"></div>
+        </div>
+
+        <form method="post" asp-route-returnUrl="@Request.Query["returnUrl"]">
+
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Email"></label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.Email" autocomplete="email" />
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.Email"></span>
+            </div>
+
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Sifre"></label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.Sifre" autocomplete="current-password" />
+                    <button type="button" class="kd-field-action" data-kd-password-toggle aria-label="Şifreyi göster">Göster</button>
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.Sifre"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary kd-btn-lg w-100 mt-3">
+                Giriş yap <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#arrow-right"></use></svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
