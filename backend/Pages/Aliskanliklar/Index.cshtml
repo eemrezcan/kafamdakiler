@@ -1,0 +1,95 @@
+@page
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.IndexModel
+@{
+    ViewData["Title"] = "Alışkanlıklar";
+}
+
+<div class="kd-page-head kd-rise">
+    <div>
+        <p class="kd-eyebrow">@Gorunum.GunAdi(Model.BugunTarihi) · @Gorunum.Tarih(Model.BugunTarihi)</p>
+        <h1 class="kd-page-title">@(Model.Arsiv ? "Arşiv" : "Alışkanlıklar")</h1>
+    </div>
+    @if (Model.Arsiv)
+    {
+        <a class="btn btn-outline-primary" asp-page="Index">Panele dön</a>
+    }
+    else
+    {
+    <div class="dropdown">
+        <button class="btn btn-primary kd-btn-add" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-plus"></use></svg>
+            Yeni alışkanlık
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end kd-menu">
+            <li>
+                <a class="dropdown-item" asp-page="Duzenle" asp-route-tur="Sayac">
+                    <strong>Sayaç</strong>
+                    <span>Su iç, meditasyon, en çok 2 kahve: günlük sayı ya da tik</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" asp-page="Duzenle" asp-route-tur="Raf">
+                    <strong>Raf</strong>
+                    <span>Kitap, dizi, kurs: nereye kadar geldin?</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    }
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+@if (Model.Arsiv && Model.Planli.Count == 0 && Model.Diger.Count == 0)
+{
+    <div class="kd-empty kd-empty--small">
+        <p class="kd-empty-title">Arşivde alışkanlık yok.</p>
+        <p>Bir alışkanlığı düzenleme sayfasından arşivleyebilirsin; verisi silinmez.</p>
+    </div>
+}
+else if (Model.Planli.Count == 0 && Model.Diger.Count == 0)
+{
+    <div class="kd-empty">
+        <p class="kd-empty-title">Henüz alışkanlık yok.</p>
+        <p>Başlamak için tür seç:</p>
+        <div class="kd-empty-choices">
+            <a class="kd-choice" asp-page="Duzenle" asp-route-tur="Sayac">
+                <strong>Sayaç</strong>
+                <span>Su iç (8 bardak), meditasyon, en çok 2 kahve</span>
+            </a>
+            <a class="kd-choice" asp-page="Duzenle" asp-route-tur="Raf">
+                <strong>Raf</strong>
+                <span>Kitap, dizi, kurs: öğeler ve nereye kadar geldin</span>
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <section class="kd-habits" aria-label="Bugünün alışkanlıkları">
+        @foreach (var kart in Model.Planli)
+        {
+            <partial name="_Kart" model="kart" />
+        }
+    </section>
+
+    @if (Model.Diger.Count > 0)
+    {
+        <h2 class="kd-eyebrow kd-section-gap">Bugün planlı değil</h2>
+        <section class="kd-habits kd-habits--dim" aria-label="Bugün planlı olmayan alışkanlıklar">
+            @foreach (var kart in Model.Diger)
+            {
+                <partial name="_Kart" model="kart" />
+            }
+        </section>
+    }
+}
+
+@if (!Model.Arsiv)
+{
+    <p class="kd-footnote"><a asp-page="Index" asp-route-arsiv="true">Arşivlenen alışkanlıklar</a></p>
+}

@@ -1,0 +1,166 @@
+@page "{id:guid?}"
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.OgeDuzenleModel
+@{
+    var a = Model.Aliskanlik;
+    var etiket = a.OgeEtiketi ?? "Öğe";
+    var altEtiket = a.AltBaslikEtiketi ?? "Alt başlık";
+    var birim = a.Birim ?? "";
+    var baslik = Model.Yeni ? etiket + " ekle" : etiket + " düzenle";
+    ViewData["Title"] = baslik;
+}
+
+<div class="kd-page-head kd-rise @Gorunum.RenkSinifi(a.Renk)">
+    <div>
+        <p class="kd-eyebrow">
+            @if (Model.Yeni)
+            {
+                <a class="kd-back" asp-page="Raf" asp-route-aliskanlikId="@a.Id"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Raf · @a.Ad</a>
+            }
+            else
+            {
+                <a class="kd-back" asp-page="Oge" asp-route-id="@Model.OgeId"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>@Model.Input.Ad</a>
+            }
+        </p>
+        <h1 class="kd-page-title">@baslik</h1>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="kd-form" novalidate>
+    <div asp-validation-summary="ModelOnly" class="kd-alert" role="alert"></div>
+
+    <section class="kd-form-block">
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Ad">@etiket adı</label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Input.Ad" maxlength="200" autocomplete="off" />
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.Ad"></span>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(a.AltBaslikEtiketi))
+        {
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.AltBaslik">@altEtiket</label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.AltBaslik" maxlength="200" autocomplete="off" />
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.AltBaslik"></span>
+            </div>
+        }
+
+        <div class="kd-field">
+            <label class="kd-field-label" for="Kapak">Kapak</label>
+            <div class="kd-cover-edit">
+                @if (Model.FotografUrl is not null)
+                {
+                    <img class="kd-cover" src="@Model.FotografUrl" alt="Mevcut kapak" />
+                }
+                else
+                {
+                    <span class="kd-cover kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#lucide-image-plus"></use></svg></span>
+                }
+                <div class="kd-cover-controls">
+                    <input class="form-control" type="file" id="Kapak" name="Kapak" accept="image/jpeg,image/png,image/webp" />
+                    <small class="kd-muted">jpg, png ya da webp; en çok 10 MB. Telefonda kamerayla da çekebilirsin.</small>
+                    @if (Model.FotografUrl is not null)
+                    {
+                        <label class="form-check kd-check">
+                            <input class="form-check-input" type="checkbox" name="KapakKaldir" value="true" />
+                            <span>Kapağı kaldır</span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <span class="kd-field-error" asp-validation-for="Kapak"></span>
+        </div>
+    </section>
+
+    <section class="kd-form-block">
+        <h2 class="kd-eyebrow kd-section-title">Konum</h2>
+        <div class="kd-field-row">
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.BaslangicKonumu">Başlangıç (@birim)</label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.BaslangicKonumu" type="number" step="any" min="0" inputmode="decimal"
+                           readonly="@Model.OturumVar" />
+                </div>
+                <small class="kd-muted">@(Model.OturumVar ? "Oturum girildiği için değiştirilemez." : "Başladıysan şu an hangi konumdasın? Sıfırdan başlıyorsan 0.")</small>
+                <span class="kd-field-error" asp-validation-for="Input.BaslangicKonumu"></span>
+            </div>
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Toplam">Toplam (@birim)</label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.Toplam" type="number" step="any" min="0" inputmode="decimal" />
+                </div>
+                <small class="kd-muted">İsteğe bağlı. Girersen yüzde ve tahmini bitiş gösterilir.</small>
+                <span class="kd-field-error" asp-validation-for="Input.Toplam"></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="kd-form-block">
+        <h2 class="kd-eyebrow kd-section-title">Durum</h2>
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Durum">Raf</label>
+            <select class="form-select kd-narrow" asp-for="Input.Durum">
+                @foreach (var durum in Enum.GetValues<OgeDurumu>())
+                {
+                    <option value="@durum" selected="@(Model.Input.Durum == durum)">@Gorunum.DurumAdi(durum)</option>
+                }
+            </select>
+            <span class="kd-field-error" asp-validation-for="Input.Durum"></span>
+        </div>
+
+        <div class="kd-field-row">
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Puan">Puan (1-5)</label>
+                <select class="form-select kd-narrow" asp-for="Input.Puan">
+                    <option value="">Yok</option>
+                    @for (var p = 1; p <= 5; p++)
+                    {
+                        <option value="@p" selected="@(Model.Input.Puan == p)">@p</option>
+                    }
+                </select>
+                <span class="kd-field-error" asp-validation-for="Input.Puan"></span>
+            </div>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Not">Not</label>
+            <textarea class="form-control" asp-for="Input.Not" rows="3" maxlength="2000"></textarea>
+            <span class="kd-field-error" asp-validation-for="Input.Not"></span>
+        </div>
+    </section>
+
+    <div class="kd-form-actions">
+        <button type="submit" class="btn btn-primary kd-btn-lg">Kaydet</button>
+        @if (Model.Yeni)
+        {
+            <a class="btn btn-outline-primary kd-btn-lg" asp-page="Raf" asp-route-aliskanlikId="@a.Id">Vazgeç</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-primary kd-btn-lg" asp-page="Oge" asp-route-id="@Model.OgeId">Vazgeç</a>
+        }
+    </div>
+</form>
+
+@if (!Model.Yeni)
+{
+    <section class="kd-danger-zone" aria-labelledby="kd-danger-title">
+        <h2 class="kd-eyebrow" id="kd-danger-title">Silme</h2>
+        <form method="post" asp-page-handler="Sil" asp-route-id="@Model.OgeId"
+              onsubmit="return confirm('Bu @etiket.ToLower(new System.Globalization.CultureInfo("tr-TR")), oturumları ve kapağı kalıcı olarak silinecek. Emin misin?');">
+            <button type="submit" class="btn btn-outline-danger">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-trash-2"></use></svg>
+                Sil
+            </button>
+        </form>
+        <p class="kd-muted">Silmek geri alınamaz; bırakmak istiyorsan durumu "Bırakıldı" yap.</p>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

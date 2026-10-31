@@ -1,0 +1,152 @@
+@page "{id:guid}"
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.DetayModel
+@{
+    var a = Model.Aliskanlik;
+    ViewData["Title"] = a.Ad;
+    var haftaSayisi = (int)Math.Ceiling(Model.Hucreler.Count / 7.0);
+}
+
+<div class="kd-page-head kd-rise @Gorunum.RenkSinifi(a.Renk)">
+    <div>
+        <p class="kd-eyebrow"><a class="kd-back" asp-page="Index"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Alışkanlıklar</a></p>
+        <h1 class="kd-page-title">
+            <span class="kd-habit-icon kd-habit-icon--lg" aria-hidden="true"><svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg></span>
+            @a.Ad
+        </h1>
+        <p class="kd-page-sub">
+            @Gorunum.SiklikMetni(a)
+            @if (a.Olcu == Olcu.Sayili)
+            {
+                <text> · @(a.HedefYonu == HedefYonu.EnAz ? "günde en az" : "günde en çok") @Gorunum.Sayi(a.GunlukHedef ?? 0) @a.Birim</text>
+            }
+            else
+            {
+                <text> · evet / hayır@(a.HedefYonu == HedefYonu.EnCok ? " (sınır)" : "")</text>
+            }
+        </p>
+    </div>
+    <div class="kd-head-actions">
+        @if (a.Tur == AliskanlikTuru.Raf)
+        {
+            <a class="btn btn-outline-primary" asp-page="Raf" asp-route-aliskanlikId="@a.Id">Raf</a>
+        }
+        <a class="btn btn-outline-primary" asp-page="Duzenle" asp-route-id="@a.Id">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg> Düzenle
+        </a>
+    </div>
+</div>
+
+<section class="kd-stats" aria-label="Özet">
+    <div class="kd-stat"><span class="kd-stat-label">Güç</span><span class="kd-stat-value">@Gorunum.Yuzde(a.Guc)</span></div>
+    <div class="kd-stat"><span class="kd-stat-label">Seri@(a.Siklik == Siklik.HaftadaN ? " (hafta)" : "")</span><span class="kd-stat-value">@a.Seri</span></div>
+    <div class="kd-stat"><span class="kd-stat-label">En uzun seri</span><span class="kd-stat-value">@a.EnUzunSeri</span></div>
+    <div class="kd-stat"><span class="kd-stat-label">Bugün</span><span class="kd-stat-value kd-stat-value--small">@Gorunum.BugunMetni(a)</span></div>
+</section>
+
+@if (!Model.KayitVar)
+{
+    <div class="kd-empty kd-empty--small">
+        <p class="kd-empty-title">Henüz kayıt yok.</p>
+        <p>İlk kaydı <a asp-page="Index" asp-fragment="h-@a.Id">alışkanlıklar panelinden</a> gir; ısı haritası ve grafikler burada dolacak.</p>
+    </div>
+}
+
+<section class="kd-panel @Gorunum.RenkSinifi(a.Renk)" aria-labelledby="kd-heat-title">
+    <h2 class="kd-eyebrow" id="kd-heat-title">Son 6 ay</h2>
+    <div class="kd-heat" style="--kd-weeks:@haftaSayisi">
+        @foreach (var hucre in Model.Hucreler)
+        {
+            @if (hucre is null)
+            {
+                <i class="kd-heat-cell is-pad"></i>
+            }
+            else
+            {
+                <i class="kd-heat-cell is-@Gorunum.GunDurumu(hucre, a.Olusturulma)"
+                   title="@Gorunum.GunAy(hucre.Tarih), @Gorunum.GunAdi(hucre.Tarih): @Gorunum.Sayi(hucre.Miktar)@(a.Birim is null ? "" : " " + a.Birim)"></i>
+            }
+        }
+    </div>
+    <p class="kd-legend">
+        <span><i class="kd-dot is-done"></i> hedef tamam</span>
+        <span><i class="kd-dot is-part"></i> kısmen</span>
+        <span><i class="kd-dot is-miss"></i> yapılmadı</span>
+        <span><i class="kd-dot is-off"></i> planlı değil</span>
+    </p>
+</section>
+
+<section class="kd-panel" aria-labelledby="kd-amount-title">
+    <h2 class="kd-eyebrow" id="kd-amount-title">Günlük miktar · son 90 gün@(string.IsNullOrEmpty(a.Birim) ? "" : " (" + a.Birim + ")")</h2>
+    <div class="kd-chart"><canvas id="kd-chart-miktar" role="img" aria-label="Günlük miktar grafiği"></canvas></div>
+</section>
+
+@if (a.Olcu == Olcu.Sayili || a.Tur == AliskanlikTuru.Raf)
+{
+    <section class="kd-panel" id="kd-minutes-panel" aria-labelledby="kd-minutes-title" hidden>
+        <h2 class="kd-eyebrow" id="kd-minutes-title">Süre · son 90 gün (dakika)</h2>
+        <div class="kd-chart"><canvas id="kd-chart-dakika" role="img" aria-label="Günlük süre grafiği"></canvas></div>
+    </section>
+}
+
+<section class="kd-panel" aria-labelledby="kd-power-title">
+    <h2 class="kd-eyebrow" id="kd-power-title">Güç eğrisi (%)</h2>
+    <div class="kd-chart"><canvas id="kd-chart-guc" role="img" aria-label="Alışkanlık gücü grafiği"></canvas></div>
+</section>
+
+@section Scripts {
+    <script src="~/lib/chart.js/chart.umd.min.js"></script>
+    <script src="~/js/aliskanliklar.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var v = @Json.Serialize(Model.Grafik);
+            var grid = function (c) { return { color: c.line }; };
+
+            kdCharts.draw('kd-chart-miktar', function (c) {
+                var sets = [{ type: 'bar', label: v.birim || 'Miktar', data: v.miktar, backgroundColor: c.accent, borderRadius: 2 }];
+                if (v.hedef !== null) {
+                    sets.push({ type: 'line', label: 'Hedef', data: v.etiketler.map(function () { return v.hedef; }),
+                        borderColor: c.pink, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 });
+                }
+                return {
+                    type: 'bar',
+                    data: { labels: v.etiketler, datasets: sets },
+                    options: {
+                        scales: { x: { ticks: { color: c.text, maxTicksLimit: 8 }, grid: { display: false } },
+                                  y: { beginAtZero: true, ticks: { color: c.text }, grid: grid(c) } },
+                        plugins: { legend: { display: v.hedef !== null, labels: { color: c.text } } }
+                    }
+                };
+            });
+
+            if (v.dakikaVar) {
+                var panel = document.getElementById('kd-minutes-panel');
+                if (panel) panel.hidden = false;
+                kdCharts.draw('kd-chart-dakika', function (c) {
+                    return {
+                        type: 'bar',
+                        data: { labels: v.etiketler, datasets: [{ label: 'Dakika', data: v.dakika, backgroundColor: c.pink, borderRadius: 2 }] },
+                        options: {
+                            scales: { x: { ticks: { color: c.text, maxTicksLimit: 8 }, grid: { display: false } },
+                                      y: { beginAtZero: true, ticks: { color: c.text }, grid: grid(c) } },
+                            plugins: { legend: { display: false } }
+                        }
+                    };
+                });
+            }
+
+            kdCharts.draw('kd-chart-guc', function (c) {
+                return {
+                    type: 'line',
+                    data: { labels: v.gucEtiketleri, datasets: [{ label: 'Güç %', data: v.guc, borderColor: c.accent, backgroundColor: 'transparent',
+                        borderWidth: 2, pointRadius: 0, tension: 0.25 }] },
+                    options: {
+                        scales: { x: { ticks: { color: c.text, maxTicksLimit: 8 }, grid: { display: false } },
+                                  y: { min: 0, max: 100, ticks: { color: c.text }, grid: grid(c) } },
+                        plugins: { legend: { display: false } }
+                    }
+                };
+            });
+        })();
+    </script>
+}

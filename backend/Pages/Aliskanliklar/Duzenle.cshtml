@@ -1,0 +1,224 @@
+@page "{id:guid?}"
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.DuzenleModel
+@{
+    var raf = Model.Input.Tur == AliskanlikTuru.Raf;
+    var baslik = Model.Yeni ? (raf ? "Yeni raf" : "Yeni sayaç") : "Alışkanlığı düzenle";
+    ViewData["Title"] = baslik;
+    var gunler = Model.Input.Gunler ?? [];
+}
+
+<div class="kd-page-head kd-rise">
+    <div>
+        <p class="kd-eyebrow"><a class="kd-back" asp-page="Index"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Alışkanlıklar</a></p>
+        <h1 class="kd-page-title">@baslik</h1>
+    </div>
+</div>
+
+<form method="post" class="kd-form" novalidate>
+    <div asp-validation-summary="ModelOnly" class="kd-alert" role="alert"></div>
+
+    <input type="hidden" asp-for="Input.Tur" />
+    @if (raf)
+    {
+        <input type="hidden" asp-for="Input.Olcu" />
+        <input type="hidden" asp-for="Input.HedefYonu" />
+    }
+
+    <section class="kd-form-block">
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Ad">Ad</label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Input.Ad" autocomplete="off" maxlength="100"
+                       placeholder="@(raf ? "Kitap okuma" : "Su iç")" />
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.Ad"></span>
+        </div>
+
+        <fieldset class="kd-field">
+            <legend class="kd-field-label">İkon</legend>
+            <div class="kd-picker" role="radiogroup">
+                @foreach (var ikon in Gorunum.Ikonlar)
+                {
+                    <label class="kd-pick" title="@ikon">
+                        <input type="radio" name="Input.Ikon" value="@ikon" checked="@(Model.Input.Ikon == ikon)" />
+                        <span><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-@ikon"></use></svg></span>
+                        <span class="visually-hidden">@ikon</span>
+                    </label>
+                }
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.Ikon"></span>
+        </fieldset>
+
+        <fieldset class="kd-field">
+            <legend class="kd-field-label">Renk</legend>
+            <div class="kd-picker kd-picker--colors" role="radiogroup">
+                @foreach (var renk in Gorunum.Renkler)
+                {
+                    <label class="kd-pick kd-pick--color @Gorunum.RenkSinifi(renk)" title="@renk">
+                        <input type="radio" name="Input.Renk" value="@renk" checked="@(Model.Input.Renk == renk)" />
+                        <span></span>
+                        <span class="visually-hidden">@renk</span>
+                    </label>
+                }
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.Renk"></span>
+        </fieldset>
+    </section>
+
+    <section class="kd-form-block">
+        <h2 class="kd-eyebrow kd-section-title">Hedef</h2>
+
+        @if (!raf)
+        {
+            <fieldset class="kd-field">
+                <legend class="kd-field-label">Nasıl ölçülür?</legend>
+                <div class="kd-options">
+                    <label class="kd-option">
+                        <input type="radio" asp-for="Input.Olcu" value="Sayili" />
+                        <span><strong>Sayı</strong><small>8 bardak, 20 dakika, 2,5 litre</small></span>
+                    </label>
+                    <label class="kd-option">
+                        <input type="radio" asp-for="Input.Olcu" value="EvetHayir" />
+                        <span><strong>Evet / hayır</strong><small>Yaptım ya da yapmadım: tek tık</small></span>
+                    </label>
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.Olcu"></span>
+            </fieldset>
+
+            <fieldset class="kd-field">
+                <legend class="kd-field-label">Hedef yönü</legend>
+                <div class="kd-options">
+                    <label class="kd-option">
+                        <input type="radio" asp-for="Input.HedefYonu" value="EnAz" />
+                        <span><strong>En az</strong><small>İyi alışkanlık: hedefe ulaşmak istiyorum</small></span>
+                    </label>
+                    <label class="kd-option">
+                        <input type="radio" asp-for="Input.HedefYonu" value="EnCok" />
+                        <span><strong>En çok</strong><small>Sınır: aşmamak istiyorum (kayıt yoksa gün başarılı)</small></span>
+                    </label>
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.HedefYonu"></span>
+            </fieldset>
+        }
+
+        <div class="kd-field-row" data-kd-when="Input.Olcu=Sayili">
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.GunlukHedef">Günlük hedef</label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.GunlukHedef" type="number" step="any" min="0" inputmode="decimal" />
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.GunlukHedef"></span>
+            </div>
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Birim">Birim</label>
+                <div class="kd-field-control">
+                    <input class="form-control" asp-for="Input.Birim" maxlength="30" autocomplete="off"
+                           placeholder="@(raf ? "sayfa, bölüm, ders, dakika" : "bardak, dakika, litre")" />
+                </div>
+                <span class="kd-field-error" asp-validation-for="Input.Birim"></span>
+            </div>
+        </div>
+
+        @if (raf)
+        {
+            <div class="kd-field-row">
+                <div class="kd-field">
+                    <label class="kd-field-label" asp-for="Input.OgeEtiketi">Öğe adı</label>
+                    <div class="kd-field-control">
+                        <input class="form-control" asp-for="Input.OgeEtiketi" maxlength="30" autocomplete="off" placeholder="Kitap, Dizi, Kurs" />
+                    </div>
+                    <span class="kd-field-error" asp-validation-for="Input.OgeEtiketi"></span>
+                </div>
+                <div class="kd-field">
+                    <label class="kd-field-label" asp-for="Input.AltBaslikEtiketi">Alt başlık adı</label>
+                    <div class="kd-field-control">
+                        <input class="form-control" asp-for="Input.AltBaslikEtiketi" maxlength="30" autocomplete="off" placeholder="Yazar, Sezon, Hoca" />
+                    </div>
+                    <span class="kd-field-error" asp-validation-for="Input.AltBaslikEtiketi"></span>
+                </div>
+            </div>
+        }
+    </section>
+
+    <section class="kd-form-block">
+        <h2 class="kd-eyebrow kd-section-title">Sıklık</h2>
+        <fieldset class="kd-field">
+            <legend class="visually-hidden">Sıklık</legend>
+            <div class="kd-options">
+                <label class="kd-option">
+                    <input type="radio" asp-for="Input.Siklik" value="HerGun" />
+                    <span><strong>Her gün</strong></span>
+                </label>
+                <label class="kd-option">
+                    <input type="radio" asp-for="Input.Siklik" value="HaftadaN" />
+                    <span><strong>Haftada N gün</strong><small>Hangi günler olduğu önemli değil</small></span>
+                </label>
+                <label class="kd-option">
+                    <input type="radio" asp-for="Input.Siklik" value="BelirliGunler" />
+                    <span><strong>Belirli günler</strong><small>Örneğin pazartesi ve cuma</small></span>
+                </label>
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.Siklik"></span>
+        </fieldset>
+
+        <div class="kd-field" data-kd-when="Input.Siklik=HaftadaN">
+            <label class="kd-field-label" asp-for="Input.HaftalikSayi">Haftada kaç gün?</label>
+            <select class="form-select kd-narrow" asp-for="Input.HaftalikSayi">
+                <option value="">Seç</option>
+                @for (var n = 1; n <= 6; n++)
+                {
+                    <option value="@n" selected="@(Model.Input.HaftalikSayi == n)">@n</option>
+                }
+            </select>
+            <span class="kd-field-error" asp-validation-for="Input.HaftalikSayi"></span>
+        </div>
+
+        <fieldset class="kd-field" data-kd-when="Input.Siklik=BelirliGunler">
+            <legend class="kd-field-label">Günler</legend>
+            <div class="kd-days">
+                @foreach (var gun in Gorunum.Haftanin)
+                {
+                    <label class="kd-day">
+                        <input type="checkbox" name="Input.Gunler" value="@gun" checked="@gunler.Contains(gun)" />
+                        <span>@Gorunum.GunAdi(gun)</span>
+                    </label>
+                }
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.Gunler"></span>
+        </fieldset>
+    </section>
+
+    <div class="kd-form-actions">
+        <button type="submit" class="btn btn-primary kd-btn-lg">Kaydet</button>
+        <a class="btn btn-outline-primary kd-btn-lg" asp-page="Index">Vazgeç</a>
+    </div>
+</form>
+
+@if (!Model.Yeni)
+{
+    <section class="kd-danger-zone" aria-labelledby="kd-danger-title">
+        <h2 class="kd-eyebrow" id="kd-danger-title">Arşiv ve silme</h2>
+        <div class="kd-danger-actions">
+            <form method="post" asp-page-handler="Arsivle" asp-route-id="@Model.AliskanlikId">
+                <button type="submit" class="btn btn-outline-primary">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-archive"></use></svg>
+                    @(Model.Input.Arsivlendi ? "Arşivden çıkar" : "Arşivle")
+                </button>
+            </form>
+            <form method="post" asp-page-handler="Sil" asp-route-id="@Model.AliskanlikId"
+                  onsubmit="return confirm('Bu alışkanlık ve bütün kayıtları, öğeleri, oturumları ve fotoğrafları kalıcı olarak silinecek. Emin misin?');">
+                <button type="submit" class="btn btn-outline-danger">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-trash-2"></use></svg>
+                    Sil
+                </button>
+            </form>
+        </div>
+        <p class="kd-muted">Arşivlenen alışkanlık panelden kalkar ama verisi durur. Silmek geri alınamaz.</p>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/aliskanliklar.js" asp-append-version="true"></script>
+}

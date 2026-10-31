@@ -1,0 +1,118 @@
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.IndexModel.Kart
+@{
+    var a = Model.Aliskanlik;
+    var (oran, durum) = Gorunum.Ilerleme(a);
+    var adim = Gorunum.Adim(a);
+    var yapildi = a.Bugun.Miktar > 0;
+}
+<article class="kd-habit @Gorunum.RenkSinifi(a.Renk)" id="h-@a.Id">
+    <header class="kd-habit-head">
+        <span class="kd-habit-icon" aria-hidden="true">
+            <svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg>
+        </span>
+        <div class="kd-habit-id">
+            <h2 class="kd-habit-name"><a asp-page="Detay" asp-route-id="@a.Id">@a.Ad</a></h2>
+            <p class="kd-habit-meta">@Gorunum.SiklikMetni(a) · Güç @Gorunum.Yuzde(a.Guc)@(a.Seri > 0 ? $" · Seri {a.Seri}" : "")</p>
+        </div>
+        <a class="kd-icon-btn" asp-page="Duzenle" asp-route-id="@a.Id" aria-label="@a.Ad alışkanlığını düzenle">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
+        </a>
+    </header>
+
+    <div class="kd-habit-progress">
+        <div class="kd-bar @(durum != "" ? "is-" + durum : "")" role="progressbar" aria-label="Bugünkü ilerleme"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Round(oran * 100)">
+            <span style="width:@Gorunum.Genislik(oran)"></span>
+        </div>
+        <p class="kd-readout">@Gorunum.BugunMetni(a)</p>
+    </div>
+
+    @if (a.Tur == AliskanlikTuru.Raf)
+    {
+        @if (a.DevamEdenler.Count == 0)
+        {
+            <div class="kd-habit-actions kd-habit-empty">
+                <p>Devam eden @((a.OgeEtiketi ?? "öğe").ToLower(new System.Globalization.CultureInfo("tr-TR"))) yok.</p>
+                <a class="btn btn-outline-primary" asp-page="OgeDuzenle" asp-route-aliskanlikId="@a.Id">+ @a.OgeEtiketi</a>
+            </div>
+        }
+        @foreach (var o in a.DevamEdenler)
+        {
+            <div class="kd-shelf">
+                <a class="kd-cover-link" asp-page="Oge" asp-route-id="@o.Id" tabindex="-1" aria-hidden="true">
+                    @if (o.FotografUrl is not null)
+                    {
+                        <img class="kd-cover" src="@o.FotografUrl" alt="" loading="lazy" />
+                    }
+                    else
+                    {
+                        <span class="kd-cover kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg></span>
+                    }
+                </a>
+                <div class="kd-shelf-body">
+                    <a class="kd-shelf-title" asp-page="Oge" asp-route-id="@o.Id">@o.Ad</a>
+                    @if (!string.IsNullOrEmpty(o.AltBaslik))
+                    {
+                        <span class="kd-muted">@o.AltBaslik</span>
+                    }
+                    <p class="kd-readout">
+                        @Gorunum.Sayi(o.GuncelKonum)@(o.Toplam is { } toplam ? " / " + Gorunum.Sayi(toplam) : "") @a.Birim@(o.Ilerleme is { } ilerleme ? " · " + Gorunum.Yuzde(ilerleme) : "")
+                    </p>
+                    <form method="post" asp-page-handler="Ilerleme" class="kd-progress-form">
+                        <input type="hidden" name="ogeId" value="@o.Id" />
+                        <label class="visually-hidden" for="p-@o.Id">Nereye kadar geldin?</label>
+                        <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
+                               class="form-control" placeholder="Nereye kadar?" required />
+                        <label class="visually-hidden" for="d-@o.Id">Dakika</label>
+                        <input id="d-@o.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute" placeholder="dk" />
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else if (a.Olcu == Olcu.EvetHayir)
+    {
+        <form method="post" asp-page-handler="Tik" asp-route-id="@a.Id" class="kd-habit-actions">
+            <button type="submit" class="kd-tick @(yapildi ? "is-done" : "")" aria-pressed="@(yapildi ? "true" : "false")">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
+                <span>@(yapildi ? "Yapıldı · geri al" : "Yaptım")</span>
+            </button>
+        </form>
+    }
+    else
+    {
+        <div class="kd-habit-actions kd-stepper">
+            <form method="post" asp-page-handler="Sayi" asp-route-id="@a.Id">
+                <input type="hidden" name="delta" value="@Gorunum.Girdi(-adim)" />
+                <button type="submit" class="kd-step-btn" aria-label="@Gorunum.Sayi(adim) @a.Birim azalt">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-minus"></use></svg>
+                </button>
+            </form>
+            <form method="post" asp-page-handler="Ayarla" asp-route-id="@a.Id" class="kd-stepper-set">
+                <label class="visually-hidden" for="m-@a.Id">Bugünkü miktar (@a.Birim)</label>
+                <input id="m-@a.Id" name="miktar" type="number" step="any" min="0" inputmode="decimal" class="form-control"
+                       value="@Gorunum.Girdi(a.Bugun.Miktar)" />
+                <button type="submit" class="kd-text-btn">Kaydet</button>
+            </form>
+            <form method="post" asp-page-handler="Sayi" asp-route-id="@a.Id">
+                <input type="hidden" name="delta" value="@Gorunum.Girdi(adim)" />
+                <button type="submit" class="kd-step-btn kd-step-btn--add" aria-label="@Gorunum.Sayi(adim) @a.Birim artır">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-plus"></use></svg>
+                </button>
+            </form>
+        </div>
+    }
+
+    <footer class="kd-strip" aria-label="Son 7 gün">
+        @foreach (var gun in Model.SonGunler)
+        {
+            <span class="kd-strip-day @(gun.Tarih == a.Bugun.Tarih ? "is-today" : "")"
+                  title="@Gorunum.GunAy(gun.Tarih): @Gorunum.Sayi(gun.Miktar)@(a.Birim is null ? "" : " " + a.Birim)">
+                <i class="kd-dot is-@Gorunum.GunDurumu(gun, a.Olusturulma)"></i>
+                <small>@Gorunum.GunKisa(gun.Tarih)</small>
+            </span>
+        }
+    </footer>
+</article>

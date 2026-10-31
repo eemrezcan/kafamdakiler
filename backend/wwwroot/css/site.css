@@ -943,3 +943,1085 @@ body {
     animation: none;
   }
 }
+
+/* ---------- Alışkanlıklar ---------- */
+
+/* Habit colors. A card, panel or picker with one of these classes gets --kd-hue. */
+:root,
+[data-bs-theme="light"] {
+  --kd-ok: #2f7d4f;
+  --kd-hue-violet: #5a3e9e;
+  --kd-hue-pink: #b8366f;
+  --kd-hue-blue: #2f62b5;
+  --kd-hue-teal: #1f7f7a;
+  --kd-hue-green: #3b7a3f;
+  --kd-hue-amber: #a8681a;
+  --kd-hue-red: #a3243b;
+  --kd-hue-slate: #5b6475;
+}
+
+[data-bs-theme="dark"] {
+  --kd-ok: #7fd0a0;
+  --kd-hue-violet: #b6a8ef;
+  --kd-hue-pink: #ef86b8;
+  --kd-hue-blue: #8fb4f2;
+  --kd-hue-teal: #7fd3cc;
+  --kd-hue-green: #9ad39d;
+  --kd-hue-amber: #f0c070;
+  --kd-hue-red: #f19aa6;
+  --kd-hue-slate: #aab3c5;
+}
+
+.kd-c-violet { --kd-hue: var(--kd-hue-violet); }
+.kd-c-pink { --kd-hue: var(--kd-hue-pink); }
+.kd-c-blue { --kd-hue: var(--kd-hue-blue); }
+.kd-c-teal { --kd-hue: var(--kd-hue-teal); }
+.kd-c-green { --kd-hue: var(--kd-hue-green); }
+.kd-c-amber { --kd-hue: var(--kd-hue-amber); }
+.kd-c-red { --kd-hue: var(--kd-hue-red); }
+.kd-c-slate { --kd-hue: var(--kd-hue-slate); }
+
+[hidden] {
+  display: none !important;
+}
+
+/* ----- Page head ----- */
+
+.kd-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.75rem 0 1.25rem;
+}
+
+.kd-page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  font-family: var(--kd-font-serif);
+  font-size: clamp(2rem, 7vw, 2.9rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+.kd-page-sub {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.kd-back {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.kd-back:hover {
+  color: var(--kd-text);
+}
+
+.kd-alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--kd-danger);
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--kd-danger) 8%, transparent);
+  color: var(--kd-danger);
+}
+
+.kd-alert:empty,
+.kd-alert.validation-summary-valid {
+  display: none;
+}
+
+.kd-alert ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.kd-muted {
+  color: var(--kd-text-muted);
+  font-size: 0.85rem;
+}
+
+.kd-footnote {
+  margin: 2rem 0 0;
+  font-size: 0.85rem;
+}
+
+.kd-section-gap {
+  margin: 2rem 0 0.75rem;
+}
+
+/* Buttons are at least 44 px high wherever a finger taps them. */
+.kd-page-head .btn,
+.kd-habit .btn,
+.kd-form .btn,
+.kd-shelf-actions .btn,
+.kd-danger-zone .btn,
+.kd-panel .btn,
+.kd-session-edit .btn,
+.kd-empty .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--kd-danger);
+  --bs-btn-border-color: var(--kd-danger);
+  --bs-btn-hover-color: var(--kd-ink-text);
+  --bs-btn-hover-bg: var(--kd-danger);
+  --bs-btn-hover-border-color: var(--kd-danger);
+  --bs-btn-active-color: var(--kd-ink-text);
+  --bs-btn-active-bg: var(--kd-danger);
+  --bs-btn-active-border-color: var(--kd-danger);
+}
+
+.kd-menu {
+  --bs-dropdown-bg: var(--kd-surface-solid);
+  --bs-dropdown-border-color: var(--kd-line-strong);
+  --bs-dropdown-link-color: var(--kd-text);
+  --bs-dropdown-link-hover-bg: rgba(var(--kd-violet-rgb), 0.08);
+  --bs-dropdown-link-hover-color: var(--kd-text);
+  --bs-dropdown-link-active-bg: rgba(var(--kd-violet-rgb), 0.14);
+  --bs-dropdown-link-active-color: var(--kd-text);
+  max-width: min(20rem, calc(100vw - 2rem));
+}
+
+.kd-menu .dropdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.7rem 1rem;
+  white-space: normal;
+}
+
+.kd-menu .dropdown-item span {
+  font-size: 0.8rem;
+  color: var(--kd-text-muted);
+}
+
+/* ----- Habit cards ----- */
+
+.kd-habits {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+}
+
+.kd-habits--dim {
+  opacity: 0.62;
+  transition: opacity 0.2s ease;
+}
+
+.kd-habits--dim:hover,
+.kd-habits--dim:focus-within {
+  opacity: 1;
+}
+
+.kd-habit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.6rem;
+  background: var(--kd-surface-solid);
+  scroll-margin-top: 5rem;
+}
+
+.kd-habit:target {
+  border-color: var(--kd-hue);
+  box-shadow: 0 0 0 1px var(--kd-hue);
+}
+
+.kd-habit-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kd-habit-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--kd-hue, var(--kd-violet)) 16%, transparent);
+  color: var(--kd-hue, var(--kd-violet));
+}
+
+.kd-habit-icon--lg {
+  width: 2.9rem;
+  height: 2.9rem;
+}
+
+.kd-habit-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.kd-habit-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.kd-habit-name a {
+  color: var(--kd-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.kd-habit-name a:hover {
+  text-decoration: underline;
+}
+
+.kd-habit-meta {
+  margin: 0.2rem 0 0;
+  font-family: var(--kd-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  color: var(--kd-text-muted);
+}
+
+.kd-bar {
+  height: 0.5rem;
+  border-radius: 99px;
+  background: var(--kd-line);
+  overflow: hidden;
+}
+
+.kd-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--kd-hue, var(--kd-violet));
+  transition: width 0.4s ease;
+}
+
+.kd-bar.is-ok > span { background: var(--kd-ok); }
+.kd-bar.is-over > span { background: var(--kd-danger); }
+.kd-bar--thin { height: 0.25rem; }
+
+.kd-readout {
+  margin: 0.5rem 0 0;
+  font-family: var(--kd-font-mono);
+  font-size: 0.82rem;
+  color: var(--kd-text);
+}
+
+.kd-readout--lg {
+  font-size: 1.15rem;
+}
+
+.kd-habit-actions {
+  display: flex;
+  align-items: center;
+}
+
+.kd-habit-actions form {
+  margin: 0;
+}
+
+.kd-habit-empty {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.kd-habit-empty p {
+  margin: 0;
+  color: var(--kd-text-muted);
+}
+
+/* One-tap yes/no. */
+.kd-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--kd-hue);
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--kd-hue);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.kd-tick.is-done {
+  background: var(--kd-hue);
+  color: var(--kd-ink-text);
+}
+
+.kd-tick:focus-visible,
+.kd-step-btn:focus-visible {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+/* − [ number  save ] + */
+.kd-stepper {
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.kd-step-btn {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--kd-text);
+}
+
+.kd-step-btn:hover {
+  border-color: var(--kd-text-muted);
+}
+
+.kd-step-btn--add {
+  border-color: var(--kd-hue);
+  background: var(--kd-hue);
+  color: var(--kd-ink-text);
+}
+
+.kd-stepper-set {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.kd-stepper-set .form-control {
+  min-width: 0;
+  min-height: 3rem;
+  text-align: center;
+}
+
+.kd-stepper-set .kd-text-btn {
+  min-height: 2.75rem;
+}
+
+/* Shelf item inside a card. */
+.kd-shelf {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.kd-cover {
+  display: block;
+  width: 4.5rem;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.3rem;
+  background: var(--kd-field-bg);
+  object-fit: cover;
+}
+
+.kd-cover--empty {
+  display: grid;
+  place-items: center;
+  color: var(--kd-hue, var(--kd-text-faint));
+}
+
+.kd-cover--lg {
+  width: 100%;
+  max-width: 11rem;
+}
+
+.kd-cover-link {
+  flex-shrink: 0;
+}
+
+.kd-shelf-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.kd-shelf-title {
+  font-weight: 600;
+  color: var(--kd-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.kd-progress-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+}
+
+.kd-progress-form .form-control {
+  flex: 1 1 8rem;
+  min-width: 0;
+  min-height: 2.75rem;
+}
+
+.kd-progress-form .kd-minute {
+  flex: 0 0 4.5rem;
+}
+
+/* Last 7 days. */
+.kd-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--kd-line);
+}
+
+.kd-strip-day {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.kd-strip-day small {
+  font-family: var(--kd-font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kd-text-faint);
+}
+
+.kd-strip-day.is-today small {
+  color: var(--kd-text);
+  font-weight: 600;
+}
+
+.kd-dot {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1.5px solid var(--kd-line-strong);
+  border-radius: 50%;
+  vertical-align: -0.1em;
+}
+
+.kd-dot.is-done {
+  border-color: var(--kd-hue, var(--kd-violet));
+  background: var(--kd-hue, var(--kd-violet));
+}
+
+.kd-dot.is-part {
+  border-color: var(--kd-hue, var(--kd-violet));
+  background: linear-gradient(90deg, var(--kd-hue, var(--kd-violet)) 50%, transparent 50%);
+}
+
+.kd-dot.is-miss {
+  border-color: var(--kd-text-faint);
+  background: transparent;
+}
+
+/* Not planned that day (or before the habit existed): dashed and faint. */
+.kd-dot.is-off {
+  border-style: dashed;
+  border-color: var(--kd-line);
+  background: transparent;
+}
+
+/* ----- Empty states ----- */
+
+.kd-empty {
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--kd-line-strong);
+  border-radius: 0.6rem;
+  text-align: center;
+  color: var(--kd-text-muted);
+}
+
+.kd-empty--small {
+  margin-bottom: 1rem;
+  padding: 1.25rem 1rem;
+}
+
+.kd-empty-title {
+  margin: 0 0 0.4rem;
+  font-family: var(--kd-font-serif);
+  font-size: 1.6rem;
+  color: var(--kd-text);
+}
+
+.kd-empty-choices {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  max-width: 40rem;
+  margin: 1.25rem auto 0;
+}
+
+.kd-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 4.5rem;
+  padding: 1rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 0.5rem;
+  color: var(--kd-text);
+  text-align: left;
+  text-decoration: none;
+}
+
+.kd-choice:hover {
+  border-color: var(--kd-text-muted);
+  background: rgba(var(--kd-violet-rgb), 0.06);
+  color: var(--kd-text);
+}
+
+.kd-choice span {
+  font-size: 0.85rem;
+  color: var(--kd-text-muted);
+}
+
+/* ----- Detail ----- */
+
+.kd-stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 576px) {
+  .kd-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.kd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.5rem;
+  background: var(--kd-surface-solid);
+}
+
+.kd-stat-label {
+  font-family: var(--kd-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-stat-value {
+  font-family: var(--kd-font-serif);
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.kd-stat-value--small {
+  font-family: var(--kd-font-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.kd-panel {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.6rem;
+  background: var(--kd-surface-solid);
+}
+
+.kd-panel .kd-eyebrow {
+  margin-bottom: 0.75rem;
+}
+
+.kd-chart {
+  position: relative;
+  height: 14rem;
+}
+
+/* Heat map: a column per week (Monday on top), cells shrink to fit the width. */
+.kd-heat {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, auto);
+  grid-template-columns: repeat(var(--kd-weeks), 1fr);
+  gap: 3px;
+}
+
+.kd-heat-cell {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--kd-line);
+}
+
+.kd-heat-cell.is-done { background: var(--kd-hue, var(--kd-violet)); }
+.kd-heat-cell.is-part { background: color-mix(in srgb, var(--kd-hue, var(--kd-violet)) 45%, transparent); }
+.kd-heat-cell.is-miss { background: color-mix(in srgb, var(--kd-text-faint) 35%, transparent); }
+.kd-heat-cell.is-off { background: transparent; box-shadow: inset 0 0 0 1px var(--kd-line); }
+.kd-heat-cell.is-pad { visibility: hidden; }
+
+.kd-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.75rem;
+  color: var(--kd-text-muted);
+}
+
+/* ----- Forms ----- */
+
+.kd-form {
+  max-width: 40rem;
+}
+
+.kd-form-block {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--kd-line);
+}
+
+.kd-form-block:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.kd-field-row {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+fieldset.kd-field {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend.kd-field-label {
+  float: none;
+  width: auto;
+}
+
+.kd-narrow {
+  max-width: 10rem;
+}
+
+.form-select {
+  min-height: 2.75rem;
+  background-color: var(--kd-field-bg);
+  border-color: var(--kd-line-strong);
+  color: var(--kd-text);
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+.kd-field .kd-muted {
+  display: block;
+  margin-top: 0.3rem;
+}
+
+/* Icon and color pickers: a grid of radio tiles. */
+.kd-picker {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr));
+}
+
+.kd-pick {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.kd-pick input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kd-pick > span:not(.visually-hidden) {
+  display: grid;
+  place-items: center;
+  height: 2.75rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.4rem;
+  color: var(--kd-text-muted);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.kd-pick:hover > span:not(.visually-hidden) {
+  border-color: var(--kd-line-strong);
+  color: var(--kd-text);
+}
+
+.kd-pick input:checked + span {
+  border-color: var(--kd-text);
+  background: rgba(var(--kd-violet-rgb), 0.1);
+  color: var(--kd-text);
+}
+
+.kd-pick input:focus-visible + span {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+.kd-pick--color > span:not(.visually-hidden)::after {
+  content: "";
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--kd-hue);
+}
+
+/* Radio choices with a short explanation. */
+.kd-options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.kd-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.kd-option:has(input:checked) {
+  border-color: var(--kd-text);
+  background: rgba(var(--kd-violet-rgb), 0.06);
+}
+
+.kd-option:has(input:focus-visible) {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+.kd-option input {
+  margin-top: 0.25rem;
+  accent-color: var(--kd-violet);
+}
+
+.kd-option strong {
+  display: block;
+  font-weight: 500;
+}
+
+.kd-option small {
+  display: block;
+  color: var(--kd-text-muted);
+}
+
+/* Day chips. */
+.kd-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.kd-day {
+  position: relative;
+}
+
+.kd-day input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kd-day span {
+  display: grid;
+  place-items: center;
+  min-width: 2.9rem;
+  height: 2.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.kd-day input:checked + span {
+  border-color: var(--kd-ink);
+  background: var(--kd-ink);
+  color: var(--kd-ink-text);
+}
+
+.kd-day input:focus-visible + span {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+.kd-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.kd-form-actions .btn {
+  flex: 1 1 9rem;
+  justify-content: center;
+}
+
+.kd-danger-zone {
+  max-width: 40rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--kd-line);
+}
+
+.kd-danger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.kd-danger-zone form {
+  margin: 0;
+}
+
+.kd-cover-edit {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.kd-cover-controls {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.kd-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0;
+}
+
+.kd-check .form-check-input {
+  margin: 0;
+}
+
+/* ----- Shelf and item ----- */
+
+.kd-shelf-section {
+  margin-bottom: 1.75rem;
+}
+
+.kd-covers {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+}
+
+.kd-book {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: var(--kd-text);
+  text-decoration: none;
+}
+
+.kd-book .kd-cover {
+  width: 100%;
+}
+
+.kd-book-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.kd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.kd-table th {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--kd-line-strong);
+  font-family: var(--kd-font-mono);
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-table td {
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid var(--kd-line);
+}
+
+.kd-oge {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 576px) {
+  .kd-oge {
+    grid-template-columns: 11rem 1fr;
+  }
+}
+
+.kd-oge-cover .kd-cover--lg {
+  max-width: 8rem;
+}
+
+@media (min-width: 576px) {
+  .kd-oge-cover .kd-cover--lg {
+    max-width: 11rem;
+  }
+}
+
+.kd-status {
+  display: inline-block;
+  margin: 0 0 0.6rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--kd-hue);
+  border-radius: 99px;
+  font-family: var(--kd-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kd-hue);
+}
+
+.kd-status.is-bitti {
+  border-color: var(--kd-ok);
+  color: var(--kd-ok);
+}
+
+.kd-status.is-birakildi {
+  border-color: var(--kd-text-faint);
+  color: var(--kd-text-faint);
+}
+
+.kd-progress-form--lg {
+  margin-top: 1rem;
+}
+
+.kd-facts {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 1.25rem 0 0;
+}
+
+.kd-facts dt {
+  font-family: var(--kd-font-mono);
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-facts dd {
+  margin: 0;
+}
+
+.kd-note {
+  margin: 1rem 0 0;
+  padding: 0.5rem 1rem;
+  border-left: 2px solid var(--kd-hue);
+  color: var(--kd-text-muted);
+  white-space: pre-line;
+}
+
+.kd-shelf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.kd-shelf-actions form {
+  margin: 0;
+}
+
+.kd-sessions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kd-session {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--kd-line);
+}
+
+.kd-session-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 1rem;
+}
+
+.kd-session-date {
+  min-width: 3.5rem;
+  font-family: var(--kd-font-mono);
+  font-size: 0.78rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-session-amount {
+  margin-left: auto;
+  font-family: var(--kd-font-mono);
+  font-size: 0.82rem;
+}
+
+.kd-session-edit summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-session-edit form {
+  margin: 0 0 0.5rem;
+}

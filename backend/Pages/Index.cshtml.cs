@@ -5,8 +5,6 @@ namespace Kafamdakiler.Pages;
 
 public class IndexModel : PageModel
 {
-    public void OnGet()
-    {
-
-    }
+    // The habit panel is the home page for now.
+    public IActionResult OnGet() => RedirectToPage("/Aliskanliklar/Index");
 }

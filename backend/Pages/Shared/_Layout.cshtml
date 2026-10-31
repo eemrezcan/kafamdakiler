@@ -1,6 +1,5 @@
 ﻿@{
     var currentPage = ViewContext.RouteData.Values["page"] as string;
-    string ActiveFor(string page) => currentPage == page ? "active" : "";
     // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
     var showChrome = User.Identity?.IsAuthenticated == true;
 }
@@ -31,7 +30,7 @@
             </a>
 
             <div class="kd-nav-links">
-                <a class="kd-nav-link @ActiveFor("/Index")" asp-area="" asp-page="/Index">Ana sayfa</a>
+                <a class="kd-nav-link @(currentPage?.StartsWith("/Aliskanliklar") == true ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
             </div>
 
             <div class="kd-account">
@@ -70,9 +69,9 @@
 
             <section class="kd-drawer-section kd-drawer-pages" aria-labelledby="kd-pages-title">
                 <h3 class="kd-eyebrow kd-section-title" id="kd-pages-title">Sayfalar</h3>
-                <a class="kd-drawer-link @ActiveFor("/Index")" asp-area="" asp-page="/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#home"></use></svg>
-                    Ana sayfa
+                <a class="kd-drawer-link @(currentPage?.StartsWith("/Aliskanliklar") == true ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
+                    Alışkanlıklar
                 </a>
             </section>
 

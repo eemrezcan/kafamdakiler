@@ -1,0 +1,177 @@
+@page "{id:guid}"
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.OgeModel
+@{
+    var a = Model.Aliskanlik;
+    var o = Model.Oge;
+    ViewData["Title"] = o.Ad;
+    var birim = a.Birim ?? "";
+    var bitti = o.Durum == OgeDurumu.Bitti;
+}
+
+<div class="kd-page-head kd-rise @Gorunum.RenkSinifi(a.Renk)">
+    <div>
+        <p class="kd-eyebrow"><a class="kd-back" asp-page="Raf" asp-route-aliskanlikId="@a.Id"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Raf · @a.Ad</a></p>
+        <h1 class="kd-page-title">@o.Ad</h1>
+        @if (!string.IsNullOrEmpty(o.AltBaslik))
+        {
+            <p class="kd-page-sub">@o.AltBaslik</p>
+        }
+    </div>
+    <div class="kd-head-actions">
+        <a class="btn btn-outline-primary" asp-page="OgeDuzenle" asp-route-id="@o.Id">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg> Düzenle
+        </a>
+    </div>
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+<section class="kd-oge @Gorunum.RenkSinifi(a.Renk)">
+    <div class="kd-oge-cover">
+        @if (o.FotografUrl is not null)
+        {
+            <img class="kd-cover kd-cover--lg" src="@o.FotografUrl" alt="@o.Ad kapağı" />
+        }
+        else
+        {
+            <span class="kd-cover kd-cover--lg kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg></span>
+        }
+    </div>
+
+    <div class="kd-oge-body">
+        <p class="kd-status is-@o.Durum.ToString().ToLowerInvariant()">@Gorunum.DurumAdi(o.Durum)</p>
+
+        <p class="kd-readout kd-readout--lg">
+            @Gorunum.Sayi(o.GuncelKonum)@(o.Toplam is { } toplam ? " / " + Gorunum.Sayi(toplam) : "") @birim
+            @if (o.Ilerleme is { } ilerleme)
+            {
+                <span> · @Gorunum.Yuzde(ilerleme)</span>
+            }
+        </p>
+        @if (o.Ilerleme is { } oran)
+        {
+            <div class="kd-bar @(bitti ? "is-ok" : "")" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Round(oran * 100)">
+                <span style="width:@Gorunum.Genislik(oran)"></span>
+            </div>
+        }
+
+        @if (!bitti)
+        {
+            <form method="post" asp-page-handler="Ilerleme" asp-route-id="@o.Id" class="kd-progress-form kd-progress-form--lg">
+                <label class="visually-hidden" for="bitisKonum">Nereye kadar geldin?</label>
+                <input id="bitisKonum" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
+                       class="form-control" placeholder="Nereye kadar geldin?" required />
+                <label class="visually-hidden" for="dakika">Dakika</label>
+                <input id="dakika" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute" placeholder="dk" />
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </form>
+        }
+
+        <dl class="kd-facts">
+            @if (o.Hiz > 0)
+            {
+                <div><dt>Hız</dt><dd>@Gorunum.Sayi(o.Hiz) @birim / gün</dd></div>
+            }
+            @if (o.TahminiBitis is { } tahmin)
+            {
+                <div><dt>Tahmini bitiş</dt><dd>@Gorunum.Tarih(tahmin)</dd></div>
+            }
+            @if (o.ToplamDakika > 0)
+            {
+                <div><dt>Toplam süre</dt><dd>@Gorunum.Sure(o.ToplamDakika)</dd></div>
+            }
+            @if (o.BaslamaTarihi is { } basla)
+            {
+                <div><dt>Başlama</dt><dd>@Gorunum.Tarih(basla)</dd></div>
+            }
+            @if (o.BitisTarihi is { } bitis)
+            {
+                <div><dt>Bitiş</dt><dd>@Gorunum.Tarih(bitis)</dd></div>
+            }
+            @if (o.Puan is { } puan)
+            {
+                <div><dt>Puan</dt><dd>@puan / 5</dd></div>
+            }
+        </dl>
+
+        @if (!string.IsNullOrEmpty(o.Not))
+        {
+            <p class="kd-note">@o.Not</p>
+        }
+
+        <div class="kd-shelf-actions">
+            @if (o.Durum is OgeDurumu.Siradaki or OgeDurumu.Birakildi or OgeDurumu.Bitti)
+            {
+                <form method="post" asp-page-handler="Durum" asp-route-id="@o.Id">
+                    <input type="hidden" name="durum" value="Devam" />
+                    <button type="submit" class="btn btn-outline-primary">@(bitti ? "Yeniden devam et" : "Devam et")</button>
+                </form>
+            }
+            @if (o.Durum is OgeDurumu.Devam or OgeDurumu.Siradaki)
+            {
+                @if (o.Toplam is null)
+                {
+                    <form method="post" asp-page-handler="Durum" asp-route-id="@o.Id">
+                        <input type="hidden" name="durum" value="Bitti" />
+                        <button type="submit" class="btn btn-outline-primary">Bitti olarak işaretle</button>
+                    </form>
+                }
+                <form method="post" asp-page-handler="Durum" asp-route-id="@o.Id">
+                    <input type="hidden" name="durum" value="Birakildi" />
+                    <button type="submit" class="btn btn-outline-primary">Bırak</button>
+                </form>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="kd-panel" aria-labelledby="kd-sessions-title">
+    <h2 class="kd-eyebrow" id="kd-sessions-title">Oturumlar</h2>
+    @if (Model.Oturumlar.Count == 0)
+    {
+        <p class="kd-muted">Henüz oturum yok. Yukarıdan nereye kadar geldiğini yaz.</p>
+    }
+    else
+    {
+        <ul class="kd-sessions">
+            @foreach (var t in Model.Oturumlar)
+            {
+                <li class="kd-session">
+                    <div class="kd-session-row">
+                        <span class="kd-session-date">@Gorunum.GunAy(t.Tarih)</span>
+                        <span class="kd-session-range">@Gorunum.Sayi(t.BaslangicKonum) → @Gorunum.Sayi(t.BitisKonum)</span>
+                        <span class="kd-session-amount">+@Gorunum.Sayi(t.Miktar) @birim@(t.Dakika is { } dk ? " · " + Gorunum.Sure(dk) : "")</span>
+                    </div>
+                    @if (t.Son)
+                    {
+                        <details class="kd-session-edit">
+                            <summary>Düzenle / sil</summary>
+                            <form method="post" asp-page-handler="OturumGuncelle" asp-route-id="@o.Id" class="kd-progress-form">
+                                <input type="hidden" name="oturumId" value="@t.Id" />
+                                <label class="visually-hidden" for="e-@t.Id">Bitiş konumu</label>
+                                <input id="e-@t.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" class="form-control"
+                                       min="@Gorunum.Girdi(t.BaslangicKonum)" value="@Gorunum.Girdi(t.BitisKonum)" required />
+                                <label class="visually-hidden" for="ed-@t.Id">Dakika</label>
+                                <input id="ed-@t.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute"
+                                       value="@t.Dakika" placeholder="dk" />
+                                <button type="submit" class="btn btn-primary">Kaydet</button>
+                            </form>
+                            <form method="post" asp-page-handler="OturumSil" asp-route-id="@o.Id"
+                                  onsubmit="return confirm('Son oturum silinecek ve @(birim) konumu @Gorunum.Sayi(t.BaslangicKonum) değerine dönecek. Emin misin?');">
+                                <input type="hidden" name="oturumId" value="@t.Id" />
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-trash-2"></use></svg> Son oturumu sil
+                                </button>
+                            </form>
+                        </details>
+                    }
+                </li>
+            }
+        </ul>
+        <p class="kd-muted">Yalnız son oturum değiştirilebilir; böylece konumlar zincir gibi tutarlı kalır.</p>
+    }
+</section>
