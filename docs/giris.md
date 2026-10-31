@@ -31,6 +31,11 @@ Kurulum ve çalıştırma komutları, beklenen sonuçla birlikte.
 Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça burada listelenir, geri kalan kodu öğrenci yazmıştır.
 
 - `README.md`: Claude yazdı (2026-10-29, kullanıcının isteğiyle); içeriği A01'de kullanıcının koştuğu komutlardır.
+- `backend/Program.cs` içindeki `/api/hesap` grubu (`MapIdentityApi` ve `/register`'ı kapatan endpoint filter): Claude'un açtığı Sonnet işçisi yazdı (2026-10-30, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle); kullanıcı inceledi.
+- `backend/Pages/Hesap/Giris.cshtml.cs`: `InputModel` (form alanları ve doğrulama kuralları) Claude'un açtığı Sonnet işçisi, `OnPostAsync` (SignInManager ile giriş, güvenli yönlendirme) ve görünümü `Giris.cshtml` Claude yazdı; `backend/Pages/Hesap/Cikis.cshtml(.cs)` (POST ile çıkış) Claude yazdı (2026-10-30, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle).
+- Web teması (K-0021, K-0022): `backend/wwwroot/css/site.css`, `backend/wwwroot/js/theme/color-mode.js`, `backend/wwwroot/js/theme/synapse.js`, `backend/wwwroot/js/theme/ui.js`, `backend/wwwroot/img/logo.svg`, `backend/wwwroot/img/icons.svg`, `backend/wwwroot/fonts/README.md` (yazı tipi dosyaları OFL lisanslı, Fontsource'tan), `backend/Pages/Shared/_Layout.cshtml` ve `_Layout.cshtml.css`: Claude yazdı (2026-10-30).
+- `backend/Program.cs` içindeki Sahip policy'si, Razor Pages klasör kuralları ve cookie yolları (A04 adım 3): Claude'un açtığı Sonnet işçisi yazdı, policy'nin cookie şeması ve cookie ayarının sırası Claude düzeltti (2026-10-31, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle); kullanıcı inceledi.
+- `backend/Pages/Hesap/Erisim.cshtml` (erişim reddedildi sayfası, A04 adım 4): Claude yazdı (2026-10-31, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle); kullanıcı inceledi.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
