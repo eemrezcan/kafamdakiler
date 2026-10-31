@@ -1,50 +1,135 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@{
+    var currentPage = ViewContext.RouteData.Values["page"] as string;
+    string ActiveFor(string page) => currentPage == page ? "active" : "";
+    // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
+    var showChrome = User.Identity?.IsAuthenticated == true;
+}
+<!DOCTYPE html>
+<html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>@ViewData["Title"] - Kafamdakiler</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo.svg" />
+    <link rel="preload" href="~/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="~/fonts/instrument-serif-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <script src="~/js/theme/color-mode.js" asp-append-version="true"></script>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Kafamdakiler.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">Kafamdakiler</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+<body class="@(showChrome ? "" : "kd-bare")">
+    @if (showChrome)
+    {
+    <header class="kd-topbar">
+        <nav class="kd-topbar-inner container" aria-label="Ana menü">
+            <a class="kd-brand" asp-area="" asp-page="/Index">
+                <svg class="kd-brand-mark" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
+                <span class="kd-brand-name">kafamdakiler</span>
+            </a>
+
+            <div class="kd-nav-links">
+                <a class="kd-nav-link @ActiveFor("/Index")" asp-area="" asp-page="/Index">Ana sayfa</a>
             </div>
+
+            <div class="kd-account">
+                <span class="kd-account-name" title="@User.Identity?.Name">@User.Identity?.Name</span>
+                <form method="post" asp-page="/Hesap/Cikis">
+                    <button type="submit" class="kd-text-btn">Çıkış</button>
+                </form>
+            </div>
+
+            <button class="kd-icon-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#kd-settings"
+                    aria-controls="kd-settings" aria-label="Ayarlar">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>
+            </button>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
+    <aside class="offcanvas offcanvas-end kd-drawer" tabindex="-1" id="kd-settings" aria-labelledby="kd-settings-title">
+        <div class="kd-drawer-header">
+            <div>
+                <p class="kd-eyebrow">Tercihler</p>
+                <h2 class="kd-drawer-title" id="kd-settings-title">Ayarlar</h2>
+            </div>
+            <button type="button" class="kd-icon-btn" data-bs-dismiss="offcanvas" aria-label="Kapat">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#close"></use></svg>
+            </button>
+        </div>
+
+        <div class="kd-drawer-body">
+            <section class="kd-drawer-section" aria-labelledby="kd-account-title">
+                <h3 class="kd-eyebrow kd-section-title" id="kd-account-title">Hesap</h3>
+                <p class="kd-drawer-account">@User.Identity?.Name</p>
+                <form method="post" asp-page="/Hesap/Cikis">
+                    <button type="submit" class="btn btn-outline-primary w-100">Çıkış yap</button>
+                </form>
+            </section>
+
+            <section class="kd-drawer-section kd-drawer-pages" aria-labelledby="kd-pages-title">
+                <h3 class="kd-eyebrow kd-section-title" id="kd-pages-title">Sayfalar</h3>
+                <a class="kd-drawer-link @ActiveFor("/Index")" asp-area="" asp-page="/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#home"></use></svg>
+                    Ana sayfa
+                </a>
+            </section>
+
+            <section class="kd-drawer-section" aria-labelledby="kd-theme-title">
+                <h3 class="kd-eyebrow kd-section-title" id="kd-theme-title">Görünüm</h3>
+                <p class="kd-section-hint">Sistem seçiliyken tema, cihazının açık/koyu ayarını izler.</p>
+
+                <div class="kd-theme-options" role="radiogroup" aria-labelledby="kd-theme-title">
+                    <label class="kd-theme-option">
+                        <input type="radio" name="kd-theme" value="auto" data-kd-theme-value="auto" />
+                        <span class="kd-theme-preview kd-theme-preview--auto" aria-hidden="true"></span>
+                        <span class="kd-theme-label">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#device"></use></svg>
+                            Sistem
+                        </span>
+                        <span class="kd-theme-note" data-kd-theme-resolved></span>
+                    </label>
+                    <label class="kd-theme-option">
+                        <input type="radio" name="kd-theme" value="light" data-kd-theme-value="light" />
+                        <span class="kd-theme-preview kd-theme-preview--light" aria-hidden="true"></span>
+                        <span class="kd-theme-label">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#sun"></use></svg>
+                            Açık
+                        </span>
+                    </label>
+                    <label class="kd-theme-option">
+                        <input type="radio" name="kd-theme" value="dark" data-kd-theme-value="dark" />
+                        <span class="kd-theme-preview kd-theme-preview--dark" aria-hidden="true"></span>
+                        <span class="kd-theme-label">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#moon"></use></svg>
+                            Koyu
+                        </span>
+                    </label>
+                </div>
+            </section>
+        </div>
+    </aside>
+    }
+
+    <main role="main" class="kd-main container">
+        @RenderBody()
+    </main>
+
+    @if (showChrome)
+    {
+    <footer class="kd-footer">
         <div class="container">
-            &copy; 2026 - Kafamdakiler - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            <span>Kafamdakiler</span>
+            <span>© 2026</span>
         </div>
     </footer>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/theme/synapse.js" asp-append-version="true"></script>
+    <script src="~/js/theme/ui.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

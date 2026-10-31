@@ -1,5 +1,154 @@
+/* Kafamdakiler theme (K-0021, K-0022).
+   Visual language: looking through a microscope. The neuron scene carries the color;
+   the interface stays quiet and precise, like instrument software: hairlines,
+   muted ink, a serif for titles and a monospace for labels and readings.
+   Builds on Bootstrap 5.3 color modes: tokens on :root (light) and [data-bs-theme="dark"]. */
+
+/* ---------- Fonts (self-hosted, see /fonts/README.md) ---------- */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-italic-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/plex-mono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/plex-mono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------- Tokens ---------- */
+
+:root,
+[data-bs-theme="light"] {
+  /* Light: a stained tissue slide under white light. */
+  --kd-violet: #5a3e9e;
+  --kd-violet-rgb: 90, 62, 158;
+  --kd-pink: #b8366f;
+  --kd-pink-rgb: 184, 54, 111;
+
+  --kd-bg: #f1eee8;
+  --kd-surface: rgba(252, 250, 246, 0.7);
+  --kd-surface-solid: #fbf9f5;
+  --kd-line: rgba(28, 24, 40, 0.12);
+  --kd-line-strong: rgba(28, 24, 40, 0.28);
+  --kd-text: #1c1a22;
+  --kd-text-muted: #6d6876;
+  --kd-text-faint: #9a95a3;
+  --kd-ink: #1c1a22;
+  --kd-ink-text: #f6f3ee;
+  --kd-field-bg: rgba(255, 255, 255, 0.55);
+  --kd-shadow: 0 1.5rem 3rem -2rem rgba(40, 30, 60, 0.28);
+  --kd-danger: #a3243b;
+
+  --kd-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --kd-font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --kd-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --bs-body-bg: var(--kd-bg);
+  --bs-body-color: var(--kd-text);
+  --bs-body-font-family: var(--kd-font-sans);
+  --bs-secondary-color: var(--kd-text-muted);
+  --bs-primary: var(--kd-violet);
+  --bs-primary-rgb: var(--kd-violet-rgb);
+  --bs-link-color: var(--kd-violet);
+  --bs-link-color-rgb: var(--kd-violet-rgb);
+  --bs-link-hover-color: var(--kd-text);
+  --bs-link-hover-color-rgb: 28, 26, 34;
+  --bs-border-color: var(--kd-line);
+  --bs-focus-ring-color: rgba(var(--kd-violet-rgb), 0.25);
+}
+
+[data-bs-theme="dark"] {
+  /* Dark: fluorescence imaging, a black field with glowing cells. */
+  --kd-violet: #b6a8ef;
+  --kd-violet-rgb: 182, 168, 239;
+  --kd-pink: #ef86b8;
+  --kd-pink-rgb: 239, 134, 184;
+
+  --kd-bg: #05060a;
+  --kd-surface: rgba(10, 11, 18, 0.58);
+  --kd-surface-solid: #0c0d14;
+  --kd-line: rgba(232, 228, 245, 0.1);
+  --kd-line-strong: rgba(232, 228, 245, 0.26);
+  --kd-text: #ebe9f2;
+  --kd-text-muted: #8e8a9c;
+  --kd-text-faint: #615d6e;
+  --kd-ink: #ebe9f2;
+  --kd-ink-text: #0a0a0f;
+  --kd-field-bg: rgba(255, 255, 255, 0.025);
+  --kd-shadow: 0 2rem 4rem -2rem rgba(0, 0, 0, 0.85);
+  --kd-danger: #f19aa6;
+
+  --bs-link-hover-color-rgb: 235, 233, 242;
+  --bs-tertiary-bg: #0e0f17;
+}
+
+/* ---------- Base ---------- */
+
 html {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 @media (min-width: 768px) {
@@ -8,24 +157,789 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
 body {
-  margin-bottom: 60px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--kd-bg);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.006em;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.kd-main {
+  flex: 1 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+::selection {
+  background: rgba(var(--kd-violet-rgb), 0.28);
+}
+
+/* ---------- Bootstrap overrides ---------- */
+
+/* Primary action: solid ink, no gradient. Light ink on the dark field, dark ink on the slide. */
+.btn-primary {
+  --bs-btn-color: var(--kd-ink-text);
+  --bs-btn-bg: var(--kd-ink);
+  --bs-btn-border-color: var(--kd-ink);
+  --bs-btn-hover-color: var(--kd-ink-text);
+  --bs-btn-hover-bg: var(--kd-ink);
+  --bs-btn-hover-border-color: var(--kd-ink);
+  --bs-btn-active-color: var(--kd-ink-text);
+  --bs-btn-active-bg: var(--kd-ink);
+  --bs-btn-active-border-color: var(--kd-ink);
+  --bs-btn-disabled-color: var(--kd-ink-text);
+  --bs-btn-disabled-bg: var(--kd-ink);
+  --bs-btn-disabled-border-color: var(--kd-ink);
+  --bs-btn-focus-shadow-rgb: var(--kd-violet-rgb);
+  font-weight: 500;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--kd-text);
+  --bs-btn-border-color: var(--kd-line-strong);
+  --bs-btn-hover-bg: rgba(var(--kd-violet-rgb), 0.08);
+  --bs-btn-hover-color: var(--kd-text);
+  --bs-btn-hover-border-color: var(--kd-text-muted);
+  --bs-btn-active-bg: rgba(var(--kd-violet-rgb), 0.14);
+  --bs-btn-active-color: var(--kd-text);
+  --bs-btn-active-border-color: var(--kd-text-muted);
+}
+
+.form-control,
+.form-select {
+  background-color: var(--kd-field-bg);
+  border-color: var(--kd-line-strong);
+  color: var(--kd-text);
+}
+
+.form-control::placeholder {
+  color: var(--kd-text-faint);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--kd-field-bg);
+  border-color: var(--kd-violet);
+  color: var(--kd-text);
+  box-shadow: 0 0 0 3px rgba(var(--kd-violet-rgb), 0.16);
+}
+
+.form-check-input:checked {
+  background-color: var(--kd-violet);
+  border-color: var(--kd-violet);
+}
+
+.form-check-input:focus,
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(var(--kd-violet-rgb), 0.3);
+}
+
+.text-danger,
+.field-validation-error {
+  color: var(--kd-danger) !important;
+}
+
+.offcanvas-backdrop.show {
+  opacity: 1;
+  background: rgba(5, 6, 10, 0.35);
+}
+
+/* ---------- Layout (_Layout.cshtml) ---------- */
+/* Kept global, not in _Layout.cshtml.css: scoped CSS skips tag-helper elements such as <a asp-page>. */
+
+/* ----- Top bar: a thin instrument header ----- */
+
+.kd-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--kd-line);
+  background: color-mix(in srgb, var(--kd-bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.kd-topbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  height: 3.75rem;
+}
+
+.kd-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--kd-text);
+  text-decoration: none;
+}
+
+.kd-brand:hover {
+  color: var(--kd-text);
+}
+
+.kd-brand-mark {
+  width: 1.9rem;
+  height: 1.9rem;
+  color: var(--kd-violet);
+}
+
+.kd-brand-name {
+  font-family: var(--kd-font-serif);
+  font-size: 1.45rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.kd-nav-links {
+  display: none;
+  align-self: stretch;
+  gap: 1.5rem;
+  margin-right: auto;
+}
+
+@media (min-width: 576px) {
+  .kd-nav-links {
+    display: flex;
+  }
+}
+
+.kd-nav-link {
+  display: flex;
+  align-items: center;
+  color: var(--kd-text-muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.kd-nav-link:hover {
+  color: var(--kd-text);
+}
+
+.kd-nav-link.active {
+  color: var(--kd-text);
+  border-bottom-color: var(--kd-text);
+}
+
+/* Signed-in account: e-mail and sign-out, on wide screens only (the drawer has them too). */
+.kd-account {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 576px) {
+  .kd-account {
+    display: flex;
+  }
+}
+
+.kd-account form {
+  margin: 0;
+}
+
+.kd-account-name {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--kd-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--kd-text-muted);
+}
+
+/* Small bordered text button in the instrument style. */
+.kd-text-btn {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 0.3rem;
+  background: transparent;
+  font-family: var(--kd-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kd-text);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.kd-text-btn:hover {
+  background: rgba(var(--kd-violet-rgb), 0.08);
+  border-color: var(--kd-text-muted);
+}
+
+.kd-text-btn:focus-visible {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+.kd-drawer-account {
+  margin: 0 0 0.9rem;
+  overflow-wrap: anywhere;
+  font-family: var(--kd-font-mono);
+  font-size: 0.8rem;
+  color: var(--kd-text);
+}
+
+.kd-topbar-inner > .kd-icon-btn {
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .kd-topbar-inner > .kd-icon-btn {
+    margin-left: 0;
+  }
+}
+
+/* ----- Settings drawer ----- */
+
+.kd-drawer {
+  --bs-offcanvas-width: 22rem;
+  --bs-offcanvas-bg: var(--kd-surface-solid);
+  --bs-offcanvas-border-color: var(--kd-line);
+}
+
+.kd-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.25rem 1rem 1.5rem;
+  border-bottom: 1px solid var(--kd-line);
+}
+
+.kd-drawer-title {
+  margin: 0;
+  font-family: var(--kd-font-serif);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.kd-drawer-body {
+  padding: 0 1.5rem 1.5rem;
+  overflow-y: auto;
+}
+
+.kd-drawer-section {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--kd-line);
+}
+
+.kd-drawer-section:first-child {
+  border-top: 0;
+}
+
+@media (min-width: 576px) {
+  .kd-drawer-pages {
+    display: none;
+  }
+
+  .kd-drawer-pages + .kd-drawer-section {
+    border-top: 0;
+  }
+}
+
+.kd-section-title {
+  margin: 0 0 0.5rem;
+}
+
+.kd-section-hint {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  color: var(--kd-text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--kd-line);
+}
+
+.kd-drawer-link .kd-icon {
+  color: var(--kd-text-muted);
+}
+
+.kd-drawer-link.active .kd-icon,
+.kd-drawer-link:hover .kd-icon {
+  color: var(--kd-text);
+}
+
+/* Theme choices: three slide-like cards with a tiny preview of each mode. */
+.kd-theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.kd-theme-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.45rem 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--kd-line);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.kd-theme-option:hover {
+  border-color: var(--kd-line-strong);
+}
+
+.kd-theme-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kd-theme-option:has(input:checked) {
+  border-color: var(--kd-text);
+}
+
+.kd-theme-option:has(input:focus-visible) {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+.kd-theme-preview {
+  position: relative;
+  display: block;
+  height: 3.4rem;
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+
+/* Previews show a tiny cell on each background. */
+.kd-theme-preview::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: -0.275rem 0 0 -0.275rem;
+  border-radius: 50%;
+}
+
+.kd-theme-preview::after {
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 50%;
+  height: 1px;
+  transform: rotate(-18deg);
+}
+
+.kd-theme-preview i {
+  display: none;
+}
+
+.kd-theme-preview--light { background: #f1eee8; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
+.kd-theme-preview--light::before { background: #5a3e9e; }
+.kd-theme-preview--light::after { background: rgba(90, 62, 158, 0.5); }
+.kd-theme-preview--dark { background: #05060a; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.kd-theme-preview--dark::before { background: #c9bff5; box-shadow: 0 0 8px #b6a8ef; }
+.kd-theme-preview--dark::after { background: rgba(182, 168, 239, 0.55); }
+.kd-theme-preview--auto { background: linear-gradient(90deg, #f1eee8 0 50%, #05060a 50% 100%); box-shadow: inset 0 0 0 1px rgba(127, 127, 127, 0.18); }
+.kd-theme-preview--auto::before { background: #8f7fd0; }
+.kd-theme-preview--auto::after { background: rgba(143, 127, 208, 0.55); }
+
+.kd-theme-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.15rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.kd-theme-label .kd-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-theme-note {
+  margin-top: -0.4rem;
+  padding: 0 0.15rem;
+  font-family: var(--kd-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kd-text-faint);
+}
+
+/* ----- Footer ----- */
+
+.kd-footer {
+  position: relative;
+  z-index: 1;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--kd-line);
+  color: var(--kd-text-faint);
+  font-family: var(--kd-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kd-footer .container {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* ---------- Components ---------- */
+
+/* Icons from /img/icons.svg; they take the current text color. */
+.kd-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-shrink: 0;
+  vertical-align: -0.25em;
+}
+
+/* Quiet icon-only button (settings, close). */
+.kd-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--kd-text-muted);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.kd-icon-btn:hover {
+  background: rgba(var(--kd-violet-rgb), 0.08);
+  color: var(--kd-text);
+}
+
+.kd-icon-btn:focus-visible {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+/* Small monospace label, like an instrument readout. */
+.kd-eyebrow {
+  margin: 0 0 0.25rem;
+  font-family: var(--kd-font-mono);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+/* Serif display title. */
+.kd-title {
+  font-family: var(--kd-font-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+
+.kd-title em {
+  font-style: italic;
+  color: var(--kd-violet);
+}
+
+/* Translucent panel over the scene, like a cover glass. */
+.kd-glass-card {
+  background: var(--kd-surface);
+  border: 1px solid var(--kd-line);
+  border-radius: 0.9rem;
+  box-shadow: var(--kd-shadow);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  padding: 1.5rem;
+}
+
+@media (min-width: 576px) {
+  .kd-glass-card {
+    padding: 2rem;
+  }
+}
+
+/* Kept for older markup: now a quiet two-tone ink instead of a bright gradient. */
+.kd-gradient-text {
+  color: var(--kd-violet);
+}
+
+/* ---------- Sign-in ---------- */
+
+/* Centers the sign-in panel on the screen. */
+.kd-auth {
+  min-height: calc(100vh - 8.5rem);
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 0 3rem;
+}
+
+/* Without the top bar and footer the panel centers on the full screen. */
+.kd-bare .kd-auth {
+  min-height: 100vh;
+  padding: 1.5rem 0;
+}
+
+.kd-auth > * {
+  width: 100%;
+  max-width: 24.5rem;
+}
+
+/* Sign-in panel: a translucent cover glass over the scene. */
+.kd-auth-card {
+  position: relative;
+  padding: 2rem 1.5rem 1.75rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.35rem;
+  background: var(--kd-surface);
+  box-shadow: var(--kd-shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  backdrop-filter: blur(18px) saturate(120%);
+}
+
+@media (min-width: 576px) {
+  .kd-auth-card {
+    padding: 2.5rem 2.25rem 2rem;
+  }
+}
+
+/* Small readout label at the top of the panel. */
+.kd-auth-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  font-family: var(--kd-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kd-text-faint);
+}
+
+.kd-auth-title {
+  margin: 0 0 0.6rem;
+  font-family: var(--kd-font-serif);
+  font-size: 2.6rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.kd-auth-title em {
+  font-style: italic;
+  color: var(--kd-violet);
+}
+
+.kd-auth-subtitle {
+  color: var(--kd-text-muted);
+}
+
+/* ---------- Form fields ---------- */
+
+/* Label + input, with an optional trailing text button:
+   <div class="kd-field">
+     <label class="kd-field-label" for="Email">E-posta</label>
+     <div class="kd-field-control">
+       <input class="form-control" id="Email" ...>
+     </div>
+     <span class="kd-field-error">...</span>
+   </div> */
+.kd-field {
+  margin-bottom: 0.5rem;
+}
+
+.kd-field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--kd-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-field-control {
+  position: relative;
+}
+
+.kd-field-control .form-control {
+  height: 2.9rem;
+  border-radius: 0.3rem;
+  font-size: 0.98rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kd-field-control:has(.kd-field-icon) .form-control {
+  padding-left: 2.6rem;
+}
+
+.kd-field-control:has([data-kd-password-toggle]) .form-control {
+  padding-right: 4.75rem;
+}
+
+.kd-field-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  transform: translateY(-50%);
+  color: var(--kd-text-faint);
+  pointer-events: none;
+}
+
+/* Text button inside a field (show / hide password). */
+.kd-field-action {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  padding: 0.35rem 0.6rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  font-family: var(--kd-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-field-action:hover {
+  color: var(--kd-text);
+  background: rgba(var(--kd-violet-rgb), 0.08);
+}
+
+.kd-field-action:focus-visible {
+  outline: 2px solid var(--kd-violet);
+}
+
+/* Each field keeps one line reserved for its error, so the panel never changes height. */
+.kd-field-error {
+  display: block;
+  min-height: 1.15rem;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.15rem;
+}
+
+/* Status line under the title: shows the subtitle, or the form-level error in its place.
+   Both sit in the same grid cell, so swapping them does not move anything. */
+.kd-auth-status {
+  display: grid;
+  min-height: 2.8em;
+  margin-bottom: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.kd-auth-status > * {
+  grid-area: 1 / 1;
+  margin: 0;
+}
+
+.kd-auth-status:has(.validation-summary-errors) .kd-auth-subtitle {
+  visibility: hidden;
+}
+
+/* Form-level error (validation summary). */
+.kd-form-error {
+  color: var(--kd-danger);
+}
+
+.kd-form-error.validation-summary-valid {
+  display: none;
+}
+
+.kd-form-error ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Buttons ---------- */
+
+/* Full-height primary button with a trailing arrow that nudges on hover. */
+.kd-btn-lg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 2.9rem;
+  padding: 0 1.1rem;
+  border-radius: 0.3rem;
+  font-size: 0.95rem;
+}
+
+.kd-btn-lg .kd-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 0.25s ease;
+}
+
+.kd-btn-lg:hover .kd-icon {
+  transform: translateX(3px);
+}
+
+/* ---------- Scene and motion ---------- */
+
+/* Full-screen neuron scene behind the page (js/theme/synapse.js). */
+.kd-synapse {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Fades an element in once on load, like a slide coming into focus. */
+.kd-rise {
+  animation: kd-focus 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.kd-rise-delay {
+  animation-delay: 0.15s;
+}
+
+@keyframes kd-focus {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-rise {
+    animation: none;
+  }
 }
