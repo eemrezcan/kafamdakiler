@@ -79,7 +79,8 @@ class _OgeFormScreenState extends State<OgeFormScreen> {
       baslangicKonumu: sayiCoz(_baslangic.text)!,
       fotografId: _vm.mevcut?.fotografId,
       durum: _durum,
-      puan: _puan,
+      // The rating belongs to a finished item only (as on the web form).
+      puan: _durum == OgeDurumu.bitti ? _puan : null,
       not: bos(_not),
     );
     if (await _vm.kaydet(yaz, fotografYolu: _fotografYolu) && mounted) {
@@ -171,7 +172,10 @@ class _OgeFormScreenState extends State<OgeFormScreen> {
                   controller: _baslangic,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-                  decoration: const InputDecoration(labelText: 'Başlangıç konumu'),
+                  decoration: const InputDecoration(
+                    labelText: 'Kaldığın yer',
+                    helperText: 'Yeni başlıyorsan 0 bırak.',
+                  ),
                   validator: ogeBaslangicDogrula,
                   onChanged: (_) => setState(() {}),
                 ),
@@ -191,26 +195,28 @@ class _OgeFormScreenState extends State<OgeFormScreen> {
           const SizedBox(height: 16),
           DropdownButtonFormField<OgeDurumu>(
             initialValue: _durum,
-            decoration: const InputDecoration(labelText: 'Durum'),
+            decoration: const InputDecoration(labelText: 'Hangi rafta?'),
             items: [
               for (final d in OgeDurumu.values) DropdownMenuItem(value: d, child: Text(ogeDurumMetni(d))),
             ],
             onChanged: (d) => setState(() => _durum = d!),
           ),
-          const SizedBox(height: 16),
-          Text('Puan (isteğe bağlı)', style: tema.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (var p = 1; p <= 5; p++)
-                ChoiceChip(
-                  label: Text('$p'),
-                  selected: _puan == p,
-                  onSelected: (v) => setState(() => _puan = v ? p : null),
-                ),
-            ],
-          ),
+          if (_durum == OgeDurumu.bitti) ...[
+            const SizedBox(height: 16),
+            Text('Kaç puan verdin? (isteğe bağlı)', style: tema.textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (var p = 1; p <= 5; p++)
+                  ChoiceChip(
+                    label: Text('$p'),
+                    selected: _puan == p,
+                    onSelected: (v) => setState(() => _puan = v ? p : null),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           TextFormField(
             controller: _not,

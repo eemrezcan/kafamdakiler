@@ -356,7 +356,7 @@ class _RenkSecici extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        for (final MapEntry(:key, :value) in renkAnahtarlari.entries)
+        for (final key in renkAnahtarlari)
           Semantics(
             label: key,
             selected: key == secili,
@@ -374,7 +374,7 @@ class _RenkSecici extends StatelessWidget {
                       ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3)
                       : null,
                 ),
-                child: CircleAvatar(radius: 16, backgroundColor: value),
+                child: CircleAvatar(radius: 16, backgroundColor: aliskanlikRengi(context, key)),
               ),
             ),
           ),

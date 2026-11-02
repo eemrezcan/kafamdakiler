@@ -34,7 +34,6 @@ import '../ui/shell/ana_iskele.dart';
 abstract final class Rotalar {
   static const bugun = '/';
   static const aliskanliklar = '/aliskanliklar';
-  static const raf = '/raf';
   static const profil = '/profil';
   static const giris = '/giris';
 }
@@ -55,9 +54,7 @@ String? yetkiYonlendirme(String konum, {required bool girisYapildi, required boo
   final girisEkraninda = konum == Rotalar.giris;
   if (!girisYapildi) return girisEkraninda ? null : Rotalar.giris;
   if (girisEkraninda) return Rotalar.bugun;
-  if (!sahip && _yonetimRotalari.any((r) => r.hasMatch(konum))) {
-    return konum.startsWith('/aliskanlik') ? Rotalar.aliskanliklar : Rotalar.raf;
-  }
+  if (!sahip && _yonetimRotalari.any((r) => r.hasMatch(konum))) return Rotalar.aliskanliklar;
   return null;
 }
 
@@ -110,15 +107,6 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: Rotalar.raf,
-              builder: (context, state) => _sayfa(
-                (c) => RafViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
-                (vm) => RafScreen(viewModel: vm),
-              ),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
               path: Rotalar.profil,
               builder: (context, state) => _sayfa(
                 (c) => ProfilViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
@@ -143,6 +131,18 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           (vm) => AliskanlikDetayScreen(viewModel: vm),
         ),
         routes: [
+          // A Raf habit's shelf page (no tab of its own; reached from the habit, as on the web).
+          GoRoute(
+            path: 'raf',
+            builder: (context, state) => _sayfa(
+              (c) => RafViewModel(
+                repo: c.read<AliskanlikRepository>(),
+                esitleyici: c.read<Esitleyici>(),
+                aliskanlikId: state.pathParameters['id']!,
+              )..yukle(),
+              (vm) => RafScreen(viewModel: vm),
+            ),
+          ),
           GoRoute(
             path: 'duzenle',
             builder: (context, state) => _sayfa(

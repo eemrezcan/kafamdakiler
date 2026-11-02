@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-/// Bottom navigation: Bugün / Alışkanlıklar / Raf / Profil. There is no
-/// separate management tab; management lives where the work is (M07).
+/// Bottom navigation: Bugün / Alışkanlıklar / Profil. A Raf habit's shelf is
+/// opened from the habit itself, as on the web; there is no separate
+/// management tab either, management lives where the work is (M07).
 class AnaIskele extends StatelessWidget {
   const AnaIskele({super.key, required this.navigationShell});
 
@@ -20,7 +21,6 @@ class AnaIskele extends StatelessWidget {
         destinations: const [
           NavigationDestination(icon: Icon(LucideIcons.calendarCheck), label: 'Bugün'),
           NavigationDestination(icon: Icon(LucideIcons.target), label: 'Alışkanlıklar'),
-          NavigationDestination(icon: Icon(LucideIcons.libraryBig), label: 'Raf'),
           NavigationDestination(icon: Icon(LucideIcons.user), label: 'Profil'),
         ],
       ),

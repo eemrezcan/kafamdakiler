@@ -14,9 +14,12 @@ import 'package:kafamdakiler/data/services/database/app_database.dart';
 /// An [ApiService] that answers from memory. With [cevrimdisi] every call
 /// fails like a lost connection.
 class SahteApi extends ApiService {
-  SahteApi({this.aliskanliklar = const [], this.ogeler = const [], this.ben_}) : super(Dio());
+  SahteApi({this.aliskanliklar = const [], this.ogeler = const [], this.ben_, this.gunler = const {}}) : super(Dio());
 
   List<Aliskanlik> aliskanliklar;
+
+  /// Days per habit id for `/gunler`; a habit not in the map gets none.
+  Map<String, List<Gun>> gunler;
   List<Oge> ogeler;
   Ben? ben_;
   bool cevrimdisi = false;
@@ -51,6 +54,16 @@ class SahteApi extends ApiService {
   Future<List<Aliskanlik>> aliskanliklariGetir({bool arsiv = false}) async {
     _kontrol('aliskanliklariGetir');
     return aliskanliklar;
+  }
+
+  // Not recorded in [cagrilar]: the Today tab fetches days in the background
+  // after the list, and the call-order tests are about the list itself.
+  @override
+  Future<List<Gun>> gunleriGetir(String aliskanlikId, DateTime baslangic, DateTime bitis) async {
+    if (cevrimdisi || sunucuHatasi != null) {
+      throw DioException.connectionError(requestOptions: RequestOptions(path: 'gunler'), reason: 'offline');
+    }
+    return gunler[aliskanlikId] ?? const [];
   }
 
   @override

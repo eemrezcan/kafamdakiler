@@ -11,6 +11,8 @@ import '../../data/models/oge.dart';
 import '../../data/models/oturum.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../utils/dogrulama.dart';
+import '../../utils/metin.dart';
+import '../core/renkler.dart';
 import '../core/widgets.dart';
 import 'oge_detay_view_model.dart';
 
@@ -99,8 +101,9 @@ class _Icerik extends StatelessWidget {
   Widget build(BuildContext context) {
     final oge = viewModel.oge!;
     final tema = Theme.of(context);
-    final mono = KdYazi.of(context).mono;
+    final rakam = KdYazi.of(context).sayi;
     final birim = viewModel.birim;
+    final renk = aliskanlikRengi(context, viewModel.renk);
     final tarih = DateFormat('d.MM.yyyy');
     final toplam = oge.toplam != null ? ' / ${sayiMetni(oge.toplam)}' : '';
     return ListView(
@@ -121,16 +124,27 @@ class _Icerik extends StatelessWidget {
         if (oge.altBaslik != null)
           Text(oge.altBaslik!, style: tema.textTheme.bodyLarge, textAlign: TextAlign.center),
         const SizedBox(height: 8),
-        Center(child: Chip(label: Text(ogeDurumMetni(oge.durum)))),
-        const SizedBox(height: 8),
+        // Shelf as a small outlined pill in the habit colour (web `.kd-status`).
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(border: Border.all(color: renk), borderRadius: BorderRadius.circular(99)),
+            child: Text(
+              trBuyuk(ogeDurumMetni(oge.durum)),
+              style: tema.textTheme.labelSmall?.copyWith(color: renk, letterSpacing: 0.8, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         if (oge.ilerleme != null)
           LinearProgressIndicator(
             value: oge.ilerleme!.clamp(0, 1).toDouble(),
             minHeight: 8,
             borderRadius: BorderRadius.circular(4),
+            color: renk,
           ),
         const SizedBox(height: 8),
-        Text('${sayiMetni(oge.guncelKonum)}$toplam $birim', style: mono.copyWith(fontSize: 18), textAlign: TextAlign.center),
+        Text('${sayiMetni(oge.guncelKonum)}$toplam $birim', style: rakam.copyWith(fontSize: 18), textAlign: TextAlign.center),
         const SizedBox(height: 16),
         Wrap(
           alignment: WrapAlignment.center,
@@ -147,13 +161,16 @@ class _Icerik extends StatelessWidget {
           const SizedBox(height: 16),
           Text(oge.not!, style: tema.textTheme.bodyMedium),
         ],
-        const SizedBox(height: 24),
-        FilledButton.icon(
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-          onPressed: () => context.push('/oge/${oge.id}/oturum'),
-          icon: const Icon(LucideIcons.play),
-          label: const Text('Okumaya başla'),
-        ),
+        // A finished or dropped item has nothing left to read; it is moved back from the edit form.
+        if (oge.durum == OgeDurumu.devam || oge.durum == OgeDurumu.siradaki) ...[
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+            onPressed: () => context.push('/oge/${oge.id}/oturum'),
+            icon: const Icon(LucideIcons.play),
+            label: const Text('Okumaya başla'),
+          ),
+        ],
         const SizedBox(height: 24),
         Text('Oturum geçmişi', style: tema.textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -186,7 +203,7 @@ class _Bilgi extends StatelessWidget {
     final tema = Theme.of(context);
     return Column(
       children: [
-        Text(deger, style: KdYazi.of(context).mono.copyWith(fontWeight: FontWeight.w600)),
+        Text(deger, style: KdYazi.of(context).sayi.copyWith(fontWeight: FontWeight.w600)),
         Text(etiket, style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onSurfaceVariant)),
       ],
     );
@@ -240,38 +257,34 @@ class _OturumSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final mono = KdYazi.of(context).mono.copyWith(fontSize: 13);
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      minTileHeight: 56,
-      title: Text(
-        '${sayiMetni(oturum.baslangicKonum)} → ${sayiMetni(oturum.bitisKonum)}  (+${sayiMetni(oturum.miktar)} $birim)',
-        style: mono,
-      ),
-      subtitle: Text(
-        '${DateFormat('d.MM.yyyy').format(oturum.tarih)}${oturum.dakika != null ? ' · ${oturum.dakika} dk' : ''}',
-        style: tema.textTheme.bodySmall,
-      ),
-      // Only the last session can be changed (the chain must stay consistent).
-      trailing: sahip && oturum.son
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: 'Son oturumu düzenle',
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  icon: const Icon(LucideIcons.pencil),
-                  onPressed: () => _duzenle(context),
-                ),
-                IconButton(
-                  tooltip: 'Son oturumu sil',
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  icon: const Icon(LucideIcons.trash2),
-                  onPressed: () => _sil(context),
-                ),
+    final rakam = KdYazi.of(context).sayi.copyWith(fontSize: 13);
+    final soluk = rakam.copyWith(color: tema.colorScheme.onSurfaceVariant);
+    // One line like the web's session row: date, range, then the amount at the right end.
+    return Container(
+      constraints: const BoxConstraints(minHeight: 52),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: tema.colorScheme.outlineVariant))),
+      child: Row(
+        children: [
+          SizedBox(width: 56, child: Text(DateFormat('d MMM', 'tr').format(oturum.tarih), style: soluk)),
+          Text('${sayiMetni(oturum.baslangicKonum)} → ${sayiMetni(oturum.bitisKonum)}', style: rakam),
+          const Spacer(),
+          Text('+${sayiMetni(oturum.miktar)} $birim${oturum.dakika != null ? ' · ${oturum.dakika} dk' : ''}', style: rakam),
+          // Only the last session can be changed (the chain must stay consistent).
+          if (sahip && oturum.son) ...[
+            const SizedBox(width: 4),
+            PopupMenuButton<bool>(
+              tooltip: 'Son oturumu düzenle ya da sil',
+              icon: Icon(LucideIcons.pencil, size: 18, color: tema.colorScheme.onSurfaceVariant),
+              onSelected: (duzenle) => duzenle ? _duzenle(context) : _sil(context),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: true, child: Text('Düzenle')),
+                PopupMenuItem(value: false, child: Text('Son oturumu sil')),
               ],
-            )
-          : null,
+            ),
+          ] else
+            const SizedBox(width: 52),
+        ],
+      ),
     );
   }
 }

@@ -41,6 +41,11 @@ class BugunViewModel extends ChangeNotifier {
   String? _hata;
   String? get hata => _hata;
 
+  /// The last 7 days of each habit for the card's strip (web "Son 7 gün"),
+  /// fetched after the list; online only, so offline the strip is hidden.
+  final Map<String, List<Gun>> _sonGunler = {};
+  List<Gun>? sonGunler(String aliskanlikId) => _sonGunler[aliskanlikId];
+
   /// Sends what is queued, then reloads. The first load shows a skeleton; a
   /// refresh keeps the list on screen.
   Future<void> yukle() async {
@@ -61,6 +66,22 @@ class BugunViewModel extends ChangeNotifier {
       _yukleniyor = false;
       notifyListeners();
     }
+    // The list is already on screen; the strips fill in when the days arrive.
+    if (_liste != null && !_cevrimdisi) await _gunleriYukle(_liste!);
+  }
+
+  /// One request per habit, in parallel; a habit whose days fail keeps its old strip.
+  Future<void> _gunleriYukle(List<Aliskanlik> liste) async {
+    Future<void> getir(Aliskanlik a) async {
+      try {
+        _sonGunler[a.id] = await _repo.sonGunler(a.id, gunSayisi: 7);
+      } on DioException {
+        // Offline or a server error: nothing to show for this card.
+      }
+    }
+
+    await Future.wait([for (final a in liste) getir(a)]);
+    notifyListeners();
   }
 
   /// Toggles a yes/no habit. Returns the previous amount (for "Geri al").

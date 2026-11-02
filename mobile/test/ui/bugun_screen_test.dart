@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
+import 'package:kafamdakiler/data/models/gun.dart';
+import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_screen.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_view_model.dart';
 
@@ -9,6 +12,8 @@ import '../test_destek.dart';
 void main() {
   late TestOrtami ortam;
 
+  // The date line above the list uses Turkish month and day names (main.dart loads them in the app).
+  setUpAll(() => initializeDateFormatting('tr'));
   tearDown(() async => ortam.kapat());
 
   /// The view model is loaded outside the fake-async zone (drift needs real
@@ -96,10 +101,12 @@ void main() {
     );
     await goster(tester, vm);
 
-    expect(find.textContaining('güç %50'), findsWidgets);
+    expect(find.textContaining('Güç %50'), findsWidgets);
     expect(find.byTooltip('Bir artır'), findsOneWidget);
     expect(find.byTooltip('Yapıldı olarak işaretle'), findsOneWidget);
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    // One bar in the counter card; the other is today's summary above the cards.
+    expect(find.descendant(of: find.byType(Card), matching: find.byType(LinearProgressIndicator)), findsOneWidget);
+    expect(find.textContaining('alışkanlıktan'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -110,5 +117,52 @@ void main() {
     final kart = tester.getRect(find.byType(Card).first);
     expect(kart.width, lessThanOrEqualTo(640));
     expect(kart.center.dx, closeTo(600, 1));
+  });
+
+  testWidgets('shelf card with several books: covers pick the book, the first one opens selected', (tester) async {
+    const ilk = OgeOzet(id: 'k1', ad: 'Kürk Mantolu Madonna', guncelKonum: 59, toplam: 356, ilerleme: 0.17);
+    const ikinci = OgeOzet(id: 'k2', ad: 'Tutunamayanlar', guncelKonum: 120, toplam: 724, ilerleme: 0.17);
+    final vm = await yukle(
+      tester,
+      SahteApi(aliskanliklar: [
+        ornekAliskanlik(id: 'r', ad: 'Kitap oku', tur: AliskanlikTuru.raf, birim: 'sayfa', hedef: 30,
+            devamEdenler: const [ilk, ikinci]),
+      ]),
+    );
+    await goster(tester, vm);
+
+    // Only the chosen book's details are shown; the API sends the most recent one first.
+    expect(find.text('Kürk Mantolu Madonna'), findsOneWidget);
+    expect(find.text('Tutunamayanlar'), findsNothing);
+
+    await tester.tap(find.byTooltip('Tutunamayanlar'));
+    await tester.pump();
+    expect(find.text('Tutunamayanlar'), findsOneWidget);
+    expect(find.text('Kürk Mantolu Madonna'), findsNothing);
+    expect(find.text('Okumaya başla'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('last 7 days strip: day names under the card, hidden when offline', (tester) async {
+    // 25-31 October 2026, ending on the fixed "today" (a Saturday).
+    final gunler = [
+      for (var i = 6; i >= 0; i--)
+        Gun(tarih: sabitBugun.subtract(Duration(days: i)), miktar: i.isEven ? 8 : 0, deger: i.isEven ? 1 : 0, planli: true, guc: 0.5),
+    ];
+    final api = SahteApi(aliskanliklar: [ornekAliskanlik(id: 'a', ad: 'Su', miktar: 3)], gunler: {'a': gunler});
+    final vm = await yukle(tester, api);
+    await goster(tester, vm);
+
+    for (final ad in ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT']) {
+      expect(find.text(ad), findsOneWidget, reason: ad);
+    }
+    expect(tester.takeException(), isNull);
+
+    // Offline the days cannot be fetched: a fresh screen shows no strip.
+    api.cevrimdisi = true;
+    final cevrimdisi = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
+    await tester.runAsync(cevrimdisi.yukle);
+    await goster(tester, cevrimdisi);
+    expect(find.text('CMT'), findsNothing);
   });
 }

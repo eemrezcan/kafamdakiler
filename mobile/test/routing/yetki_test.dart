@@ -19,8 +19,8 @@ const _yonetimRotalari = [
 const _herkesinRotalari = [
   '/',
   '/aliskanliklar',
-  '/raf',
   '/profil',
+  '/aliskanlik/a1/raf',
   '/aliskanlik/a1',
   '/aliskanlik/a1/kronometre',
   '/oge/o1',
@@ -33,10 +33,10 @@ void main() {
       for (final rota in _yonetimRotalari) {
         final hedef = yetkiYonlendirme(rota, girisYapildi: true, sahip: false);
         expect(hedef, isNotNull, reason: rota);
-        expect(hedef, anyOf('/aliskanliklar', '/raf'), reason: rota);
+        expect(hedef, '/aliskanliklar', reason: rota);
       }
       expect(yetkiYonlendirme('/aliskanlik/yeni', girisYapildi: true, sahip: false), '/aliskanliklar');
-      expect(yetkiYonlendirme('/oge/o1/duzenle', girisYapildi: true, sahip: false), '/raf');
+      expect(yetkiYonlendirme('/oge/o1/duzenle', girisYapildi: true, sahip: false), '/aliskanliklar');
     });
 
     test('Sahip can open them', () {

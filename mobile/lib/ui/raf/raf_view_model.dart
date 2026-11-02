@@ -7,9 +7,10 @@ import '../../data/models/oge.dart';
 import '../../data/repositories/aliskanlik_repository.dart';
 import '../../data/repositories/esitleyici.dart';
 
-/// The "Raf" tab: items of the chosen Raf habit, split into the four shelves.
+/// The shelf page of one Raf habit (opened from the habit, as on the web):
+/// its items split into the four shelves.
 class RafViewModel extends ChangeNotifier {
-  RafViewModel({required this._repo, required this._esitleyici})
+  RafViewModel({required this._repo, required this._esitleyici, required this.aliskanlikId})
       : _gorulenGonderim = _esitleyici.gonderimSayisi {
     _repo.addListener(yukle);
     _esitleyici.addListener(_kuyrukDegisti);
@@ -19,8 +20,7 @@ class RafViewModel extends ChangeNotifier {
   final Esitleyici _esitleyici;
   int _gorulenGonderim;
 
-  List<Aliskanlik> _rafAliskanliklari = const [];
-  List<Aliskanlik> get rafAliskanliklari => _rafAliskanliklari;
+  final String aliskanlikId;
 
   Aliskanlik? _secili;
   Aliskanlik? get secili => _secili;
@@ -42,10 +42,7 @@ class RafViewModel extends ChangeNotifier {
     _hata = null;
     try {
       final liste = (await _repo.listele()).liste;
-      _rafAliskanliklari = [for (final a in liste) if (a.tur == AliskanlikTuru.raf) a];
-      // Keep the chosen habit when it still exists.
-      _secili = _rafAliskanliklari.where((a) => a.id == _secili?.id).firstOrNull ??
-          _rafAliskanliklari.firstOrNull;
+      _secili = liste.where((a) => a.id == aliskanlikId && a.tur == AliskanlikTuru.raf).firstOrNull;
       _ogeler = _secili == null ? const [] : await _repo.ogeleriListele(_secili!.id);
     } on DioException catch (e) {
       _hata = e.response != null
@@ -56,13 +53,6 @@ class RafViewModel extends ChangeNotifier {
       _ilkYukleme = false;
       notifyListeners();
     }
-  }
-
-  Future<void> sec(Aliskanlik a) async {
-    _secili = a;
-    _ogeler = const [];
-    notifyListeners();
-    await yukle();
   }
 
   void _kuyrukDegisti() {

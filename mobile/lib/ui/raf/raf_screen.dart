@@ -33,7 +33,7 @@ class RafScreen extends StatelessWidget {
           length: rafSekmeleri.length,
           child: Scaffold(
             appBar: AppBar(
-              title: const Text('Raf'),
+              title: Text(secili == null ? 'Raf' : '${secili.ad} · Raf'),
               actions: [
                 if (sahip && secili != null)
                   IconButton(
@@ -61,44 +61,14 @@ class RafScreen extends StatelessWidget {
       }
       return RefreshIndicator(
         onRefresh: viewModel.yukle,
-        child: BosDurum(
-          ikon: LucideIcons.libraryBig,
-          metin: sahip
-              ? 'Henüz Raf alışkanlığı yok. Alışkanlıklar sekmesinde + ile Raf türünde bir alışkanlık ekle.'
-              : 'Henüz Raf alışkanlığı yok.',
-        ),
+        child: const BosDurum(ikon: LucideIcons.libraryBig, metin: 'Bu alışkanlık bulunamadı ya da Raf türünde değil.'),
       );
     }
     return OrtaGenislik(
       maxGenislik: 840,
-      child: Column(
+      child: TabBarView(
         children: [
-          if (viewModel.rafAliskanliklari.length > 1)
-            SizedBox(
-              height: 56,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                children: [
-                  for (final a in viewModel.rafAliskanliklari)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(a.ad),
-                        selected: a.id == viewModel.secili!.id,
-                        onSelected: (_) => viewModel.sec(a),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                for (final (durum, _) in rafSekmeleri) _Raf(viewModel: viewModel, durum: durum),
-              ],
-            ),
-          ),
+          for (final (durum, _) in rafSekmeleri) _Raf(viewModel: viewModel, durum: durum),
         ],
       ),
     );

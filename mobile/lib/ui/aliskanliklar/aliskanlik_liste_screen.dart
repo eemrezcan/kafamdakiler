@@ -91,8 +91,13 @@ class _Satir extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final renk = aliskanlikRengi(context, a.renk);
-    final mono = KdYazi.of(context).mono.copyWith(fontSize: 12, color: tema.colorScheme.onSurfaceVariant);
+    final rakam = KdYazi.of(context).sayi.copyWith(fontSize: 12, color: tema.colorScheme.onSurfaceVariant);
     return Card(
+      color: kartZemini(context, renk),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: kartCercevesi(context, renk)),
+      ),
       child: ListTile(
         minTileHeight: 64,
         onTap: () => context.push('/aliskanlik/${a.id}'),
@@ -103,7 +108,7 @@ class _Satir extends StatelessWidget {
         title: Text(a.ad, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
           '${a.tur == AliskanlikTuru.raf ? 'Raf' : 'Sayaç'} · güç ${yuzdeMetni(a.guc)} · seri ${a.seri}',
-          style: mono,
+          style: rakam,
         ),
         trailing: a.arsivlendi ? const Icon(LucideIcons.archive, size: 18) : const Icon(LucideIcons.chevronRight),
       ),

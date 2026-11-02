@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../data/models/aliskanlik.dart';
+import '../../utils/aliskanlik_gunu.dart';
+import '../core/renkler.dart';
 import '../core/widgets.dart';
+import '../../utils/metin.dart';
 import 'aliskanlik_karti.dart';
 import 'bugun_view_model.dart';
 import 'sayi_giris_dialog.dart';
@@ -67,6 +71,7 @@ class BugunScreen extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: AliskanlikKarti(
             aliskanlik: a,
+            sonGunler: viewModel.sonGunler(a.id),
             onTik: () => _tik(context, a),
             onMiktar: (a, yeni) => viewModel.miktarYaz(a, yeni),
             onSayiGir: () => _sayiGir(context, a),
@@ -85,6 +90,8 @@ class BugunScreen extends StatelessWidget {
               style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
             ),
           ),
+        const _Tarih(),
+        if (planli.isNotEmpty) _BugunOzeti(planli: planli),
         if (planli.isEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -105,6 +112,62 @@ class BugunScreen extends StatelessWidget {
           for (final a in plansiz) Opacity(opacity: 0.55, child: kart(a)),
         ],
       ],
+    );
+  }
+}
+
+/// "Bugün 2 alışkanlıktan 1 tanesi tamam" and a thin bar, above the cards.
+/// A habit counts as done when today's value reached 1 (for a limit habit:
+/// still under the limit).
+class _BugunOzeti extends StatelessWidget {
+  const _BugunOzeti({required this.planli});
+
+  final List<Aliskanlik> planli;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final tamam = planli.where((a) => (a.bugun?.deger ?? 0) >= 1).length;
+    final hepsi = tamam == planli.length;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            hepsi
+                ? 'Bugün hepsi tamam: $tamam / ${planli.length}'
+                : 'Bugün ${planli.length} alışkanlıktan $tamam tanesi tamam',
+            style: tema.textTheme.bodyMedium?.copyWith(color: tema.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 6),
+          LinearProgressIndicator(
+            value: tamam / planli.length,
+            minHeight: 4,
+            borderRadius: BorderRadius.circular(2),
+            color: hepsi ? tamamRengi(context) : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "PAZARTESİ · 2 KASIM 2026" above the list, like the web page's eyebrow.
+/// The habit day starts at 05:00, so just after midnight it is still yesterday.
+class _Tarih extends StatelessWidget {
+  const _Tarih();
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final buyuk = trBuyuk(DateFormat('EEEE · d MMMM y', 'tr').format(aliskanlikGunu(DateTime.now())));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        buyuk,
+        style: tema.textTheme.labelSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant, letterSpacing: 0.8),
+      ),
     );
   }
 }

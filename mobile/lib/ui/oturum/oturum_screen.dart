@@ -44,6 +44,12 @@ class _OturumScreenState extends State<OturumScreen> {
 
   void _elleGir() => setState(() => _faz = _Faz.form);
 
+  /// Throws the running stopwatch away; no session is written.
+  Future<void> _vazgec() async {
+    await _vm.kronometre.sifirla();
+    if (mounted) context.pop();
+  }
+
   Future<void> _kaydet() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _kaydediliyor = true);
@@ -90,7 +96,7 @@ class _OturumScreenState extends State<OturumScreen> {
         Text(oge.ad, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
         if (oge.altBaslik != null) Text(oge.altBaslik!, textAlign: TextAlign.center),
         const SizedBox(height: 32),
-        KronometreGosterge(viewModel: _vm.kronometre, onBitir: _bitir),
+        KronometreGosterge(viewModel: _vm.kronometre, onBitir: _bitir, onVazgec: _vazgec),
         const SizedBox(height: 24),
         if (!_vm.kronometre.calisiyor)
           TextButton(onPressed: _elleGir, child: const Text('Kronometresiz, elle gir')),

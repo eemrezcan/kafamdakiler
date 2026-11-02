@@ -65,6 +65,12 @@ class _SayacKronometreScreenState extends State<SayacKronometreScreen> {
     context.pop();
   }
 
+  /// Throws the running stopwatch away; nothing is written.
+  Future<void> _vazgec() async {
+    await widget.kronometre.sifirla();
+    if (mounted) context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final a = _aliskanlik;
@@ -76,7 +82,7 @@ class _SayacKronometreScreenState extends State<SayacKronometreScreen> {
             ? const Center(child: CircularProgressIndicator())
             : a == null
                 ? const BosDurum(metin: 'Alışkanlık bulunamadı. Listeyi yenileyip tekrar dene.')
-                : Center(child: KronometreGosterge(viewModel: widget.kronometre, onBitir: _bitir)),
+                : Center(child: KronometreGosterge(viewModel: widget.kronometre, onBitir: _bitir, onVazgec: _vazgec)),
       ),
     );
   }

@@ -22,9 +22,11 @@ class OgeDetayViewModel extends ChangeNotifier {
   Oge? _oge;
   Oge? get oge => _oge;
 
-  /// Unit of the habit ("sayfa"), from the cached habit list.
+  /// Unit ("sayfa") and colour key of the habit, from the cached habit list.
   String _birim = '';
   String get birim => _birim;
+  String _renk = 'violet';
+  String get renk => _renk;
 
   /// Newest first; null when offline (history is not cached).
   List<Oturum>? _oturumlar;
@@ -40,7 +42,9 @@ class OgeDetayViewModel extends ChangeNotifier {
     _hata = null;
     try {
       _oge = await _repo.oge(id);
-      _birim = (await _repo.yerelListe()).where((a) => a.id == _oge!.aliskanlikId).firstOrNull?.birim ?? '';
+      final aliskanlik = (await _repo.yerelListe()).where((a) => a.id == _oge!.aliskanlikId).firstOrNull;
+      _birim = aliskanlik?.birim ?? '';
+      _renk = aliskanlik?.renk ?? 'violet';
       try {
         _oturumlar = await _repo.oturumlar(id);
       } on DioException {
