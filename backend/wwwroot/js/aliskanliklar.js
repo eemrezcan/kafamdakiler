@@ -29,12 +29,15 @@
 window.kdCharts = (function () {
   var charts = [];
 
-  function css(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  function css(name, el) {
+    return getComputedStyle(el || document.documentElement).getPropertyValue(name).trim();
   }
 
-  function theme() {
-    return { text: css('--kd-text-muted'), line: css('--kd-line'), accent: css('--kd-violet'), pink: css('--kd-pink') };
+  // hue: the habit color of the panel around the canvas (kd-c-*), violet when there is none.
+  function theme(canvas) {
+    var hue = css('--kd-hue', canvas) || css('--kd-violet');
+    return { text: css('--kd-text-muted'), line: css('--kd-line'), accent: css('--kd-violet'), pink: css('--kd-pink'),
+             hue: hue, hueSoft: hue.length === 7 ? hue + '99' : hue };
   }
 
   function draw(canvasId, build) {
@@ -47,7 +50,7 @@ window.kdCharts = (function () {
 
   function render(entry) {
     if (entry.chart) entry.chart.destroy();
-    var colors = theme();
+    var colors = theme(entry.canvas);
     var config = entry.build(colors);
     config.options = config.options || {};
     config.options.maintainAspectRatio = false;

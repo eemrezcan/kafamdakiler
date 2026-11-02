@@ -12,7 +12,6 @@
     <title>@ViewData["Title"] - Kafamdakiler</title>
     <link rel="icon" type="image/svg+xml" href="~/img/logo.svg" />
     <link rel="preload" href="~/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="~/fonts/instrument-serif-latin.woff2" as="font" type="font/woff2" crossorigin />
     <script src="~/js/theme/color-mode.js" asp-append-version="true"></script>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -114,6 +113,15 @@
     <main role="main" class="kd-main container">
         @RenderBody()
     </main>
+
+    @* One-time success message set by a page after a save (TempData "Bildirim"); CSS fades it out. *@
+    @if (TempData["Bildirim"] is string bildirim)
+    {
+    <div class="kd-toast" role="status">
+        <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
+        @bildirim
+    </div>
+    }
 
     @if (showChrome)
     {

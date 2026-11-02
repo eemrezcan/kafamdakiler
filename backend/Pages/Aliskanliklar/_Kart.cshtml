@@ -5,6 +5,8 @@
     var (oran, durum) = Gorunum.Ilerleme(a);
     var adim = Gorunum.Adim(a);
     var yapildi = a.Bugun.Miktar > 0;
+    // More items than this: the rest are reached from the shelf page.
+    const int EnCokKapak = 5;
 }
 <article class="kd-habit @Gorunum.RenkSinifi(a.Renk)" id="h-@a.Id">
     <header class="kd-habit-head">
@@ -13,7 +15,7 @@
         </span>
         <div class="kd-habit-id">
             <h2 class="kd-habit-name"><a asp-page="Detay" asp-route-id="@a.Id">@a.Ad</a></h2>
-            <p class="kd-habit-meta">@Gorunum.SiklikMetni(a) · Güç @Gorunum.Yuzde(a.Guc)@(a.Seri > 0 ? $" · Seri {a.Seri}" : "")</p>
+            <p class="kd-habit-meta">@Gorunum.SiklikMetni(a) · <span title="Düzenin: yaptığın her gün artar, kaçırınca biraz düşer; tek kaçırma sıfırlamaz.">Güç @Gorunum.Yuzde(a.Guc)</span>@(a.Seri > 0 ? $" · Seri {a.Seri}" : "")</p>
         </div>
         <a class="kd-icon-btn" asp-page="Duzenle" asp-route-id="@a.Id" aria-label="@a.Ad alışkanlığını düzenle">
             <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
@@ -37,37 +39,45 @@
                 <a class="btn btn-outline-primary" asp-page="OgeDuzenle" asp-route-aliskanlikId="@a.Id">+ @a.OgeEtiketi</a>
             </div>
         }
-        @foreach (var o in a.DevamEdenler)
+        @if (a.DevamEdenler.Count == 1)
         {
+            var o = a.DevamEdenler[0];
             <div class="kd-shelf">
                 <a class="kd-cover-link" asp-page="Oge" asp-route-id="@o.Id" tabindex="-1" aria-hidden="true">
-                    @if (o.FotografUrl is not null)
-                    {
-                        <img class="kd-cover" src="@o.FotografUrl" alt="" loading="lazy" />
-                    }
-                    else
-                    {
-                        <span class="kd-cover kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg></span>
-                    }
+                    <partial name="_Kapak" model="(o.FotografUrl, a.Ikon)" />
                 </a>
-                <div class="kd-shelf-body">
-                    <a class="kd-shelf-title" asp-page="Oge" asp-route-id="@o.Id">@o.Ad</a>
-                    @if (!string.IsNullOrEmpty(o.AltBaslik))
+                <partial name="_DevamEden" model="(a, o)" />
+            </div>
+        }
+        else if (a.DevamEdenler.Count > 1)
+        {
+            @* Several items in progress: covers act as tabs (hidden radios), the chosen one's panel shows below.
+               The first item is the most recently read, so it opens selected; CSS does the switching, no JS. *@
+            var gorunen = a.DevamEdenler.Take(EnCokKapak).ToList();
+            var kalan = a.DevamEdenler.Count - gorunen.Count;
+            <div class="kd-shelf-pick">
+                <div class="kd-shelf-pick-tabs" role="radiogroup" aria-label="Devam edenler: @a.Ad">
+                    @for (var i = 0; i < gorunen.Count; i++)
                     {
-                        <span class="kd-muted">@o.AltBaslik</span>
+                        var o = gorunen[i];
+                        <label class="kd-shelf-pick-tab" title="@o.Ad">
+                            <input class="visually-hidden" type="radio" name="sec-@a.Id" value="@o.Id" checked="@(i == 0)" autocomplete="off" />
+                            <partial name="_Kapak" model="(o.FotografUrl, a.Ikon)" />
+                            <span class="visually-hidden">@o.Ad</span>
+                        </label>
                     }
-                    <p class="kd-readout">
-                        @Gorunum.Sayi(o.GuncelKonum)@(o.Toplam is { } toplam ? " / " + Gorunum.Sayi(toplam) : "") @a.Birim@(o.Ilerleme is { } ilerleme ? " · " + Gorunum.Yuzde(ilerleme) : "")
-                    </p>
-                    <form method="post" asp-page-handler="Ilerleme" class="kd-progress-form">
-                        <input type="hidden" name="ogeId" value="@o.Id" />
-                        <label class="visually-hidden" for="p-@o.Id">Nereye kadar geldin?</label>
-                        <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
-                               class="form-control" placeholder="Nereye kadar?" required />
-                        <label class="visually-hidden" for="d-@o.Id">Dakika</label>
-                        <input id="d-@o.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute" placeholder="dk" />
-                        <button type="submit" class="btn btn-primary">Kaydet</button>
-                    </form>
+                    @if (kalan > 0)
+                    {
+                        <a class="kd-shelf-pick-more" asp-page="Raf" asp-route-aliskanlikId="@a.Id" aria-label="@kalan tane daha, rafa git">+@kalan</a>
+                    }
+                </div>
+                <div class="kd-shelf-pick-panels">
+                    @foreach (var o in gorunen)
+                    {
+                        <div class="kd-shelf-pick-panel">
+                            <partial name="_DevamEden" model="(a, o)" />
+                        </div>
+                    }
                 </div>
             </div>
         }
@@ -92,9 +102,12 @@
             </form>
             <form method="post" asp-page-handler="Ayarla" asp-route-id="@a.Id" class="kd-stepper-set">
                 <label class="visually-hidden" for="m-@a.Id">Bugünkü miktar (@a.Birim)</label>
-                <input id="m-@a.Id" name="miktar" type="number" step="any" min="0" inputmode="decimal" class="form-control"
+                <input id="m-@a.Id" name="miktar" type="number" step="any" min="0" inputmode="decimal" enterkeyhint="done" class="form-control"
                        value="@Gorunum.Girdi(a.Bugun.Miktar)" />
-                <button type="submit" class="kd-text-btn">Kaydet</button>
+                @* −/+ save on their own; this small check saves a typed number (Enter does too). *@
+                <button type="submit" class="kd-stepper-save" aria-label="Yazdığın miktarı kaydet">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
+                </button>
             </form>
             <form method="post" asp-page-handler="Sayi" asp-route-id="@a.Id">
                 <input type="hidden" name="delta" value="@Gorunum.Girdi(adim)" />

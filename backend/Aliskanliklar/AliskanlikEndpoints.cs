@@ -169,8 +169,11 @@ public static class AliskanlikEndpoints
     {
         var idler = liste.Select(a => a.Id).ToList();
         var veri = await GunToplamlariAsync(db, idler, ct);
+        // Most recently read first, then items with no session yet (newest first), so the web card opens on the current one.
         var devam = (await db.Ogeler.Where(o => idler.Contains(o.AliskanlikId) && o.Durum == OgeDurumu.Devam)
-                .OrderBy(o => o.CreatedAt)
+                .OrderByDescending(o => o.Oturumlar.Any()) // PostgreSQL sorts NULL first in DESC; keep sessionless items last
+                .ThenByDescending(o => o.Oturumlar.Max(t => (DateTimeOffset?)t.CreatedAt))
+                .ThenByDescending(o => o.CreatedAt)
                 .Select(o => new { o.AliskanlikId, o.Id, o.Ad, o.AltBaslik, o.FotografId, o.Toplam, o.BaslangicKonumu, Son = o.Oturumlar.Max(t => (decimal?)t.BitisKonum) })
                 .ToListAsync(ct))
             .ToLookup(o => o.AliskanlikId);

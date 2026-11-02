@@ -18,6 +18,10 @@ public class OgeModel(AppDbContext db) : PageModel
     [TempData]
     public string? Hata { get; set; }
 
+    // Short success message, shown once as a toast by the layout.
+    [TempData]
+    public string? Bildirim { get; set; }
+
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
     {
         var oge = await AliskanlikIslemleri.OgeSorgu(db).FirstOrDefaultAsync(o => o.Id == id, ct);
@@ -42,7 +46,7 @@ public class OgeModel(AppDbContext db) : PageModel
 
         var (sonuc, _) = await AliskanlikIslemleri.OturumEkleAsync(db, oge,
             new OturumEkleDto { BitisKonum = bitisKonum.Value, Dakika = dakika }, ct);
-        return Don(id, sonuc);
+        return Don(id, sonuc, "Oturum kaydedildi");
     }
 
     public async Task<IActionResult> OnPostOturumGuncelleAsync(Guid id, Guid oturumId, decimal? bitisKonum, int? dakika, CancellationToken ct)
@@ -53,7 +57,7 @@ public class OgeModel(AppDbContext db) : PageModel
         if (bitisKonum is null)
             return Don(id, Sonuc.Gecersiz("bitisKonum", "Nereye kadar geldiğini yaz."));
 
-        return Don(id, await AliskanlikIslemleri.OturumGuncelleAsync(db, oturum, bitisKonum.Value, dakika, ct));
+        return Don(id, await AliskanlikIslemleri.OturumGuncelleAsync(db, oturum, bitisKonum.Value, dakika, ct), "Oturum güncellendi");
     }
 
     public async Task<IActionResult> OnPostOturumSilAsync(Guid id, Guid oturumId, CancellationToken ct)
@@ -62,7 +66,7 @@ public class OgeModel(AppDbContext db) : PageModel
         if (oturum is null)
             return NotFound();
 
-        return Don(id, await AliskanlikIslemleri.OturumSilAsync(db, oturum, ct));
+        return Don(id, await AliskanlikIslemleri.OturumSilAsync(db, oturum, ct), "Oturum silindi");
     }
 
     // Move the item to another shelf (continue, finish by hand, give up).
@@ -73,14 +77,16 @@ public class OgeModel(AppDbContext db) : PageModel
             return NotFound();
 
         await AliskanlikIslemleri.OgeDurumAsync(db, oge, durum, ct);
-        return Don(id, Sonuc.Tamam);
+        return Don(id, Sonuc.Tamam, "Raf: " + Gorunum.DurumAdi(durum));
     }
 
     // Post-redirect-get.
-    private IActionResult Don(Guid id, Sonuc sonuc)
+    private IActionResult Don(Guid id, Sonuc sonuc, string? bildirim = null)
     {
         if (!sonuc.Basarili)
             Hata = sonuc.Mesaj;
+        else
+            Bildirim = bildirim;
 
         return RedirectToPage("Oge", new { id });
     }

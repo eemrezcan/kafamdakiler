@@ -1,7 +1,7 @@
 /* Kafamdakiler theme (K-0021, K-0022).
    Visual language: looking through a microscope. The neuron scene carries the color;
    the interface stays quiet and precise, like instrument software: hairlines,
-   muted ink, a serif for titles and a monospace for labels and readings.
+   muted ink, one plain sans (Inter) for everything; small caps labels and tabular digits for readings.
    Builds on Bootstrap 5.3 color modes: tokens on :root (light) and [data-bs-theme="dark"]. */
 
 /* ---------- Fonts (self-hosted, see /fonts/README.md) ---------- */
@@ -21,60 +21,6 @@
   font-weight: 100 900;
   font-display: swap;
   src: url("/fonts/inter-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Instrument Serif";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/instrument-serif-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Instrument Serif";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/instrument-serif-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Instrument Serif";
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/instrument-serif-italic-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Instrument Serif";
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/instrument-serif-italic-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/plex-mono-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "IBM Plex Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/plex-mono-latin-ext.woff2") format("woff2");
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -103,8 +49,6 @@
   --kd-danger: #a3243b;
 
   --kd-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --kd-font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --kd-font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --bs-body-bg: var(--kd-bg);
   --bs-body-color: var(--kd-text);
@@ -224,6 +168,13 @@ body {
   color: var(--kd-text);
 }
 
+/* The open list of a <select> is drawn by the OS; some (Chrome on Linux) ignore
+   color-scheme and paint it white, so the options get the theme colors explicitly. */
+.form-select option {
+  background-color: var(--kd-surface-solid);
+  color: var(--kd-text);
+}
+
 .form-control::placeholder {
   color: var(--kd-text-faint);
 }
@@ -297,10 +248,10 @@ body {
 }
 
 .kd-brand-name {
-  font-family: var(--kd-font-serif);
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 
 .kd-nav-links {
@@ -358,9 +309,8 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.72rem;
-  letter-spacing: 0.04em;
   color: var(--kd-text-muted);
 }
 
@@ -370,9 +320,9 @@ body {
   border: 1px solid var(--kd-line-strong);
   border-radius: 0.3rem;
   background: transparent;
-  font-family: var(--kd-font-mono);
   font-size: 0.68rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text);
   transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -391,7 +341,7 @@ body {
 .kd-drawer-account {
   margin: 0 0 0.9rem;
   overflow-wrap: anywhere;
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.8rem;
   color: var(--kd-text);
 }
@@ -424,9 +374,8 @@ body {
 
 .kd-drawer-title {
   margin: 0;
-  font-family: var(--kd-font-serif);
-  font-size: 2rem;
-  font-weight: 400;
+  font-size: 1.5rem;
+  font-weight: 600;
   line-height: 1.05;
 }
 
@@ -583,9 +532,9 @@ body {
 .kd-theme-note {
   margin-top: -0.4rem;
   padding: 0 0.15rem;
-  font-family: var(--kd-font-mono);
   font-size: 0.66rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text-faint);
 }
@@ -598,9 +547,9 @@ body {
   padding: 1.25rem 0;
   border-top: 1px solid var(--kd-line);
   color: var(--kd-text-faint);
-  font-family: var(--kd-font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -644,27 +593,25 @@ body {
   outline-offset: 2px;
 }
 
-/* Small monospace label, like an instrument readout. */
+/* Small uppercase label, like an instrument readout. */
 .kd-eyebrow {
   margin: 0 0 0.25rem;
-  font-family: var(--kd-font-mono);
   font-size: 0.68rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--kd-text-muted);
 }
 
 /* Serif display title. */
 .kd-title {
-  font-family: var(--kd-font-serif);
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.02;
 }
 
 .kd-title em {
-  font-style: italic;
+  font-style: normal;
   color: var(--kd-violet);
 }
 
@@ -735,24 +682,23 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  font-family: var(--kd-font-mono);
   font-size: 0.66rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text-faint);
 }
 
 .kd-auth-title {
   margin: 0 0 0.6rem;
-  font-family: var(--kd-font-serif);
-  font-size: 2.6rem;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.015em;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .kd-auth-title em {
-  font-style: italic;
+  font-style: normal;
   color: var(--kd-violet);
 }
 
@@ -777,9 +723,9 @@ body {
 .kd-field-label {
   display: block;
   margin-bottom: 0.5rem;
-  font-family: var(--kd-font-mono);
   font-size: 0.68rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text-muted);
 }
@@ -822,9 +768,9 @@ body {
   border: 0;
   border-radius: 0.25rem;
   background: transparent;
-  font-family: var(--kd-font-mono);
   font-size: 0.66rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text-muted);
 }
@@ -949,6 +895,8 @@ body {
 /* Habit colors. A card, panel or picker with one of these classes gets --kd-hue. */
 :root,
 [data-bs-theme="light"] {
+  /* How much of the habit color goes into its card's surface. */
+  --kd-tint: 9%;
   --kd-ok: #2f7d4f;
   --kd-hue-violet: #5a3e9e;
   --kd-hue-pink: #b8366f;
@@ -956,11 +904,12 @@ body {
   --kd-hue-teal: #1f7f7a;
   --kd-hue-green: #3b7a3f;
   --kd-hue-amber: #a8681a;
-  --kd-hue-red: #a3243b;
+  --kd-hue-red: #b5361f;
   --kd-hue-slate: #5b6475;
 }
 
 [data-bs-theme="dark"] {
+  --kd-tint: 12%;
   --kd-ok: #7fd0a0;
   --kd-hue-violet: #b6a8ef;
   --kd-hue-pink: #ef86b8;
@@ -968,7 +917,7 @@ body {
   --kd-hue-teal: #7fd3cc;
   --kd-hue-green: #9ad39d;
   --kd-hue-amber: #f0c070;
-  --kd-hue-red: #f19aa6;
+  --kd-hue-red: #f4826c;
   --kd-hue-slate: #aab3c5;
 }
 
@@ -1001,11 +950,10 @@ body {
   align-items: center;
   gap: 0.65rem;
   margin: 0;
-  font-family: var(--kd-font-serif);
-  font-size: clamp(2rem, 7vw, 2.9rem);
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.015em;
+  font-size: clamp(1.65rem, 6vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
@@ -1030,6 +978,52 @@ body {
 
 .kd-back:hover {
   color: var(--kd-text);
+}
+
+/* Toast: a one-time "saved" message at the bottom, gone after a few seconds. */
+.kd-toast {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  z-index: 1080;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 999px;
+  background: var(--kd-surface-solid);
+  box-shadow: var(--kd-shadow);
+  color: var(--kd-text);
+  font-size: 0.9rem;
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: kd-toast 3.2s ease forwards;
+}
+
+.kd-toast .kd-icon {
+  color: var(--kd-ok);
+}
+
+@keyframes kd-toast {
+  0% { opacity: 0; transform: translate(-50%, 0.5rem); }
+  8%, 80% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 0); visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-toast {
+    animation: kd-toast-still 3.2s steps(1, end) forwards;
+  }
+
+  .kd-habit:target {
+    animation: none;
+  }
+}
+
+@keyframes kd-toast-still {
+  to { visibility: hidden; }
 }
 
 .kd-alert {
@@ -1118,8 +1112,22 @@ body {
 
 /* ----- Habit cards ----- */
 
+/* Today's summary under the page title. */
+.kd-today {
+  max-width: 22rem;
+  margin-top: 0.6rem;
+}
+
+.kd-today-text {
+  margin: 0 0 0.4rem;
+  color: var(--kd-text-muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .kd-habits {
   display: grid;
+  align-items: start;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
 }
@@ -1139,15 +1147,20 @@ body {
   flex-direction: column;
   gap: 0.9rem;
   padding: 1rem;
-  border: 1px solid var(--kd-line);
+  border: 1px solid color-mix(in srgb, var(--kd-hue, var(--kd-violet)) 28%, var(--kd-line));
   border-radius: 0.6rem;
-  background: var(--kd-surface-solid);
+  background: color-mix(in srgb, var(--kd-hue, var(--kd-violet)) var(--kd-tint), var(--kd-surface-solid));
   scroll-margin-top: 5rem;
 }
 
+/* After a save the page jumps back to the card: a short glow shows which one, then fades. */
 .kd-habit:target {
-  border-color: var(--kd-hue);
-  box-shadow: 0 0 0 1px var(--kd-hue);
+  animation: kd-card-flash 1.6s ease-out;
+}
+
+@keyframes kd-card-flash {
+  from { box-shadow: 0 0 0 2px var(--kd-hue, var(--kd-violet)); }
+  to { box-shadow: 0 0 0 2px transparent; }
 }
 
 .kd-habit-head {
@@ -1196,9 +1209,8 @@ body {
 
 .kd-habit-meta {
   margin: 0.2rem 0 0;
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.68rem;
-  letter-spacing: 0.03em;
   color: var(--kd-text-muted);
 }
 
@@ -1223,7 +1235,7 @@ body {
 
 .kd-readout {
   margin: 0.5rem 0 0;
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.82rem;
   color: var(--kd-text);
 }
@@ -1307,22 +1319,46 @@ body {
   color: var(--kd-ink-text);
 }
 
+/* The typed amount: a centered number with a small check button inside the field, on the right. */
 .kd-stepper-set {
+  position: relative;
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 0.4rem;
   min-width: 0;
 }
 
 .kd-stepper-set .form-control {
   min-width: 0;
   min-height: 3rem;
+  padding-inline: 2.75rem;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
-.kd-stepper-set .kd-text-btn {
-  min-height: 2.75rem;
+.kd-stepper-save {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--kd-text-faint);
+  transform: translateY(-50%);
+}
+
+.kd-stepper-save:hover,
+.kd-stepper-set:focus-within .kd-stepper-save {
+  color: var(--kd-text);
+}
+
+.kd-stepper-save:focus-visible {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 1px;
 }
 
 /* Shelf item inside a card. */
@@ -1339,6 +1375,76 @@ body {
   border-radius: 0.3rem;
   background: var(--kd-field-bg);
   object-fit: cover;
+}
+
+/* Several items in progress on one card: a row of small covers (radio tabs) and the chosen item's panel. */
+.kd-shelf-pick-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.kd-shelf-pick-tab {
+  display: block;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.kd-shelf-pick-tab .kd-cover {
+  width: 2.75rem;
+}
+
+.kd-shelf-pick-tab:hover {
+  opacity: 0.85;
+}
+
+.kd-shelf-pick-tab:has(input:checked) {
+  opacity: 1;
+  outline: 2px solid var(--kd-hue, var(--kd-violet));
+  outline-offset: 2px;
+}
+
+.kd-shelf-pick-tab:has(input:focus-visible) {
+  outline: 2px solid var(--kd-text);
+  outline-offset: 2px;
+}
+
+.kd-shelf-pick-more {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  aspect-ratio: 3 / 4;
+  border: 1px dashed var(--kd-line-strong);
+  border-radius: 0.3rem;
+  color: var(--kd-text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.kd-shelf-pick-more:hover {
+  color: var(--kd-text);
+}
+
+.kd-shelf-pick-panel {
+  display: none;
+}
+
+.kd-shelf-pick:has(.kd-shelf-pick-tab:nth-child(1) input:checked) .kd-shelf-pick-panel:nth-child(1),
+.kd-shelf-pick:has(.kd-shelf-pick-tab:nth-child(2) input:checked) .kd-shelf-pick-panel:nth-child(2),
+.kd-shelf-pick:has(.kd-shelf-pick-tab:nth-child(3) input:checked) .kd-shelf-pick-panel:nth-child(3),
+.kd-shelf-pick:has(.kd-shelf-pick-tab:nth-child(4) input:checked) .kd-shelf-pick-panel:nth-child(4),
+.kd-shelf-pick:has(.kd-shelf-pick-tab:nth-child(5) input:checked) .kd-shelf-pick-panel:nth-child(5) {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-shelf-pick-tab {
+    transition: none;
+  }
 }
 
 .kd-cover--empty {
@@ -1379,13 +1485,15 @@ body {
 }
 
 .kd-progress-form .form-control {
-  flex: 1 1 8rem;
-  min-width: 0;
+  /* Wide enough for the "Nereye kadar geldin?" placeholder; the button wraps below instead. */
+  flex: 1 1 11rem;
+  min-width: 11rem;
   min-height: 2.75rem;
 }
 
 .kd-progress-form .kd-minute {
   flex: 0 0 4.5rem;
+  min-width: 0;
 }
 
 /* Last 7 days. */
@@ -1406,9 +1514,9 @@ body {
 }
 
 .kd-strip-day small {
-  font-family: var(--kd-font-mono);
   font-size: 0.58rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text-faint);
 }
@@ -1442,8 +1550,9 @@ body {
   background: transparent;
 }
 
-/* Not planned that day (or before the habit existed): dashed and faint. */
-.kd-dot.is-off {
+/* Not planned that day, or before the habit existed: dashed and faint. */
+.kd-dot.is-off,
+.kd-dot.is-none {
   border-style: dashed;
   border-color: var(--kd-line);
   background: transparent;
@@ -1466,9 +1575,9 @@ body {
 
 .kd-empty-title {
   margin: 0 0 0.4rem;
-  font-family: var(--kd-font-serif);
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   color: var(--kd-text);
+  font-weight: 600;
 }
 
 .kd-empty-choices {
@@ -1518,6 +1627,20 @@ body {
   }
 }
 
+/* One-line explanation under a stat value (what "Güç" means). */
+.kd-stat-note {
+  color: var(--kd-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+/* On a phone the stat with an explanation takes the full row, so the text does not stack up. */
+@media (max-width: 575.98px) {
+  .kd-stat:has(.kd-stat-note) {
+    grid-column: 1 / -1;
+  }
+}
+
 .kd-stat {
   display: flex;
   flex-direction: column;
@@ -1530,21 +1653,22 @@ body {
 }
 
 .kd-stat-label {
-  font-family: var(--kd-font-mono);
   font-size: 0.66rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-text-muted);
 }
 
 .kd-stat-value {
-  font-family: var(--kd-font-serif);
-  font-size: 2rem;
-  line-height: 1.1;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .kd-stat-value--small {
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
   line-height: 1.6;
   overflow-wrap: anywhere;
@@ -1567,12 +1691,13 @@ body {
   height: 14rem;
 }
 
-/* Heat map: a column per week (Monday on top), cells shrink to fit the width. */
+/* Heat map: a column per week (Monday on top). Cells shrink to fit the width, but a short map
+   (a young habit) keeps small cells instead of stretching across the panel. */
 .kd-heat {
   display: grid;
   grid-auto-flow: column;
   grid-template-rows: repeat(7, auto);
-  grid-template-columns: repeat(var(--kd-weeks), 1fr);
+  grid-template-columns: repeat(var(--kd-weeks), minmax(0, 2.25rem));
   gap: 3px;
 }
 
@@ -1587,7 +1712,15 @@ body {
 .kd-heat-cell.is-part { background: color-mix(in srgb, var(--kd-hue, var(--kd-violet)) 45%, transparent); }
 .kd-heat-cell.is-miss { background: color-mix(in srgb, var(--kd-text-faint) 35%, transparent); }
 .kd-heat-cell.is-off { background: transparent; box-shadow: inset 0 0 0 1px var(--kd-line); }
+.kd-heat-cell.is-none { background: color-mix(in srgb, var(--kd-line) 25%, transparent); }
 .kd-heat-cell.is-pad { visibility: hidden; }
+
+.kd-swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  vertical-align: -0.1em;
+}
 
 .kd-legend {
   display: flex;
@@ -1879,10 +2012,9 @@ textarea.form-control {
 .kd-table th {
   padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--kd-line-strong);
-  font-family: var(--kd-font-mono);
   font-size: 0.66rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-align: left;
   text-transform: uppercase;
   color: var(--kd-text-muted);
@@ -1922,9 +2054,9 @@ textarea.form-control {
   padding: 0.15rem 0.6rem;
   border: 1px solid var(--kd-hue);
   border-radius: 99px;
-  font-family: var(--kd-font-mono);
   font-size: 0.68rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--kd-hue);
 }
@@ -1951,10 +2083,9 @@ textarea.form-control {
 }
 
 .kd-facts dt {
-  font-family: var(--kd-font-mono);
   font-size: 0.64rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--kd-text-muted);
 }
@@ -1988,9 +2119,16 @@ textarea.form-control {
   list-style: none;
 }
 
+/* A session row: date, range and amount on one line; the last one has a pencil at the right end.
+   Every row keeps room for the pencil so the amounts line up. */
 .kd-session {
+  position: relative;
   padding: 0.7rem 0;
   border-bottom: 1px solid var(--kd-line);
+}
+
+.kd-session:last-child {
+  border-bottom: 0;
 }
 
 .kd-session-row {
@@ -1998,28 +2136,54 @@ textarea.form-control {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.2rem 1rem;
+  min-height: 1.6rem;
+  padding-right: 3rem;
 }
 
 .kd-session-date {
   min-width: 3.5rem;
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.78rem;
   color: var(--kd-text-muted);
 }
 
 .kd-session-amount {
   margin-left: auto;
-  font-family: var(--kd-font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 0.82rem;
 }
 
 .kd-session-edit summary {
-  display: flex;
-  align-items: center;
-  min-height: 2.75rem;
+  position: absolute;
+  top: 0.15rem;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.4rem;
+  list-style: none;
   cursor: pointer;
-  font-size: 0.85rem;
   color: var(--kd-text-muted);
+}
+
+.kd-session-edit summary::-webkit-details-marker {
+  display: none;
+}
+
+.kd-session-edit summary:hover,
+.kd-session-edit[open] summary {
+  background: rgba(var(--kd-violet-rgb), 0.1);
+  color: var(--kd-text);
+}
+
+.kd-session-edit summary:focus-visible {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: -2px;
+}
+
+.kd-session-edit[open] {
+  margin-top: 0.75rem;
 }
 
 .kd-session-edit form {

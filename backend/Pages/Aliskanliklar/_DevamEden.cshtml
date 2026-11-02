@@ -1,0 +1,26 @@
+@using Kafamdakiler.Aliskanliklar
+@model (AliskanlikDto Aliskanlik, DevamEdenDto Oge)
+@{
+    var a = Model.Aliskanlik;
+    var o = Model.Oge;
+}
+@* An item in progress on the habit card: title, position and the "Nereye kadar geldin?" form. *@
+<div class="kd-shelf-body">
+    <a class="kd-shelf-title" asp-page="Oge" asp-route-id="@o.Id">@o.Ad</a>
+    @if (!string.IsNullOrEmpty(o.AltBaslik))
+    {
+        <span class="kd-muted">@o.AltBaslik</span>
+    }
+    <p class="kd-readout">
+        @Gorunum.Sayi(o.GuncelKonum)@(o.Toplam is { } toplam ? " / " + Gorunum.Sayi(toplam) : "") @a.Birim@(o.Ilerleme is { } ilerleme ? " · " + Gorunum.Yuzde(ilerleme) : "")
+    </p>
+    <form method="post" asp-page-handler="Ilerleme" class="kd-progress-form">
+        <input type="hidden" name="ogeId" value="@o.Id" />
+        <label class="visually-hidden" for="p-@o.Id">Nereye kadar geldin?</label>
+        <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
+               class="form-control" placeholder="Nereye kadar geldin?" required />
+        <label class="visually-hidden" for="d-@o.Id">Dakika</label>
+        <input id="d-@o.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute" placeholder="dk" />
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+    </form>
+</div>

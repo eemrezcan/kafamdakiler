@@ -15,8 +15,15 @@ public class IndexModel(AppDbContext db) : PageModel
     public List<Kart> Diger { get; private set; } = [];
     public DateOnly BugunTarihi { get; private set; }
 
+    // Today's summary: how many of today's planned habits reached their goal (or stayed under the limit).
+    public int BugunTamam => Planli.Count(k => k.Aliskanlik.Bugun.Deger >= 1);
+
     [TempData]
     public string? Hata { get; set; }
+
+    // Short success message, shown once as a toast by the layout.
+    [TempData]
+    public string? Bildirim { get; set; }
 
     // /Aliskanliklar?arsiv=true lists the archived habits instead.
     [BindProperty(SupportsGet = true)]
@@ -48,7 +55,7 @@ public class IndexModel(AppDbContext db) : PageModel
         var sonuc = yapildi
             ? await AliskanlikIslemleri.KayitSilAsync(db, a, bugun, ct)
             : await AliskanlikIslemleri.KayitYazAsync(db, a, bugun, 1, null, ct);
-        return Don(sonuc, id);
+        return Don(sonuc, id, yapildi ? "Geri alındı" : "İşaretlendi");
     }
 
     // Counter habit: −/+ changes today's total by one step.
@@ -62,7 +69,7 @@ public class IndexModel(AppDbContext db) : PageModel
         var simdiki = await db.AliskanlikKayitlari.Where(k => k.AliskanlikId == id && k.Tarih == bugun)
             .Select(k => (decimal?)k.Miktar).FirstOrDefaultAsync(ct) ?? 0;
         var yeni = Math.Max(0, simdiki + delta);
-        return Don(await AliskanlikIslemleri.KayitYazAsync(db, a, bugun, yeni, null, ct), id);
+        return Don(await AliskanlikIslemleri.KayitYazAsync(db, a, bugun, yeni, null, ct), id, "Kaydedildi");
     }
 
     // Counter habit: type today's total.
@@ -74,10 +81,10 @@ public class IndexModel(AppDbContext db) : PageModel
         if (miktar is null or < 0)
         {
             Hata = "Bugünkü miktarı 0 ya da daha büyük bir sayı olarak yaz.";
-            return Don(Sonuc.Tamam, id);
+            return Don(Sonuc.Tamam, id, null);
         }
 
-        return Don(await AliskanlikIslemleri.KayitYazAsync(db, a, AliskanlikIslemleri.Bugun(), miktar.Value, null, ct), id);
+        return Don(await AliskanlikIslemleri.KayitYazAsync(db, a, AliskanlikIslemleri.Bugun(), miktar.Value, null, ct), id, "Kaydedildi");
     }
 
     // Shelf habit: "I got to page 35".
@@ -89,19 +96,21 @@ public class IndexModel(AppDbContext db) : PageModel
         if (bitisKonum is null)
         {
             Hata = "Nereye kadar geldiğini yaz.";
-            return Don(Sonuc.Tamam, oge.AliskanlikId);
+            return Don(Sonuc.Tamam, oge.AliskanlikId, null);
         }
 
         var (sonuc, _) = await AliskanlikIslemleri.OturumEkleAsync(db, oge,
             new OturumEkleDto { BitisKonum = bitisKonum.Value, Dakika = dakika }, ct);
-        return Don(sonuc, oge.AliskanlikId);
+        return Don(sonuc, oge.AliskanlikId, "Oturum kaydedildi");
     }
 
     // Post-redirect-get, back to the same card.
-    private IActionResult Don(Sonuc sonuc, Guid aliskanlikId)
+    private IActionResult Don(Sonuc sonuc, Guid aliskanlikId, string? bildirim)
     {
         if (!sonuc.Basarili)
             Hata = sonuc.Mesaj;
+        else
+            Bildirim = bildirim;
 
         return RedirectToPage("/Aliskanliklar/Index", null, null, "h-" + aliskanlikId);
     }

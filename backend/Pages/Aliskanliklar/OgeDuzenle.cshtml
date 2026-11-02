@@ -80,12 +80,12 @@
         <h2 class="kd-eyebrow kd-section-title">Konum</h2>
         <div class="kd-field-row">
             <div class="kd-field">
-                <label class="kd-field-label" asp-for="Input.BaslangicKonumu">Başlangıç (@birim)</label>
+                <label class="kd-field-label" asp-for="Input.BaslangicKonumu">Kaldığın yer (@birim)</label>
                 <div class="kd-field-control">
                     <input class="form-control" asp-for="Input.BaslangicKonumu" type="number" step="any" min="0" inputmode="decimal"
                            readonly="@Model.OturumVar" />
                 </div>
-                <small class="kd-muted">@(Model.OturumVar ? "Oturum girildiği için değiştirilemez." : "Başladıysan şu an hangi konumdasın? Sıfırdan başlıyorsan 0.")</small>
+                <small class="kd-muted">@(Model.OturumVar ? "Oturum girildiği için değiştirilemez; değiştirmek için oturumları sil." : "Yeni başlıyorsan 0 bırak. Daha önce başladıysan kaldığın yeri yaz.")</small>
                 <span class="kd-field-error" asp-validation-for="Input.BaslangicKonumu"></span>
             </div>
             <div class="kd-field">
@@ -100,9 +100,9 @@
     </section>
 
     <section class="kd-form-block">
-        <h2 class="kd-eyebrow kd-section-title">Durum</h2>
+        <h2 class="kd-eyebrow kd-section-title">Raf</h2>
         <div class="kd-field">
-            <label class="kd-field-label" asp-for="Input.Durum">Raf</label>
+            <label class="kd-field-label" asp-for="Input.Durum">Hangi rafta?</label>
             <select class="form-select kd-narrow" asp-for="Input.Durum">
                 @foreach (var durum in Enum.GetValues<OgeDurumu>())
                 {
@@ -112,9 +112,10 @@
             <span class="kd-field-error" asp-validation-for="Input.Durum"></span>
         </div>
 
-        <div class="kd-field-row">
+        @* The rating is asked only on the "Bitti" shelf; aliskanliklar.js shows and enables it. *@
+        <div class="kd-field-row" data-kd-when="Input.Durum=Bitti">
             <div class="kd-field">
-                <label class="kd-field-label" asp-for="Input.Puan">Puan (1-5)</label>
+                <label class="kd-field-label" asp-for="Input.Puan">Kaç puan verdin? (1-5)</label>
                 <select class="form-select kd-narrow" asp-for="Input.Puan">
                     <option value="">Yok</option>
                     @for (var p = 1; p <= 5; p++)
@@ -163,4 +164,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/aliskanliklar.js" asp-append-version="true"></script>
 }

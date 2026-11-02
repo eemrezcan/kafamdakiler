@@ -149,7 +149,9 @@
                     @if (t.Son)
                     {
                         <details class="kd-session-edit">
-                            <summary>Düzenle / sil</summary>
+                            <summary aria-label="Son oturumu düzenle ya da sil">
+                                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
+                            </summary>
                             <form method="post" asp-page-handler="OturumGuncelle" asp-route-id="@o.Id" class="kd-progress-form">
                                 <input type="hidden" name="oturumId" value="@t.Id" />
                                 <label class="visually-hidden" for="e-@t.Id">Bitiş konumu</label>
@@ -172,6 +174,5 @@
                 </li>
             }
         </ul>
-        <p class="kd-muted">Yalnız son oturum değiştirilebilir; böylece konumlar zincir gibi tutarlı kalır.</p>
     }
 </section>

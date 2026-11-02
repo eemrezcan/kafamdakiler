@@ -38,7 +38,10 @@
 </div>
 
 <section class="kd-stats" aria-label="Özet">
-    <div class="kd-stat"><span class="kd-stat-label">Güç</span><span class="kd-stat-value">@Gorunum.Yuzde(a.Guc)</span></div>
+    <div class="kd-stat">
+        <span class="kd-stat-label">Güç</span><span class="kd-stat-value">@Gorunum.Yuzde(a.Guc)</span>
+        <span class="kd-stat-note">Düzenin: yaptığın her gün artar, kaçırınca biraz düşer; tek kaçırma sıfırlamaz.</span>
+    </div>
     <div class="kd-stat"><span class="kd-stat-label">Seri@(a.Siklik == Siklik.HaftadaN ? " (hafta)" : "")</span><span class="kd-stat-value">@a.Seri</span></div>
     <div class="kd-stat"><span class="kd-stat-label">En uzun seri</span><span class="kd-stat-value">@a.EnUzunSeri</span></div>
     <div class="kd-stat"><span class="kd-stat-label">Bugün</span><span class="kd-stat-value kd-stat-value--small">@Gorunum.BugunMetni(a)</span></div>
@@ -53,7 +56,7 @@
 }
 
 <section class="kd-panel @Gorunum.RenkSinifi(a.Renk)" aria-labelledby="kd-heat-title">
-    <h2 class="kd-eyebrow" id="kd-heat-title">Son 6 ay</h2>
+    <h2 class="kd-eyebrow" id="kd-heat-title">@Model.HaritaBasligi</h2>
     <div class="kd-heat" style="--kd-weeks:@haftaSayisi">
         @foreach (var hucre in Model.Hucreler)
         {
@@ -69,27 +72,27 @@
         }
     </div>
     <p class="kd-legend">
-        <span><i class="kd-dot is-done"></i> hedef tamam</span>
-        <span><i class="kd-dot is-part"></i> kısmen</span>
-        <span><i class="kd-dot is-miss"></i> yapılmadı</span>
-        <span><i class="kd-dot is-off"></i> planlı değil</span>
+        <span><i class="kd-heat-cell kd-swatch is-done"></i> hedef tamam</span>
+        <span><i class="kd-heat-cell kd-swatch is-part"></i> kısmen</span>
+        <span><i class="kd-heat-cell kd-swatch is-miss"></i> yapılmadı</span>
+        <span><i class="kd-heat-cell kd-swatch is-off"></i> planlı değil</span>
     </p>
 </section>
 
-<section class="kd-panel" aria-labelledby="kd-amount-title">
-    <h2 class="kd-eyebrow" id="kd-amount-title">Günlük miktar · son 90 gün@(string.IsNullOrEmpty(a.Birim) ? "" : " (" + a.Birim + ")")</h2>
+<section class="kd-panel @Gorunum.RenkSinifi(a.Renk)" aria-labelledby="kd-amount-title">
+    <h2 class="kd-eyebrow" id="kd-amount-title">Günlük miktar@(string.IsNullOrEmpty(a.Birim) ? "" : " (" + a.Birim + ")")</h2>
     <div class="kd-chart"><canvas id="kd-chart-miktar" role="img" aria-label="Günlük miktar grafiği"></canvas></div>
 </section>
 
 @if (a.Olcu == Olcu.Sayili || a.Tur == AliskanlikTuru.Raf)
 {
-    <section class="kd-panel" id="kd-minutes-panel" aria-labelledby="kd-minutes-title" hidden>
-        <h2 class="kd-eyebrow" id="kd-minutes-title">Süre · son 90 gün (dakika)</h2>
+    <section class="kd-panel @Gorunum.RenkSinifi(a.Renk)" id="kd-minutes-panel" aria-labelledby="kd-minutes-title" hidden>
+        <h2 class="kd-eyebrow" id="kd-minutes-title">Süre (dakika)</h2>
         <div class="kd-chart"><canvas id="kd-chart-dakika" role="img" aria-label="Günlük süre grafiği"></canvas></div>
     </section>
 }
 
-<section class="kd-panel" aria-labelledby="kd-power-title">
+<section class="kd-panel @Gorunum.RenkSinifi(a.Renk)" aria-labelledby="kd-power-title">
     <h2 class="kd-eyebrow" id="kd-power-title">Güç eğrisi (%)</h2>
     <div class="kd-chart"><canvas id="kd-chart-guc" role="img" aria-label="Alışkanlık gücü grafiği"></canvas></div>
 </section>
@@ -103,10 +106,10 @@
             var grid = function (c) { return { color: c.line }; };
 
             kdCharts.draw('kd-chart-miktar', function (c) {
-                var sets = [{ type: 'bar', label: v.birim || 'Miktar', data: v.miktar, backgroundColor: c.accent, borderRadius: 2 }];
+                var sets = [{ type: 'bar', label: v.birim || 'Miktar', data: v.miktar, backgroundColor: c.hue, borderRadius: 2 }];
                 if (v.hedef !== null) {
                     sets.push({ type: 'line', label: 'Hedef', data: v.etiketler.map(function () { return v.hedef; }),
-                        borderColor: c.pink, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 });
+                        borderColor: c.text, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 });
                 }
                 return {
                     type: 'bar',
@@ -125,7 +128,7 @@
                 kdCharts.draw('kd-chart-dakika', function (c) {
                     return {
                         type: 'bar',
-                        data: { labels: v.etiketler, datasets: [{ label: 'Dakika', data: v.dakika, backgroundColor: c.pink, borderRadius: 2 }] },
+                        data: { labels: v.etiketler, datasets: [{ label: 'Dakika', data: v.dakika, backgroundColor: c.hueSoft, borderRadius: 2 }] },
                         options: {
                             scales: { x: { ticks: { color: c.text, maxTicksLimit: 8 }, grid: { display: false } },
                                       y: { beginAtZero: true, ticks: { color: c.text }, grid: grid(c) } },
@@ -138,7 +141,7 @@
             kdCharts.draw('kd-chart-guc', function (c) {
                 return {
                     type: 'line',
-                    data: { labels: v.gucEtiketleri, datasets: [{ label: 'Güç %', data: v.guc, borderColor: c.accent, backgroundColor: 'transparent',
+                    data: { labels: v.gucEtiketleri, datasets: [{ label: 'Güç %', data: v.guc, borderColor: c.hue, backgroundColor: 'transparent',
                         borderWidth: 2, pointRadius: 0, tension: 0.25 }] },
                     options: {
                         scales: { x: { ticks: { color: c.text, maxTicksLimit: 8 }, grid: { display: false } },

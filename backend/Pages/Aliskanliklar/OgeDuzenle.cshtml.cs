@@ -25,6 +25,10 @@ public class OgeDuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
 
     public bool Yeni => OgeId is null;
 
+    // Short success message, shown once as a toast by the layout.
+    [TempData]
+    public string? Bildirim { get; set; }
+
     // The start position is locked once a session exists.
     public bool OturumVar { get; private set; }
 
@@ -98,6 +102,7 @@ public class OgeDuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
             return Page();
         }
 
+        Bildirim = "Kaydedildi";
         return RedirectToPage("Oge", new { id = oge!.Id });
     }
 
@@ -109,6 +114,7 @@ public class OgeDuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
 
         var aliskanlikId = oge.AliskanlikId;
         await AliskanlikIslemleri.OgeSilAsync(db, depo, oge, ct);
+        Bildirim = "Silindi";
         return RedirectToPage("Raf", new { aliskanlikId });
     }
 

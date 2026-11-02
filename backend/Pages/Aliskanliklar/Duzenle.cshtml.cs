@@ -16,6 +16,10 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
 
     public bool Yeni => AliskanlikId is null;
 
+    // Short success message, shown once as a toast by the layout.
+    [TempData]
+    public string? Bildirim { get; set; }
+
     public async Task<IActionResult> OnGetAsync(Guid? id, AliskanlikTuru? tur, CancellationToken ct)
     {
         AliskanlikId = id;
@@ -56,6 +60,7 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
             a.Sira = await db.Aliskanliklar.AnyAsync(ct) ? await db.Aliskanliklar.MaxAsync(x => x.Sira, ct) + 1 : 0;
             db.Aliskanliklar.Add(a);
             await db.SaveChangesAsync(ct);
+            Bildirim = "Alışkanlık eklendi";
 
             // A new shelf habit starts with an empty shelf: go and fill it.
             return a.Tur == AliskanlikTuru.Raf
@@ -76,6 +81,7 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
         Input.Arsivlendi = mevcut.Arsivlendi;
         AliskanlikIslemleri.AliskanlikUygula(mevcut, Input);
         await db.SaveChangesAsync(ct);
+        Bildirim = "Kaydedildi";
         return RedirectToPage("Index", null, null, "h-" + mevcut.Id);
     }
 
@@ -87,6 +93,7 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
 
         a.Arsivlendi = !a.Arsivlendi;
         await db.SaveChangesAsync(ct);
+        Bildirim = a.Arsivlendi ? "Arşivlendi" : "Arşivden çıkarıldı";
         return a.Arsivlendi ? RedirectToPage("Index") : RedirectToPage("Index", null, null, "h-" + a.Id);
     }
 
@@ -97,6 +104,7 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
             return NotFound();
 
         await AliskanlikIslemleri.AliskanlikSilAsync(db, depo, a, ct);
+        Bildirim = "Alışkanlık silindi";
         return RedirectToPage("Index");
     }
 

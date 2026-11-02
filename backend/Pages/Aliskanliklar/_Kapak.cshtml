@@ -1,0 +1,11 @@
+@using Kafamdakiler.Aliskanliklar
+@model (string? FotografUrl, string Ikon)
+@* An item's cover, or the habit icon when there is no photo. *@
+@if (Model.FotografUrl is not null)
+{
+    <img class="kd-cover" src="@Model.FotografUrl" alt="" loading="lazy" />
+}
+else
+{
+    <span class="kd-cover kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(Model.Ikon)"></use></svg></span>
+}

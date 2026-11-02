@@ -109,7 +109,8 @@ public static class Gorunum
 
     // One day of the strips: "done", "part", "miss" or "off" (not planned that day, or before the habit existed).
     public static string GunDurumu(GunDto gun, DateTimeOffset olusturulma) =>
-        !gun.Planli || gun.Tarih < AliskanlikHesap.AliskanlikGunu(olusturulma) ? "off"
+        gun.Tarih < AliskanlikHesap.AliskanlikGunu(olusturulma) ? "none"
+        : !gun.Planli ? "off"
         : gun.Deger >= 1 ? "done" : gun.Deger > 0 ? "part" : "miss";
 
     // Step of the − / + buttons: whole numbers, or halves when the goal itself is fractional.

@@ -9,6 +9,26 @@
     <div>
         <p class="kd-eyebrow">@Gorunum.GunAdi(Model.BugunTarihi) · @Gorunum.Tarih(Model.BugunTarihi)</p>
         <h1 class="kd-page-title">@(Model.Arsiv ? "Arşiv" : "Alışkanlıklar")</h1>
+        @if (!Model.Arsiv && Model.Planli.Count > 0)
+        {
+            var oran = (double)Model.BugunTamam / Model.Planli.Count;
+            <div class="kd-today">
+                <p class="kd-today-text">
+                    @if (Model.BugunTamam == Model.Planli.Count)
+                    {
+                        <text>Bugün hepsi tamam: @Model.Planli.Count / @Model.Planli.Count</text>
+                    }
+                    else
+                    {
+                        <text>Bugün @Model.Planli.Count alışkanlıktan @Model.BugunTamam tanesi tamam</text>
+                    }
+                </p>
+                <div class="kd-bar kd-bar--thin @(oran >= 1 ? "is-ok" : "")" role="progressbar" aria-label="Bugünkü genel ilerleme"
+                     aria-valuemin="0" aria-valuemax="@Model.Planli.Count" aria-valuenow="@Model.BugunTamam">
+                    <span style="width:@Gorunum.Genislik(oran)"></span>
+                </div>
+            </div>
+        }
     </div>
     @if (Model.Arsiv)
     {
