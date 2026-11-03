@@ -16,6 +16,7 @@ Course project for BLM4581 (web) and BLM4587 (mobile).
 | `backend.Tests/` | xUnit v3 tests |
 | `compose.yaml` | PostgreSQL for local development |
 | `docs/` | Decisions (`docs/kararlar/`) and project notes |
+| `ornek-beyin/` | Sample "second brain" (Markdown notes, all made up) used in development, tests and demos. Treat it as read-only: the API works on a copy, `cp -r ornek-beyin .ornek-beyin-calisma` (delete the copy to reset it) |
 
 ## Database
 PostgreSQL 18 runs in Docker. Credentials live in `.env`, which is git-ignored; only the empty template `.env.example` is committed.

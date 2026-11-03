@@ -26,6 +26,7 @@ Kurulum ve çalıştırma komutları, beklenen sonuçla birlikte.
 - `backend.Tests/`: xUnit testleri (K-0016), henüz yok
 - `compose.yaml`: geliştirmede Postgres (K-0012, K-0020), henüz yok
 - `deploy/`: sunucuya özgü dosyalar (Caddy vb.), henüz yok
+- `ornek-beyin/`: uydurma notlardan örnek ikinci beyin; geliştirme, test ve gösterim için (K-0023). Repodaki kopya şablondur, API Git dışı `.ornek-beyin-calisma/` kopyasında çalışır
 
 ## Yapay zekânın yazdığı kısımlar
 Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça burada listelenir, geri kalan kodu öğrenci yazmıştır.
@@ -45,6 +46,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - Mobil uyarlama (2026-11-02, kullanıcının isteğiyle, K-0022 eki): `mobile/lib/config/app_theme.dart` (tek yazı tipi Inter; `KdYazi.sayi` ve `KdYazi.baslik`), `mobile/lib/ui/core/renkler.dart` (web'deki açık ve koyu palet, kart zemini ve çerçevesi, tamam rengi), `bugun_screen.dart` içindeki Bugün özeti, `aliskanlik_karti.dart` içindeki renkli kart ve `_DevamEdenSecici` (birden çok kitapta kapak seçimi), `aliskanlik_detay_screen.dart` içindeki Güç açıklaması ve renkli gün ızgarası, `oge_form_screen.dart` etiketleri ve puanın yalnız "Bitti"de görünmesi, `aliskanlik_liste_screen.dart` renkli kartı, `test/ui/bugun_screen_test.dart` içindeki iki test değişikliği: Claude yazdı.
 - Mobil görünümün web'e eşlenmesi (2026-11-02, kullanıcının isteğiyle): `app_theme.dart` içindeki düğme, seçim, alan, çip, SnackBar ve sekme stilleri; `aliskanlik_karti.dart` içinde web düzenindeki kart başlığı (kalem, sıklık satırı), kare −/+ düğmeleri, tam genişlikte "Yaptım" düğmesi ve ilerleme çubuğu; Raf sekmesinin alt menüden kalkması ve rafın `/aliskanlik/:id/raf` sayfası olması (`router.dart`, `ana_iskele.dart`, `raf_screen.dart`, `raf_view_model.dart`); Bugün'deki tarih satırı; detaydaki çerçeveli istatistik kutuları; kitap detayındaki renkli durum etiketi, tek satırlık oturum satırları ve bitmiş kitapta gizlenen "Okumaya başla"; kronometredeki "Vazgeç" (`kronometre_gosterge.dart`, `oturum_screen.dart`, `sayac_kronometre_screen.dart`); `lib/utils/metin.dart` (`trBuyuk`); `test/routing/yetki_test.dart` ve `test/ui/bugun_screen_test.dart` güncellemeleri: Claude yazdı.
 - Mobil kartlarda son 7 gün şeridi (2026-11-02, kullanıcının isteğiyle): `bugun_view_model.dart` içindeki `sonGunler` ve `_gunleriYukle`, `aliskanlik_karti.dart` içindeki `_GunSeridi` ve `_NoktaCiz`, `test/test_destek.dart` içindeki `gunleriGetir` sahtesi ve `bugun_screen_test.dart` içindeki şerit testi: Claude yazdı.
+- Örnek beyin (2026-11-03, kullanıcının isteğiyle, K-0023 eki): `ornek-beyin/` klasörünün tamamı (uydurma içerik: üç proje, görevler, devir kartları, günlük, notlar, iki gün planı, iki gelen kartı, etiket sözlüğü; gizli ve finans notu kural denemesi için): Claude, beynin kendi komutlarıyla (`beyin.py`) üretti.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

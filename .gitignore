@@ -491,6 +491,7 @@ docs/sorular.md
 docs/adimlar/
 docs/planlar/
 docs/kararlar/K-0005-veri-sahipligi.md
+docs/kararlar/K-0023-beyin-baglantisi.md
 docs/gundem.md
 
 # Secrets for Docker Compose (K-0012)
@@ -498,6 +499,10 @@ docs/gundem.md
 
 # Uploaded files in development (K-0015)
 .dosyalar/
+
+# Sample brain: the committed copy is a read-only template; the API works on a copy (K-0023)
+ornek-beyin/.beyin/
+.ornek-beyin-calisma/
 
 # Flutter Android debug source set (the Visual Studio [Dd]ebug/ rule above would hide it)
 !mobile/android/app/src/debug/
