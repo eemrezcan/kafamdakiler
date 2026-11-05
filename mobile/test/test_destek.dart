@@ -11,6 +11,7 @@ import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
+import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
@@ -223,11 +224,88 @@ class SahteApi extends ApiService {
     );
   }
 
+  // ---- Management (Sahip only) ----
+
+  List<Izin> izinler = [];
+  YonetimBeyinDurumu yonetimBeyni = const YonetimBeyinDurumu(bagli: true, vault: '.ornek-beyin-calisma');
+  List<Gonderim> gonderimler = [];
+
+  /// When set, `gonderimiYenidenDene` fails with this HTTP status (409: being sent right now).
+  int? yenidenDeneHatasi;
+
+  @override
+  Future<List<Izin>> izinleriGetir() async {
+    _kontrol('izinleriGetir');
+    return izinler;
+  }
+
+  @override
+  Future<Izin> izinAyarla(String izin, {required bool acik}) async {
+    _kontrol('izinAyarla:$izin:$acik');
+    final yeni = Izin(izin: izin, aciklama: izinler.firstWhere((i) => i.izin == izin).aciklama, acik: acik);
+    izinler = [for (final i in izinler) i.izin == izin ? yeni : i];
+    return yeni;
+  }
+
+  @override
+  Future<YonetimBeyinDurumu> yonetimBeyinDurumu() async {
+    _kontrol('yonetimBeyinDurumu');
+    return yonetimBeyni;
+  }
+
+  @override
+  Future<List<Gonderim>> gonderimKuyrugu() async {
+    _kontrol('gonderimKuyrugu');
+    return gonderimler;
+  }
+
+  @override
+  Future<Gonderim> gonderimiYenidenDene(String id) async {
+    _kontrol('gonderimiYenidenDene:$id');
+    if (yenidenDeneHatasi != null) {
+      final istek = RequestOptions(path: 'yeniden-dene');
+      throw DioException.badResponse(
+        statusCode: yenidenDeneHatasi!,
+        requestOptions: istek,
+        response: Response(requestOptions: istek, statusCode: yenidenDeneHatasi),
+      );
+    }
+    final eski = gonderimler.firstWhere((g) => g.id == id);
+    final yeni = Gonderim(
+      id: id,
+      metin: eski.metin,
+      durum: eski.durum,
+      gonderim: GonderimDurumu.bekliyor,
+      yakalandiAt: eski.yakalandiAt,
+    );
+    gonderimler = [for (final g in gonderimler) g.id == id ? yeni : g];
+    return yeni;
+  }
+
   @override
   Future<List<Oturum>> oturumlariGetir(String ogeId) async {
     _kontrol('oturumlariGetir');
     return const [];
   }
+}
+
+Gonderim ornekGonderim({
+  String id = 'g1',
+  String metin = 'Ali\'ye kitabı ver',
+  GonderimDurumu gonderim = GonderimDurumu.hatali,
+  YakalamaDurumu durum = YakalamaDurumu.bekliyor,
+  int deneme = 2,
+  String? sonHata = 'beyin.py zaman aşımı',
+}) {
+  return Gonderim(
+    id: id,
+    metin: metin,
+    durum: durum,
+    gonderim: gonderim,
+    yakalandiAt: DateTime.utc(2026, 11, 4, 10),
+    denemeSayisi: deneme,
+    sonHata: sonHata,
+  );
 }
 
 /// 2026-10-31 12:00 Istanbul time (habit day 2026-10-31).

@@ -124,6 +124,8 @@ class YakalaViewModel extends ChangeNotifier {
         );
       } else {
         await _repo.yakala(metin: metin, fotografKaynagi: fotografKaynagi, hedef: _hedef);
+        // The form is cleared for the next thought, and so is the project: the next one may be about another.
+        _hedef = null;
       }
       unawaited(_esitleyici.gonder());
       return true;

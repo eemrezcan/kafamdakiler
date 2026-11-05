@@ -39,7 +39,6 @@ public class BeyinOkumaTests : IDisposable
 
     [Theory]
     [InlineData("projects/kitap-kulubu/notlar/takvim-kutuphanesi.md")]
-    [InlineData("kisisel/plan-2026-11-03.md")]
     [InlineData("gelen/2026-11-03-1840-kitap-onerisi.md")]
     [InlineData("ogrenme/okul/veri-yapilari-ozet.md")]
     [InlineData("etiketler.md")]
@@ -68,6 +67,10 @@ public class BeyinOkumaTests : IDisposable
     [InlineData("projects/kitap-kulubu/index.md ")]
     [InlineData("-x.md")]
     [InlineData("finans/ham/ekstre.md")]
+    [InlineData("finans/abonelikler.md")]
+    [InlineData("kisisel/plan-2026-11-03.md")]
+    [InlineData("kisisel/gorevler/dis-randevusu-al.md")]
+    [InlineData("KISISEL/tarihler.md")]
     [InlineData("FINANS/HAM/ekstre.md")]
     [InlineData("file:///etc/passwd.md")]
     [InlineData("~/brain/x.md")]
@@ -262,9 +265,9 @@ public class BeyinOkumaTests : IDisposable
     [Fact]
     public async Task Not_MarkedHidden_Is404_EvenIfTheBrainSentIt()
     {
-        _beyin.Cikti("""{"yol": "kisisel/x.md", "baslik": "X", "ustbilgi": {"gizli": true, "tags": ["a"]}, "govde": "sir"}""");
+        _beyin.Cikti("""{"yol": "projects/a/x.md", "baslik": "X", "ustbilgi": {"gizli": true, "tags": ["a"]}, "govde": "sir"}""");
 
-        var (durum, govde) = await Oku(await BeyinOkuma.Not("kisisel/x.md", Bagli(), Gunluk, Ct), Ct);
+        var (durum, govde) = await Oku(await BeyinOkuma.Not("projects/a/x.md", Bagli(), Gunluk, Ct), Ct);
 
         Assert.Equal(404, durum);
         Assert.DoesNotContain("sir", govde.ToString());
@@ -314,5 +317,103 @@ public class BeyinOkumaTests : IDisposable
         Assert.Equal(["g"], govde.GetProperty("geciken").EnumerateArray().Select(g => g.GetProperty("kimlik").GetString()).ToArray());
         Assert.DoesNotContain("kisisel/plan.md", govde.ToString());
         Assert.DoesNotContain("Gizli", govde.ToString());
+    }
+
+    // The closed folders (finans/, kisisel/): nothing from them leaves, wherever the brain mentions a path.
+
+    [Fact]
+    public async Task Ara_DropsHitsFromTheClosedFolders()
+    {
+        _beyin.Cikti("""
+            [{"yol": "projects/a/notlar/n.md", "baslik": "Açık", "alan": "projects", "alinti": "a"},
+             {"yol": "kisisel/plan-2026-11-03.md", "baslik": "Plan", "alan": "kisisel", "alinti": "sir"},
+             {"yol": "finans/abonelikler.md", "baslik": "Abonelikler", "alan": "finans", "alinti": "sir"},
+             {"yol": "Finans/Ham/x.md", "baslik": "Büyük harf", "alinti": "sir"}]
+            """);
+
+        var (durum, govde) = await Oku(await BeyinOkuma.Ara("a", null, null, Bagli(), Gunluk, Ct), Ct);
+
+        Assert.Equal(200, durum);
+        Assert.Equal(["projects/a/notlar/n.md"], govde.EnumerateArray().Select(s => s.GetProperty("yol").GetString()).ToArray());
+        Assert.DoesNotContain("sir", govde.ToString());
+    }
+
+    [Fact]
+    public async Task Ara_SnippetComesAsPlainText()
+    {
+        _beyin.Cikti("""[{"yol": "a/b.md", "baslik": "B", "alinti": "# Başlık ## 2026-11-03 · **Kalın** ve [bağlantı](http://x.y) - [x] 20 sayfa ^c4d957"}]""");
+
+        var (_, govde) = await Oku(await BeyinOkuma.Ara("b", null, null, Bagli(), Gunluk, Ct), Ct);
+
+        Assert.Equal("Başlık 2026-11-03 · Kalın ve bağlantı 20 sayfa", govde[0].GetProperty("alinti").GetString());
+    }
+
+    [Fact]
+    public async Task Proje_InAClosedFolder_Is404()
+    {
+        _beyin.Cikti("""{"kimlik": "a", "baslik": "A", "yol": "kisisel/a/index.md", "durum": "sir", "acik_gorevler": [], "son_gunluk": []}""");
+
+        var (durum, govde) = await Oku(await BeyinOkuma.Proje("a", Bagli(), Gunluk, Ct), Ct);
+
+        Assert.Equal(404, durum);
+        Assert.DoesNotContain("sir", govde.ToString());
+    }
+
+    [Fact]
+    public async Task Proje_DropsTasksAndProjectsFromTheClosedFolders()
+    {
+        _beyin.Cikti("""
+            {"kimlik": "a", "baslik": "A", "yol": "projects/a/index.md", "durum": "d",
+             "acik_gorevler": [{"kimlik": "g1", "baslik": "Açık", "durum": "aktif", "yol": "projects/a/gorevler/g1.md"},
+                               {"kimlik": "g2", "baslik": "Kişisel", "durum": "aktif", "yol": "kisisel/gorevler/dis-randevusu-al.md"},
+                               {"kimlik": "g3", "baslik": "Finans", "durum": "aktif", "yol": "finans/borc.md"}],
+             "son_gunluk": []}
+            """);
+        var (_, proje) = await Oku(await BeyinOkuma.Proje("a", Bagli(), Gunluk, Ct), Ct);
+        Assert.Equal(["g1"], proje.GetProperty("acikGorevler").EnumerateArray().Select(g => g.GetProperty("kimlik").GetString()).ToArray());
+
+        _beyin.Cikti("""
+            [{"kimlik": "a", "baslik": "A", "yol": "projects/a/index.md"},
+             {"kimlik": "k", "baslik": "K", "yol": "kisisel/k/index.md"}]
+            """);
+        var (_, liste) = await Oku(await BeyinOkuma.Projeler(Bagli(), Gunluk, Ct), Ct);
+        Assert.Equal(["a"], liste.EnumerateArray().Select(p => p.GetProperty("kimlik").GetString()).ToArray());
+    }
+
+    [Fact]
+    public async Task Gun_DropsOverdueTasksFromTheClosedFolders()
+    {
+        _beyin.Cikti("""
+            {"tarih": "2026-11-03", "plan_var": true, "bolumler": [],
+             "geciken": [{"kimlik": "g", "baslik": "Açık", "yol": "projects/p/gorevler/g.md", "gun": 2},
+                         {"kimlik": "h", "baslik": "Kişisel", "yol": "kisisel/gorevler/dis-randevusu-al.md", "gun": 2}]}
+            """);
+
+        var (_, govde) = await Oku(await BeyinOkuma.Gun("2026-11-03", Bagli(), Gunluk, Ct), Ct);
+
+        Assert.Equal(["g"], govde.GetProperty("geciken").EnumerateArray().Select(g => g.GetProperty("kimlik").GetString()).ToArray());
+    }
+
+    // The plain-text snippet
+
+    [Theory]
+    [InlineData("# Başlık", "Başlık")]
+    [InlineData("## Durum Okuma listesi sayfası bitti. ## Sıradaki adım Buluşma", "Durum Okuma listesi sayfası bitti. Sıradaki adım Buluşma")]
+    [InlineData("**kalın** ve *italik* ve __altı__ ve `kod` ve ~~çizili~~", "kalın ve italik ve altı ve kod ve çizili")]
+    [InlineData("[[proje/not|Görünen ad]] ve [[düz not]]", "Görünen ad ve düz not")]
+    [InlineData("![resim](a.png) [bağ](http://x)", "resim bağ")]
+    [InlineData("…~30dk ^10a508 - [x] 20 sayfa kitap ^c4d957", "…~30dk 20 sayfa kitap")]
+    [InlineData("> alıntı satırı", "alıntı satırı")]
+    [InlineData("<b>kalın</b> yazı", "kalın yazı")]
+    [InlineData("C# dili, snake_case_ad, a-b ve 5 - 3", "C# dili, snake_case_ad, a-b ve 5 3")]
+    [InlineData("  çok   boşluk  var  ", "çok boşluk var")]
+    public void DuzMetin_TakesTheMarksOut_AndKeepsTheWords(string girdi, string beklenen) =>
+        Assert.Equal(beklenen, DuzMetin.Temizle(girdi));
+
+    [Fact]
+    public void DuzMetin_LeavesNullAndEmptyAlone()
+    {
+        Assert.Null(DuzMetin.Temizle(null));
+        Assert.Equal("", DuzMetin.Temizle(""));
     }
 }

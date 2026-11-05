@@ -2491,3 +2491,53 @@ textarea.form-control {
     transition: none;
   }
 }
+
+/* ----- Yönetim (Sahip panel): the Asistan's permissions, the brain, the sending queue ----- */
+
+.kd-yonetim-blok {
+  max-width: 48rem;
+  margin-bottom: 2rem;
+}
+
+.kd-izin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--kd-line);
+}
+
+.kd-izin form {
+  margin: 0;
+}
+
+.kd-izin-metin {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.kd-izin .kd-status {
+  margin: 0;
+}
+
+.kd-status.is-hata {
+  border-color: var(--kd-danger);
+  color: var(--kd-danger);
+}
+
+.kd-yonetim-hata {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.kd-yonetim-blok .kd-capture {
+  flex-wrap: wrap;
+}
+
+.kd-yonetim-blok .kd-capture form {
+  margin: 0;
+}

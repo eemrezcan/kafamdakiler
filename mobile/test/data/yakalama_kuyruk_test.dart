@@ -308,6 +308,43 @@ void main() {
       expect(await esitleyici.bekleyenler(reddedilenler: true), isEmpty);
     });
 
+    test('a 409 "being sent to the brain right now" keeps the entry queued; it goes through on the next try', () async {
+      var gonderiliyor = true;
+      kur((istek) {
+        if (istek.method == 'GET') return jsonYanit(200, [_sunucuYakalama('y1')]);
+        if (!gonderiliyor) return istek.method == 'DELETE' ? ResponseBody.fromString('', 204) : jsonYanit(200, _sunucuYakalama('y1'));
+        return jsonYanit(409, {'title': 'Çakışma', 'detail': 'Yakalama şu an beyne gönderiliyor; birazdan tekrar dene.'});
+      });
+      await repo.listele();
+      await repo.sil('y1');
+
+      expect(await esitleyici.gonder(), 0);
+      expect(await esitleyici.bekleyenler(), hasLength(1), reason: 'still waiting, not refused');
+      expect(await esitleyici.reddedilenler(), isEmpty);
+
+      gonderiliyor = false;
+      expect(await esitleyici.gonder(), 1);
+      expect(await esitleyici.bekleyenler(reddedilenler: true), isEmpty);
+    });
+
+    test('the same 409 on an edit keeps the edit queued too', () async {
+      var gonderiliyor = true;
+      kur((istek) {
+        if (istek.method == 'GET') return jsonYanit(200, [_sunucuYakalama('y1')]);
+        return gonderiliyor
+            ? jsonYanit(409, {'title': 'Çakışma', 'detail': 'Yakalama şu an beyne gönderiliyor; birazdan tekrar dene.'})
+            : jsonYanit(200, _sunucuYakalama('y1', metin: 'yeni'));
+      });
+      final sunucudaki = (await repo.listele()).liste.single;
+      await repo.guncelle(sunucudaki, metin: 'yeni');
+
+      expect(await esitleyici.gonder(), 0);
+      expect(await esitleyici.reddedilenler(), isEmpty);
+
+      gonderiliyor = false;
+      expect(await esitleyici.gonder(), 1);
+    });
+
     test('a DELETE answered 409 comes back to the list with the reason', () async {
       kur((istek) => istek.method == 'GET' ? jsonYanit(200, [_sunucuYakalama('y1')]) : jsonYanit(409, {'title': 'x'}));
       await repo.listele();

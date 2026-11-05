@@ -93,7 +93,8 @@ public static class YakalamaIslemleri
         }
     }
 
-    private const string GonderiliyorMesaji = "Yakalama şu an beyne gönderiliyor; birazdan tekrar dene.";
+    // The mobile app tells this 409 ("try again later") from the permanent ones by this wording, so keep "gönderiliyor" in it.
+    internal const string GonderiliyorMesaji = "Yakalama şu an beyne gönderiliyor; birazdan tekrar dene.";
 
     private static Task<Sonuc?> FotografHatasi(AppDbContext db, Guid? fotografId, Guid? kendisi, CancellationToken ct) =>
         FotografKurali.HataAsync(db, fotografId, null, kendisi, ct);

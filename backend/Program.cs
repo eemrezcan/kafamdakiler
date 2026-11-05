@@ -7,6 +7,7 @@ using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.OpenApi;
 using Kafamdakiler.Yakalamalar;
+using Kafamdakiler.Yonetim;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +32,11 @@ builder.Services.AddAuthorizationBuilder()
     // Challenge with the cookie scheme so the browser is redirected to the login and access denied pages.
     .AddPolicy(OwnerPolicy, policy => policy
         .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme)
+        .RequireRole(SeedData.OwnerRole))
+    // /api/yonetim: the Sahip role only, whatever permissions anyone holds. Bearer token.
+    .AddPolicy(YonetimPolicies.Sahip, policy => policy
+        .AddAuthenticationSchemes(IdentityConstants.BearerScheme)
+        .RequireAuthenticatedUser()
         .RequireRole(SeedData.OwnerRole))
     // API policies: the Sahip role or the matching `izin` claim (K-0009). Bearer token, so no redirects.
     .AddPolicy(AliskanlikPolicies.Oku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku], IdentityConstants.BearerScheme))
@@ -67,6 +73,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddIdentityApiEndpoints<IdentityUser<Guid>>()
     .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<AppDbContext>();
+
+// The `izin` claims are read from the database on every request, not from the token (K-0009 eki).
+builder.Services.AddScoped<IClaimsTransformation, IzinleriVeritabanindanOku>();
 
 // Must come after AddIdentityApiEndpoints, which sets its own LoginPath (/Account/Login).
 builder.Services.ConfigureApplicationCookie(options =>
@@ -149,6 +158,7 @@ app.MapOgeEndpoints();
 app.MapDosyaEndpoints();
 app.MapYakalamaEndpoints();
 app.MapBeyinEndpoints();
+app.MapYonetimEndpoints();
 
 app.Run();
 
@@ -167,3 +177,6 @@ static void IzinPolicy(AuthorizationPolicyBuilder policy, string[] izinler, para
     .RequireAuthenticatedUser()
     .RequireAssertion(context =>
         context.User.IsInRole(SeedData.OwnerRole) || izinler.Any(izin => context.User.HasClaim(AliskanlikPolicies.IzinClaim, izin)));
+
+// The integration tests start the app through this class.
+public partial class Program;

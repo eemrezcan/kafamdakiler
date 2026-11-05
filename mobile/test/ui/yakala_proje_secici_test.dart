@@ -91,6 +91,33 @@ void main() {
     expect(govde['metin'], 'takvim için renk sor');
   });
 
+  testWidgets('the picked project is cleared after each save: the next capture starts without one', (tester) async {
+    await cevrimdisiHazirla(tester);
+    await goster(tester);
+    await tester.tap(find.text('Proje (isteğe bağlı)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kitap Kulübü Sitesi'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField), 'birinci');
+    await tester.pump();
+    await tester.tap(find.text('Kaydet'));
+    await gercekZaman(tester);
+
+    expect(find.text('Proje (isteğe bağlı)'), findsOneWidget, reason: 'the button is back to "no project"');
+    expect(find.byTooltip('Projeyi kaldır'), findsNothing);
+
+    await tester.enterText(find.byType(TextFormField), 'ikinci');
+    await tester.pump();
+    await tester.tap(find.text('Kaydet'));
+    await gercekZaman(tester);
+
+    final satirlar = (await tester.runAsync(() => ortam.db.select(ortam.db.bekleyenIslemler).get()))!;
+    final govdeler = [for (final s in satirlar) jsonDecode(s.govde) as Map<String, dynamic>];
+    expect(govdeler.firstWhere((g) => g['metin'] == 'birinci')['hedef'], 'projects/kitap-kulubu');
+    expect(govdeler.firstWhere((g) => g['metin'] == 'ikinci').containsKey('hedef'), isFalse);
+  });
+
   testWidgets('no project is the default: the capture carries no Hedef', (tester) async {
     await cevrimdisiHazirla(tester);
     await goster(tester);

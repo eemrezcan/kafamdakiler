@@ -16,6 +16,7 @@ const _yonetimRotalari = [
   '/oge/o1/duzenle',
   '/yakala',
   '/yakalama/y1/duzenle',
+  '/yonetim',
 ];
 
 const _herkesinRotalari = [

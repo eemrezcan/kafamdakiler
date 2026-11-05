@@ -84,10 +84,12 @@ public static partial class BeyinOkuma
     {
         var bekleyen = await db.Yakalamalar.CountAsync(y => y.Durum == YakalamaDurumu.Bekliyor, ct);
         var hatali = await db.Yakalamalar.CountAsync(y => y.Durum == YakalamaDurumu.Bekliyor && y.SonHata != null, ct);
-        // The folder name only: the full path is the server's business.
-        var vault = beyin.Bagli ? Path.GetFileName(Path.TrimEndingDirectorySeparator(ayar.Vault)) : null;
-        return Results.Ok(new BeyinDurumDto(beyin.Bagli, vault, bekleyen, hatali));
+        return Results.Ok(new BeyinDurumDto(beyin.Bagli, VaultAdi(beyin, ayar), bekleyen, hatali));
     }
+
+    // The folder name only: the full path is the server's business.
+    internal static string? VaultAdi(BeyinIstemcisi beyin, BeyinAyari ayar) =>
+        beyin.Bagli ? Path.GetFileName(Path.TrimEndingDirectorySeparator(ayar.Vault)) : null;
 
     public static Task<IResult> Projeler(BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         CalistirAsync(beyin, log, ["proje", "liste"], null, ProjeListesi, ct);
@@ -143,16 +145,16 @@ public static partial class BeyinOkuma
     // Conversions: beyin.py's JSON -> our DTOs. A missing required field is an InvalidDataException (a 502).
 
     private static object ProjeListesi(JsonElement veri) =>
-        Dizi(veri).Where(Gorunur).Select(p => new ProjeOzetDto(Gerekli(p, "kimlik"), Gerekli(p, "baslik"))).ToList();
+        Dizi(veri).Where(Gorunur).Where(AcikYol).Select(p => new ProjeOzetDto(Gerekli(p, "kimlik"), Gerekli(p, "baslik"))).ToList();
 
     private static object ProjeAyrintisi(JsonElement p)
     {
-        if (!Gorunur(p))
+        if (!Gorunur(p) || !AcikYol(p))
             throw new GizliKayit();
 
         return new ProjeDto(
             Gerekli(p, "kimlik"), Gerekli(p, "baslik"), Metin(p, "durum"), Metin(p, "siradaki_adim"),
-            DiziAlani(p, "acik_gorevler").Where(Gorunur).Select(g => new ProjeGorevDto(
+            DiziAlani(p, "acik_gorevler").Where(Gorunur).Where(AcikYol).Select(g => new ProjeGorevDto(
                 Gerekli(g, "kimlik"), Gerekli(g, "baslik"), Metin(g, "durum"), Tarih(g, "bitis"), Metin(g, "oncelik"), Metin(g, "sonraki_adim"))).ToList(),
             DiziAlani(p, "son_gunluk").Select(s => new GunlukSatiriDto(Metin(s, "zaman"), Metin(s, "baslik"), Metin(s, "metin"))).ToList());
     }
@@ -165,15 +167,15 @@ public static partial class BeyinOkuma
             DiziAlani(b, "maddeler").Where(Gorunur).Select(m => new BeyinGunMaddesiDto(
                 Gerekli(m, "id"), Gerekli(m, "baslik"), Metin(m, "durum"), Sayi(m, "tahmin_dk"), Sayi(m, "sure_dk"),
                 Metin(m, "proje"), Metin(m, "gorev"))).ToList())).ToList(),
-        DiziAlani(g, "geciken").Where(Gorunur).Select(x => new GecikenGorevDto(
+        DiziAlani(g, "geciken").Where(Gorunur).Where(AcikYol).Select(x => new GecikenGorevDto(
             Gerekli(x, "kimlik"), Gerekli(x, "baslik"), Tarih(x, "bitis"), Sayi(x, "gun"), Metin(x, "proje"), Metin(x, "oncelik"))).ToList(),
         g.TryGetProperty("toplam", out var t) && t.ValueKind == JsonValueKind.Object
             ? new BeyinGunToplamiDto(Sayi(t, "madde") ?? 0, Sayi(t, "yapildi") ?? 0, Sayi(t, "acik") ?? 0)
             : null);
 
     private static object AramaSonuclari(JsonElement veri) =>
-        Dizi(veri).Where(Gorunur).Select(s => new AramaSonucuDto(
-            Gerekli(s, "yol"), Metin(s, "baslik") ?? Gerekli(s, "yol"), Metin(s, "proje"), Metin(s, "alan"), Metin(s, "alinti"))).ToList();
+        Dizi(veri).Where(Gorunur).Where(AcikYol).Select(s => new AramaSonucuDto(
+            Gerekli(s, "yol"), Metin(s, "baslik") ?? Gerekli(s, "yol"), Metin(s, "proje"), Metin(s, "alan"), DuzMetin.Temizle(Metin(s, "alinti")))).ToList();
 
     private static object NotAyrintisi(JsonElement n)
     {
@@ -192,6 +194,10 @@ public static partial class BeyinOkuma
     // (`gizli` present and anything but false hides it; the brain already leaves hidden ones out.)
     private static bool Gorunur(JsonElement kayit) =>
         !kayit.TryGetProperty("gizli", out var g) || g.ValueKind == JsonValueKind.False || g.ValueKind == JsonValueKind.Null;
+
+    // Whatever lives in `finans/` or `kisisel/` never leaves through this API, wherever it shows up (a search hit,
+    // a project's task, an overdue task). A record that names no path is left alone: the day plan has none.
+    private static bool AcikYol(JsonElement kayit) => !NotYolu.Kapali(Metin(kayit, "yol"));
 
     private static IEnumerable<JsonElement> Dizi(JsonElement e) =>
         e.ValueKind == JsonValueKind.Array ? e.EnumerateArray() : throw new InvalidDataException("liste bekleniyordu");
@@ -218,7 +224,7 @@ public static partial class BeyinOkuma
 }
 
 // The note path the API accepts (the brain checks again, this is the first lock): relative, ends in .md, no ".."
-// and no dot-folders such as .beyin, and not the raw finance folder (the brain's own rule, kept here too).
+// and no dot-folders such as .beyin, and not in the closed folders (finance and personal notes stay in the brain).
 public static partial class NotYolu
 {
     public const int EnUzun = 300;
@@ -227,8 +233,11 @@ public static partial class NotYolu
     [GeneratedRegex(@"^[\p{L}\p{N}][\p{L}\p{N} _-]*(/[\p{L}\p{N}][\p{L}\p{N} _-]*)*\.md\z", RegexOptions.CultureInvariant)]
     private static partial Regex Kalip();
 
+    private static readonly string[] KapaliKlasorler = ["finans/", "kisisel/"];
+
+    public static bool Kapali(string? yol) =>
+        yol is not null && KapaliKlasorler.Any(k => yol.StartsWith(k, StringComparison.OrdinalIgnoreCase));
+
     public static bool Gecerli(string? yol) =>
-        yol is { Length: > 0 and <= EnUzun }
-        && Kalip().IsMatch(yol)
-        && !yol.StartsWith("finans/ham/", StringComparison.OrdinalIgnoreCase);
+        yol is { Length: > 0 and <= EnUzun } && Kalip().IsMatch(yol) && !Kapali(yol);
 }

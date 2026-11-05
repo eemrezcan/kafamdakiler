@@ -21,6 +21,9 @@ public sealed class TestVeritabani : IAsyncLifetime
 
     public AppDbContext Db { get; private set; } = null!;
 
+    // Connection string of this test's own database (for tests that start the whole app on it).
+    public string Baglanti => _baglanti ?? throw new InvalidOperationException("Not initialized.");
+
     public DosyaDeposu Depo { get; private set; } = null!;
 
     public async ValueTask InitializeAsync()

@@ -1,0 +1,114 @@
+@page
+@using Kafamdakiler.Yonetim
+@model Kafamdakiler.Pages.Yonetim.IndexModel
+@{
+    ViewData["Title"] = "Yönetim";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Asistan, beyin ve gönderim</p>
+        <h1 class="kd-page-title">Yönetim</h1>
+    </div>
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+<section class="kd-yonetim-blok" aria-labelledby="izinler-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="izinler-baslik">Asistan'ın izinleri</h2>
+    <p class="kd-muted">Kapatılan izin, Asistan'ın bir sonraki isteğinde etkili olur; elindeki token aynı kalsa da 403 alır.</p>
+
+    @foreach (var izin in Model.IzinListesi)
+    {
+        <div class="kd-izin">
+            <div class="kd-izin-metin">
+                <code>@izin.Izin</code>
+                <span class="kd-muted">@izin.Aciklama</span>
+            </div>
+            <span class="kd-status @(izin.Acik ? "is-bitti" : "is-birakildi")">@(izin.Acik ? "Açık" : "Kapalı")</span>
+            <form method="post" asp-page-handler="Izin">
+                <input type="hidden" name="izin" value="@izin.Izin" />
+                <input type="hidden" name="acik" value="@((!izin.Acik).ToString().ToLowerInvariant())" />
+                <button type="submit" class="btn @(izin.Acik ? "btn-outline-primary" : "btn-primary")">@(izin.Acik ? "Kapat" : "Aç")</button>
+            </form>
+        </div>
+    }
+</section>
+
+<section class="kd-yonetim-blok" aria-labelledby="oturum-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="oturum-baslik">Asistan'ın oturumları</h2>
+    <p class="kd-muted">
+        Bu, Asistan'ın yenileme (refresh) token'ını geçersiz kılar; süresi dolunca yeniden giriş yapması gerekir.
+        Elindeki erişim token'ı en çok 1 saat çalışmaya devam eder; hemen kesmek için izinleri kapat.
+    </p>
+    <form method="post" asp-page-handler="OturumlariKapat"
+          onsubmit="return confirm('Asistan yeniden giriş yapmak zorunda kalacak. Emin misin?');">
+        <button type="submit" class="btn btn-outline-primary">Asistan'ın oturumlarını kapat</button>
+    </form>
+</section>
+
+<section class="kd-yonetim-blok" aria-labelledby="beyin-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="beyin-baslik">Beyin</h2>
+    <dl class="kd-facts">
+        <div>
+            <dt>Bağlantı</dt>
+            <dd>@(Model.BeyinDurumu.Bagli ? "Bağlı" : "Bağlı değil")</dd>
+        </div>
+        <div>
+            <dt>Vault</dt>
+            <dd>@(Model.BeyinDurumu.Vault ?? "-")</dd>
+        </div>
+        <div>
+            <dt>Bekleyen yakalama</dt>
+            <dd>@Model.BeyinDurumu.BekleyenYakalama</dd>
+        </div>
+        <div>
+            <dt>İlgi isteyen</dt>
+            <dd>@Model.BeyinDurumu.HataliYakalama</dd>
+        </div>
+    </dl>
+</section>
+
+<section class="kd-yonetim-blok" aria-labelledby="gonderim-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="gonderim-baslik">Takılı ya da hatalı gönderimler</h2>
+
+    @if (Model.Kuyruk.Count == 0)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Takılı gönderim yok.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var y in Model.Kuyruk)
+        {
+            <article class="kd-capture kd-c-violet" id="y-@y.Id">
+                <div class="kd-capture-body">
+                    <p class="kd-capture-text @(string.IsNullOrEmpty(y.Metin) ? "is-empty" : "")">@(string.IsNullOrEmpty(y.Metin) ? "Fotoğraf" : y.Metin)</p>
+                    <p class="kd-capture-meta">
+                        <span class="kd-status is-@(y.Gonderim == GonderimDurumu.Takili ? "birakildi" : "hata")">@(y.Gonderim == GonderimDurumu.Takili ? "Takılı" : "Hatalı")</span>
+                        <span>@y.DenemeSayisi deneme</span>
+                        @if (y.SonDenemeAt is { } son)
+                        {
+                            <time datetime="@son.ToString("o")">@son.ToLocalTime().ToString("dd.MM HH:mm")</time>
+                        }
+                    </p>
+                    @if (y.SonHata is not null)
+                    {
+                        <p class="kd-muted kd-yonetim-hata">@y.SonHata</p>
+                    }
+                    @if (y.Gonderim == GonderimDurumu.Takili)
+                    {
+                        <p class="kd-muted kd-yonetim-hata">Sonuç belirsiz: kart beyinde olabilir. Yeniden denemeden önce beynin gelen kutusuna bak.</p>
+                    }
+                </div>
+                <form method="post" asp-page-handler="YenidenDene" asp-route-id="@y.Id">
+                    <button type="submit" class="btn btn-outline-primary">Yeniden dene</button>
+                </form>
+            </article>
+        }
+    }
+</section>

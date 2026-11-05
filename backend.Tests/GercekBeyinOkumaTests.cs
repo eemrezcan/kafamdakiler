@@ -121,6 +121,23 @@ public sealed class GercekBeyinOkumaTests : IDisposable
 
     private static int EnCok() => BeyinOkuma.EnCokSonuc;
 
+    // finans/ and kisisel/ are closed to the API: the brain does find them, the answer must not carry them.
+    [Fact]
+    public async Task Ara_NeverReturnsTheClosedFolders_EvenWhenTheBrainFindsThem()
+    {
+        var beyin = Hazirla();
+
+        var ham = await beyin.CalistirAsync(["ara", "--limit=50"], Ct, ["kitap"]);
+        Assert.True(ham.Basarili);
+        Assert.Contains(ham.Veri!.Value.EnumerateArray(), e => e.GetProperty("yol").GetString()!.StartsWith("kisisel/"));
+
+        var (durum, govde) = await Oku(BeyinOkuma.Ara("kitap", null, EnCok(), beyin, Gunluk, Ct));
+
+        Assert.Equal(200, durum);
+        Assert.NotEmpty(Alan(govde, "yol"));
+        Assert.DoesNotContain(Alan(govde, "yol"), y => y.StartsWith("kisisel/") || y.StartsWith("finans/"));
+    }
+
     [Fact]
     public async Task Ara_QueryThatLooksLikeAnOption_IsJustText()
     {
@@ -144,7 +161,6 @@ public sealed class GercekBeyinOkumaTests : IDisposable
 
         foreach (var yol in new[]
                  {
-                     "kisisel/gizli-not.md",
                      "projects/kitap-kulubu/notlar/gizli-not-2.md",
                      "projects/gizli-proje/index.md",
                      "projects/gizli-proje/notlar/sir.md",
@@ -175,6 +191,9 @@ public sealed class GercekBeyinOkumaTests : IDisposable
     [InlineData("/etc/passwd")]
     [InlineData(".beyin/indeks.sqlite3")]
     [InlineData("finans/ham/ekstre.md")]
+    [InlineData("finans/abonelikler.md")]
+    [InlineData("kisisel/gizli-not.md")]
+    [InlineData("kisisel/plan-2026-11-03.md")]
     [InlineData("projects/../kisisel/gizli-not.md")]
     public async Task Not_BadPath_Is400_AndNeverReachesTheBrain(string yol)
     {

@@ -9,6 +9,7 @@ import '../data/repositories/esitleyici.dart';
 import '../data/repositories/kronometre_repository.dart';
 import '../data/repositories/kullanici_repository.dart';
 import '../data/repositories/yakalama_repository.dart';
+import '../data/services/api_service.dart';
 import '../ui/aliskanliklar/aliskanlik_detay_screen.dart';
 import '../ui/aliskanliklar/aliskanlik_detay_view_model.dart';
 import '../ui/aliskanliklar/aliskanlik_form_screen.dart';
@@ -43,6 +44,8 @@ import '../ui/yakalama/yakala_screen.dart';
 import '../ui/yakalama/yakala_view_model.dart';
 import '../ui/yakalama/yakalama_liste_screen.dart';
 import '../ui/yakalama/yakalama_liste_view_model.dart';
+import '../ui/yonetim/yonetim_screen.dart';
+import '../ui/yonetim/yonetim_view_model.dart';
 
 abstract final class Rotalar {
   static const bugun = '/';
@@ -54,6 +57,9 @@ abstract final class Rotalar {
   static const yakalamalar = '/yakalamalar';
   static const yakala = '/yakala';
   static const profil = '/profil';
+
+  /// The Sahip's management screen: opened from Profil, a full-screen page.
+  static const yonetim = '/yonetim';
   static const giris = '/giris';
 }
 
@@ -64,13 +70,15 @@ final _yonetimRotalari = [
   RegExp(r'^/oge/[^/]+/duzenle$'),
   RegExp(r'^/yakala$'),
   RegExp(r'^/yakalama/[^/]+/duzenle$'),
+  RegExp(r'^/yonetim$'),
 ];
 
 /// Where a visit to [konum] must be sent instead, or null to let it through.
 ///
 /// - Signed-out users only see the login screen.
-/// - The forms that create or change content (captures included) are for the
-///   Sahip role only; the route is blocked, not just the button hidden (M07).
+/// - The forms that create or change content (captures included) and the
+///   management screen are for the Sahip role only; the route is blocked, not
+///   just the button hidden (M07).
 String? yetkiYonlendirme(String konum, {required bool girisYapildi, required bool sahip}) {
   final girisEkraninda = konum == Rotalar.giris;
   if (!girisYapildi) return girisEkraninda ? null : Rotalar.giris;
@@ -171,6 +179,13 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
         builder: (context, state) => _sayfa(
           (c) => AliskanlikListeViewModel(repo: c.read<AliskanlikRepository>())..yukle(),
           (vm) => AliskanlikListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.yonetim,
+        builder: (context, state) => _sayfa(
+          (c) => YonetimViewModel(api: c.read<ApiService>())..yukle(),
+          (vm) => YonetimScreen(viewModel: vm),
         ),
       ),
       GoRoute(

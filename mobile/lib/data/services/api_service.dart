@@ -11,6 +11,7 @@ import '../models/giris.dart';
 import '../models/gun.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
+import '../models/yonetim.dart';
 import '../models/yakalama.dart';
 import 'token_depo.dart';
 import 'token_interceptor.dart';
@@ -214,6 +215,36 @@ class ApiService {
   Future<BeyinNotu> beyinNot(String yol) async {
     final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/not', queryParameters: {'yol': yol});
     return BeyinNotu.fromJson(yanit.data!);
+  }
+
+  // ---- Management (Sahip only, /api/yonetim) ----
+
+  Future<List<Izin>> izinleriGetir() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/yonetim/izinler');
+    return _liste(yanit, Izin.fromJson);
+  }
+
+  /// Opens or closes one permission of the Asistan; takes effect on its next request.
+  Future<Izin> izinAyarla(String izin, {required bool acik}) async {
+    final yanit = await _dio.put<Map<String, dynamic>>('/api/yonetim/izinler/$izin', data: {'acik': acik});
+    return Izin.fromJson(yanit.data!);
+  }
+
+  Future<YonetimBeyinDurumu> yonetimBeyinDurumu() async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/yonetim/beyin');
+    return YonetimBeyinDurumu.fromJson(yanit.data!);
+  }
+
+  /// Every capture, the ones that need a look first.
+  Future<List<Gonderim>> gonderimKuyrugu() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/yonetim/gonderim');
+    return _liste(yanit, Gonderim.fromJson);
+  }
+
+  /// 409 while the server is sending it right now, or once it left `bekliyor`.
+  Future<Gonderim> gonderimiYenidenDene(String id) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/yonetim/gonderim/$id/yeniden-dene');
+    return Gonderim.fromJson(yanit.data!);
   }
 
   // ---- Files ----

@@ -180,8 +180,8 @@ class Esitleyici extends ChangeNotifier {
   /// Sends the queue in order and returns how many entries were marked sent.
   ///
   /// - 2xx (including 200 for "this id already exists"): marked sent.
-  /// - No answer (offline, timeout), 401, 408, 429, 5xx: stop and keep the
-  ///   rest queued for the next call.
+  /// - No answer (offline, timeout), 401, 408, 429, 5xx, and the 409 "being sent
+  ///   to the brain right now": stop and keep the rest queued for the next call.
   /// - Any other 4xx: the server refused it for good; the reason is stored in
   ///   `hata` and the entry is skipped from now on.
   ///
@@ -213,7 +213,7 @@ class Esitleyici extends ChangeNotifier {
           } on DioException catch (e) {
             final kod = e.response?.statusCode;
             final kalici = kod != null && kod >= 400 && kod < 500 && kod != 401 && kod != 408 && kod != 429;
-            if (!kalici) break;
+            if (!kalici || _gonderiliyor(e)) break;
             await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
                 .write(BekleyenIslemlerCompanion(hata: Value('$kod: ${e.response?.data}')));
             degisti = true;
@@ -259,6 +259,13 @@ class Esitleyici extends ChangeNotifier {
         }
     }
   }
+
+  /// 409 "the capture is being sent to the brain right now": temporary, the same
+  /// entry works a moment later. The other 409s (the capture already left
+  /// `bekliyor`) stay permanent. The server's message carries the word "gönderiliyor"
+  /// (YakalamaIslemleri.GonderiliyorMesaji); a test on both sides keeps them in step.
+  static bool _gonderiliyor(DioException e) =>
+      e.response?.statusCode == 409 && '${e.response?.data}'.contains('gönderiliyor');
 
   /// Uploads the photo first (once), writes the returned id into the queued
   /// body, then sends the capture. A retry after a failed send finds the id in
