@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../data/models/beyin.dart';
 import '../../data/models/yakalama.dart';
+import '../../data/repositories/beyin_repository.dart';
 import '../../data/repositories/esitleyici.dart';
 import '../../data/repositories/yakalama_repository.dart';
 
@@ -11,10 +13,13 @@ import '../../data/repositories/yakalama_repository.dart';
 /// queue and only then asks the sender to try. Opening the screen makes no API
 /// call either; an edit reads the local copy of the capture.
 class YakalaViewModel extends ChangeNotifier {
-  YakalaViewModel({required this._repo, required this._esitleyici, this.duzenlenenId});
+  YakalaViewModel({required this._repo, required this._esitleyici, this._beyin, this.duzenlenenId});
 
   final YakalamaRepository _repo;
   final Esitleyici _esitleyici;
+
+  /// Where the project list comes from (the phone's copy); without it there is no project picker.
+  final BeyinRepository? _beyin;
 
   /// Capture being edited (null for a new one).
   final String? duzenlenenId;
@@ -32,6 +37,46 @@ class YakalaViewModel extends ChangeNotifier {
   String? _hata;
   String? get hata => _hata;
 
+  bool get projeSecici => _beyin != null;
+
+  /// The picked project hint (`projects/<kimlik>`), or null for none.
+  String? _hedef;
+  String? get hedef => _hedef;
+
+  /// The project list kept on the phone; the picker reads it, so it works offline.
+  List<ProjeOzet> _projeler = const [];
+  List<ProjeOzet> get projeler => _projeler;
+
+  /// Reads the phone's copy of the project list. No network.
+  Future<void> projeleriYukle() async {
+    if (_beyin == null) return;
+    final liste = await _beyin.yerelProjeler();
+    if (_atildi) return;
+    _projeler = liste;
+    notifyListeners();
+  }
+
+  bool _atildi = false;
+
+  @override
+  void dispose() {
+    _atildi = true;
+    super.dispose();
+  }
+
+  /// Asks the server for a newer project list (the picker's "Listeyi yenile"). False when it did not answer.
+  Future<bool> projeleriYenile() async {
+    if (_beyin == null) return false;
+    final tamam = await _beyin.projeleriYenile();
+    await projeleriYukle();
+    return tamam;
+  }
+
+  void hedefSec(String? hedef) {
+    _hedef = hedef;
+    notifyListeners();
+  }
+
   /// Edit mode: finds the capture on the phone.
   Future<void> yukle() async {
     _yukleniyor = true;
@@ -43,6 +88,8 @@ class YakalaViewModel extends ChangeNotifier {
       } else if (!_mevcut!.degistirilebilir) {
         _hata = 'Bu yakalama beyne gitti, artık değiştirilemez.';
         _mevcut = null;
+      } else {
+        _hedef = _mevcut!.hedef;
       }
     } finally {
       _yukleniyor = false;
@@ -67,9 +114,16 @@ class YakalaViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       if (duzenleme) {
-        await _repo.guncelle(_mevcut!, metin: metin, yeniFotografKaynagi: fotografKaynagi, fotografKaldir: fotografKaldir);
+        await _repo.guncelle(
+          _mevcut!,
+          metin: metin,
+          yeniFotografKaynagi: fotografKaynagi,
+          fotografKaldir: fotografKaldir,
+          hedef: _hedef,
+          hedefKaldir: _hedef == null,
+        );
       } else {
-        await _repo.yakala(metin: metin, fotografKaynagi: fotografKaynagi);
+        await _repo.yakala(metin: metin, fotografKaynagi: fotografKaynagi, hedef: _hedef);
       }
       unawaited(_esitleyici.gonder());
       return true;

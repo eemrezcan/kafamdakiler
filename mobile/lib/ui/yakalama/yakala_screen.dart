@@ -39,6 +39,13 @@ class _YakalaScreenState extends State<YakalaScreen> {
 
   YakalaViewModel get _vm => widget.viewModel;
 
+  @override
+  void initState() {
+    super.initState();
+    // The phone's copy of the project list: opening the screen makes no network call.
+    _vm.projeleriYukle();
+  }
+
   bool get _fotografVar =>
       _yeniFotograf != null ||
       (!_fotografKaldirildi && (_vm.mevcut?.fotografId != null || _vm.mevcut?.fotografYolu != null));
@@ -184,6 +191,10 @@ class _YakalaScreenState extends State<YakalaScreen> {
             },
           ),
           const SizedBox(height: 8),
+          if (_vm.projeSecici) ...[
+            _ProjeSecici(viewModel: _vm),
+            const SizedBox(height: 8),
+          ],
           Wrap(
             spacing: 8,
             children: [
@@ -216,6 +227,131 @@ class _YakalaScreenState extends State<YakalaScreen> {
                 : const Text('Kaydet'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The optional project hint of a capture: a button that shows the picked project
+/// (or "Proje seç") and opens the list kept on the phone, so it also works offline.
+class _ProjeSecici extends StatelessWidget {
+  const _ProjeSecici({required this.viewModel});
+
+  final YakalaViewModel viewModel;
+
+  static const _onEk = 'projects/';
+
+  /// The project's title when the phone's list knows it, else its id.
+  String _ad(String hedef) {
+    final kimlik = hedef.startsWith(_onEk) ? hedef.substring(_onEk.length) : hedef;
+    return viewModel.projeler.where((p) => p.kimlik == kimlik).firstOrNull?.baslik ?? kimlik;
+  }
+
+  Future<void> _ac(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => _ProjeListesi(
+        viewModel: viewModel,
+        onSec: (hedef) {
+          viewModel.hedefSec(hedef);
+          Navigator.pop(sheetContext);
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        final hedef = viewModel.hedef;
+        return Row(
+          children: [
+            Flexible(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: () => _ac(context),
+                icon: const Icon(LucideIcons.folder),
+                label: Text(hedef == null ? 'Proje (isteğe bağlı)' : _ad(hedef), overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            if (hedef != null)
+              IconButton(
+                tooltip: 'Projeyi kaldır',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: const Icon(LucideIcons.x),
+                onPressed: () => viewModel.hedefSec(null),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ProjeListesi extends StatelessWidget {
+  const _ProjeListesi({required this.viewModel, required this.onSec});
+
+  final YakalaViewModel viewModel;
+  final void Function(String? hedef) onSec;
+
+  Future<void> _yenile(BuildContext context) async {
+    final mesaj = ScaffoldMessenger.of(context);
+    final tamam = await viewModel.projeleriYenile();
+    if (!tamam) {
+      mesaj.showSnackBar(const SnackBar(content: Text('Sunucuya ulaşılamadı; telefondaki liste gösteriliyor.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return SafeArea(
+      child: ListenableBuilder(
+        listenable: viewModel,
+        builder: (context, _) {
+          final projeler = viewModel.projeler;
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  minTileHeight: 56,
+                  leading: const Icon(LucideIcons.folderX),
+                  title: const Text('Projesiz'),
+                  trailing: viewModel.hedef == null ? const Icon(LucideIcons.check) : null,
+                  onTap: () => onSec(null),
+                ),
+                for (final p in projeler)
+                  ListTile(
+                    minTileHeight: 56,
+                    leading: const Icon(LucideIcons.folder),
+                    title: Text(p.baslik),
+                    subtitle: Text(p.kimlik),
+                    trailing: viewModel.hedef == p.hedef ? const Icon(LucideIcons.check) : null,
+                    onTap: () => onSec(p.hedef),
+                  ),
+                if (projeler.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      'Telefonda proje listesi yok. İnternet varken "Listeyi yenile" ile al.',
+                      style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                TextButton.icon(
+                  onPressed: () => _yenile(context),
+                  icon: const Icon(LucideIcons.refreshCw),
+                  label: const Text('Listeyi yenile'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -76,25 +76,30 @@ class YakalamaRepository extends ChangeNotifier {
 
   /// Saves a new capture on the phone and queues it. Needs no network.
   /// [fotografKaynagi] is the picked file; a copy goes to the app's folder.
-  Future<void> yakala({String? metin, String? fotografKaynagi}) async {
+  ///
+  /// [hedef] is the optional project hint (`projects/<kimlik>`).
+  Future<void> yakala({String? metin, String? fotografKaynagi, String? hedef}) async {
     final yol = fotografKaynagi == null ? null : await _fotograflar.kopyala(fotografKaynagi);
     await _esitleyici.yakalamaKuyrugaAl(YakalamaGovde(
-      yaz: YakalamaYaz(id: _uuid.v7(), metin: _bosYap(metin), yakalandiAt: _simdi()),
+      yaz: YakalamaYaz(id: _uuid.v7(), metin: _bosYap(metin), hedef: _bosYap(hedef), yakalandiAt: _simdi()),
       fotografYolu: yol,
     ));
     notifyListeners();
   }
 
   /// Changes a capture that waits (on the phone or on the server). The
-  /// capture time and the target stay as they were.
+  /// capture time stays as it was.
   ///
   /// The photo is kept unless [yeniFotografKaynagi] replaces it or
-  /// [fotografKaldir] removes it.
+  /// [fotografKaldir] removes it. The target is kept unless [hedef] replaces it
+  /// or [hedefKaldir] removes it.
   Future<void> guncelle(
     YakalamaSatiri mevcut, {
     String? metin,
     String? yeniFotografKaynagi,
     bool fotografKaldir = false,
+    String? hedef,
+    bool hedefKaldir = false,
   }) async {
     String? fotografId = mevcut.fotografId;
     String? fotografYolu = mevcut.fotografYolu;
@@ -112,7 +117,7 @@ class YakalamaRepository extends ChangeNotifier {
           id: mevcut.id,
           metin: _bosYap(metin),
           fotografId: fotografId,
-          hedef: mevcut.hedef,
+          hedef: hedefKaldir ? null : (_bosYap(hedef) ?? mevcut.hedef),
           yakalandiAt: mevcut.yakalandiAt,
         ),
         fotografYolu: fotografYolu,

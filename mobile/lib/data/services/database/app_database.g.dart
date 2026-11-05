@@ -1727,6 +1727,264 @@ class YakalamaOnbellekCompanion extends UpdateCompanion<YakalamaOnbellekData> {
   }
 }
 
+class $ProjeOnbellekTable extends ProjeOnbellek
+    with TableInfo<$ProjeOnbellekTable, ProjeOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProjeOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'proje_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProjeOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProjeOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProjeOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+    );
+  }
+
+  @override
+  $ProjeOnbellekTable createAlias(String alias) {
+    return $ProjeOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class ProjeOnbellekData extends DataClass
+    implements Insertable<ProjeOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  const ProjeOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    return map;
+  }
+
+  ProjeOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return ProjeOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+    );
+  }
+
+  factory ProjeOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProjeOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+    };
+  }
+
+  ProjeOnbellekData copyWith({String? id, int? sira, String? govde}) =>
+      ProjeOnbellekData(
+        id: id ?? this.id,
+        sira: sira ?? this.sira,
+        govde: govde ?? this.govde,
+      );
+  ProjeOnbellekData copyWithCompanion(ProjeOnbellekCompanion data) {
+    return ProjeOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjeOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProjeOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde);
+}
+
+class ProjeOnbellekCompanion extends UpdateCompanion<ProjeOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<int> rowid;
+  const ProjeOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProjeOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<ProjeOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProjeOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<int>? rowid,
+  }) {
+    return ProjeOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProjeOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1743,6 +2001,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $YakalamaOnbellekTable yakalamaOnbellek = $YakalamaOnbellekTable(
     this,
   );
+  late final $ProjeOnbellekTable projeOnbellek = $ProjeOnbellekTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1754,6 +2013,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     kullaniciOnbellek,
     kronometreKayitlari,
     yakalamaOnbellek,
+    projeOnbellek,
   ];
 }
 
@@ -2900,6 +3160,181 @@ typedef $$YakalamaOnbellekTableProcessedTableManager =
       YakalamaOnbellekData,
       PrefetchHooks Function()
     >;
+typedef $$ProjeOnbellekTableCreateCompanionBuilder =
+    ProjeOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<int> rowid,
+    });
+typedef $$ProjeOnbellekTableUpdateCompanionBuilder =
+    ProjeOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<int> rowid,
+    });
+
+class $$ProjeOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $ProjeOnbellekTable> {
+  $$ProjeOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProjeOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProjeOnbellekTable> {
+  $$ProjeOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProjeOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProjeOnbellekTable> {
+  $$ProjeOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+}
+
+class $$ProjeOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProjeOnbellekTable,
+          ProjeOnbellekData,
+          $$ProjeOnbellekTableFilterComposer,
+          $$ProjeOnbellekTableOrderingComposer,
+          $$ProjeOnbellekTableAnnotationComposer,
+          $$ProjeOnbellekTableCreateCompanionBuilder,
+          $$ProjeOnbellekTableUpdateCompanionBuilder,
+          (
+            ProjeOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $ProjeOnbellekTable,
+              ProjeOnbellekData
+            >,
+          ),
+          ProjeOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$ProjeOnbellekTableTableManager(_$AppDatabase db, $ProjeOnbellekTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProjeOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProjeOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProjeOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProjeOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<int> rowid = const Value.absent(),
+              }) => ProjeOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProjeOnbellekTable, ProjeOnbellekData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ProjeOnbellekTable,
+                    ProjeOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProjeOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProjeOnbellekTable,
+      ProjeOnbellekData,
+      $$ProjeOnbellekTableFilterComposer,
+      $$ProjeOnbellekTableOrderingComposer,
+      $$ProjeOnbellekTableAnnotationComposer,
+      $$ProjeOnbellekTableCreateCompanionBuilder,
+      $$ProjeOnbellekTableUpdateCompanionBuilder,
+      (
+        ProjeOnbellekData,
+        BaseReferences<_$AppDatabase, $ProjeOnbellekTable, ProjeOnbellekData>,
+      ),
+      ProjeOnbellekData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2916,4 +3351,6 @@ class $AppDatabaseManager {
       $$KronometreKayitlariTableTableManager(_db, _db.kronometreKayitlari);
   $$YakalamaOnbellekTableTableManager get yakalamaOnbellek =>
       $$YakalamaOnbellekTableTableManager(_db, _db.yakalamaOnbellek);
+  $$ProjeOnbellekTableTableManager get projeOnbellek =>
+      $$ProjeOnbellekTableTableManager(_db, _db.projeOnbellek);
 }

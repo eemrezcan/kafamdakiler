@@ -40,16 +40,19 @@ Rol `GET /api/ben` ile okunur ve çevrimdışı açılış için saklanır. Seed
 
 ## Ekranlar
 
-Alt gezinme: **Bugün / Alışkanlıklar / Raf / Profil**.
+Alt gezinme: **Bugün / Projeler / Yakalamalar / Ara / Profil**. "Yakala" düğmesi (yalnız Sahip) her sekmede durur; klavye açıkken (arama alanı) gizlenir.
 
-- Bugün: planlı alışkanlıklar; tik, −/+, sayı girişi, kronometre, "Okumaya başla"
-- Alışkanlıklar: liste, detay (güç, seri, son 30 gün), form (yalnız Sahip)
-- Raf: Devam / Sıradaki / Bitti / Bırakıldı, öğe detayı, oturum geçmişi, öğe formu (yalnız Sahip)
-- Profil: e-posta, rol, çevrimdışı kuyruk, gönderilemeyen kayıtlar, çıkış
+- Bugün: üstte beynin gün planı (gün ileri ve geri, salt okunur; plan satırları, geciken görevler, toplam), altında bugünün alışkanlık kartları (tik, −/+, sayı girişi, kronometre, "Okumaya başla"). Biri açılamazsa öbürü çalışır.
+- Projeler: beynin projeleri; ayrıntıda durum, sıradaki adım, açık görevler, son günlük satırları
+- Yakalamalar: yakalama listesi; Yakala ekranında isteğe bağlı proje seçici (`Hedef` = `projects/<kimlik>`, düzenlerken de)
+- Ara: beyinde arama; sonuçtan not okuma ekranı (Markdown, `flutter_markdown_plus`; görseller ve bağlantılar açılmaz)
+- Profil: e-posta, rol, **Alışkanlıklar** (liste, detay: güç, seri, son 30 gün; form yalnız Sahip; raf: Devam / Sıradaki / Bitti / Bırakıldı, öğe detayı, oturum geçmişi), çevrimdışı kuyruk, gönderilemeyen kayıtlar, çıkış
+
+Beyin ekranları `/api/beyin` okur (K-0023). Sunucuda beyin ayarlı değilse (503) "Beyin bağlı değil", izin yoksa (403) "Beyni okuma iznin yok", internet yoksa "Çevrimdışısın" der; her birinde "Tekrar dene" vardır. Yalnız **proje listesi** telefonda saklanır (Yakala'nın proje seçicisi çevrimdışı da dolu gelir); her başarılı okumada ve girişte yenilenir, izin kapanınca (403) silinir. Öbür beyin ekranları internet ister.
 
 ## Çevrimdışı çalışma
 
-Günlük girişler (tik, sayı, kronometre, "nereye kadar") önce telefondaki SQLite veritabanına (drift) yazılır, ekran hemen güncellenir. Bekleyen kayıtlar bağlantı geri geldiğinde ve uygulama öne geldiğinde sunucuya gider. Sunucunun kalıcı olarak reddettiği kayıtlar Profil ekranında hatasıyla görünür. Alışkanlık/öğe oluşturma, düzenleme, silme ve fotoğraf yükleme çevrimiçi yapılır.
+Yakalamalar da aynı kuyruktan geçer (metin, fotoğraf, proje). Günlük girişler (tik, sayı, kronometre, "nereye kadar") önce telefondaki SQLite veritabanına (drift) yazılır, ekran hemen güncellenir. Bekleyen kayıtlar bağlantı geri geldiğinde ve uygulama öne geldiğinde sunucuya gider. Sunucunun kalıcı olarak reddettiği kayıtlar Profil ekranında hatasıyla görünür. Alışkanlık/öğe oluşturma, düzenleme, silme ve fotoğraf yükleme çevrimiçi yapılır.
 
 ## Kontroller
 

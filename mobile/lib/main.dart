@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -7,6 +9,7 @@ import 'config/app_config.dart';
 import 'config/app_theme.dart';
 import 'data/repositories/aliskanlik_repository.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/beyin_repository.dart';
 import 'data/repositories/esitleyici.dart';
 import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
@@ -33,6 +36,7 @@ Future<void> main() async {
   final aliskanliklar = AliskanlikRepository(api: api, db: db, esitleyici: esitleyici);
   final yakalamalar = YakalamaRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
+  final beyin = BeyinRepository(api: api, db: db);
   auth = AuthRepository(
     api: api,
     depo: depo,
@@ -50,7 +54,11 @@ Future<void> main() async {
   // The role is asked after every sign-in and at start (offline: cached role).
   var girisYapildiydi = false;
   void rolIcin() {
-    if (auth.girisYapildi && !girisYapildiydi) kullanici.yukle();
+    if (auth.girisYapildi && !girisYapildiydi) {
+      kullanici.yukle();
+      // Keeps the phone's project list (the capture screen's picker) fresh; quiet when offline or not allowed.
+      unawaited(beyin.projeleriYenile());
+    }
     girisYapildiydi = auth.girisYapildi;
   }
 
@@ -64,6 +72,7 @@ Future<void> main() async {
     esitleyici: esitleyici,
     aliskanliklar: aliskanliklar,
     yakalamalar: yakalamalar,
+    beyin: beyin,
     kronometre: KronometreRepository(db: db),
   ));
 }
@@ -77,6 +86,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.esitleyici,
     required this.aliskanliklar,
     required this.yakalamalar,
+    required this.beyin,
     required this.kronometre,
   });
 
@@ -86,6 +96,7 @@ class KafamdakilerApp extends StatefulWidget {
   final Esitleyici esitleyici;
   final AliskanlikRepository aliskanliklar;
   final YakalamaRepository yakalamalar;
+  final BeyinRepository beyin;
   final KronometreRepository kronometre;
 
   @override
@@ -123,6 +134,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.esitleyici),
         ChangeNotifierProvider.value(value: widget.aliskanliklar),
         ChangeNotifierProvider.value(value: widget.yakalamalar),
+        Provider.value(value: widget.beyin),
         Provider.value(value: widget.kronometre),
       ],
       child: MaterialApp.router(

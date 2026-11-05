@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../data/repositories/aliskanlik_repository.dart';
 import '../data/repositories/auth_repository.dart';
+import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/esitleyici.dart';
 import '../data/repositories/kronometre_repository.dart';
 import '../data/repositories/kullanici_repository.dart';
@@ -14,8 +15,12 @@ import '../ui/aliskanliklar/aliskanlik_form_screen.dart';
 import '../ui/aliskanliklar/aliskanlik_form_view_model.dart';
 import '../ui/aliskanliklar/aliskanlik_liste_screen.dart';
 import '../ui/aliskanliklar/aliskanlik_liste_view_model.dart';
+import '../ui/ara/ara_screen.dart';
+import '../ui/ara/ara_view_model.dart';
+import '../ui/ara/not_screen.dart';
 import '../ui/bugun/bugun_screen.dart';
 import '../ui/bugun/bugun_view_model.dart';
+import '../ui/bugun/gun_plani_view_model.dart';
 import '../ui/giris/giris_screen.dart';
 import '../ui/giris/giris_view_model.dart';
 import '../ui/oturum/kronometre_view_model.dart';
@@ -24,6 +29,9 @@ import '../ui/oturum/oturum_view_model.dart';
 import '../ui/oturum/sayac_kronometre_screen.dart';
 import '../ui/profil/profil_screen.dart';
 import '../ui/profil/profil_view_model.dart';
+import '../ui/projeler/proje_detay_screen.dart';
+import '../ui/projeler/proje_liste_screen.dart';
+import '../ui/projeler/proje_view_model.dart';
 import '../ui/raf/oge_detay_screen.dart';
 import '../ui/raf/oge_detay_view_model.dart';
 import '../ui/raf/oge_form_screen.dart';
@@ -38,7 +46,11 @@ import '../ui/yakalama/yakalama_liste_view_model.dart';
 
 abstract final class Rotalar {
   static const bugun = '/';
+
+  /// The habit list: opened from Profil, a full-screen page (not a tab).
   static const aliskanliklar = '/aliskanliklar';
+  static const projeler = '/projeler';
+  static const ara = '/ara';
   static const yakalamalar = '/yakalamalar';
   static const yakala = '/yakala';
   static const profil = '/profil';
@@ -99,18 +111,28 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           StatefulShellBranch(routes: [
             GoRoute(
               path: Rotalar.bugun,
-              builder: (context, state) => _sayfa(
-                (c) => BugunViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
-                (vm) => BugunScreen(viewModel: vm),
+              builder: (context, state) => MultiProvider(
+                providers: [
+                  ChangeNotifierProvider(
+                    create: (c) => BugunViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                  ),
+                  ChangeNotifierProvider(create: (c) => GunPlaniViewModel(repo: c.read<BeyinRepository>())..yukle()),
+                ],
+                child: Builder(
+                  builder: (context) => BugunScreen(
+                    viewModel: context.read<BugunViewModel>(),
+                    gunPlani: context.read<GunPlaniViewModel>(),
+                  ),
+                ),
               ),
             ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: Rotalar.aliskanliklar,
+              path: Rotalar.projeler,
               builder: (context, state) => _sayfa(
-                (c) => AliskanlikListeViewModel(repo: c.read<AliskanlikRepository>())..yukle(),
-                (vm) => AliskanlikListeScreen(viewModel: vm),
+                (c) => ProjeListeViewModel(repo: c.read<BeyinRepository>())..yukle(),
+                (vm) => ProjeListeScreen(viewModel: vm),
               ),
             ),
           ]),
@@ -120,6 +142,15 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
               builder: (context, state) => _sayfa(
                 (c) => YakalamaListeViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                 (vm) => YakalamaListeScreen(viewModel: vm),
+              ),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: Rotalar.ara,
+              builder: (context, state) => _sayfa(
+                (c) => AraViewModel(repo: c.read<BeyinRepository>()),
+                (vm) => AraScreen(viewModel: vm),
               ),
             ),
           ]),
@@ -136,9 +167,35 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
       ),
       // Full-screen pages above the tabs. `yeni` must come before `:id`.
       GoRoute(
+        path: Rotalar.aliskanliklar,
+        builder: (context, state) => _sayfa(
+          (c) => AliskanlikListeViewModel(repo: c.read<AliskanlikRepository>())..yukle(),
+          (vm) => AliskanlikListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: '/projeler/:kimlik',
+        builder: (context, state) => _sayfa(
+          (c) => ProjeDetayViewModel(repo: c.read<BeyinRepository>(), kimlik: state.pathParameters['kimlik']!)..yukle(),
+          (vm) => ProjeDetayScreen(viewModel: vm),
+        ),
+      ),
+      // A note, by its vault path: /not?yol=projects/kitap-kulubu/notlar/x.md
+      GoRoute(
+        path: '/not',
+        builder: (context, state) => _sayfa(
+          (c) => NotViewModel(repo: c.read<BeyinRepository>(), yol: state.uri.queryParameters['yol'] ?? '')..yukle(),
+          (vm) => NotScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
         path: Rotalar.yakala,
         builder: (context, state) => _sayfa(
-          (c) => YakalaViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>()),
+          (c) => YakalaViewModel(
+            repo: c.read<YakalamaRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            beyin: c.read<BeyinRepository>(),
+          ),
           (vm) => YakalaScreen(viewModel: vm),
         ),
       ),
@@ -148,6 +205,7 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           (c) => YakalaViewModel(
             repo: c.read<YakalamaRepository>(),
             esitleyici: c.read<Esitleyici>(),
+            beyin: c.read<BeyinRepository>(),
             duzenlenenId: state.pathParameters['id'],
           )..yukle(),
           (vm) => YakalaScreen(viewModel: vm),

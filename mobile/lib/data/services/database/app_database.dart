@@ -56,6 +56,17 @@ class YakalamaOnbellek extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Cache of `GET /api/beyin/projeler` (`ProjeOzetDto` JSON, in server order), replaced as a whole.
+/// It lets the capture screen's project picker work offline (Kat 1, karar 3).
+class ProjeOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// The last `GET /api/ben` answer, so the role is known when offline.
 class KullaniciOnbellek extends Table {
   IntColumn get id => integer()();
@@ -99,13 +110,21 @@ class BekleyenIslemler extends Table {
 }
 
 @DriftDatabase(
-  tables: [AliskanlikOnbellek, OgeOnbellek, BekleyenIslemler, KullaniciOnbellek, KronometreKayitlari, YakalamaOnbellek],
+  tables: [
+    AliskanlikOnbellek,
+    OgeOnbellek,
+    BekleyenIslemler,
+    KullaniciOnbellek,
+    KronometreKayitlari,
+    YakalamaOnbellek,
+    ProjeOnbellek,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +137,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await m.createTable(yakalamaOnbellek);
           }
+          if (from < 4) {
+            await m.createTable(projeOnbellek);
+          }
         },
       );
 
@@ -129,5 +151,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(kullaniciOnbellek).go();
         await delete(kronometreKayitlari).go();
         await delete(yakalamaOnbellek).go();
+        await delete(projeOnbellek).go();
       });
 }

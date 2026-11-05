@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/kullanici_repository.dart';
+import '../../routing/router.dart';
 import '../core/widgets.dart';
 import 'profil_view_model.dart';
 
@@ -69,6 +71,18 @@ class ProfilScreen extends StatelessWidget {
                       subtitle: const Text('Rol'),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // The habit list is not a tab any more; it opens from here.
+              Card(
+                child: ListTile(
+                  minTileHeight: 56,
+                  leading: const Icon(LucideIcons.target),
+                  title: const Text('Alışkanlıklar'),
+                  subtitle: const Text('Liste, detay ve raf'),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => context.push(Rotalar.aliskanliklar),
                 ),
               ),
               const SizedBox(height: 16),

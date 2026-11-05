@@ -21,6 +21,10 @@ const _yonetimRotalari = [
 const _herkesinRotalari = [
   '/',
   '/aliskanliklar',
+  '/projeler',
+  '/projeler/kitap-kulubu',
+  '/ara',
+  '/not?yol=projects/a/notlar/b.md',
   '/yakalamalar',
   '/profil',
   '/aliskanlik/a1/raf',

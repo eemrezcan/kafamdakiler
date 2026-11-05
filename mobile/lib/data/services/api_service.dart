@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../utils/aliskanlik_gunu.dart';
 import '../models/aliskanlik.dart';
 import '../models/ben.dart';
+import '../models/beyin.dart';
 import '../models/enums.dart';
 import '../models/giris.dart';
 import '../models/gun.dart';
@@ -183,6 +184,37 @@ class ApiService {
 
   /// 409 once the capture left `bekliyor`; the server removes its photo too.
   Future<void> yakalamaSil(String id) => _dio.delete<void>('/api/yakalamalar/$id');
+
+  // ---- Second brain (read only, /api/beyin) ----
+  // 503: the brain is not set up on the server; 403: no `beyin.oku` permission.
+
+  Future<List<ProjeOzet>> beyinProjeleri() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/beyin/projeler');
+    return _liste(yanit, ProjeOzet.fromJson);
+  }
+
+  Future<ProjeDetay> beyinProje(String kimlik) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/projeler/${Uri.encodeComponent(kimlik)}');
+    return ProjeDetay.fromJson(yanit.data!);
+  }
+
+  Future<BeyinGun> beyinGun(DateTime tarih) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/gunler/${tarihMetni(tarih)}');
+    return BeyinGun.fromJson(yanit.data!);
+  }
+
+  Future<List<AramaSonucu>> beyinAra(String q, {String? proje, int? limit}) async {
+    final yanit = await _dio.get<List<dynamic>>(
+      '/api/beyin/ara',
+      queryParameters: {'q': q, 'proje': ?proje, 'limit': ?limit},
+    );
+    return _liste(yanit, AramaSonucu.fromJson);
+  }
+
+  Future<BeyinNotu> beyinNot(String yol) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/not', queryParameters: {'yol': yol});
+    return BeyinNotu.fromJson(yanit.data!);
+  }
 
   // ---- Files ----
 

@@ -8,12 +8,17 @@ import '../core/widgets.dart';
 import '../../utils/metin.dart';
 import 'aliskanlik_karti.dart';
 import 'bugun_view_model.dart';
+import 'gun_plani_karti.dart';
+import 'gun_plani_view_model.dart';
 import 'sayi_giris_dialog.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani});
 
   final BugunViewModel viewModel;
+
+  /// The brain's plan for the day, shown above the habit cards. Without it the screen is habits only.
+  final GunPlaniViewModel? gunPlani;
 
   Future<void> _tik(BuildContext context, Aliskanlik a) async {
     final mesaj = ScaffoldMessenger.of(context);
@@ -44,6 +49,14 @@ class BugunScreen extends StatelessWidget {
         listenable: viewModel,
         builder: (context, _) {
           final liste = viewModel.liste;
+          final plan = gunPlani;
+          if (plan != null) {
+            // Plan card and habits in one scroll: a failing side never hides the other.
+            return RefreshIndicator(
+              onRefresh: () => Future.wait([viewModel.yukle(), plan.yukle()]),
+              child: OrtaGenislik(child: _liste(context, plan: plan)),
+            );
+          }
           if (liste == null) {
             if (viewModel.yukleniyor) return const YuklemeIskeleti();
             return BosDurum(
@@ -55,7 +68,7 @@ class BugunScreen extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: viewModel.yukle,
             child: liste.isEmpty
-                ? const BosDurum(metin: 'Henüz alışkanlık yok. Alışkanlıklar sekmesinden + ile ekleyebilirsin.')
+                ? const BosDurum(metin: 'Henüz alışkanlık yok. Profil > Alışkanlıklar ekranından + ile ekleyebilirsin.')
                 : OrtaGenislik(child: _liste(context)),
           );
         },
@@ -63,10 +76,37 @@ class BugunScreen extends StatelessWidget {
     );
   }
 
-  Widget _liste(BuildContext context) {
+  /// The habit part when the list is not there (yet): a skeleton, the error with a retry, or the empty hint.
+  List<Widget> _aliskanlikDurumu(BuildContext context) {
+    final tema = Theme.of(context);
+    final soluk = TextStyle(color: tema.colorScheme.onSurfaceVariant);
+    if (viewModel.liste == null) {
+      if (viewModel.yukleniyor) {
+        return [
+          for (var i = 0; i < 2; i++)
+            Container(
+              height: 88,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(color: tema.colorScheme.outlineVariant, borderRadius: BorderRadius.circular(12)),
+            ),
+        ];
+      }
+      return [
+        Text(viewModel.hata ?? 'Alışkanlıklar alınamadı.', style: soluk),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(onPressed: viewModel.yukle, child: const Text('Tekrar dene')),
+        ),
+      ];
+    }
+    return [Text('Henüz alışkanlık yok. Profil > Alışkanlıklar ekranından + ile ekleyebilirsin.', style: soluk)];
+  }
+
+  Widget _liste(BuildContext context, {GunPlaniViewModel? plan}) {
     final planli = viewModel.planli;
     final plansiz = viewModel.plansiz;
     final tema = Theme.of(context);
+    final aliskanlikVar = viewModel.liste != null && viewModel.liste!.isNotEmpty;
     Widget kart(Aliskanlik a) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: AliskanlikKarti(
@@ -92,8 +132,11 @@ class BugunScreen extends StatelessWidget {
             ),
           ),
         const _Tarih(),
+        if (plan != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: GunPlaniKarti(viewModel: plan)),
+        // The habit list is not there (yet) or empty: say so under the plan card.
+        if (plan != null && !aliskanlikVar) ..._aliskanlikDurumu(context),
         if (planli.isNotEmpty) _BugunOzeti(planli: planli),
-        if (planli.isEmpty)
+        if (planli.isEmpty && (plan == null || aliskanlikVar))
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
