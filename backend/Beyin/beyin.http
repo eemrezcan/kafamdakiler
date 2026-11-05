@@ -1,0 +1,71 @@
+### Brain read API scenario (VS Code REST Client or Rider HTTP Client). Run top to bottom.
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+### The brain must be configured (README, "Brain"); otherwise every request below answers 503.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. Status: connected?, vault folder name, waiting and failed captures
+GET {{host}}/api/beyin/durum
+Authorization: Bearer {{token}}
+
+### 3. Projects (hidden ones are left out), then one project
+GET {{host}}/api/beyin/projeler
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/beyin/projeler/kitap-kulubu
+Authorization: Bearer {{token}}
+
+### 4. A day's plan (yyyy-MM-dd). The first read of a day gives its plan lines permanent ids in the plan file.
+GET {{host}}/api/beyin/gunler/2026-11-03
+Authorization: Bearer {{token}}
+
+### 5. Search (q is required, at most 200 characters; limit 1-50, default 10)
+GET {{host}}/api/beyin/ara?q=kitap&limit=5
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/beyin/ara?q=takvim&proje=kitap-kulubu
+Authorization: Bearer {{token}}
+
+### 6. One note
+GET {{host}}/api/beyin/not?yol=projects/kitap-kulubu/notlar/takvim-kutuphanesi.md
+Authorization: Bearer {{token}}
+
+### 7. Refused: bad path -> 400 { errors: { yol: [...] } }
+GET {{host}}/api/beyin/not?yol=../kisisel/gizli-not.md
+Authorization: Bearer {{token}}
+
+### 8. A hidden note looks like a missing one -> 404
+GET {{host}}/api/beyin/not?yol=kisisel/gizli-not.md
+Authorization: Bearer {{token}}
+
+### 9. Refused: empty query -> 400 { errors: { q: [...] } }
+GET {{host}}/api/beyin/ara?q=
+Authorization: Bearer {{token}}
+
+### 10. Assistant without the beyin.oku permission -> 403
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+GET {{host}}/api/beyin/projeler
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}

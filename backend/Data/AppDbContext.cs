@@ -71,7 +71,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Metin).HasMaxLength(5000);
             e.Property(x => x.Hedef).HasMaxLength(100);
             e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.SonHata).HasMaxLength(2000);
             e.HasIndex(x => new { x.Durum, x.YakalandiAt });
+            // PostgreSQL's row version: an edit loaded before the sender took the capture cannot overwrite it silently.
+            e.Property<uint>("xmin").IsRowVersion();
 
             e.HasOne(x => x.Fotograf).WithMany().HasForeignKey(x => x.FotografId).OnDelete(DeleteBehavior.SetNull);
         });

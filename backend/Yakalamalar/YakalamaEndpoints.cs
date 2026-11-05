@@ -70,5 +70,5 @@ public static class YakalamaEndpoints
     }
 
     internal static YakalamaDto DtoYap(Yakalama y) =>
-        new(y.Id, y.Metin, y.FotografId, OgeEndpoints.FotografUrl(y.FotografId), y.Hedef, y.Durum, y.YakalandiAt, y.CreatedAt);
+        new(y.Id, y.Metin, y.FotografId, OgeEndpoints.FotografUrl(y.FotografId), y.Hedef, y.Durum, y.YakalandiAt, y.CreatedAt, y.DenemeSayisi, y.SonHata);
 }

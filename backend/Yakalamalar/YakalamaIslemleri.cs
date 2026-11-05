@@ -1,4 +1,5 @@
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +11,8 @@ public static class YakalamaIslemleri
 {
     public static async Task<(Sonuc Sonuc, Yakalama? Yakalama)> OlusturAsync(AppDbContext db, YakalamaYazDto dto, CancellationToken ct)
     {
-        if (await FotografYokMu(db, dto.FotografId, ct))
-            return (Sonuc.Gecersiz("fotografId", "Fotoğraf bulunamadı."), null);
+        if (await FotografHatasi(db, dto.FotografId, null, ct) is { } hata)
+            return (hata, null);
 
         var y = new Yakalama();
         if (dto.Id is { } id)
@@ -26,12 +27,22 @@ public static class YakalamaIslemleri
     {
         if (y.Durum != YakalamaDurumu.Bekliyor)
             return Sonuc.Catisma("Yalnız bekleyen yakalama değiştirilebilir.");
-        if (dto.FotografId != y.FotografId && await FotografYokMu(db, dto.FotografId, ct))
-            return Sonuc.Gecersiz("fotografId", "Fotoğraf bulunamadı.");
+        if (YakalamaGonderimi.Gonderiliyor(y, DateTimeOffset.UtcNow))
+            return Sonuc.Catisma(GonderiliyorMesaji);
+        if (dto.FotografId != y.FotografId && await FotografHatasi(db, dto.FotografId, y.Id, ct) is { } hata)
+            return hata;
 
         var eskiFotograf = y.FotografId;
         Uygula(y, dto);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // The sender took the capture between our read and our save.
+            return Sonuc.Catisma(GonderiliyorMesaji);
+        }
 
         // A replaced or removed photo is no longer used by anything: remove it from the disk too.
         if (eskiFotograf is { } eski && eski != y.FotografId)
@@ -44,10 +55,20 @@ public static class YakalamaIslemleri
     {
         if (y.Durum != YakalamaDurumu.Bekliyor)
             return Sonuc.Catisma("Yalnız bekleyen yakalama silinebilir.");
+        if (YakalamaGonderimi.Gonderiliyor(y, DateTimeOffset.UtcNow))
+            return Sonuc.Catisma(GonderiliyorMesaji);
 
         var fotograf = y.FotografId;
         db.Yakalamalar.Remove(y);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Sonuc.Catisma(GonderiliyorMesaji);
+        }
+
         if (fotograf is { } f)
             await depo.SilAsync([f], ct);
 
@@ -60,8 +81,20 @@ public static class YakalamaIslemleri
         y.FotografId = dto.FotografId;
         y.Hedef = string.IsNullOrWhiteSpace(dto.Hedef) ? null : dto.Hedef;
         y.YakalandiAt = dto.YakalandiAt!.Value.ToUniversalTime();
+
+        // An edit restarts the wait before sending, and a capture that failed to send gets a fresh start.
+        // A capture still claimed (unsure whether it was sent) keeps its note until someone retries it by hand.
+        y.GuncellendiAt = DateTimeOffset.UtcNow;
+        if (y.GonderimBasladiAt is null)
+        {
+            y.DenemeSayisi = 0;
+            y.SonDenemeAt = null;
+            y.SonHata = null;
+        }
     }
 
-    private static async Task<bool> FotografYokMu(AppDbContext db, Guid? fotografId, CancellationToken ct) =>
-        fotografId is { } id && !await db.Dosyalar.AnyAsync(d => d.Id == id, ct);
+    private const string GonderiliyorMesaji = "Yakalama şu an beyne gönderiliyor; birazdan tekrar dene.";
+
+    private static Task<Sonuc?> FotografHatasi(AppDbContext db, Guid? fotografId, Guid? kendisi, CancellationToken ct) =>
+        FotografKurali.HataAsync(db, fotografId, null, kendisi, ct);
 }

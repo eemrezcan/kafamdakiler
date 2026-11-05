@@ -257,6 +257,9 @@ namespace Kafamdakiler.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DenemeSayisi")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Durum")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -264,6 +267,12 @@ namespace Kafamdakiler.Migrations
 
                     b.Property<Guid?>("FotografId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("GonderimBasladiAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("GuncellendiAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Hedef")
                         .HasMaxLength(100)
@@ -273,8 +282,21 @@ namespace Kafamdakiler.Migrations
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)");
 
+                    b.Property<DateTimeOffset?>("SonDenemeAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SonHata")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<DateTimeOffset>("YakalandiAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

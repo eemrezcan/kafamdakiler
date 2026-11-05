@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.OpenApi;
@@ -36,6 +37,7 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AliskanlikPolicies.Yaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz], IdentityConstants.BearerScheme))
     .AddPolicy(YakalamaPolicies.Oku, policy => IzinPolicy(policy, [YakalamaPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(YakalamaPolicies.Yaz, policy => IzinPolicy(policy, [YakalamaPolicies.Yaz], IdentityConstants.BearerScheme))
+    .AddPolicy(BeyinPolicies.Oku, policy => IzinPolicy(policy, [BeyinPolicies.Oku], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
     .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
@@ -51,6 +53,13 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
         HataAnahtarlari.CamelCaseYap(sorun);
 });
 builder.Services.AddScoped<DosyaDeposu>();
+builder.Services.AddHostedService<YetimDosyaTemizleyici>();
+
+// The brain (K-0023): off when Beyin:Komut or Beyin:Vault is empty.
+var beyinAyari = BeyinAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath);
+builder.Services.AddSingleton(beyinAyari);
+builder.Services.AddSingleton<BeyinIstemcisi>();
+builder.Services.AddHostedService<YakalamaGondericisi>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
@@ -79,6 +88,9 @@ builder.Services.AddHealthChecks()
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+    OrnekBeyinKopyasi.HazirlaGerekirse(beyinAyari);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -136,6 +148,7 @@ app.MapAliskanlikEndpoints();
 app.MapOgeEndpoints();
 app.MapDosyaEndpoints();
 app.MapYakalamaEndpoints();
+app.MapBeyinEndpoints();
 
 app.Run();
 

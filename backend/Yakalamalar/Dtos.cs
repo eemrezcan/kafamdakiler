@@ -31,4 +31,4 @@ public class YakalamaYazDto : IValidatableObject
 
 public record YakalamaDto(
     Guid Id, string? Metin, Guid? FotografId, string? FotografUrl, string? Hedef, YakalamaDurumu Durum,
-    DateTimeOffset YakalandiAt, DateTimeOffset Olusturulma);
+    DateTimeOffset YakalandiAt, DateTimeOffset Olusturulma, int DenemeSayisi, string? SonHata);
