@@ -14,11 +14,14 @@ const _yonetimRotalari = [
   '/aliskanlik/a1/duzenle',
   '/raf/r1/oge-yeni',
   '/oge/o1/duzenle',
+  '/yakala',
+  '/yakalama/y1/duzenle',
 ];
 
 const _herkesinRotalari = [
   '/',
   '/aliskanliklar',
+  '/yakalamalar',
   '/profil',
   '/aliskanlik/a1/raf',
   '/aliskanlik/a1',

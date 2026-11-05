@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
 import 'package:kafamdakiler/data/models/aliskanlik.dart';
@@ -5,11 +7,15 @@ import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
+import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
+import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
 import 'package:kafamdakiler/data/services/api_service.dart';
 import 'package:kafamdakiler/data/services/database/app_database.dart';
+import 'package:kafamdakiler/data/services/fotograf_deposu.dart';
 
 /// An [ApiService] that answers from memory. With [cevrimdisi] every call
 /// fails like a lost connection.
@@ -22,6 +28,9 @@ class SahteApi extends ApiService {
   Map<String, List<Gun>> gunler;
   List<Oge> ogeler;
   Ben? ben_;
+
+  /// Server captures for `/api/yakalamalar`.
+  List<Yakalama> yakalamalar = [];
   bool cevrimdisi = false;
 
   /// When set, every call fails with this HTTP status.
@@ -103,6 +112,31 @@ class SahteApi extends ApiService {
   }
 
   @override
+  Future<List<Yakalama>> yakalamalariGetir() async {
+    _kontrol('yakalamalariGetir');
+    return yakalamalar;
+  }
+
+  @override
+  Future<DosyaYaniti> dosyaYukle(String yol, {String? dosyaAdi}) async {
+    _kontrol('dosyaYukle');
+    return const DosyaYaniti(id: 'f1', url: '/api/dosyalar/f1');
+  }
+
+  @override
+  Future<Yakalama> yakalamaOlustur(YakalamaYaz yaz) async {
+    _kontrol('yakalamaOlustur');
+    return Yakalama(
+      id: yaz.id!,
+      metin: yaz.metin,
+      fotografId: yaz.fotografId,
+      durum: YakalamaDurumu.bekliyor,
+      yakalandiAt: yaz.yakalandiAt,
+      olusturulma: yaz.yakalandiAt,
+    );
+  }
+
+  @override
   Future<List<Oturum>> oturumlariGetir(String ogeId) async {
     _kontrol('oturumlariGetir');
     return const [];
@@ -169,17 +203,31 @@ class TestOrtami {
     db = AppDatabase(NativeDatabase.memory());
     esitleyici = Esitleyici(api: this.api, db: db, simdi: _artanSaat);
     repo = AliskanlikRepository(api: this.api, db: db, esitleyici: esitleyici, simdi: () => sabitAn);
+    yakalamalar = YakalamaRepository(
+      api: this.api,
+      db: db,
+      esitleyici: esitleyici,
+      fotograflar: FotografDeposu(klasor: () async => fotografKlasoru),
+      simdi: () => sabitAn,
+    );
   }
 
   final SahteApi api;
   late final AppDatabase db;
   late final Esitleyici esitleyici;
   late final AliskanlikRepository repo;
+  late final YakalamaRepository yakalamalar;
+
+  /// Where the photo copies of the captures go in tests.
+  final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');
 
   var _saat = sabitAn;
 
   /// Strictly increasing, so queue order is deterministic.
   DateTime _artanSaat() => _saat = _saat.add(const Duration(seconds: 1));
 
-  Future<void> kapat() => db.close();
+  Future<void> kapat() async {
+    await db.close();
+    if (fotografKlasoru.existsSync()) fotografKlasoru.deleteSync(recursive: true);
+  }
 }

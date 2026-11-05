@@ -248,6 +248,43 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Dosyalar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Yakalamalar.Yakalama", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Durum")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("FotografId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Hedef")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Metin")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<DateTimeOffset>("YakalandiAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FotografId");
+
+                    b.HasIndex("Durum", "YakalandiAt");
+
+                    b.ToTable("Yakalamalar");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -479,6 +516,16 @@ namespace Kafamdakiler.Migrations
                         .IsRequired();
 
                     b.Navigation("Oge");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Yakalamalar.Yakalama", b =>
+                {
+                    b.HasOne("Kafamdakiler.Dosyalar.Dosya", "Fotograf")
+                        .WithMany()
+                        .HasForeignKey("FotografId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Fotograf");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

@@ -69,7 +69,8 @@ class AliskanlikListeScreen extends StatelessWidget {
                 : OrtaGenislik(
                     child: ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
+                      // Room for the floating "Yakala" button under the last card.
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                       itemCount: liste.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, i) => _Satir(liste[i]),

@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Dosyalar;
+using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Oge> Ogeler => Set<Oge>();
     public DbSet<Oturum> Oturumlar => Set<Oturum>();
     public DbSet<Dosya> Dosyalar => Set<Dosya>();
+    public DbSet<Yakalama> Yakalamalar => Set<Yakalama>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -62,6 +64,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.BaslangicKonum).HasPrecision(10, 2);
             e.Property(x => x.BitisKonum).HasPrecision(10, 2);
             e.HasIndex(x => new { x.OgeId, x.BitisKonum });
+        });
+
+        builder.Entity<Yakalama>(e =>
+        {
+            e.Property(x => x.Metin).HasMaxLength(5000);
+            e.Property(x => x.Hedef).HasMaxLength(100);
+            e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => new { x.Durum, x.YakalandiAt });
+
+            e.HasOne(x => x.Fotograf).WithMany().HasForeignKey(x => x.FotografId).OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<Dosya>(e =>

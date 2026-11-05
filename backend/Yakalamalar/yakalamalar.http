@@ -1,0 +1,121 @@
+### Capture API scenario: a text capture, a photo capture, and the refused cases.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the two seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+
+# Client-made ids (Guid v7 style), so every POST below can be repeated safely.
+@metinId = 019e1000-0000-7000-8000-000000000001
+@fotoYakalamaId = 019e1000-0000-7000-8000-000000000002
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. Capture a text -> 201 (again with the same id -> 200, no second record)
+POST {{host}}/api/yakalamalar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{metinId}}",
+  "metin": "Kitap kulübü için yeni kitap önerisi sor",
+  "hedef": "projects/kitap-kulubu",
+  "yakalandiAt": "2026-11-04T10:00:00+03:00"
+}
+
+### 3. Upload a photo -> 201 { id, url }. Put the id into @fotografId below.
+POST {{host}}/api/dosyalar
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=sinir
+
+--sinir
+Content-Disposition: form-data; name="dosya"; filename="fis.png"
+Content-Type: image/png
+
+< ./fis.png
+--sinir--
+
+###
+@fotografId = <id from request 3>
+
+### 4. Capture with a photo only (no text) -> 201
+POST {{host}}/api/yakalamalar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{fotoYakalamaId}}",
+  "fotografId": "{{fotografId}}",
+  "yakalandiAt": "2026-11-04T12:30:00+03:00"
+}
+
+### 5. List, newest first (YakalandiAt). Filter: ?durum=bekliyor | beyneGitti | islendi
+GET {{host}}/api/yakalamalar
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/yakalamalar?durum=bekliyor
+Authorization: Bearer {{token}}
+
+### 6. One capture
+GET {{host}}/api/yakalamalar/{{metinId}}
+Authorization: Bearer {{token}}
+
+### 7. Update (only while durum is bekliyor). Changing or dropping the photo deletes the old file.
+PUT {{host}}/api/yakalamalar/{{metinId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "metin": "Kitap kulübü için yeni kitap önerisi sor (Cuma'ya kadar)",
+  "hedef": "projects/kitap-kulubu",
+  "yakalandiAt": "2026-11-04T10:00:00+03:00"
+}
+
+### 8. Refused: no text and no photo -> 400 { errors: { metin: [...] } }
+POST {{host}}/api/yakalamalar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "yakalandiAt": "2026-11-04T10:00:00+03:00" }
+
+### 9. Refused: bad target -> 400 { errors: { hedef: [...] } }
+POST {{host}}/api/yakalamalar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "metin": "x", "hedef": "projects/../finans", "yakalandiAt": "2026-11-04T10:00:00+03:00" }
+
+### 10. Refused: missing client time -> 400 { errors: { yakalandiAt: [...] } }
+POST {{host}}/api/yakalamalar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "metin": "x" }
+
+### 11. Delete (also deletes the photo file) -> 204. A capture that already went to the brain -> 409.
+DELETE {{host}}/api/yakalamalar/{{fotoYakalamaId}}
+Authorization: Bearer {{token}}
+
+### 12. Assistant without the yakalama.oku permission -> 403
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+GET {{host}}/api/yakalamalar
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}

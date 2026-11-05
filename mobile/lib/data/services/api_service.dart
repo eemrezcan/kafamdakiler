@@ -10,6 +10,7 @@ import '../models/giris.dart';
 import '../models/gun.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
+import '../models/yakalama.dart';
 import 'token_depo.dart';
 import 'token_interceptor.dart';
 
@@ -159,6 +160,29 @@ class ApiService {
 
   /// 409 if the session is not the last one.
   Future<void> oturumSil(String id) => _dio.delete<void>('/api/oturumlar/$id');
+
+  // ---- Captures ----
+
+  /// Newest first (by the phone's capture time).
+  Future<List<Yakalama>> yakalamalariGetir() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/yakalamalar');
+    return _liste(yanit, Yakalama.fromJson);
+  }
+
+  /// 201, or 200 with the existing capture when the same `id` was sent before.
+  Future<Yakalama> yakalamaOlustur(YakalamaYaz yaz) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/yakalamalar', data: yaz.toJson());
+    return Yakalama.fromJson(yanit.data!);
+  }
+
+  /// 409 once the capture left `bekliyor`.
+  Future<Yakalama> yakalamaGuncelle(String id, YakalamaYaz yaz) async {
+    final yanit = await _dio.put<Map<String, dynamic>>('/api/yakalamalar/$id', data: yaz.toJson());
+    return Yakalama.fromJson(yanit.data!);
+  }
+
+  /// 409 once the capture left `bekliyor`; the server removes its photo too.
+  Future<void> yakalamaSil(String id) => _dio.delete<void>('/api/yakalamalar/$id');
 
   // ---- Files ----
 

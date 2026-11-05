@@ -80,7 +80,8 @@ class BugunScreen extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      // Room for the floating "Yakala" button under the last card.
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
         if (viewModel.cevrimdisi)
           Padding(

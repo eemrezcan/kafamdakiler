@@ -2189,3 +2189,305 @@ textarea.form-control {
 .kd-session-edit form {
   margin: 0 0 0.5rem;
 }
+
+/* ---------- Captures (Yakalamalar) ---------- */
+
+/* Quick capture box at the top of the list. */
+.kd-composer {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 0.75rem 0.5rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.75rem;
+  background: var(--kd-surface-solid);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kd-composer:focus-within {
+  border-color: var(--kd-hue);
+  box-shadow: 0 0 0 3px rgba(var(--kd-violet-rgb), 0.16);
+}
+
+.kd-composer-input {
+  display: block;
+  width: 100%;
+  min-height: 3.25rem;
+  max-height: 16rem;
+  padding: 0.25rem 0.25rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--kd-text);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  resize: none;
+}
+
+.kd-composer-input:focus {
+  outline: none;
+}
+
+.kd-composer-input::placeholder {
+  color: var(--kd-text-faint);
+}
+
+.kd-composer-preview {
+  position: relative;
+  display: inline-block;
+  margin: 0 0 0.5rem 0.25rem;
+}
+
+.kd-composer-preview img {
+  display: block;
+  max-width: 8rem;
+  max-height: 8rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.4rem;
+  object-fit: cover;
+}
+
+.kd-composer-remove {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 50%;
+  background: var(--kd-surface-solid);
+  color: var(--kd-text);
+}
+
+.kd-composer-remove .kd-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.kd-composer-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--kd-line);
+}
+
+.kd-composer-photo {
+  margin: 0;
+  cursor: pointer;
+  color: var(--kd-text-muted);
+}
+
+.kd-composer-photo:focus-within {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: 2px;
+}
+
+.kd-composer-more {
+  font-size: 0.85rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-composer-hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--kd-text-faint);
+}
+
+.kd-composer-hint kbd {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--kd-text-muted);
+  font-size: 0.7rem;
+}
+
+.kd-composer-save {
+  min-width: 6rem;
+}
+
+/* On touch screens there is no keyboard shortcut to show. */
+@media (max-width: 575.98px), (hover: none) {
+  .kd-composer-hint {
+    display: none;
+  }
+
+  .kd-composer-save {
+    margin-left: auto;
+  }
+}
+
+/* Status filter chips with counts. */
+.kd-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.kd-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 99px;
+  color: var(--kd-text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.kd-filter-chip span {
+  color: var(--kd-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-filter-chip:hover {
+  border-color: var(--kd-line-strong);
+  color: var(--kd-text);
+}
+
+.kd-filter-chip.is-active {
+  border-color: var(--kd-violet);
+  background: rgba(var(--kd-violet-rgb), 0.12);
+  color: var(--kd-text);
+}
+
+.kd-filter-chip.is-active span {
+  color: var(--kd-violet);
+}
+
+/* Four chips fit on one line on a phone. */
+@media (max-width: 575.98px) {
+  .kd-filter {
+    gap: 0.3rem;
+  }
+
+  .kd-filter-chip {
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* The list, grouped by day. */
+.kd-capture-day {
+  margin-bottom: 1.5rem;
+}
+
+.kd-capture-day-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-capture {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-bottom: 0.5rem;
+  padding: 0.85rem 0.75rem 0.85rem 1rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.6rem;
+  background: var(--kd-surface-solid);
+  transition: border-color 0.15s ease;
+}
+
+.kd-capture:hover {
+  border-color: var(--kd-line-strong);
+}
+
+.kd-capture-photo {
+  flex-shrink: 0;
+  display: block;
+  border-radius: 0.4rem;
+}
+
+.kd-capture-photo img {
+  display: block;
+  width: 3.75rem;
+  height: 3.75rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.4rem;
+  background: var(--kd-field-bg);
+  object-fit: cover;
+}
+
+.kd-capture-body {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.kd-capture-text {
+  margin: 0 0 0.35rem;
+  color: var(--kd-text);
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.kd-capture-text.is-empty {
+  color: var(--kd-text-faint);
+  font-style: italic;
+}
+
+.kd-capture-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-capture-meta time {
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-capture-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--kd-hue);
+}
+
+.kd-capture-target .kd-icon {
+  flex-shrink: 0;
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.kd-capture-meta .kd-status {
+  margin: 0;
+}
+
+.kd-status.is-beynegitti {
+  border-color: var(--kd-hue-violet);
+  color: var(--kd-hue-violet);
+}
+
+.kd-status.is-islendi {
+  border-color: var(--kd-ok);
+  color: var(--kd-ok);
+}
+
+.kd-capture-edit {
+  flex-shrink: 0;
+  margin: -0.35rem 0;
+  color: var(--kd-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-composer,
+  .kd-capture {
+    transition: none;
+  }
+}

@@ -49,6 +49,9 @@ class ProfilViewModel extends ChangeNotifier {
       BekleyenTur.gunSil => '${adlar[b.hedefId] ?? 'Alışkanlık'}: ${b.tarih} günü silme',
       BekleyenTur.oturumEkle =>
         'Oturum: ${sayiMetni(OturumEkle.fromJson(jsonDecode(b.govde) as Map<String, dynamic>).bitisKonum)} konumuna kadar',
+      BekleyenTur.yakalamaEkle => 'Yakalama: yeni kayıt',
+      BekleyenTur.yakalamaGuncelle => 'Yakalama: değişiklik',
+      BekleyenTur.yakalamaSil => 'Yakalama: silme',
     };
   }
 

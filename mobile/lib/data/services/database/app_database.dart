@@ -34,6 +34,26 @@ enum BekleyenTur {
   /// `DELETE /api/aliskanliklar/{hedefId}/kayitlar/{tarih}` (day back to zero).
   /// Appended last: the column stores the enum index.
   gunSil,
+
+  /// `POST /api/yakalamalar` with a `YakalamaGovde` body; the queue id is the
+  /// capture id, [hedefId] too. Appended last: the column stores the enum index.
+  yakalamaEkle,
+
+  /// `PUT /api/yakalamalar/{hedefId}` with a `YakalamaGovde` body.
+  yakalamaGuncelle,
+
+  /// `DELETE /api/yakalamalar/{hedefId}`.
+  yakalamaSil,
+}
+
+/// Cache of `GET /api/yakalamalar` (`YakalamaDto` JSON, newest first), replaced as a whole.
+class YakalamaOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 /// The last `GET /api/ben` answer, so the role is known when offline.
@@ -79,13 +99,13 @@ class BekleyenIslemler extends Table {
 }
 
 @DriftDatabase(
-  tables: [AliskanlikOnbellek, OgeOnbellek, BekleyenIslemler, KullaniciOnbellek, KronometreKayitlari],
+  tables: [AliskanlikOnbellek, OgeOnbellek, BekleyenIslemler, KullaniciOnbellek, KronometreKayitlari, YakalamaOnbellek],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -94,6 +114,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(kullaniciOnbellek);
             await m.createTable(kronometreKayitlari);
+          }
+          if (from < 3) {
+            await m.createTable(yakalamaOnbellek);
           }
         },
       );
@@ -105,5 +128,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(bekleyenIslemler).go();
         await delete(kullaniciOnbellek).go();
         await delete(kronometreKayitlari).go();
+        await delete(yakalamaOnbellek).go();
       });
 }

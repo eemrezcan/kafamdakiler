@@ -10,6 +10,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/esitleyici.dart';
 import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
+import 'data/repositories/yakalama_repository.dart';
 import 'data/services/api_service.dart';
 import 'data/services/database/app_database.dart';
 import 'data/services/esitleme_tetikleyici.dart';
@@ -30,12 +31,14 @@ Future<void> main() async {
   ));
   final esitleyici = Esitleyici(api: api, db: db);
   final aliskanliklar = AliskanlikRepository(api: api, db: db, esitleyici: esitleyici);
+  final yakalamalar = YakalamaRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
   auth = AuthRepository(
     api: api,
     depo: depo,
     // Explicit sign-out: the user confirmed losing unsent entries.
     cikistaTemizle: () async {
+      await yakalamalar.yerelFotograflariSil();
       await db.hepsiniTemizle();
       aliskanliklar.resimleriBirak();
       kullanici.temizle();
@@ -60,6 +63,7 @@ Future<void> main() async {
     api: api,
     esitleyici: esitleyici,
     aliskanliklar: aliskanliklar,
+    yakalamalar: yakalamalar,
     kronometre: KronometreRepository(db: db),
   ));
 }
@@ -72,6 +76,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.api,
     required this.esitleyici,
     required this.aliskanliklar,
+    required this.yakalamalar,
     required this.kronometre,
   });
 
@@ -80,6 +85,7 @@ class KafamdakilerApp extends StatefulWidget {
   final ApiService api;
   final Esitleyici esitleyici;
   final AliskanlikRepository aliskanliklar;
+  final YakalamaRepository yakalamalar;
   final KronometreRepository kronometre;
 
   @override
@@ -116,6 +122,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         Provider.value(value: widget.api),
         ChangeNotifierProvider.value(value: widget.esitleyici),
         ChangeNotifierProvider.value(value: widget.aliskanliklar),
+        ChangeNotifierProvider.value(value: widget.yakalamalar),
         Provider.value(value: widget.kronometre),
       ],
       child: MaterialApp.router(

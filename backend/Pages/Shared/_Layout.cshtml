@@ -30,6 +30,7 @@
 
             <div class="kd-nav-links">
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Aliskanliklar") == true ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
+                <a class="kd-nav-link @(currentPage?.StartsWith("/Yakalamalar") == true ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">Yakalamalar</a>
             </div>
 
             <div class="kd-account">
@@ -71,6 +72,10 @@
                 <a class="kd-drawer-link @(currentPage?.StartsWith("/Aliskanliklar") == true ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
                     Alışkanlıklar
+                </a>
+                <a class="kd-drawer-link @(currentPage?.StartsWith("/Yakalamalar") == true ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
+                    Yakalamalar
                 </a>
             </section>
 

@@ -1469,6 +1469,264 @@ class KronometreKayitlariCompanion
   }
 }
 
+class $YakalamaOnbellekTable extends YakalamaOnbellek
+    with TableInfo<$YakalamaOnbellekTable, YakalamaOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $YakalamaOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'yakalama_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<YakalamaOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  YakalamaOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return YakalamaOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+    );
+  }
+
+  @override
+  $YakalamaOnbellekTable createAlias(String alias) {
+    return $YakalamaOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class YakalamaOnbellekData extends DataClass
+    implements Insertable<YakalamaOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  const YakalamaOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    return map;
+  }
+
+  YakalamaOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return YakalamaOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+    );
+  }
+
+  factory YakalamaOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return YakalamaOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+    };
+  }
+
+  YakalamaOnbellekData copyWith({String? id, int? sira, String? govde}) =>
+      YakalamaOnbellekData(
+        id: id ?? this.id,
+        sira: sira ?? this.sira,
+        govde: govde ?? this.govde,
+      );
+  YakalamaOnbellekData copyWithCompanion(YakalamaOnbellekCompanion data) {
+    return YakalamaOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('YakalamaOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is YakalamaOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde);
+}
+
+class YakalamaOnbellekCompanion extends UpdateCompanion<YakalamaOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<int> rowid;
+  const YakalamaOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  YakalamaOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<YakalamaOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  YakalamaOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<int>? rowid,
+  }) {
+    return YakalamaOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('YakalamaOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1482,6 +1740,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $KullaniciOnbellekTable(this);
   late final $KronometreKayitlariTable kronometreKayitlari =
       $KronometreKayitlariTable(this);
+  late final $YakalamaOnbellekTable yakalamaOnbellek = $YakalamaOnbellekTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1492,6 +1753,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     bekleyenIslemler,
     kullaniciOnbellek,
     kronometreKayitlari,
+    yakalamaOnbellek,
   ];
 }
 
@@ -2455,6 +2717,189 @@ typedef $$KronometreKayitlariTableProcessedTableManager =
       KronometreKayitlariData,
       PrefetchHooks Function()
     >;
+typedef $$YakalamaOnbellekTableCreateCompanionBuilder =
+    YakalamaOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<int> rowid,
+    });
+typedef $$YakalamaOnbellekTableUpdateCompanionBuilder =
+    YakalamaOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<int> rowid,
+    });
+
+class $$YakalamaOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $YakalamaOnbellekTable> {
+  $$YakalamaOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$YakalamaOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $YakalamaOnbellekTable> {
+  $$YakalamaOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$YakalamaOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $YakalamaOnbellekTable> {
+  $$YakalamaOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+}
+
+class $$YakalamaOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $YakalamaOnbellekTable,
+          YakalamaOnbellekData,
+          $$YakalamaOnbellekTableFilterComposer,
+          $$YakalamaOnbellekTableOrderingComposer,
+          $$YakalamaOnbellekTableAnnotationComposer,
+          $$YakalamaOnbellekTableCreateCompanionBuilder,
+          $$YakalamaOnbellekTableUpdateCompanionBuilder,
+          (
+            YakalamaOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $YakalamaOnbellekTable,
+              YakalamaOnbellekData
+            >,
+          ),
+          YakalamaOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$YakalamaOnbellekTableTableManager(
+    _$AppDatabase db,
+    $YakalamaOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$YakalamaOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$YakalamaOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$YakalamaOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => YakalamaOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<int> rowid = const Value.absent(),
+              }) => YakalamaOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$YakalamaOnbellekTable, YakalamaOnbellekData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $YakalamaOnbellekTable,
+                    YakalamaOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$YakalamaOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $YakalamaOnbellekTable,
+      YakalamaOnbellekData,
+      $$YakalamaOnbellekTableFilterComposer,
+      $$YakalamaOnbellekTableOrderingComposer,
+      $$YakalamaOnbellekTableAnnotationComposer,
+      $$YakalamaOnbellekTableCreateCompanionBuilder,
+      $$YakalamaOnbellekTableUpdateCompanionBuilder,
+      (
+        YakalamaOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $YakalamaOnbellekTable,
+          YakalamaOnbellekData
+        >,
+      ),
+      YakalamaOnbellekData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2469,4 +2914,6 @@ class $AppDatabaseManager {
       $$KullaniciOnbellekTableTableManager(_db, _db.kullaniciOnbellek);
   $$KronometreKayitlariTableTableManager get kronometreKayitlari =>
       $$KronometreKayitlariTableTableManager(_db, _db.kronometreKayitlari);
+  $$YakalamaOnbellekTableTableManager get yakalamaOnbellek =>
+      $$YakalamaOnbellekTableTableManager(_db, _db.yakalamaOnbellek);
 }

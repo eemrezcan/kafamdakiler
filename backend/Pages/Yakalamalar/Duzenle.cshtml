@@ -1,0 +1,92 @@
+@page "{id:guid?}"
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.Yakalamalar.DuzenleModel
+@{
+    var baslik = Model.Yeni ? "Yeni yakalama" : "Yakalamayı düzenle";
+    ViewData["Title"] = baslik;
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">
+            <a class="kd-back" asp-page="Index"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Yakalamalar</a>
+        </p>
+        <h1 class="kd-page-title">@baslik</h1>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="kd-form" novalidate>
+    <div asp-validation-summary="ModelOnly" class="kd-alert" role="alert"></div>
+    @* The client's clock; sent back as it was when the form opened. *@
+    <input type="hidden" name="Input.YakalandiAt" value="@Model.Input.YakalandiAt?.ToString("o")" />
+    <span class="kd-field-error" asp-validation-for="Input.YakalandiAt"></span>
+
+    <section class="kd-form-block">
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Metin">Aklında ne var?</label>
+            <textarea class="form-control" asp-for="Input.Metin" rows="4" maxlength="5000" autofocus></textarea>
+            <small class="kd-muted">Metin ya da fotoğraftan en az biri dolu olmalı.</small>
+            <span class="kd-field-error" asp-validation-for="Input.Metin"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" for="Fotograf">Fotoğraf</label>
+            <div class="kd-cover-edit">
+                @if (Model.FotografUrl is not null)
+                {
+                    <img class="kd-cover" src="@Model.FotografUrl" alt="Mevcut fotoğraf" />
+                }
+                else
+                {
+                    <span class="kd-cover kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#lucide-image-plus"></use></svg></span>
+                }
+                <div class="kd-cover-controls">
+                    <input class="form-control" type="file" id="Fotograf" name="Fotograf" accept="image/jpeg,image/png,image/webp" />
+                    <small class="kd-muted">jpg, png ya da webp; en çok 10 MB. Telefonda kamerayla da çekebilirsin.</small>
+                    @if (Model.FotografUrl is not null)
+                    {
+                        <label class="form-check kd-check">
+                            <input class="form-check-input" type="checkbox" name="FotografKaldir" value="true" />
+                            <span>Fotoğrafı kaldır</span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <span class="kd-field-error" asp-validation-for="Fotograf"></span>
+            <span class="kd-field-error" asp-validation-for="Input.FotografId"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Hedef">Hedef (isteğe bağlı)</label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Input.Hedef" maxlength="100" autocomplete="off" placeholder="projects/kitap-kulubu" />
+            </div>
+            <small class="kd-muted">Beyinde nereye gideceğine dair ipucu: <code>projects/proje-adi</code>.</small>
+            <span class="kd-field-error" asp-validation-for="Input.Hedef"></span>
+        </div>
+    </section>
+
+    <div class="kd-form-actions">
+        <button type="submit" class="btn btn-primary kd-btn-lg">Kaydet</button>
+        <a class="btn btn-outline-primary kd-btn-lg" asp-page="Index">Vazgeç</a>
+    </div>
+</form>
+
+@if (!Model.Yeni)
+{
+    <section class="kd-danger-zone" aria-labelledby="kd-danger-title">
+        <h2 class="kd-eyebrow" id="kd-danger-title">Silme</h2>
+        <form method="post" asp-page-handler="Sil" asp-route-id="@Model.YakalamaId"
+              onsubmit="return confirm('Bu yakalama ve fotoğrafı kalıcı olarak silinecek. Emin misin?');">
+            <button type="submit" class="btn btn-outline-danger">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-trash-2"></use></svg>
+                Sil
+            </button>
+        </form>
+        <p class="kd-muted">Silmek geri alınamaz.</p>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -7,6 +7,7 @@ import '../data/repositories/auth_repository.dart';
 import '../data/repositories/esitleyici.dart';
 import '../data/repositories/kronometre_repository.dart';
 import '../data/repositories/kullanici_repository.dart';
+import '../data/repositories/yakalama_repository.dart';
 import '../ui/aliskanliklar/aliskanlik_detay_screen.dart';
 import '../ui/aliskanliklar/aliskanlik_detay_view_model.dart';
 import '../ui/aliskanliklar/aliskanlik_form_screen.dart';
@@ -30,10 +31,16 @@ import '../ui/raf/oge_form_view_model.dart';
 import '../ui/raf/raf_screen.dart';
 import '../ui/raf/raf_view_model.dart';
 import '../ui/shell/ana_iskele.dart';
+import '../ui/yakalama/yakala_screen.dart';
+import '../ui/yakalama/yakala_view_model.dart';
+import '../ui/yakalama/yakalama_liste_screen.dart';
+import '../ui/yakalama/yakalama_liste_view_model.dart';
 
 abstract final class Rotalar {
   static const bugun = '/';
   static const aliskanliklar = '/aliskanliklar';
+  static const yakalamalar = '/yakalamalar';
+  static const yakala = '/yakala';
   static const profil = '/profil';
   static const giris = '/giris';
 }
@@ -43,13 +50,15 @@ final _yonetimRotalari = [
   RegExp(r'^/aliskanlik/[^/]+/duzenle$'),
   RegExp(r'^/raf/[^/]+/oge-yeni$'),
   RegExp(r'^/oge/[^/]+/duzenle$'),
+  RegExp(r'^/yakala$'),
+  RegExp(r'^/yakalama/[^/]+/duzenle$'),
 ];
 
 /// Where a visit to [konum] must be sent instead, or null to let it through.
 ///
 /// - Signed-out users only see the login screen.
-/// - The forms that create or change content are for the Sahip role only; the
-///   route is blocked, not just the button hidden (M07).
+/// - The forms that create or change content (captures included) are for the
+///   Sahip role only; the route is blocked, not just the button hidden (M07).
 String? yetkiYonlendirme(String konum, {required bool girisYapildi, required bool sahip}) {
   final girisEkraninda = konum == Rotalar.giris;
   if (!girisYapildi) return girisEkraninda ? null : Rotalar.giris;
@@ -107,6 +116,15 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
+              path: Rotalar.yakalamalar,
+              builder: (context, state) => _sayfa(
+                (c) => YakalamaListeViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                (vm) => YakalamaListeScreen(viewModel: vm),
+              ),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
               path: Rotalar.profil,
               builder: (context, state) => _sayfa(
                 (c) => ProfilViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
@@ -117,6 +135,24 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
         ],
       ),
       // Full-screen pages above the tabs. `yeni` must come before `:id`.
+      GoRoute(
+        path: Rotalar.yakala,
+        builder: (context, state) => _sayfa(
+          (c) => YakalaViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>()),
+          (vm) => YakalaScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: '/yakalama/:id/duzenle',
+        builder: (context, state) => _sayfa(
+          (c) => YakalaViewModel(
+            repo: c.read<YakalamaRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            duzenlenenId: state.pathParameters['id'],
+          )..yukle(),
+          (vm) => YakalaScreen(viewModel: vm),
+        ),
+      ),
       GoRoute(
         path: '/aliskanlik/yeni',
         builder: (context, state) => _sayfa(

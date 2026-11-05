@@ -50,7 +50,8 @@ class ProfilScreen extends StatelessWidget {
         child: ListenableBuilder(
           listenable: viewModel,
           builder: (context, _) => ListView(
-            padding: const EdgeInsets.all(16),
+            // Room for the floating "Yakala" button under the last card.
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             children: [
               Card(
                 child: Column(

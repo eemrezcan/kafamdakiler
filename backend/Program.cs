@@ -5,6 +5,7 @@ using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.OpenApi;
+using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -31,10 +32,13 @@ builder.Services.AddAuthorizationBuilder()
         .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme)
         .RequireRole(SeedData.OwnerRole))
     // API policies: the Sahip role or the matching `izin` claim (K-0009). Bearer token, so no redirects.
-    .AddPolicy(AliskanlikPolicies.Oku, policy => IzinPolicy(policy, AliskanlikPolicies.Oku, IdentityConstants.BearerScheme))
-    .AddPolicy(AliskanlikPolicies.Yaz, policy => IzinPolicy(policy, AliskanlikPolicies.Yaz, IdentityConstants.BearerScheme))
-    // Photos are read by <img> tags (cookie) and by the mobile app (bearer).
-    .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, AliskanlikPolicies.Oku, IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme));
+    .AddPolicy(AliskanlikPolicies.Oku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(AliskanlikPolicies.Yaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz], IdentityConstants.BearerScheme))
+    .AddPolicy(YakalamaPolicies.Oku, policy => IzinPolicy(policy, [YakalamaPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(YakalamaPolicies.Yaz, policy => IzinPolicy(policy, [YakalamaPolicies.Yaz], IdentityConstants.BearerScheme))
+    // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
+    .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
+    .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
 
 // Enums travel as camelCase text in the API ("enAz", "pzt").
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -131,6 +135,7 @@ app.MapBenEndpoints();
 app.MapAliskanlikEndpoints();
 app.MapOgeEndpoints();
 app.MapDosyaEndpoints();
+app.MapYakalamaEndpoints();
 
 app.Run();
 
@@ -144,8 +149,8 @@ static Task YonlendirYaDaReddet(RedirectContext<CookieAuthenticationOptions> con
     return Task.CompletedTask;
 }
 
-static void IzinPolicy(AuthorizationPolicyBuilder policy, string izin, params string[] schemes) => policy
+static void IzinPolicy(AuthorizationPolicyBuilder policy, string[] izinler, params string[] schemes) => policy
     .AddAuthenticationSchemes(schemes)
     .RequireAuthenticatedUser()
     .RequireAssertion(context =>
-        context.User.IsInRole(SeedData.OwnerRole) || context.User.HasClaim(AliskanlikPolicies.IzinClaim, izin));
+        context.User.IsInRole(SeedData.OwnerRole) || izinler.Any(izin => context.User.HasClaim(AliskanlikPolicies.IzinClaim, izin)));

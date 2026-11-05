@@ -22,7 +22,7 @@ public static class DosyaEndpoints
             return Results.Created(url, new DosyaYuklendiDto(kayit.Id, url));
         })
         .DisableAntiforgery()
-        .RequireAuthorization(AliskanlikPolicies.Yaz);
+        .RequireAuthorization(AliskanlikPolicies.DosyaYaz);
 
         dosyalar.MapGet("/{id:guid}", async (Guid id, AppDbContext db, DosyaDeposu depo, CancellationToken ct) =>
         {

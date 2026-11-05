@@ -6,6 +6,7 @@ import '../models/aliskanlik.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/gun.dart';
+import '../models/yakalama.dart';
 import '../services/database/app_database.dart';
 
 /// Lays the writes that are still queued on the phone over a server (or
@@ -89,4 +90,71 @@ Oge ogeyeBekleyenleriUygula(Oge oge, List<BekleyenIslemlerData> bekleyenler) {
     guncelKonum: konum,
     ilerleme: toplam == null || toplam == 0 ? null : (konum / toplam).clamp(0, 1).toDouble(),
   );
+}
+
+/// Lays the queued capture writes over the server's captures, newest first.
+///
+/// - A queued new capture is a row of its own ([YakalamaKonumu.telefonda]).
+/// - A queued edit shows the new content; a queued delete hides the row.
+/// - A capture that already went to the brain is never changed on the screen
+///   (the server would refuse the write anyway).
+/// - A write the server refused ([BekleyenIslemlerData.hata]) is not applied;
+///   its reason is attached to the row, so the list can show it.
+///
+/// [bekleyenler] holds the unsent entries, refused ones included, in queue order.
+List<YakalamaSatiri> yakalamalaraBekleyenleriUygula(
+  List<Yakalama> sunucu,
+  List<BekleyenIslemlerData> bekleyenler,
+) {
+  final satirlar = <String, YakalamaSatiri>{
+    for (final y in sunucu)
+      y.id: YakalamaSatiri(
+        id: y.id,
+        metin: y.metin,
+        fotografId: y.fotografId,
+        hedef: y.hedef,
+        konum: y.durum == YakalamaDurumu.bekliyor ? YakalamaKonumu.sunucuda : YakalamaKonumu.beyinde,
+        islendi: y.durum == YakalamaDurumu.islendi,
+        yakalandiAt: y.yakalandiAt,
+      ),
+  };
+
+  YakalamaSatiri telefonda(BekleyenIslemlerData b, {String? hata}) {
+    final g = YakalamaGovde.fromJson(jsonDecode(b.govde) as Map<String, dynamic>);
+    return YakalamaSatiri(
+      id: b.hedefId,
+      metin: g.yaz.metin,
+      fotografId: g.yaz.fotografId,
+      fotografYolu: g.fotografYolu,
+      hedef: g.yaz.hedef,
+      konum: YakalamaKonumu.telefonda,
+      islendi: false,
+      yakalandiAt: g.yaz.yakalandiAt,
+      hata: hata,
+    );
+  }
+
+  for (final b in bekleyenler) {
+    final hedef = satirlar[b.hedefId];
+    switch (b.tur) {
+      case BekleyenTur.yakalamaEkle:
+        satirlar[b.hedefId] = telefonda(b, hata: b.hata);
+      case BekleyenTur.yakalamaGuncelle when hedef != null && hedef.degistirilebilir:
+        satirlar[b.hedefId] = b.hata == null ? telefonda(b) : hedef.copyWith(hata: b.hata);
+      case BekleyenTur.yakalamaSil when hedef != null && hedef.degistirilebilir:
+        if (b.hata == null) {
+          satirlar.remove(b.hedefId);
+        } else {
+          satirlar[b.hedefId] = hedef.copyWith(hata: b.hata);
+        }
+      default:
+        break;
+    }
+  }
+
+  return satirlar.values.toList()
+    ..sort((a, b) {
+      final tarih = b.yakalandiAt.compareTo(a.yakalandiAt);
+      return tarih != 0 ? tarih : b.id.compareTo(a.id);
+    });
 }
