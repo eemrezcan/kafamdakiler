@@ -102,8 +102,8 @@ public static class AliskanlikIslemleri
     {
         if (a.Tur != AliskanlikTuru.Raf)
             return (Sonuc.Catisma("Yalnız Raf alışkanlığına öğe eklenir."), null);
-        if (await FotografYokMu(db, dto.FotografId, ct))
-            return (Sonuc.Gecersiz("fotografId", "Fotoğraf bulunamadı."), null);
+        if (await FotografKurali.HataAsync(db, dto.FotografId, null, null, ct) is { } hata)
+            return (hata, null);
 
         var oge = new Oge { AliskanlikId = a.Id };
         if (dto.Id is { } id)
@@ -122,8 +122,8 @@ public static class AliskanlikIslemleri
             return Sonuc.Catisma("Oturum girilmiş öğenin başlangıç konumu değiştirilemez.");
         if (dto.Toplam is { } toplam && toplam < GuncelKonum(oge))
             return Sonuc.Gecersiz("toplam", "Toplam, güncel konumdan küçük olamaz.");
-        if (dto.FotografId != oge.FotografId && await FotografYokMu(db, dto.FotografId, ct))
-            return Sonuc.Gecersiz("fotografId", "Fotoğraf bulunamadı.");
+        if (dto.FotografId != oge.FotografId && await FotografKurali.HataAsync(db, dto.FotografId, oge.Id, null, ct) is { } hata)
+            return hata;
 
         var eskiFotograf = oge.FotografId;
         OgeUygula(oge, dto);
@@ -174,9 +174,6 @@ public static class AliskanlikIslemleri
         else
             oge.BitisTarihi = null;
     }
-
-    private static async Task<bool> FotografYokMu(AppDbContext db, Guid? fotografId, CancellationToken ct) =>
-        fotografId is { } id && !await db.Dosyalar.AnyAsync(d => d.Id == id, ct);
 
     // Sessions (Raf)
 
