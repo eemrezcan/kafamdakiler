@@ -29,6 +29,16 @@ Kullanıcı kararı. Senaryo çalışmasından (takvim ve son tarih, beyin ile r
 
 İlkeler: kendiliğinden gelen veri elle girilenden önce gelir; her modülden sonra birkaç gün gerçek kullanım; Claude API için aylık bütçe sınırı; `gizli: true` notlar yapay zekâya gitmez. Kat 1 öğrenme kipindedir; sonraki katların kipi ayrıca konuşulur (K-0001).
 
+## Ek (2026-11-06): Kat 1'e dört ek
+Kullanıcı kararı. Benzer uygulamalar taramasından (beyinde `projects/kafamdakiler/notlar/benzer-uygulamalar-ozellik-havuzu.md`) sunucu ve yapay zekâ gerektirmeyen, Kat 1 modüllerini büyüten dört özellik Kat 1'e alındı:
+- Paylaşım menüsünden yakalama: başka uygulamadan paylaşılan metin, link ya da tek görsel Yakala ekranını dolu açar.
+- Uygulama kısayolu: ikona basılı tutunca "Yakala".
+- Ana ekran widget'ı: tek dokunuşla Yakala. Yukarıdaki 2026-11-03 sırasında "ders sonrası" sayılan widget bununla öne alındı (yalnız yakalama düğmesi; veri gösteren widget yine sonraya).
+- Sürüm uyumu: API en düşük uygulama sürümünü söyler, eski uygulama "güncelle" der. Sunucuya taşınınca APK ile API ayrı güncelleneceği için.
+
+Ayrıntı ve sıra `docs/planlar/kat1.md` F7'de. Kalan seçimler (konum, ilgili notlar, kaydırarak ayıklama, cihaz oturumları) havuzda kalır; konum beynin `gelen ekle` komutunda alan olmadığı için Kat 1'e alınmadı.
+Bu ekin yeniden açma koşulu: F7 gösterime (2026-11-18) yetişmeyecek gibi görünürse widget çıkarılır, önce anlatım yapılır (K-0001 eki 2026-11-05).
+
 ## Gerekçe
 Kapsam bir dönemlik ödevden büyük; teslime çalışan bir çekirdek yetişmeli. Yapılı veri uygulamada durur, Claude ona Faz 2'deki MCP kapısından özetle bağlanır (benzer uygulamaların taraması, 2026-10-15).
 

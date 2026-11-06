@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repositories/aliskanlik_repository.dart';
+import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/esitleyici.dart';
@@ -95,6 +96,11 @@ Widget _sayfa<T extends ChangeNotifier>(T Function(BuildContext) olustur, Widget
     child: Builder(builder: (context) => ekran(context.read<T>())),
   );
 }
+
+/// True when Yakala is the screen on top. The top route is read from the match list: after a `push`
+/// the router's `uri` still shows the page underneath.
+bool yakalaUstte(GoRouter router) =>
+    router.routerDelegate.currentConfiguration.last.matchedLocation == Rotalar.yakala;
 
 GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
   return GoRouter(
@@ -211,7 +217,7 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
             esitleyici: c.read<Esitleyici>(),
             beyin: c.read<BeyinRepository>(),
           ),
-          (vm) => YakalaScreen(viewModel: vm),
+          (vm) => YakalaScreen(viewModel: vm, baslangic: state.extra as YakalaGirdisi?),
         ),
       ),
       GoRoute(

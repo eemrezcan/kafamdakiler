@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../data/models/yakala_girdisi.dart';
 import '../core/widgets.dart';
 import 'yakala_view_model.dart';
 
@@ -12,9 +13,12 @@ import 'yakala_view_model.dart';
 /// clears the form for the next thought (the screen stays). With a view model
 /// in edit mode the same form changes a capture that still waits, then closes.
 class YakalaScreen extends StatefulWidget {
-  const YakalaScreen({super.key, required this.viewModel, this.fotografSecici});
+  const YakalaScreen({super.key, required this.viewModel, this.fotografSecici, this.baslangic});
 
   final YakalaViewModel viewModel;
+
+  /// Text and photo shared from another app (new captures only).
+  final YakalaGirdisi? baslangic;
 
   /// Replaces the camera/gallery in tests.
   final Future<String?> Function(ImageSource kaynak)? fotografSecici;
@@ -31,6 +35,9 @@ class _YakalaScreenState extends State<YakalaScreen> {
   final _odak = FocusNode();
   bool _dolduruldu = false;
 
+  /// Several images were shared and only the first was taken.
+  bool _cokluGorselNotu = false;
+
   /// A photo picked in this form (path of the picker's file).
   String? _yeniFotograf;
 
@@ -44,6 +51,12 @@ class _YakalaScreenState extends State<YakalaScreen> {
     super.initState();
     // The phone's copy of the project list: opening the screen makes no network call.
     _vm.projeleriYukle();
+    final baslangic = widget.baslangic;
+    if (baslangic != null && !_vm.duzenleme) {
+      _metin.text = baslangic.metin ?? '';
+      _yeniFotograf = baslangic.fotografYolu;
+      _cokluGorselNotu = baslangic.cokluGorsel;
+    }
   }
 
   bool get _fotografVar =>
@@ -95,6 +108,7 @@ class _YakalaScreenState extends State<YakalaScreen> {
       setState(() {
         _metin.clear();
         _yeniFotograf = null;
+        _cokluGorselNotu = false;
       });
       _odak.requestFocus();
     }
@@ -190,6 +204,11 @@ class _YakalaScreenState extends State<YakalaScreen> {
               setState(() {});
             },
           ),
+          if (_cokluGorselNotu)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text('Birden çok görsel paylaşıldı; yalnız ilki alındı.'),
+            ),
           const SizedBox(height: 8),
           if (_vm.projeSecici) ...[
             _ProjeSecici(viewModel: _vm),

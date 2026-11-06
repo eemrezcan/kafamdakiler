@@ -55,6 +55,15 @@ class ApiService {
     return Ben.fromJson(yanit.data!);
   }
 
+  /// Lowest app build number the API accepts (anonymous; no token, no refresh).
+  Future<int> enAzMobilSurumKodu() async {
+    final yanit = await _dio.get<Map<String, dynamic>>(
+      '/api/surum',
+      options: Options(extra: {TokenInterceptor.girissizAnahtari: true}),
+    );
+    return yanit.data!['enAzMobilSurumKodu'] as int;
+  }
+
   // ---- Habits ----
 
   Future<List<Aliskanlik>> aliskanliklariGetir({bool arsiv = false}) async {

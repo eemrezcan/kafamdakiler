@@ -86,6 +86,9 @@ The brain is also read through `/api/beyin` (tag "Beyin" in Scalar), for the `Sa
 
 PNG and WebP photos are converted to JPEG on the server (SkiaSharp) because `gelen ekle` only takes JPEG.
 
+## App version check
+`GET /api/surum` (anonymous) returns `{ "enAzMobilSurumKodu": N }` from the setting `Mobil:EnAzSurumKodu` (default 1; on a server the environment variable `Mobil__EnAzSurumKodu`). The app compares its build number (the `+N` in `mobile/pubspec.yaml`) with it at start and when it returns to the foreground; a lower build shows a blocking "update needed" screen, and offline or on any error the app carries on. Raise the setting only after a breaking API change, together with a new app build whose `+N` is at least that value.
+
 ## Migrations
 The schema is created with EF Core migrations (Identity tables, then habits). Apply them before the first run and after pulling new ones:
 
@@ -114,6 +117,24 @@ dart run build_runner build
 adb reverse tcp:5051 tcp:5051
 flutter run --dart-define=API_URL=http://localhost:5051
 ```
+
+Capturing from outside the app (Sahip account only): "Kafamdakiler" appears in Android's share menu for text, links and images; the shared content opens Yakala with the text field or the photo filled in, and you edit and save as usual. Only the first image is taken when several are shared. Long-pressing the app icon shows a "Yakala" shortcut. The home screen widget "Kafamdakiler · Yakala" (add it from the launcher's widget list) opens Yakala the same way; its tap reuses the `quick_actions` plugin's launch extra, so keep `YakalaWidget.kt` in step if that plugin is upgraded. When you are signed out, the shared content waits and Yakala opens with it right after you sign in; with the Asistan account it is dropped with a short message.
+
+## Phone over Tailscale
+
+Until the server exists, the laptop plays the server and the phone reaches it through [Tailscale](https://tailscale.com):
+
+1. Install Tailscale on the laptop and the phone and sign in to the same tailnet. In the admin console enable MagicDNS and HTTPS certificates.
+2. Run the API (`dotnet run --project backend --launch-profile http`), then expose it over HTTPS inside the tailnet:
+
+   ```bash
+   sudo tailscale serve --bg 5051
+   ```
+
+   `tailscale serve status` prints the address, e.g. `https://<machine>.<tailnet>.ts.net`. Only devices in your tailnet can reach it.
+3. Build the app for the phone with that address: `flutter run --release --dart-define=API_URL=https://<machine>.<tailnet>.ts.net` (from `mobile/`, phone connected with USB debugging).
+
+`sudo tailscale serve --https=443 off` stops it.
 
 ## Tests
 ```bash

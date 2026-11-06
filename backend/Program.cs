@@ -5,6 +5,7 @@ using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
+using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
 using Kafamdakiler.Yakalamalar;
 using Kafamdakiler.Yonetim;
@@ -65,6 +66,7 @@ builder.Services.AddHostedService<YetimDosyaTemizleyici>();
 var beyinAyari = BeyinAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSingleton(beyinAyari);
 builder.Services.AddSingleton<BeyinIstemcisi>();
+builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddHostedService<YakalamaGondericisi>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -159,6 +161,7 @@ app.MapDosyaEndpoints();
 app.MapYakalamaEndpoints();
 app.MapBeyinEndpoints();
 app.MapYonetimEndpoints();
+app.MapMobilEndpoints();
 
 app.Run();
 

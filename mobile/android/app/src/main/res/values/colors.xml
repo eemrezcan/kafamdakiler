@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home screen widget; same values as the app theme (lib/config/app_theme.dart: primary / onPrimary). -->
+    <color name="widget_zemin">#FF5A3E9E</color>
+    <color name="widget_yazi">#FFF6F3EE</color>
+</resources>
