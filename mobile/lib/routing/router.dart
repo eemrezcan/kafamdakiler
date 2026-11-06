@@ -7,6 +7,8 @@ import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/esitleyici.dart';
+import '../data/repositories/hatirlatici_bildirim_yoneticisi.dart';
+import '../data/repositories/hatirlatici_repository.dart';
 import '../data/repositories/kronometre_repository.dart';
 import '../data/repositories/kullanici_repository.dart';
 import '../data/repositories/yakalama_repository.dart';
@@ -23,7 +25,12 @@ import '../ui/ara/not_screen.dart';
 import '../ui/bugun/bugun_screen.dart';
 import '../ui/bugun/bugun_view_model.dart';
 import '../ui/bugun/gun_plani_view_model.dart';
+import '../ui/bugun/yaklasanlar_view_model.dart';
 import '../ui/giris/giris_screen.dart';
+import '../ui/hatirlaticilar/hatirlatici_form_screen.dart';
+import '../ui/hatirlaticilar/hatirlatici_form_view_model.dart';
+import '../ui/hatirlaticilar/hatirlatici_liste_screen.dart';
+import '../ui/hatirlaticilar/hatirlatici_liste_view_model.dart';
 import '../ui/giris/giris_view_model.dart';
 import '../ui/oturum/kronometre_view_model.dart';
 import '../ui/oturum/oturum_screen.dart';
@@ -57,6 +64,9 @@ abstract final class Rotalar {
   static const ara = '/ara';
   static const yakalamalar = '/yakalamalar';
   static const yakala = '/yakala';
+
+  /// The reminders list: opened from the Today card and from Profil, a full-screen page (not a tab).
+  static const hatirlaticilar = '/hatirlaticilar';
   static const profil = '/profil';
 
   /// The Sahip's management screen: opened from Profil, a full-screen page.
@@ -71,6 +81,8 @@ final _yonetimRotalari = [
   RegExp(r'^/oge/[^/]+/duzenle$'),
   RegExp(r'^/yakala$'),
   RegExp(r'^/yakalama/[^/]+/duzenle$'),
+  RegExp(r'^/hatirlatici/yeni$'),
+  RegExp(r'^/hatirlatici/[^/]+/duzenle$'),
   RegExp(r'^/yonetim$'),
 ];
 
@@ -131,11 +143,15 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
                     create: (c) => BugunViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
                   ChangeNotifierProvider(create: (c) => GunPlaniViewModel(repo: c.read<BeyinRepository>())..yukle()),
+                  ChangeNotifierProvider(
+                    create: (c) => YaklasanlarViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                  ),
                 ],
                 child: Builder(
                   builder: (context) => BugunScreen(
                     viewModel: context.read<BugunViewModel>(),
                     gunPlani: context.read<GunPlaniViewModel>(),
+                    yaklasanlar: context.read<YaklasanlarViewModel>(),
                   ),
                 ),
               ),
@@ -230,6 +246,36 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
             duzenlenenId: state.pathParameters['id'],
           )..yukle(),
           (vm) => YakalaScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.hatirlaticilar,
+        builder: (context, state) => _sayfa(
+          (c) => HatirlaticiListeViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+          (vm) => HatirlaticiListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: '/hatirlatici/yeni',
+        builder: (context, state) => _sayfa(
+          (c) => HatirlaticiFormViewModel(
+            repo: c.read<HatirlaticiRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            bildirim: c.read<HatirlaticiBildirimYoneticisi>(),
+          ),
+          (vm) => HatirlaticiFormScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: '/hatirlatici/:id/duzenle',
+        builder: (context, state) => _sayfa(
+          (c) => HatirlaticiFormViewModel(
+            repo: c.read<HatirlaticiRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            bildirim: c.read<HatirlaticiBildirimYoneticisi>(),
+            duzenlenenId: state.pathParameters['id'],
+          )..yukle(),
+          (vm) => HatirlaticiFormScreen(viewModel: vm),
         ),
       ),
       GoRoute(

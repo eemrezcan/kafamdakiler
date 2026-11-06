@@ -11,14 +11,19 @@ import 'bugun_view_model.dart';
 import 'gun_plani_karti.dart';
 import 'gun_plani_view_model.dart';
 import 'sayi_giris_dialog.dart';
+import 'yaklasanlar_karti.dart';
+import 'yaklasanlar_view_model.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar});
 
   final BugunViewModel viewModel;
 
   /// The brain's plan for the day, shown above the habit cards. Without it the screen is habits only.
   final GunPlaniViewModel? gunPlani;
+
+  /// Upcoming reminders, shown under the plan card. Without it the card is not there.
+  final YaklasanlarViewModel? yaklasanlar;
 
   Future<void> _tik(BuildContext context, Aliskanlik a) async {
     final mesaj = ScaffoldMessenger.of(context);
@@ -53,7 +58,7 @@ class BugunScreen extends StatelessWidget {
           if (plan != null) {
             // Plan card and habits in one scroll: a failing side never hides the other.
             return RefreshIndicator(
-              onRefresh: () => Future.wait([viewModel.yukle(), plan.yukle()]),
+              onRefresh: () => Future.wait([viewModel.yukle(), plan.yukle(), if (yaklasanlar != null) yaklasanlar!.yukle()]),
               child: OrtaGenislik(child: _liste(context, plan: plan)),
             );
           }
@@ -133,6 +138,11 @@ class BugunScreen extends StatelessWidget {
           ),
         const _Tarih(),
         if (plan != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: GunPlaniKarti(viewModel: plan)),
+        // Hidden until it has an answer, so a failing reminders read leaves no gap.
+        if (yaklasanlar != null) ...[
+          YaklasanlarKarti(viewModel: yaklasanlar!),
+          if (yaklasanlar!.liste != null) const SizedBox(height: 16),
+        ],
         // The habit list is not there (yet) or empty: say so under the plan card.
         if (plan != null && !aliskanlikVar) ..._aliskanlikDurumu(context),
         if (planli.isNotEmpty) _BugunOzeti(planli: planli),

@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../utils/aliskanlik_gunu.dart';
 import '../models/gun.dart';
+import '../models/hatirlatici.dart';
 import '../models/oturum.dart';
 import '../models/yakalama.dart';
 import '../services/api_service.dart';
@@ -233,6 +234,26 @@ class Esitleyici extends ChangeNotifier {
     return gonderilen;
   }
 
+  // Reminders. Every write is queued as its own entry and sent in order (the server knows the client id, so a
+  // repeated send is harmless); no entry is merged or dropped.
+
+  /// Queues a new reminder; [yaz]`.id` is its Guid v7 and the queue id.
+  Future<String> hatirlaticiEkleKuyrugaAl(HatirlaticiYaz yaz) =>
+      _kuyrugaAl(id: yaz.id!, tur: BekleyenTur.hatirlaticiEkle, hedefId: yaz.id!, govde: yaz.toJson());
+
+  Future<String> hatirlaticiGuncelleKuyrugaAl(String id, HatirlaticiYaz yaz) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.hatirlaticiGuncelle, hedefId: id, govde: yaz.toJson());
+
+  Future<String> hatirlaticiSilKuyrugaAl(String id) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.hatirlaticiSil, hedefId: id, govde: const {});
+
+  Future<String> hatirlaticiYaptimKuyrugaAl(String id) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.hatirlaticiYaptim, hedefId: id, govde: const {});
+
+  /// [sure] is `1s` or `yarin` ([ErteleSuresi]).
+  Future<String> hatirlaticiErteleKuyrugaAl(String id, String sure) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.hatirlaticiErtele, hedefId: id, govde: {'sure': sure});
+
   Future<BekleyenIslemlerData?> _satir(String id) =>
       (_db.select(_db.bekleyenIslemler)..where((t) => t.id.equals(id))).getSingleOrNull();
 
@@ -256,6 +277,30 @@ class Esitleyici extends ChangeNotifier {
           await _api.yakalamaSil(islem.hedefId);
         } on DioException catch (e) {
           if (e.response?.statusCode != 404) rethrow; // already gone
+        }
+      case BekleyenTur.hatirlaticiEkle:
+        await _api.hatirlaticiOlustur(HatirlaticiYaz.fromJson(govde));
+      case BekleyenTur.hatirlaticiGuncelle:
+        await _api.hatirlaticiGuncelle(islem.hedefId, HatirlaticiYaz.fromJson(govde));
+      case BekleyenTur.hatirlaticiSil:
+        try {
+          await _api.hatirlaticiSil(islem.hedefId);
+        } on DioException catch (e) {
+          if (e.response?.statusCode != 404) rethrow; // already gone
+        }
+      case BekleyenTur.hatirlaticiYaptim:
+      case BekleyenTur.hatirlaticiErtele:
+        try {
+          if (islem.tur == BekleyenTur.hatirlaticiYaptim) {
+            await _api.hatirlaticiYaptim(islem.hedefId);
+          } else {
+            await _api.hatirlaticiErtele(islem.hedefId, govde['sure'] as String);
+          }
+        } on DioException catch (e) {
+          // 404: deleted meanwhile. 409: not open any more (done on another device, or a double tap on a one-off).
+          // Both leave nothing to do, so they are not shown as refused entries.
+          final kod = e.response?.statusCode;
+          if (kod != 404 && kod != 409) rethrow;
         }
     }
   }

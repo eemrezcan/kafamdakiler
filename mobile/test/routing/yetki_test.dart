@@ -16,6 +16,8 @@ const _yonetimRotalari = [
   '/oge/o1/duzenle',
   '/yakala',
   '/yakalama/y1/duzenle',
+  '/hatirlatici/yeni',
+  '/hatirlatici/h1/duzenle',
   '/yonetim',
 ];
 
@@ -27,6 +29,7 @@ const _herkesinRotalari = [
   '/ara',
   '/not?yol=projects/a/notlar/b.md',
   '/yakalamalar',
+  '/hatirlaticilar',
   '/profil',
   '/aliskanlik/a1/raf',
   '/aliskanlik/a1',

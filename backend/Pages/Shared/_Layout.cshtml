@@ -31,6 +31,7 @@
             <div class="kd-nav-links">
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Aliskanliklar") == true ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Yakalamalar") == true ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">Yakalamalar</a>
+                <a class="kd-nav-link @(currentPage?.StartsWith("/Hatirlaticilar") == true ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">Hatırlatıcılar</a>
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Yonetim") == true ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">Yönetim</a>
             </div>
 
@@ -77,6 +78,10 @@
                 <a class="kd-drawer-link @(currentPage?.StartsWith("/Yakalamalar") == true ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
                     Yakalamalar
+                </a>
+                <a class="kd-drawer-link @(currentPage?.StartsWith("/Hatirlaticilar") == true ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-bell"></use></svg>
+                    Hatırlatıcılar
                 </a>
                 <a class="kd-drawer-link @(currentPage?.StartsWith("/Yonetim") == true ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>

@@ -1,0 +1,25 @@
+namespace Kafamdakiler.Hatirlaticilar;
+
+public class Hatirlatici
+{
+    public Guid Id { get; set; } = Guid.CreateVersion7();
+    public string Baslik { get; set; } = "";
+    public string? Not { get; set; }
+    public HatirlaticiTuru Tur { get; set; }
+    // Only meaningful for Soz (a promise made to someone).
+    public string? Kime { get; set; }
+    // First (or only) day of the rule, in Europe/Istanbul.
+    public DateOnly Gun { get; set; }
+    // Null means the default morning hour from the settings.
+    public TimeOnly? Saat { get; set; }
+    public Tekrar Tekrar { get; set; }
+    public int OnceGun { get; set; }
+    public HatirlaticiDurumu Durum { get; set; }
+    // The next firing moment, computed from the rule and stored so lists can be sorted and filtered in SQL.
+    public DateTimeOffset SonrakiAn { get; set; }
+    // A snooze: when set, it comes before SonrakiAn. The rule itself is unchanged.
+    public DateTimeOffset? ErteleAn { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset EtkinAn => ErteleAn ?? SonrakiAn;
+}

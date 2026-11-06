@@ -6,6 +6,8 @@ import '../models/aliskanlik.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/gun.dart';
+import '../models/hatirlatici.dart';
+import '../../utils/hatirlatici_islemleri.dart';
 import '../models/yakalama.dart';
 import '../services/database/app_database.dart';
 
@@ -157,4 +159,30 @@ List<YakalamaSatiri> yakalamalaraBekleyenleriUygula(
       final tarih = b.yakalandiAt.compareTo(a.yakalandiAt);
       return tarih != 0 ? tarih : b.id.compareTo(a.id);
     });
+}
+
+/// Lays the queued reminder writes over the server's (or cached) reminders, in queue order, so a reminder made,
+/// changed, done or snoozed offline shows at once. Each write is applied at the moment it was queued
+/// ([BekleyenIslemlerData.olusturulma]). [bekleyenler] holds the unsent entries without the refused ones.
+List<Hatirlatici> hatirlaticilaraBekleyenleriUygula(List<Hatirlatici> sunucu, List<BekleyenIslemlerData> bekleyenler) {
+  final harita = <String, Hatirlatici>{for (final h in sunucu) h.id: h};
+  for (final b in bekleyenler) {
+    final govde = jsonDecode(b.govde) as Map<String, dynamic>;
+    final mevcut = harita[b.hedefId];
+    switch (b.tur) {
+      case BekleyenTur.hatirlaticiEkle:
+        harita[b.hedefId] = hatirlaticiYazdan(HatirlaticiYaz.fromJson(govde), b.olusturulma);
+      case BekleyenTur.hatirlaticiGuncelle when mevcut != null:
+        harita[b.hedefId] = hatirlaticiYazdan(HatirlaticiYaz.fromJson(govde), b.olusturulma, mevcut: mevcut);
+      case BekleyenTur.hatirlaticiSil:
+        harita.remove(b.hedefId);
+      case BekleyenTur.hatirlaticiYaptim when mevcut != null:
+        harita[b.hedefId] = hatirlaticiYaptim(mevcut, b.olusturulma);
+      case BekleyenTur.hatirlaticiErtele when mevcut != null:
+        harita[b.hedefId] = hatirlaticiErtele(mevcut, govde['sure'] as String, b.olusturulma);
+      default:
+        break;
+    }
+  }
+  return harita.values.toList();
 }

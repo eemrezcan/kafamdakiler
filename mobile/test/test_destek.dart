@@ -7,6 +7,7 @@ import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
+import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
@@ -15,11 +16,14 @@ import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
 import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
 import 'package:kafamdakiler/data/services/api_service.dart';
+import 'package:kafamdakiler/data/services/bildirim_servisi.dart';
 import 'package:kafamdakiler/data/services/database/app_database.dart';
 import 'package:kafamdakiler/data/services/fotograf_deposu.dart';
 import 'package:kafamdakiler/utils/aliskanlik_gunu.dart';
+import 'package:kafamdakiler/utils/bildirim_plani.dart';
 
 /// An [ApiService] that answers from memory. With [cevrimdisi] every call
 /// fails like a lost connection.
@@ -119,6 +123,42 @@ class SahteApi extends ApiService {
   Future<List<Yakalama>> yakalamalariGetir() async {
     _kontrol('yakalamalariGetir');
     return yakalamalar;
+  }
+
+  /// Server reminders for `/api/hatirlaticilar`.
+  List<Hatirlatici> hatirlaticilar = [];
+
+  @override
+  Future<List<Hatirlatici>> hatirlaticilariGetir() async {
+    _kontrol('hatirlaticilariGetir');
+    return hatirlaticilar;
+  }
+
+  @override
+  Future<Hatirlatici> hatirlaticiOlustur(HatirlaticiYaz yaz) async {
+    _kontrol('hatirlaticiOlustur');
+    return ornekHatirlatici(id: yaz.id!, baslik: yaz.baslik);
+  }
+
+  @override
+  Future<Hatirlatici> hatirlaticiGuncelle(String id, HatirlaticiYaz yaz) async {
+    _kontrol('hatirlaticiGuncelle');
+    return ornekHatirlatici(id: id, baslik: yaz.baslik);
+  }
+
+  @override
+  Future<void> hatirlaticiSil(String id) async => _kontrol('hatirlaticiSil');
+
+  @override
+  Future<Hatirlatici> hatirlaticiYaptim(String id) async {
+    _kontrol('hatirlaticiYaptim');
+    return ornekHatirlatici(id: id);
+  }
+
+  @override
+  Future<Hatirlatici> hatirlaticiErtele(String id, String sure) async {
+    _kontrol('hatirlaticiErtele:$sure');
+    return ornekHatirlatici(id: id);
   }
 
   // ---- Second brain ----
@@ -308,6 +348,36 @@ Gonderim ornekGonderim({
   );
 }
 
+/// A reminder on 2026-11-02 09:00 Istanbul time (06:00Z), the day after [sabitAn]'s habit day plus one.
+Hatirlatici ornekHatirlatici({
+  String id = 'h1',
+  String baslik = 'Faturayı öde',
+  HatirlaticiTuru tur = HatirlaticiTuru.gorev,
+  String? kime,
+  DateTime? gun,
+  Saat? saat,
+  Tekrar tekrar = Tekrar.yok,
+  int onceGun = 0,
+  HatirlaticiDurumu durum = HatirlaticiDurumu.acik,
+  DateTime? sonrakiAn,
+  DateTime? erteleAn,
+}) {
+  return Hatirlatici(
+    id: id,
+    baslik: baslik,
+    tur: tur,
+    kime: kime,
+    gun: gun ?? DateTime.utc(2026, 11, 2),
+    saat: saat,
+    tekrar: tekrar,
+    onceGun: onceGun,
+    durum: durum,
+    sonrakiAn: sonrakiAn ?? DateTime.utc(2026, 11, 2, 6),
+    erteleAn: erteleAn,
+    createdAt: DateTime.utc(2026, 10, 1),
+  );
+}
+
 /// 2026-10-31 12:00 Istanbul time (habit day 2026-10-31).
 final sabitAn = DateTime.utc(2026, 10, 31, 9);
 final sabitBugun = DateTime.utc(2026, 10, 31);
@@ -376,6 +446,7 @@ class TestOrtami {
       simdi: () => sabitAn,
     );
     beyin = BeyinRepository(api: this.api, db: db);
+    hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
   }
 
   final SahteApi api;
@@ -384,6 +455,7 @@ class TestOrtami {
   late final AliskanlikRepository repo;
   late final YakalamaRepository yakalamalar;
   late final BeyinRepository beyin;
+  late final HatirlaticiRepository hatirlaticilar;
 
   /// Where the photo copies of the captures go in tests.
   final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');
@@ -397,4 +469,34 @@ class TestOrtami {
     await db.close();
     if (fotografKlasoru.existsSync()) fotografKlasoru.deleteSync(recursive: true);
   }
+}
+
+/// A [BildirimServisi] that remembers what it was asked to set up, so tests need no platform plugin.
+class SahteBildirimServisi implements BildirimServisi {
+  /// Every plan handed to [kur], oldest first.
+  final List<List<PlanliBildirim>> planlar = [];
+  int izinIstekleri = 0;
+  BildirimYaniti? acilis;
+  void Function(BildirimYaniti)? yanitla;
+  bool baslatildi = false;
+
+  List<PlanliBildirim> get son => planlar.last;
+
+  @override
+  Future<void> baslat({required void Function(BildirimYaniti) yanit}) async {
+    baslatildi = true;
+    yanitla = yanit;
+  }
+
+  @override
+  Future<BildirimYaniti?> acilisYaniti() async => acilis;
+
+  @override
+  Future<bool> izinIste() async {
+    izinIstekleri++;
+    return true;
+  }
+
+  @override
+  Future<void> kur(List<PlanliBildirim> plan) async => planlar.add(plan);
 }

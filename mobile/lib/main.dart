@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -12,6 +13,8 @@ import 'data/repositories/aliskanlik_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/beyin_repository.dart';
 import 'data/repositories/esitleyici.dart';
+import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
+import 'data/repositories/hatirlatici_repository.dart';
 import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
 import 'data/repositories/surum_denetcisi.dart';
@@ -19,6 +22,7 @@ import 'data/repositories/yakala_yonlendirici.dart';
 import 'data/repositories/yakalama_repository.dart';
 import 'data/services/api_service.dart';
 import 'data/services/database/app_database.dart';
+import 'data/services/bildirim_servisi.dart';
 import 'data/services/esitleme_tetikleyici.dart';
 import 'data/services/paylasim_kaynagi.dart';
 import 'data/services/token_depo.dart';
@@ -42,7 +46,14 @@ Future<void> main() async {
   final esitleyici = Esitleyici(api: api, db: db);
   final aliskanliklar = AliskanlikRepository(api: api, db: db, esitleyici: esitleyici);
   final yakalamalar = YakalamaRepository(api: api, db: db, esitleyici: esitleyici);
+  final hatirlaticilar = HatirlaticiRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
+  final bildirimler = HatirlaticiBildirimYoneticisi(
+    repo: hatirlaticilar,
+    esitleyici: esitleyici,
+    servis: YerelBildirimServisi(),
+    yazabilir: () => kullanici.sahip,
+  );
   final beyin = BeyinRepository(api: api, db: db);
   auth = AuthRepository(
     api: api,
@@ -51,6 +62,7 @@ Future<void> main() async {
     cikistaTemizle: () async {
       await yakalamalar.yerelFotograflariSil();
       await db.hepsiniTemizle();
+      await bildirimler.temizle();
       aliskanliklar.resimleriBirak();
       kullanici.temizle();
     },
@@ -79,6 +91,8 @@ Future<void> main() async {
     esitleyici: esitleyici,
     aliskanliklar: aliskanliklar,
     yakalamalar: yakalamalar,
+    hatirlaticilar: hatirlaticilar,
+    bildirimler: bildirimler,
     beyin: beyin,
     kronometre: KronometreRepository(db: db),
     surum: surum,
@@ -94,6 +108,8 @@ class KafamdakilerApp extends StatefulWidget {
     required this.esitleyici,
     required this.aliskanliklar,
     required this.yakalamalar,
+    required this.hatirlaticilar,
+    required this.bildirimler,
     required this.beyin,
     required this.kronometre,
     required this.surum,
@@ -105,6 +121,8 @@ class KafamdakilerApp extends StatefulWidget {
   final Esitleyici esitleyici;
   final AliskanlikRepository aliskanliklar;
   final YakalamaRepository yakalamalar;
+  final HatirlaticiRepository hatirlaticilar;
+  final HatirlaticiBildirimYoneticisi bildirimler;
   final BeyinRepository beyin;
   final KronometreRepository kronometre;
   final SurumDenetcisi surum;
@@ -133,7 +151,11 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
     gonder: () async {
       // At start, on return to the foreground and when connectivity comes back.
       unawaited(widget.surum.kontrolEt());
-      if (widget.auth.girisYapildi) await widget.esitleyici.gonder();
+      if (widget.auth.girisYapildi) {
+        await widget.esitleyici.gonder();
+        // After the sync: refresh the reminders and set the notifications up again.
+        await widget.bildirimler.esitleVeKur();
+      }
     },
   );
 
@@ -144,11 +166,18 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
     _yakalaYonlendirici.degerlendir();
     // Share menu and app shortcut; a platform failure must not stop the app.
     PaylasimKaynagi(_bekleyenYakala).baslat().catchError((Object _) {});
+    // Notification taps and buttons; a platform failure must not stop the app.
+    widget.bildirimler
+        .baslat(listeyiAc: () {
+          if (widget.auth.girisYapildi) _router.push(Rotalar.hatirlaticilar);
+        })
+        .catchError((Object _) {});
   }
 
   @override
   void dispose() {
     _tetikleyici.durdur();
+    widget.bildirimler.durdur();
     _yakalaYonlendirici.durdur();
     _router.dispose();
     super.dispose();
@@ -164,6 +193,8 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.esitleyici),
         ChangeNotifierProvider.value(value: widget.aliskanliklar),
         ChangeNotifierProvider.value(value: widget.yakalamalar),
+        ChangeNotifierProvider.value(value: widget.hatirlaticilar),
+        Provider.value(value: widget.bildirimler),
         Provider.value(value: widget.beyin),
         Provider.value(value: widget.kronometre),
         ChangeNotifierProvider.value(value: widget.surum),
@@ -173,6 +204,10 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
+        // Turkish date and time pickers (the reminder form).
+        locale: const Locale('tr'),
+        supportedLocales: const [Locale('tr')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         routerConfig: _router,
         scaffoldMessengerKey: _mesajAnahtari,
         builder: (context, child) => Consumer<SurumDenetcisi>(

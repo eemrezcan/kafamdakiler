@@ -80,3 +80,14 @@ String? ogeToplamDogrula(String? v, double baslangic) {
 String? puanDogrula(int? puan) => puan != null && (puan < 1 || puan > 5) ? 'Puan 1 ile 5 arasında olmalı.' : null;
 
 String? notDogrula(String? v) => (v?.length ?? 0) > 2000 ? 'Not en çok 2000 karakter olabilir.' : null;
+
+/// Reminder: how many days before the heads-up comes (0 means none).
+String? onceGunDogrula(String? v) {
+  final t = v?.trim() ?? '';
+  if (t.isEmpty) return null;
+  final n = int.tryParse(t);
+  if (n == null || n < 0 || n > 60) return 'Kaç gün önce uyarılacağı 0 ile 60 arasında olmalı.';
+  return null;
+}
+
+String? kimeDogrula(String? v) => (v?.trim().length ?? 0) > 100 ? 'Kime en çok 100 karakter olabilir.' : null;

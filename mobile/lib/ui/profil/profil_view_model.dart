@@ -52,6 +52,11 @@ class ProfilViewModel extends ChangeNotifier {
       BekleyenTur.yakalamaEkle => 'Yakalama: yeni kayıt',
       BekleyenTur.yakalamaGuncelle => 'Yakalama: değişiklik',
       BekleyenTur.yakalamaSil => 'Yakalama: silme',
+      BekleyenTur.hatirlaticiEkle => 'Hatırlatıcı: yeni kayıt',
+      BekleyenTur.hatirlaticiGuncelle => 'Hatırlatıcı: değişiklik',
+      BekleyenTur.hatirlaticiSil => 'Hatırlatıcı: silme',
+      BekleyenTur.hatirlaticiYaptim => 'Hatırlatıcı: yaptım',
+      BekleyenTur.hatirlaticiErtele => 'Hatırlatıcı: erteleme',
     };
   }
 

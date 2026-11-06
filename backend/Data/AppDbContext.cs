@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Dosyalar;
+using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Oturum> Oturumlar => Set<Oturum>();
     public DbSet<Dosya> Dosyalar => Set<Dosya>();
     public DbSet<Yakalama> Yakalamalar => Set<Yakalama>();
+    public DbSet<Hatirlatici> Hatirlaticilar => Set<Hatirlatici>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -77,6 +79,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property<uint>("xmin").IsRowVersion();
 
             e.HasOne(x => x.Fotograf).WithMany().HasForeignKey(x => x.FotografId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<Hatirlatici>(e =>
+        {
+            e.Property(x => x.Baslik).HasMaxLength(200);
+            e.Property(x => x.Not).HasMaxLength(2000);
+            e.Property(x => x.Kime).HasMaxLength(100);
+            e.Property(x => x.Tur).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Tekrar).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.Ignore(x => x.EtkinAn);
+            e.HasIndex(x => new { x.Durum, x.SonrakiAn });
         });
 
         builder.Entity<Dosya>(e =>

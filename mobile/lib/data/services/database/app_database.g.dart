@@ -1985,6 +1985,268 @@ class ProjeOnbellekCompanion extends UpdateCompanion<ProjeOnbellekData> {
   }
 }
 
+class $HatirlaticiOnbellekTable extends HatirlaticiOnbellek
+    with TableInfo<$HatirlaticiOnbellekTable, HatirlaticiOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HatirlaticiOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hatirlatici_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HatirlaticiOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HatirlaticiOnbellekData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HatirlaticiOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+    );
+  }
+
+  @override
+  $HatirlaticiOnbellekTable createAlias(String alias) {
+    return $HatirlaticiOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class HatirlaticiOnbellekData extends DataClass
+    implements Insertable<HatirlaticiOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  const HatirlaticiOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    return map;
+  }
+
+  HatirlaticiOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return HatirlaticiOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+    );
+  }
+
+  factory HatirlaticiOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HatirlaticiOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+    };
+  }
+
+  HatirlaticiOnbellekData copyWith({String? id, int? sira, String? govde}) =>
+      HatirlaticiOnbellekData(
+        id: id ?? this.id,
+        sira: sira ?? this.sira,
+        govde: govde ?? this.govde,
+      );
+  HatirlaticiOnbellekData copyWithCompanion(HatirlaticiOnbellekCompanion data) {
+    return HatirlaticiOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HatirlaticiOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HatirlaticiOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde);
+}
+
+class HatirlaticiOnbellekCompanion
+    extends UpdateCompanion<HatirlaticiOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<int> rowid;
+  const HatirlaticiOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HatirlaticiOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<HatirlaticiOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HatirlaticiOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<int>? rowid,
+  }) {
+    return HatirlaticiOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HatirlaticiOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2002,6 +2264,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $ProjeOnbellekTable projeOnbellek = $ProjeOnbellekTable(this);
+  late final $HatirlaticiOnbellekTable hatirlaticiOnbellek =
+      $HatirlaticiOnbellekTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2014,6 +2278,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     kronometreKayitlari,
     yakalamaOnbellek,
     projeOnbellek,
+    hatirlaticiOnbellek,
   ];
 }
 
@@ -3335,6 +3600,196 @@ typedef $$ProjeOnbellekTableProcessedTableManager =
       ProjeOnbellekData,
       PrefetchHooks Function()
     >;
+typedef $$HatirlaticiOnbellekTableCreateCompanionBuilder =
+    HatirlaticiOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<int> rowid,
+    });
+typedef $$HatirlaticiOnbellekTableUpdateCompanionBuilder =
+    HatirlaticiOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<int> rowid,
+    });
+
+class $$HatirlaticiOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $HatirlaticiOnbellekTable> {
+  $$HatirlaticiOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HatirlaticiOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $HatirlaticiOnbellekTable> {
+  $$HatirlaticiOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HatirlaticiOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HatirlaticiOnbellekTable> {
+  $$HatirlaticiOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+}
+
+class $$HatirlaticiOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HatirlaticiOnbellekTable,
+          HatirlaticiOnbellekData,
+          $$HatirlaticiOnbellekTableFilterComposer,
+          $$HatirlaticiOnbellekTableOrderingComposer,
+          $$HatirlaticiOnbellekTableAnnotationComposer,
+          $$HatirlaticiOnbellekTableCreateCompanionBuilder,
+          $$HatirlaticiOnbellekTableUpdateCompanionBuilder,
+          (
+            HatirlaticiOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $HatirlaticiOnbellekTable,
+              HatirlaticiOnbellekData
+            >,
+          ),
+          HatirlaticiOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$HatirlaticiOnbellekTableTableManager(
+    _$AppDatabase db,
+    $HatirlaticiOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HatirlaticiOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HatirlaticiOnbellekTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$HatirlaticiOnbellekTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HatirlaticiOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<int> rowid = const Value.absent(),
+              }) => HatirlaticiOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $HatirlaticiOnbellekTable,
+                    HatirlaticiOnbellekData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $HatirlaticiOnbellekTable,
+                    HatirlaticiOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HatirlaticiOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HatirlaticiOnbellekTable,
+      HatirlaticiOnbellekData,
+      $$HatirlaticiOnbellekTableFilterComposer,
+      $$HatirlaticiOnbellekTableOrderingComposer,
+      $$HatirlaticiOnbellekTableAnnotationComposer,
+      $$HatirlaticiOnbellekTableCreateCompanionBuilder,
+      $$HatirlaticiOnbellekTableUpdateCompanionBuilder,
+      (
+        HatirlaticiOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $HatirlaticiOnbellekTable,
+          HatirlaticiOnbellekData
+        >,
+      ),
+      HatirlaticiOnbellekData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3353,4 +3808,6 @@ class $AppDatabaseManager {
       $$YakalamaOnbellekTableTableManager(_db, _db.yakalamaOnbellek);
   $$ProjeOnbellekTableTableManager get projeOnbellek =>
       $$ProjeOnbellekTableTableManager(_db, _db.projeOnbellek);
+  $$HatirlaticiOnbellekTableTableManager get hatirlaticiOnbellek =>
+      $$HatirlaticiOnbellekTableTableManager(_db, _db.hatirlaticiOnbellek);
 }

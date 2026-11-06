@@ -44,10 +44,37 @@ enum BekleyenTur {
 
   /// `DELETE /api/yakalamalar/{hedefId}`.
   yakalamaSil,
+
+  /// `POST /api/hatirlaticilar` with a `HatirlaticiYaz` body; the queue id is the reminder id, [hedefId] too.
+  /// Appended last: the column stores the enum index.
+  hatirlaticiEkle,
+
+  /// `PUT /api/hatirlaticilar/{hedefId}` with a `HatirlaticiYaz` body.
+  hatirlaticiGuncelle,
+
+  /// `DELETE /api/hatirlaticilar/{hedefId}`.
+  hatirlaticiSil,
+
+  /// `POST /api/hatirlaticilar/{hedefId}/yaptim`.
+  hatirlaticiYaptim,
+
+  /// `POST /api/hatirlaticilar/{hedefId}/ertele` with `{"sure": "1s" | "yarin"}`.
+  hatirlaticiErtele,
 }
 
 /// Cache of `GET /api/yakalamalar` (`YakalamaDto` JSON, newest first), replaced as a whole.
 class YakalamaOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cache of `GET /api/hatirlaticilar` (`HatirlaticiDto` JSON in the server's order), replaced as a whole.
+/// The reminders list and the notification plan read it offline, with the queued writes laid on top.
+class HatirlaticiOnbellek extends Table {
   TextColumn get id => text()();
   IntColumn get sira => integer()();
   TextColumn get govde => text()();
@@ -118,13 +145,14 @@ class BekleyenIslemler extends Table {
     KronometreKayitlari,
     YakalamaOnbellek,
     ProjeOnbellek,
+    HatirlaticiOnbellek,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -140,6 +168,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await m.createTable(projeOnbellek);
           }
+          if (from < 5) {
+            await m.createTable(hatirlaticiOnbellek);
+          }
         },
       );
 
@@ -152,5 +183,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(kronometreKayitlari).go();
         await delete(yakalamaOnbellek).go();
         await delete(projeOnbellek).go();
+        await delete(hatirlaticiOnbellek).go();
       });
 }

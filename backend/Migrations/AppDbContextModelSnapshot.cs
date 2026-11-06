@@ -248,6 +248,65 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Dosyalar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Hatirlaticilar.Hatirlatici", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Baslik")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Durum")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("ErteleAn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Gun")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Kime")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Not")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("OnceGun")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeOnly?>("Saat")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<DateTimeOffset>("SonrakiAn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Tekrar")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Durum", "SonrakiAn");
+
+                    b.ToTable("Hatirlaticilar");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Yakalamalar.Yakalama", b =>
                 {
                     b.Property<Guid>("Id")

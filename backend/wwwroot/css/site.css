@@ -2492,6 +2492,139 @@ textarea.form-control {
   }
 }
 
+/* ---------- Reminders (Hatırlatıcılar) ---------- */
+
+/* One reminder: text on the left, buttons on the right (under the text on a phone). */
+.kd-rem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0.85rem 0.75rem 0.85rem 1rem;
+  border: 1px solid var(--kd-line);
+  border-left: 3px solid var(--kd-hue);
+  border-radius: 0.6rem;
+  background: var(--kd-surface-solid);
+  transition: border-color 0.15s ease;
+}
+
+.kd-rem:hover {
+  border-color: var(--kd-line-strong);
+  border-left-color: var(--kd-hue);
+}
+
+/* Past its moment: red edge and a faint red wash. */
+.kd-rem.is-overdue {
+  border-left-color: var(--kd-danger);
+  background: linear-gradient(90deg, rgba(var(--kd-violet-rgb), 0) 0, rgba(163, 36, 59, 0.07) 100%), var(--kd-surface-solid);
+}
+
+.kd-rem.is-overdue .kd-rem-left {
+  color: var(--kd-danger);
+}
+
+.kd-rem-body {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.kd-rem-title {
+  margin: 0 0 0.35rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.kd-rem-title a {
+  color: var(--kd-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.kd-rem-title a:hover {
+  text-decoration: underline;
+}
+
+.kd-rem-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-rem-meta .kd-status {
+  margin: 0;
+}
+
+.kd-rem-meta .kd-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-right: 0.25rem;
+  vertical-align: -0.1em;
+}
+
+.kd-rem-when time {
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-rem-left {
+  margin-left: 0.4rem;
+  color: var(--kd-text);
+  font-weight: 500;
+}
+
+.kd-rem-snoozed {
+  color: var(--kd-hue);
+}
+
+.kd-rem-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--kd-text-faint);
+}
+
+.kd-rem-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.kd-rem-actions form {
+  margin: 0;
+}
+
+.kd-rem-actions .btn {
+  min-height: 2.75rem;
+}
+
+.kd-rem-actions .btn .kd-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.3rem;
+  vertical-align: -0.15em;
+}
+
+/* On a phone the buttons go under the text and share the row. */
+@media (max-width: 575.98px) {
+  .kd-rem {
+    flex-direction: column;
+  }
+
+  .kd-rem-actions {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-rem {
+    transition: none;
+  }
+}
+
 /* ----- Yönetim (Sahip panel): the Asistan's permissions, the brain, the sending queue ----- */
 
 .kd-yonetim-blok {

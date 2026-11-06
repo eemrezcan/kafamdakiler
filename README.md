@@ -89,6 +89,18 @@ PNG and WebP photos are converted to JPEG on the server (SkiaSharp) because `gel
 ## App version check
 `GET /api/surum` (anonymous) returns `{ "enAzMobilSurumKodu": N }` from the setting `Mobil:EnAzSurumKodu` (default 1; on a server the environment variable `Mobil__EnAzSurumKodu`). The app compares its build number (the `+N` in `mobile/pubspec.yaml`) with it at start and when it returns to the foreground; a lower build shows a blocking "update needed" screen, and offline or on any error the app carries on. Raise the setting only after a breaking API change, together with a new app build whose `+N` is at least that value.
 
+Reminders: the hour used when a reminder has none comes from `Hatirlatici:VarsayilanSaat` (Istanbul time, default `09:00`; on a server the environment variable `Hatirlatici__VarsayilanSaat`).
+
+## Reminders API
+Under `/api/hatirlaticilar` (permissions `hatirlatici.oku` for reading, `hatirlatici.yaz` for writing; the Sahip always passes):
+
+- `GET /` list, sorted by the effective moment; filters `?durum=acik|tamam|arsiv` and `?yaklasan=N` (open ones due within N days, overdue included)
+- `GET /{id}`, `POST /`, `PUT /{id}`, `DELETE /{id}`
+- `POST /{id}/yaptim` done: a repeating reminder moves to its next turn, a one-off becomes `tamam`
+- `POST /{id}/ertele` with `{ "sure": "1s" | "yarin" }` snooze: one hour from now, or tomorrow at the reminder's hour
+
+Examples: `backend/Hatirlaticilar/hatirlaticilar.http`.
+
 ## Migrations
 The schema is created with EF Core migrations (Identity tables, then habits). Apply them before the first run and after pulling new ones:
 
@@ -119,6 +131,8 @@ flutter run --dart-define=API_URL=http://localhost:5051
 ```
 
 Capturing from outside the app (Sahip account only): "Kafamdakiler" appears in Android's share menu for text, links and images; the shared content opens Yakala with the text field or the photo filled in, and you edit and save as usual. Only the first image is taken when several are shared. Long-pressing the app icon shows a "Yakala" shortcut. The home screen widget "Kafamdakiler · Yakala" (add it from the launcher's widget list) opens Yakala the same way; its tap reuses the `quick_actions` plugin's launch extra, so keep `YakalaWidget.kt` in step if that plugin is upgraded. When you are signed out, the shared content waits and Yakala opens with it right after you sign in; with the Asistan account it is dropped with a short message.
+
+Reminder notifications: the phone schedules local notifications for every open reminder (its moment and, when set, the "N days before" heads-up). They are planned again after every sync and at every app start, and the plugin sets them up again after a restart. The first reminder you create asks for the notification permission (Android 13+) and, once per run, for the exact alarm permission; without it the notifications still come, only at an approximate time. The buttons on a notification (Yaptım, 1 saat ertele, Yarın) open the app, write to the offline queue there and send it. Limits: some phone makers (Xiaomi, Huawei, Samsung's battery savers and the like) stop apps from running in the background and may delay or drop scheduled notifications unless the app is excluded from battery optimisation; a reminder changed on another device is only picked up when this phone syncs (app start, return to the foreground, connectivity); when the phone has no connection the times come from the phone's own copy of the recurrence rules.
 
 ## Phone over Tailscale
 

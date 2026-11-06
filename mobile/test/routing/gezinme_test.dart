@@ -8,6 +8,8 @@ import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
+import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
 import 'package:kafamdakiler/data/repositories/kronometre_repository.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
 import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
@@ -99,6 +101,15 @@ void main() {
           ChangeNotifierProvider<Esitleyici>.value(value: ortam.esitleyici),
           ChangeNotifierProvider<AliskanlikRepository>.value(value: ortam.repo),
           ChangeNotifierProvider<YakalamaRepository>.value(value: ortam.yakalamalar),
+          ChangeNotifierProvider<HatirlaticiRepository>.value(value: ortam.hatirlaticilar),
+          Provider<HatirlaticiBildirimYoneticisi>.value(
+            value: HatirlaticiBildirimYoneticisi(
+              repo: ortam.hatirlaticilar,
+              esitleyici: ortam.esitleyici,
+              servis: SahteBildirimServisi(),
+              yazabilir: () => true,
+            ),
+          ),
           Provider<BeyinRepository>.value(value: ortam.beyin),
           Provider<KronometreRepository>.value(value: KronometreRepository(db: ortam.db)),
         ],
@@ -200,6 +211,26 @@ void main() {
     await bekle(tester);
     expect(router.state.matchedLocation, '/aliskanliklar');
     expect(find.text('Su iç'), findsOneWidget);
+  });
+
+  testWidgets('the Yaklaşanlar card on Bugün and the row on Profil both open the reminders list', (tester) async {
+    ortam.api.hatirlaticilar = [
+      ornekHatirlatici(id: 'h', baslik: 'Yaklaşan iş', sonrakiAn: DateTime.now().toUtc().add(const Duration(days: 2))),
+    ];
+    await uygulamayiAc(tester);
+
+    expect(find.text('Yaklaşanlar'), findsOneWidget);
+    await tester.tap(find.text('Yaklaşanlar'));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/hatirlaticilar');
+    expect(find.text('Yaklaşan iş'), findsOneWidget);
+
+    router.go('/');
+    await bekle(tester);
+    await sekme(tester, 'Profil');
+    await tester.tap(find.text('Hatırlatıcılar'));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/hatirlaticilar');
   });
 
   testWidgets('a note path with slashes and spaces survives the route', (tester) async {

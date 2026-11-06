@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Yakalamalar;
 
 namespace Kafamdakiler.Yonetim;
@@ -16,6 +17,8 @@ public static class Izinler
         new(AliskanlikPolicies.Yaz, "Alışkanlık, öğe ve kayıt ekler, değiştirir, siler"),
         new(YakalamaPolicies.Oku, "Yakalamaları okur"),
         new(YakalamaPolicies.Yaz, "Yakalama ekler, değiştirir, siler"),
+        new(HatirlaticiPolicies.Oku, "Hatırlatıcıları okur"),
+        new(HatirlaticiPolicies.Yaz, "Hatırlatıcı ekler, değiştirir, siler, yaptım ve ertele işaretler"),
         new(BeyinPolicies.Oku, "Beyni okur: proje, gün planı, arama, not"),
     ];
 

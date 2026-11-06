@@ -1,0 +1,123 @@
+@page "{id:guid?}"
+@using Kafamdakiler.Hatirlaticilar
+@model Kafamdakiler.Pages.Hatirlaticilar.DuzenleModel
+@{
+    var baslik = Model.Yeni ? "Yeni hatırlatıcı" : "Hatırlatıcıyı düzenle";
+    ViewData["Title"] = baslik;
+}
+
+<div class="kd-page-head kd-rise kd-c-amber">
+    <div>
+        <p class="kd-eyebrow">
+            <a class="kd-back" asp-page="Index"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Hatırlatıcılar</a>
+        </p>
+        <h1 class="kd-page-title">@baslik</h1>
+    </div>
+</div>
+
+<form method="post" class="kd-form" novalidate data-kd-reminder-form>
+    <div asp-validation-summary="ModelOnly" class="kd-alert" role="alert"></div>
+
+    <section class="kd-form-block">
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Baslik">Başlık</label>
+            <input class="form-control" asp-for="Input.Baslik" maxlength="200" autocomplete="off" autofocus />
+            <span class="kd-field-error" asp-validation-for="Input.Baslik"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Tur">Tür</label>
+            <select class="form-select kd-narrow" asp-for="Input.Tur" data-kd-reminder-tur>
+                @foreach (var tur in Enum.GetValues<HatirlaticiTuru>())
+                {
+                    <option value="@tur" selected="@(Model.Input.Tur == tur)">@HatirlaticiGorunum.TurAdi(tur)</option>
+                }
+            </select>
+            <span class="kd-field-error" asp-validation-for="Input.Tur"></span>
+        </div>
+
+        <div class="kd-field" data-kd-reminder-kime hidden="@(Model.Input.Tur != HatirlaticiTuru.Soz)">
+            <label class="kd-field-label" asp-for="Input.Kime">Kime söz verdin?</label>
+            <input class="form-control" asp-for="Input.Kime" maxlength="100" autocomplete="off" />
+            <span class="kd-field-error" asp-validation-for="Input.Kime"></span>
+        </div>
+
+        <div class="kd-field-row">
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Gun">Gün</label>
+                <input class="form-control" asp-for="Input.Gun" type="date" />
+                <span class="kd-field-error" asp-validation-for="Input.Gun"></span>
+            </div>
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Saat">Saat</label>
+                <input class="form-control" asp-for="Input.Saat" type="time" />
+                <small class="kd-muted">Boşsa @Model.VarsayilanSaat.ToString("HH:mm").</small>
+                <span class="kd-field-error" asp-validation-for="Input.Saat"></span>
+            </div>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Tekrar">Tekrar</label>
+            <select class="form-select kd-narrow" asp-for="Input.Tekrar">
+                @foreach (var tekrar in Enum.GetValues<Tekrar>())
+                {
+                    <option value="@tekrar" selected="@(Model.Input.Tekrar == tekrar)">@HatirlaticiGorunum.TekrarAdi(tekrar)</option>
+                }
+            </select>
+            <small class="kd-muted">Ayın 31'inde başlayan aylık hatırlatıcı, kısa aylarda ayın son günü çalar.</small>
+            <span class="kd-field-error" asp-validation-for="Input.Tekrar"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.OnceGun">Kaç gün önce de haber verilsin?</label>
+            <input class="form-control kd-narrow" asp-for="Input.OnceGun" type="number" min="0" max="60" inputmode="numeric" />
+            <small class="kd-muted">0 ise yalnız asıl günde haber verilir (en çok 60).</small>
+            <span class="kd-field-error" asp-validation-for="Input.OnceGun"></span>
+        </div>
+
+        @if (!Model.Yeni)
+        {
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.Durum">Durum</label>
+                <select class="form-select kd-narrow" asp-for="Input.Durum">
+                    @foreach (var durum in Enum.GetValues<HatirlaticiDurumu>())
+                    {
+                        <option value="@durum" selected="@(Model.Input.Durum == durum)">@HatirlaticiGorunum.DurumAdi(durum)</option>
+                    }
+                </select>
+                <span class="kd-field-error" asp-validation-for="Input.Durum"></span>
+            </div>
+        }
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.Not">Not (isteğe bağlı)</label>
+            <textarea class="form-control" asp-for="Input.Not" rows="3" maxlength="2000"></textarea>
+            <span class="kd-field-error" asp-validation-for="Input.Not"></span>
+        </div>
+    </section>
+
+    <div class="kd-form-actions">
+        <button type="submit" class="btn btn-primary kd-btn-lg">Kaydet</button>
+        <a class="btn btn-outline-primary kd-btn-lg" asp-page="Index">Vazgeç</a>
+    </div>
+</form>
+
+@if (!Model.Yeni)
+{
+    <section class="kd-danger-zone" aria-labelledby="kd-danger-title">
+        <h2 class="kd-eyebrow" id="kd-danger-title">Silme</h2>
+        <form method="post" asp-page-handler="Sil" asp-route-id="@Model.HatirlaticiId"
+              onsubmit="return confirm('Bu hatırlatıcı kalıcı olarak silinecek. Emin misin?');">
+            <button type="submit" class="btn btn-outline-danger">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-trash-2"></use></svg>
+                Sil
+            </button>
+        </form>
+        <p class="kd-muted">Silmek geri alınamaz. Bitmiş bir hatırlatıcıyı silmek yerine durumunu Arşiv yapabilirsin.</p>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/hatirlaticilar.js" asp-append-version="true"></script>
+}

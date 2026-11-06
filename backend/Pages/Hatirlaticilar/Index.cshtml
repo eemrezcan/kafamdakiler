@@ -1,0 +1,124 @@
+@page
+@using Kafamdakiler.Hatirlaticilar
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.Hatirlaticilar.IndexModel
+@{
+    ViewData["Title"] = "Hatırlatıcılar";
+    var toplam = Model.Sayilar.Values.Sum();
+}
+
+<div class="kd-page-head kd-rise kd-c-amber">
+    <div>
+        <p class="kd-eyebrow">Unutma, ertelemeden yap</p>
+        <h1 class="kd-page-title">Hatırlatıcılar</h1>
+    </div>
+    <a class="btn btn-primary" asp-page="Duzenle">
+        <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-plus"></use></svg>
+        Yeni hatırlatıcı
+    </a>
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+@if (toplam > 0)
+{
+    <nav class="kd-filter" aria-label="Duruma göre süz">
+        @foreach (var durum in Enum.GetValues<HatirlaticiDurumu>())
+        {
+            <a class="kd-filter-chip @(Model.Durum == durum ? "is-active" : "")" asp-page="Index" asp-route-durum="@durum" asp-route-tur="@Model.Tur"
+               aria-current="@(Model.Durum == durum ? "page" : null)">@HatirlaticiGorunum.DurumAdi(durum) <span>@Model.Sayilar.GetValueOrDefault(durum)</span></a>
+        }
+    </nav>
+    <nav class="kd-filter" aria-label="Türe göre süz">
+        <a class="kd-filter-chip @(Model.Tur is null ? "is-active" : "")" asp-page="Index" asp-route-durum="@Model.Durum"
+           aria-current="@(Model.Tur is null ? "page" : null)">Hepsi</a>
+        @foreach (var tur in Enum.GetValues<HatirlaticiTuru>())
+        {
+            <a class="kd-filter-chip @(Model.Tur == tur ? "is-active" : "")" asp-page="Index" asp-route-durum="@Model.Durum" asp-route-tur="@tur"
+               aria-current="@(Model.Tur == tur ? "page" : null)">@HatirlaticiGorunum.TurAdi(tur)</a>
+        }
+    </nav>
+}
+
+@if (Model.Hatirlaticilar.Count == 0)
+{
+    <div class="kd-empty kd-empty--small">
+        <p class="kd-empty-title">@(toplam == 0 ? "Henüz hatırlatıcı yok." : "Bu süzgeçte hatırlatıcı yok.")</p>
+        @if (toplam == 0)
+        {
+            <p class="mb-0">Bir görev, verdiğin bir söz ya da özel bir tarih ekle; zamanı gelince haber verilir.</p>
+        }
+    </div>
+}
+else
+{
+    @foreach (var h in Model.Hatirlaticilar)
+    {
+        var acik = h.Durum == HatirlaticiDurumu.Acik;
+        var gecikmis = acik && (h.KalanGun < 0 || h.EtkinAn < Model.Simdi);
+        var tekrar = HatirlaticiGorunum.TekrarOzeti(h.Tekrar, h.Gun);
+        var once = HatirlaticiGorunum.OnceNotu(h.OnceGun);
+        <article class="kd-rem @HatirlaticiGorunum.TurRengi(h.Tur) @(gecikmis ? "is-overdue" : "")" id="h-@h.Id">
+            <div class="kd-rem-body">
+                <p class="kd-rem-title">
+                    <a asp-page="Duzenle" asp-route-id="@h.Id">@h.Baslik</a>
+                </p>
+                <p class="kd-rem-meta">
+                    <span class="kd-status">@HatirlaticiGorunum.TurAdi(h.Tur)</span>
+                    @if (h.Kime is not null)
+                    {
+                        <span>Kime: @h.Kime</span>
+                    }
+                    <span class="kd-rem-when">
+                        <time datetime="@h.EtkinAn.ToString("o")">@YakalamaGorunum.Zaman(h.EtkinAn)</time>
+                        @if (acik)
+                        {
+                            <strong class="kd-rem-left">@HatirlaticiGorunum.KalanGunMetni(h.KalanGun)</strong>
+                        }
+                    </span>
+                    @if (h.ErteleAn is not null)
+                    {
+                        <span class="kd-rem-snoozed">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-clock"></use></svg>ertelendi
+                        </span>
+                    }
+                    @if (tekrar is not null)
+                    {
+                        <span>
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-repeat"></use></svg>@tekrar
+                        </span>
+                    }
+                </p>
+                @if (once is not null)
+                {
+                    <p class="kd-rem-note">@once</p>
+                }
+            </div>
+
+            <div class="kd-rem-actions">
+                @if (acik)
+                {
+                    <form method="post" asp-page-handler="Yaptim" asp-route-id="@h.Id" asp-route-durum="@Model.Durum" asp-route-tur="@Model.Tur">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>Yaptım
+                        </button>
+                    </form>
+                    <form method="post" asp-page-handler="Ertele" asp-route-id="@h.Id" asp-route-durum="@Model.Durum" asp-route-tur="@Model.Tur">
+                        <input type="hidden" name="sure" value="1s" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">1 saat ertele</button>
+                    </form>
+                    <form method="post" asp-page-handler="Ertele" asp-route-id="@h.Id" asp-route-durum="@Model.Durum" asp-route-tur="@Model.Tur">
+                        <input type="hidden" name="sure" value="yarin" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Yarın</button>
+                    </form>
+                }
+                <a class="kd-icon-btn" asp-page="Duzenle" asp-route-id="@h.Id" aria-label="Hatırlatıcıyı düzenle">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
+                </a>
+            </div>
+        </article>
+    }
+}

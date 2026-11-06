@@ -1,0 +1,128 @@
+### Reminder API scenario: a repeating promise, a one-off task, done, snooze and the refused cases.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the two seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+
+# Client-made ids (Guid v7 style), so every POST below can be repeated safely.
+@dogumGunuId = 019e2000-0000-7000-8000-000000000001
+@gorevId = 019e2000-0000-7000-8000-000000000002
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. A yearly special date with a 3-day heads-up -> 201 (again with the same id -> 200)
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{dogumGunuId}}",
+  "baslik": "Annemin doğum günü",
+  "tur": "ozelTarih",
+  "gun": "2026-12-15",
+  "tekrar": "yillik",
+  "onceGun": 3
+}
+
+### 3. A one-off task at 17:30 -> 201
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{gorevId}}",
+  "baslik": "Faturayı öde",
+  "tur": "gorev",
+  "gun": "2026-11-10",
+  "saat": "17:30:00"
+}
+
+### 4. A promise to someone, repeating on the 31st (a short month ends on its last day)
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "Ali'ye kitabı geri ver", "tur": "soz", "kime": "Ali", "gun": "2026-11-30", "tekrar": "aylik" }
+
+### 5. List: all, open ones due within 7 days, closed ones
+GET {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/hatirlaticilar?yaklasan=7
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/hatirlaticilar?durum=tamam
+Authorization: Bearer {{token}}
+
+### 6. One reminder
+GET {{host}}/api/hatirlaticilar/{{gorevId}}
+Authorization: Bearer {{token}}
+
+### 7. Edit (clears a snooze, recomputes the next moment)
+PUT {{host}}/api/hatirlaticilar/{{gorevId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "Faturayı öde", "tur": "gorev", "gun": "2026-11-12", "saat": "18:00:00" }
+
+### 8. Snooze one hour, or until tomorrow at the reminder's hour
+POST {{host}}/api/hatirlaticilar/{{gorevId}}/ertele
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sure": "1s" }
+
+###
+POST {{host}}/api/hatirlaticilar/{{gorevId}}/ertele
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sure": "yarin" }
+
+### 9. Done: a one-off becomes "tamam", a repeating one moves to its next turn
+POST {{host}}/api/hatirlaticilar/{{gorevId}}/yaptim
+Authorization: Bearer {{token}}
+
+### 10. Refused: no title and an unknown snooze -> 400
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "", "gun": "2026-11-10" }
+
+###
+POST {{host}}/api/hatirlaticilar/{{dogumGunuId}}/ertele
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sure": "2s" }
+
+### 11. Delete -> 204
+DELETE {{host}}/api/hatirlaticilar/{{gorevId}}
+Authorization: Bearer {{token}}
+
+### 12. The Asistan without the hatirlatici.oku permission -> 403
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+GET {{host}}/api/hatirlaticilar
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}

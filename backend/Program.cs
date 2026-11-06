@@ -5,6 +5,7 @@ using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
+using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
 using Kafamdakiler.Yakalamalar;
@@ -44,6 +45,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(AliskanlikPolicies.Yaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz], IdentityConstants.BearerScheme))
     .AddPolicy(YakalamaPolicies.Oku, policy => IzinPolicy(policy, [YakalamaPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(YakalamaPolicies.Yaz, policy => IzinPolicy(policy, [YakalamaPolicies.Yaz], IdentityConstants.BearerScheme))
+    .AddPolicy(HatirlaticiPolicies.Oku, policy => IzinPolicy(policy, [HatirlaticiPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(HatirlaticiPolicies.Yaz, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz], IdentityConstants.BearerScheme))
     .AddPolicy(BeyinPolicies.Oku, policy => IzinPolicy(policy, [BeyinPolicies.Oku], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
@@ -67,6 +70,8 @@ var beyinAyari = BeyinAyari.Oku(builder.Configuration, builder.Environment.Conte
 builder.Services.AddSingleton(beyinAyari);
 builder.Services.AddSingleton<BeyinIstemcisi>();
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
+builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<YakalamaGondericisi>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -159,6 +164,7 @@ app.MapAliskanlikEndpoints();
 app.MapOgeEndpoints();
 app.MapDosyaEndpoints();
 app.MapYakalamaEndpoints();
+app.MapHatirlaticiEndpoints();
 app.MapBeyinEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();

@@ -8,6 +8,7 @@ import '../models/ben.dart';
 import '../models/beyin.dart';
 import '../models/enums.dart';
 import '../models/giris.dart';
+import '../models/hatirlatici.dart';
 import '../models/gun.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
@@ -194,6 +195,38 @@ class ApiService {
 
   /// 409 once the capture left `bekliyor`; the server removes its photo too.
   Future<void> yakalamaSil(String id) => _dio.delete<void>('/api/yakalamalar/$id');
+
+  // ---- Reminders ----
+
+  /// `GET /api/hatirlaticilar` (all statuses, sorted by the effective moment).
+  Future<List<Hatirlatici>> hatirlaticilariGetir() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/hatirlaticilar');
+    return _liste(yanit, Hatirlatici.fromJson);
+  }
+
+  /// `POST /api/hatirlaticilar`; the same client id twice returns the existing record (200).
+  Future<Hatirlatici> hatirlaticiOlustur(HatirlaticiYaz yaz) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/hatirlaticilar', data: yaz.toJson());
+    return Hatirlatici.fromJson(yanit.data!);
+  }
+
+  Future<Hatirlatici> hatirlaticiGuncelle(String id, HatirlaticiYaz yaz) async {
+    final yanit = await _dio.put<Map<String, dynamic>>('/api/hatirlaticilar/$id', data: yaz.toJson());
+    return Hatirlatici.fromJson(yanit.data!);
+  }
+
+  Future<void> hatirlaticiSil(String id) => _dio.delete<void>('/api/hatirlaticilar/$id');
+
+  Future<Hatirlatici> hatirlaticiYaptim(String id) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/hatirlaticilar/$id/yaptim');
+    return Hatirlatici.fromJson(yanit.data!);
+  }
+
+  /// [sure] is `1s` or `yarin` ([ErteleSuresi]).
+  Future<Hatirlatici> hatirlaticiErtele(String id, String sure) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/hatirlaticilar/$id/ertele', data: {'sure': sure});
+    return Hatirlatici.fromJson(yanit.data!);
+  }
 
   // ---- Second brain (read only, /api/beyin) ----
   // 503: the brain is not set up on the server; 403: no `beyin.oku` permission.

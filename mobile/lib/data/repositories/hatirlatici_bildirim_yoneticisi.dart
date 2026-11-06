@@ -1,0 +1,104 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+
+import '../../utils/bildirim_plani.dart';
+import '../models/hatirlatici.dart';
+import '../services/bildirim_servisi.dart';
+import 'esitleyici.dart';
+import 'hatirlatici_repository.dart';
+
+/// Keeps the phone's scheduled notifications in step with the reminders: after every sync, at app start and after
+/// every local write the whole plan is cancelled and set up again ([bildirimleriPlanla]). Also answers the notification
+/// buttons: a button writes to the queue and asks the sender to send it.
+class HatirlaticiBildirimYoneticisi {
+  HatirlaticiBildirimYoneticisi({
+    required this._repo,
+    required this._esitleyici,
+    required this._servis,
+    required this._yazabilir,
+    DateTime Function()? simdi,
+  }) : _simdi = simdi ?? DateTime.now;
+
+  final HatirlaticiRepository _repo;
+  final Esitleyici _esitleyici;
+  final BildirimServisi _servis;
+
+  /// Whether the user may change reminders (the Sahip); the buttons are offered only then.
+  final bool Function() _yazabilir;
+  final DateTime Function() _simdi;
+  bool _calisiyor = false;
+  bool _tekrar = false;
+
+  /// Starts the plugin, listens to local changes and answers the notification that opened the app, if any.
+  /// [listeyiAc] is called when a tap (not a button) should show the reminders list.
+  Future<void> baslat({required void Function() listeyiAc}) async {
+    _repo.addListener(_yerelDegisti);
+    Future<void> yanitla(BildirimYaniti y) async {
+      if (await this.yanitla(y)) listeyiAc();
+    }
+
+    await _servis.baslat(yanit: (y) => unawaited(yanitla(y)));
+    final acilis = await _servis.acilisYaniti();
+    if (acilis != null) await yanitla(acilis);
+  }
+
+  void durdur() => _repo.removeListener(_yerelDegisti);
+
+  void _yerelDegisti() => unawaited(kur());
+
+  /// Sets the notifications up from the phone's copy (cache plus queue). No network. A call made while one is running
+  /// makes it run once more afterwards.
+  Future<void> kur() async {
+    if (_calisiyor) {
+      _tekrar = true;
+      return;
+    }
+    _calisiyor = true;
+    try {
+      do {
+        _tekrar = false;
+        final liste = await _repo.yerelListe();
+        await _servis.kur(bildirimleriPlanla(liste, _simdi(), eylemler: _yazabilir()));
+      } while (_tekrar);
+    } finally {
+      _calisiyor = false;
+    }
+  }
+
+  /// After a sync (and at start): refreshes the cache from the server when it can be reached, then plans again.
+  Future<void> esitleVeKur() async {
+    try {
+      await _repo.listele();
+    } on DioException {
+      // Offline, or not allowed (403): the cache stays as it is.
+    }
+    await kur();
+  }
+
+  /// Sign-out: nothing may fire for the account that left.
+  Future<void> temizle() => _servis.kur(const []);
+
+  /// Asks for the notification permission; called when a reminder is created.
+  Future<bool> izinIste() => _servis.izinIste();
+
+  /// A button on a notification (or a tap, [BildirimYaniti.eylem] null). Returns true when a tap or a button should
+  /// open the reminders list.
+  Future<bool> yanitla(BildirimYaniti yanit) async {
+    final id = yanit.hatirlaticiId;
+    final eylem = yanit.eylem;
+    if (id == null || eylem == null || !_yazabilir()) return true;
+    switch (eylem) {
+      case BildirimEylemi.yaptim:
+        await _repo.yaptim(id);
+      case BildirimEylemi.birSaatErtele:
+        await _repo.ertele(id, ErteleSuresi.birSaat);
+      case BildirimEylemi.yarinErtele:
+        await _repo.ertele(id, ErteleSuresi.yarin);
+      default:
+        return true;
+    }
+    unawaited(_esitleyici.gonder());
+    return false;
+  }
+}
