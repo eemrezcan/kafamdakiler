@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../routing/router.dart';
+import '../brifing/brifing_profil_karti.dart';
 import '../core/widgets.dart';
 import 'profil_view_model.dart';
 
@@ -128,6 +129,10 @@ class ProfilScreen extends StatelessWidget {
                   onTap: () => context.push(Rotalar.gelen),
                 ),
               ),
+              if (kullanici.brifingOkuyabilir) ...[
+                const SizedBox(height: 16),
+                const BrifingProfilKarti(),
+              ],
               // Permissions, brain status and the sending queue: the Sahip's only.
               if (kullanici.sahip) ...[
                 const SizedBox(height: 16),

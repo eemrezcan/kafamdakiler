@@ -3337,6 +3337,485 @@ class GelenOnbellekCompanion extends UpdateCompanion<GelenOnbellekData> {
   }
 }
 
+class $BrifingOnbellekTable extends BrifingOnbellek
+    with TableInfo<$BrifingOnbellekTable, BrifingOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BrifingOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _gunMeta = const VerificationMeta('gun');
+  @override
+  late final GeneratedColumn<String> gun = GeneratedColumn<String>(
+    'gun',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _okunmaMeta = const VerificationMeta('okunma');
+  @override
+  late final GeneratedColumn<DateTime> okunma = GeneratedColumn<DateTime>(
+    'okunma',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [gun, govde, okunma];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'brifing_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BrifingOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('gun')) {
+      context.handle(
+        _gunMeta,
+        gun.isAcceptableOrUnknown(data['gun']!, _gunMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_gunMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    if (data.containsKey('okunma')) {
+      context.handle(
+        _okunmaMeta,
+        okunma.isAcceptableOrUnknown(data['okunma']!, _okunmaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_okunmaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {gun};
+  @override
+  BrifingOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BrifingOnbellekData(
+      gun: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gun'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+      okunma: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}okunma'],
+      )!,
+    );
+  }
+
+  @override
+  $BrifingOnbellekTable createAlias(String alias) {
+    return $BrifingOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class BrifingOnbellekData extends DataClass
+    implements Insertable<BrifingOnbellekData> {
+  /// "2026-11-07".
+  final String gun;
+  final String govde;
+  final DateTime okunma;
+  const BrifingOnbellekData({
+    required this.gun,
+    required this.govde,
+    required this.okunma,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['gun'] = Variable<String>(gun);
+    map['govde'] = Variable<String>(govde);
+    map['okunma'] = Variable<DateTime>(okunma);
+    return map;
+  }
+
+  BrifingOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return BrifingOnbellekCompanion(
+      gun: Value(gun),
+      govde: Value(govde),
+      okunma: Value(okunma),
+    );
+  }
+
+  factory BrifingOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BrifingOnbellekData(
+      gun: serializer.fromJson<String>(json['gun']),
+      govde: serializer.fromJson<String>(json['govde']),
+      okunma: serializer.fromJson<DateTime>(json['okunma']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'gun': serializer.toJson<String>(gun),
+      'govde': serializer.toJson<String>(govde),
+      'okunma': serializer.toJson<DateTime>(okunma),
+    };
+  }
+
+  BrifingOnbellekData copyWith({
+    String? gun,
+    String? govde,
+    DateTime? okunma,
+  }) => BrifingOnbellekData(
+    gun: gun ?? this.gun,
+    govde: govde ?? this.govde,
+    okunma: okunma ?? this.okunma,
+  );
+  BrifingOnbellekData copyWithCompanion(BrifingOnbellekCompanion data) {
+    return BrifingOnbellekData(
+      gun: data.gun.present ? data.gun.value : this.gun,
+      govde: data.govde.present ? data.govde.value : this.govde,
+      okunma: data.okunma.present ? data.okunma.value : this.okunma,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BrifingOnbellekData(')
+          ..write('gun: $gun, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(gun, govde, okunma);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BrifingOnbellekData &&
+          other.gun == this.gun &&
+          other.govde == this.govde &&
+          other.okunma == this.okunma);
+}
+
+class BrifingOnbellekCompanion extends UpdateCompanion<BrifingOnbellekData> {
+  final Value<String> gun;
+  final Value<String> govde;
+  final Value<DateTime> okunma;
+  final Value<int> rowid;
+  const BrifingOnbellekCompanion({
+    this.gun = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.okunma = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BrifingOnbellekCompanion.insert({
+    required String gun,
+    required String govde,
+    required DateTime okunma,
+    this.rowid = const Value.absent(),
+  }) : gun = Value(gun),
+       govde = Value(govde),
+       okunma = Value(okunma);
+  static Insertable<BrifingOnbellekData> custom({
+    Expression<String>? gun,
+    Expression<String>? govde,
+    Expression<DateTime>? okunma,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (gun != null) 'gun': gun,
+      if (govde != null) 'govde': govde,
+      if (okunma != null) 'okunma': okunma,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BrifingOnbellekCompanion copyWith({
+    Value<String>? gun,
+    Value<String>? govde,
+    Value<DateTime>? okunma,
+    Value<int>? rowid,
+  }) {
+    return BrifingOnbellekCompanion(
+      gun: gun ?? this.gun,
+      govde: govde ?? this.govde,
+      okunma: okunma ?? this.okunma,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (gun.present) {
+      map['gun'] = Variable<String>(gun.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (okunma.present) {
+      map['okunma'] = Variable<DateTime>(okunma.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BrifingOnbellekCompanion(')
+          ..write('gun: $gun, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AyarKayitlariTable extends AyarKayitlari
+    with TableInfo<$AyarKayitlariTable, AyarKayitlariData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AyarKayitlariTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _anahtarMeta = const VerificationMeta(
+    'anahtar',
+  );
+  @override
+  late final GeneratedColumn<String> anahtar = GeneratedColumn<String>(
+    'anahtar',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _degerMeta = const VerificationMeta('deger');
+  @override
+  late final GeneratedColumn<String> deger = GeneratedColumn<String>(
+    'deger',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [anahtar, deger];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ayar_kayitlari';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AyarKayitlariData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('anahtar')) {
+      context.handle(
+        _anahtarMeta,
+        anahtar.isAcceptableOrUnknown(data['anahtar']!, _anahtarMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_anahtarMeta);
+    }
+    if (data.containsKey('deger')) {
+      context.handle(
+        _degerMeta,
+        deger.isAcceptableOrUnknown(data['deger']!, _degerMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_degerMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {anahtar};
+  @override
+  AyarKayitlariData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AyarKayitlariData(
+      anahtar: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}anahtar'],
+      )!,
+      deger: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deger'],
+      )!,
+    );
+  }
+
+  @override
+  $AyarKayitlariTable createAlias(String alias) {
+    return $AyarKayitlariTable(attachedDatabase, alias);
+  }
+}
+
+class AyarKayitlariData extends DataClass
+    implements Insertable<AyarKayitlariData> {
+  final String anahtar;
+  final String deger;
+  const AyarKayitlariData({required this.anahtar, required this.deger});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['anahtar'] = Variable<String>(anahtar);
+    map['deger'] = Variable<String>(deger);
+    return map;
+  }
+
+  AyarKayitlariCompanion toCompanion(bool nullToAbsent) {
+    return AyarKayitlariCompanion(anahtar: Value(anahtar), deger: Value(deger));
+  }
+
+  factory AyarKayitlariData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AyarKayitlariData(
+      anahtar: serializer.fromJson<String>(json['anahtar']),
+      deger: serializer.fromJson<String>(json['deger']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'anahtar': serializer.toJson<String>(anahtar),
+      'deger': serializer.toJson<String>(deger),
+    };
+  }
+
+  AyarKayitlariData copyWith({String? anahtar, String? deger}) =>
+      AyarKayitlariData(
+        anahtar: anahtar ?? this.anahtar,
+        deger: deger ?? this.deger,
+      );
+  AyarKayitlariData copyWithCompanion(AyarKayitlariCompanion data) {
+    return AyarKayitlariData(
+      anahtar: data.anahtar.present ? data.anahtar.value : this.anahtar,
+      deger: data.deger.present ? data.deger.value : this.deger,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AyarKayitlariData(')
+          ..write('anahtar: $anahtar, ')
+          ..write('deger: $deger')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(anahtar, deger);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AyarKayitlariData &&
+          other.anahtar == this.anahtar &&
+          other.deger == this.deger);
+}
+
+class AyarKayitlariCompanion extends UpdateCompanion<AyarKayitlariData> {
+  final Value<String> anahtar;
+  final Value<String> deger;
+  final Value<int> rowid;
+  const AyarKayitlariCompanion({
+    this.anahtar = const Value.absent(),
+    this.deger = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AyarKayitlariCompanion.insert({
+    required String anahtar,
+    required String deger,
+    this.rowid = const Value.absent(),
+  }) : anahtar = Value(anahtar),
+       deger = Value(deger);
+  static Insertable<AyarKayitlariData> custom({
+    Expression<String>? anahtar,
+    Expression<String>? deger,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (anahtar != null) 'anahtar': anahtar,
+      if (deger != null) 'deger': deger,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AyarKayitlariCompanion copyWith({
+    Value<String>? anahtar,
+    Value<String>? deger,
+    Value<int>? rowid,
+  }) {
+    return AyarKayitlariCompanion(
+      anahtar: anahtar ?? this.anahtar,
+      deger: deger ?? this.deger,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (anahtar.present) {
+      map['anahtar'] = Variable<String>(anahtar.value);
+    }
+    if (deger.present) {
+      map['deger'] = Variable<String>(deger.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AyarKayitlariCompanion(')
+          ..write('anahtar: $anahtar, ')
+          ..write('deger: $deger, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3363,6 +3842,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SabahBirakilanlarTable sabahBirakilanlar =
       $SabahBirakilanlarTable(this);
   late final $GelenOnbellekTable gelenOnbellek = $GelenOnbellekTable(this);
+  late final $BrifingOnbellekTable brifingOnbellek = $BrifingOnbellekTable(
+    this,
+  );
+  late final $AyarKayitlariTable ayarKayitlari = $AyarKayitlariTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3380,6 +3863,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     gunPlaniOnbellek,
     sabahBirakilanlar,
     gelenOnbellek,
+    brifingOnbellek,
+    ayarKayitlari,
   ];
 }
 
@@ -5626,6 +6111,345 @@ typedef $$GelenOnbellekTableProcessedTableManager =
       GelenOnbellekData,
       PrefetchHooks Function()
     >;
+typedef $$BrifingOnbellekTableCreateCompanionBuilder =
+    BrifingOnbellekCompanion Function({
+      required String gun,
+      required String govde,
+      required DateTime okunma,
+      Value<int> rowid,
+    });
+typedef $$BrifingOnbellekTableUpdateCompanionBuilder =
+    BrifingOnbellekCompanion Function({
+      Value<String> gun,
+      Value<String> govde,
+      Value<DateTime> okunma,
+      Value<int> rowid,
+    });
+
+class $$BrifingOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $BrifingOnbellekTable> {
+  $$BrifingOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get gun => $composableBuilder(
+    column: $table.gun,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BrifingOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $BrifingOnbellekTable> {
+  $$BrifingOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get gun => $composableBuilder(
+    column: $table.gun,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BrifingOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BrifingOnbellekTable> {
+  $$BrifingOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get gun =>
+      $composableBuilder(column: $table.gun, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get okunma =>
+      $composableBuilder(column: $table.okunma, builder: (column) => column);
+}
+
+class $$BrifingOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BrifingOnbellekTable,
+          BrifingOnbellekData,
+          $$BrifingOnbellekTableFilterComposer,
+          $$BrifingOnbellekTableOrderingComposer,
+          $$BrifingOnbellekTableAnnotationComposer,
+          $$BrifingOnbellekTableCreateCompanionBuilder,
+          $$BrifingOnbellekTableUpdateCompanionBuilder,
+          (
+            BrifingOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $BrifingOnbellekTable,
+              BrifingOnbellekData
+            >,
+          ),
+          BrifingOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$BrifingOnbellekTableTableManager(
+    _$AppDatabase db,
+    $BrifingOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BrifingOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BrifingOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BrifingOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> gun = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<DateTime> okunma = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BrifingOnbellekCompanion(
+                gun: gun,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String gun,
+                required String govde,
+                required DateTime okunma,
+                Value<int> rowid = const Value.absent(),
+              }) => BrifingOnbellekCompanion.insert(
+                gun: gun,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BrifingOnbellekTable, BrifingOnbellekData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $BrifingOnbellekTable,
+                    BrifingOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BrifingOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BrifingOnbellekTable,
+      BrifingOnbellekData,
+      $$BrifingOnbellekTableFilterComposer,
+      $$BrifingOnbellekTableOrderingComposer,
+      $$BrifingOnbellekTableAnnotationComposer,
+      $$BrifingOnbellekTableCreateCompanionBuilder,
+      $$BrifingOnbellekTableUpdateCompanionBuilder,
+      (
+        BrifingOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $BrifingOnbellekTable,
+          BrifingOnbellekData
+        >,
+      ),
+      BrifingOnbellekData,
+      PrefetchHooks Function()
+    >;
+typedef $$AyarKayitlariTableCreateCompanionBuilder =
+    AyarKayitlariCompanion Function({
+      required String anahtar,
+      required String deger,
+      Value<int> rowid,
+    });
+typedef $$AyarKayitlariTableUpdateCompanionBuilder =
+    AyarKayitlariCompanion Function({
+      Value<String> anahtar,
+      Value<String> deger,
+      Value<int> rowid,
+    });
+
+class $$AyarKayitlariTableFilterComposer
+    extends Composer<_$AppDatabase, $AyarKayitlariTable> {
+  $$AyarKayitlariTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get anahtar => $composableBuilder(
+    column: $table.anahtar,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deger => $composableBuilder(
+    column: $table.deger,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AyarKayitlariTableOrderingComposer
+    extends Composer<_$AppDatabase, $AyarKayitlariTable> {
+  $$AyarKayitlariTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get anahtar => $composableBuilder(
+    column: $table.anahtar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deger => $composableBuilder(
+    column: $table.deger,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AyarKayitlariTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AyarKayitlariTable> {
+  $$AyarKayitlariTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get anahtar =>
+      $composableBuilder(column: $table.anahtar, builder: (column) => column);
+
+  GeneratedColumn<String> get deger =>
+      $composableBuilder(column: $table.deger, builder: (column) => column);
+}
+
+class $$AyarKayitlariTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AyarKayitlariTable,
+          AyarKayitlariData,
+          $$AyarKayitlariTableFilterComposer,
+          $$AyarKayitlariTableOrderingComposer,
+          $$AyarKayitlariTableAnnotationComposer,
+          $$AyarKayitlariTableCreateCompanionBuilder,
+          $$AyarKayitlariTableUpdateCompanionBuilder,
+          (
+            AyarKayitlariData,
+            BaseReferences<
+              _$AppDatabase,
+              $AyarKayitlariTable,
+              AyarKayitlariData
+            >,
+          ),
+          AyarKayitlariData,
+          PrefetchHooks Function()
+        > {
+  $$AyarKayitlariTableTableManager(_$AppDatabase db, $AyarKayitlariTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AyarKayitlariTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AyarKayitlariTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AyarKayitlariTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> anahtar = const Value.absent(),
+                Value<String> deger = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AyarKayitlariCompanion(
+                anahtar: anahtar,
+                deger: deger,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String anahtar,
+                required String deger,
+                Value<int> rowid = const Value.absent(),
+              }) => AyarKayitlariCompanion.insert(
+                anahtar: anahtar,
+                deger: deger,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AyarKayitlariTable, AyarKayitlariData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AyarKayitlariTable,
+                    AyarKayitlariData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AyarKayitlariTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AyarKayitlariTable,
+      AyarKayitlariData,
+      $$AyarKayitlariTableFilterComposer,
+      $$AyarKayitlariTableOrderingComposer,
+      $$AyarKayitlariTableAnnotationComposer,
+      $$AyarKayitlariTableCreateCompanionBuilder,
+      $$AyarKayitlariTableUpdateCompanionBuilder,
+      (
+        AyarKayitlariData,
+        BaseReferences<_$AppDatabase, $AyarKayitlariTable, AyarKayitlariData>,
+      ),
+      AyarKayitlariData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5654,4 +6478,8 @@ class $AppDatabaseManager {
       $$SabahBirakilanlarTableTableManager(_db, _db.sabahBirakilanlar);
   $$GelenOnbellekTableTableManager get gelenOnbellek =>
       $$GelenOnbellekTableTableManager(_db, _db.gelenOnbellek);
+  $$BrifingOnbellekTableTableManager get brifingOnbellek =>
+      $$BrifingOnbellekTableTableManager(_db, _db.brifingOnbellek);
+  $$AyarKayitlariTableTableManager get ayarKayitlari =>
+      $$AyarKayitlariTableTableManager(_db, _db.ayarKayitlari);
 }

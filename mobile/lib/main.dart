@@ -12,6 +12,7 @@ import 'config/app_theme.dart';
 import 'data/repositories/aliskanlik_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/beyin_repository.dart';
+import 'data/repositories/brifing_repository.dart';
 import 'data/repositories/esitleyici.dart';
 import 'data/repositories/eylem_bildirim_yoneticisi.dart';
 import 'data/repositories/eylem_repository.dart';
@@ -61,12 +62,15 @@ Future<void> main() async {
     servis: bildirimServisi,
     yazabilir: () => kullanici.sahip,
   );
+  final brifing = BrifingRepository(api: api, db: db);
   final bildirimler = HatirlaticiBildirimYoneticisi(
     repo: hatirlaticilar,
     esitleyici: esitleyici,
     servis: bildirimServisi,
     yazabilir: () => kullanici.sahip,
     eylemler: eylemBildirimleri,
+    brifing: brifing,
+    brifingOkuyabilir: () => kullanici.brifingOkuyabilir,
   );
   final beyin = BeyinRepository(api: api, db: db);
   final gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici);
@@ -111,6 +115,7 @@ Future<void> main() async {
     gelen: gelen,
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
+    brifing: brifing,
     beyin: beyin,
     gunPlani: gunPlani,
     kronometre: KronometreRepository(db: db),
@@ -132,6 +137,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.gelen,
     required this.bildirimler,
     required this.eylemBildirimleri,
+    required this.brifing,
     required this.beyin,
     required this.gunPlani,
     required this.kronometre,
@@ -149,6 +155,7 @@ class KafamdakilerApp extends StatefulWidget {
   final GelenRepository gelen;
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
+  final BrifingRepository brifing;
   final BeyinRepository beyin;
   final GunPlaniRepository gunPlani;
   final KronometreRepository kronometre;
@@ -201,6 +208,8 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
           if (widget.auth.girisYapildi) _router.push(Rotalar.hatirlaticilar);
         }, kuyruguAc: () {
           if (widget.auth.girisYapildi) _router.push(Rotalar.eylemler);
+        }, brifingiAc: () {
+          if (widget.auth.girisYapildi) _router.push(Rotalar.brifing);
         })
         .catchError((Object _) {});
   }
@@ -228,6 +237,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.eylemler),
         ChangeNotifierProvider.value(value: widget.gelen),
         Provider.value(value: widget.bildirimler),
+        Provider.value(value: widget.brifing),
         Provider.value(value: widget.beyin),
         ChangeNotifierProvider.value(value: widget.gunPlani),
         Provider.value(value: widget.kronometre),

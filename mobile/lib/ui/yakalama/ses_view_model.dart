@@ -33,13 +33,17 @@ String sesHataMetni(Object hata, {String islem = 'İşlem tamamlanamadı'}) {
 /// Dictation, "İşe çevir" and "Özetle / Maddele" of the capture screen (K2.4). The text itself stays in the screen's field;
 /// this holds what surrounds it. Dictation works on the phone. The rest needs the server, so it is off without a connection.
 class SesViewModel extends ChangeNotifier {
-  SesViewModel({required this._api, required this._dikte, required this._baglanti}) {
+  SesViewModel({required this._api, required this._dikte, required this._baglanti, this.kaynak}) {
     _baglanti.varMi().then(_baglantiDegisti, onError: (Object _) {});
     _abonelik = _baglanti.degisim.listen(_baglantiDegisti, onError: (Object _) {});
   }
 
   /// The server's limit for the text of "İşe çevir" (the field itself takes more).
   static const isCikarSiniri = 4000;
+
+  /// Where the text was written, sent along when the chosen ones are applied (`brifing` for the briefing box); null is the
+  /// capture screen's default.
+  final String? kaynak;
 
   final ApiService _api;
   final DikteServisi _dikte;
@@ -189,6 +193,10 @@ class SesViewModel extends ChangeNotifier {
           (oneri: _gonderilen[i], sonuc: _sonuclar.where((s) => s.sira == i).firstOrNull),
       ];
 
+  /// The last flow added something (or may have: no answer came). Stays after [akisiKapat]; the next [isCikar] resets it.
+  bool _eklendi = false;
+  bool get eklendi => _eklendi;
+
   /// The server could not be reached while applying: nothing says whether it went through.
   bool _sonucBilinmiyor = false;
   bool get sonucBilinmiyor => _sonucBilinmiyor;
@@ -199,6 +207,7 @@ class SesViewModel extends ChangeNotifier {
     final temiz = metin.trim();
     if (temiz.isEmpty) return;
     _hata = null;
+    _eklendi = false;
     if (temiz.length > isCikarSiniri) {
       _hata = 'İşe çevirmek için metin en çok $isCikarSiniri karakter olabilir. Metni kısalt ya da parçala.';
       notifyListeners();
@@ -248,7 +257,7 @@ class SesViewModel extends ChangeNotifier {
     _akis = IsAkisi.uygulaniyor;
     notifyListeners();
     try {
-      final yanit = await _api.isCikarUygula(_gonderilen);
+      final yanit = await _api.isCikarUygula(_gonderilen, kaynak: kaynak);
       _sonuclar = yanit.sonuclar;
     } on Object catch (e) {
       if (_atildi) return;
@@ -264,6 +273,7 @@ class SesViewModel extends ChangeNotifier {
       }
     }
     if (_atildi) return;
+    _eklendi = _sonucBilinmiyor || _sonuclar.any((s) => s.uygulandi);
     _akis = IsAkisi.sonuc;
     notifyListeners();
   }

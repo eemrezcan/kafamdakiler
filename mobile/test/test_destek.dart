@@ -7,6 +7,7 @@ import 'package:kafamdakiler/data/models/aliskanlik.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/beyin_yazma.dart';
+import 'package:kafamdakiler/data/models/brifing.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/gelen.dart';
@@ -20,6 +21,7 @@ import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
+import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
 import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
@@ -295,6 +297,54 @@ class SahteApi extends ApiService {
     return gelenOneriYaniti;
   }
 
+  // ---- Morning briefing ----
+
+  /// What `brifingBugun` answers; null means 404 (not ready yet).
+  Brifing? brifingYaniti;
+
+  /// `(gun, sira, oy)` of every vote sent.
+  final List<(String, int, int)> brifingOylari = [];
+  int brifingYenilemeleri = 0;
+
+  void _brifingKontrol(String ad) {
+    _kontrol(ad);
+    if (brifingHatasi == null) return;
+    final istek = RequestOptions(path: ad);
+    throw DioException.badResponse(
+      statusCode: brifingHatasi!,
+      requestOptions: istek,
+      response: Response(requestOptions: istek, statusCode: brifingHatasi),
+    );
+  }
+
+  /// When set, the briefing calls fail with this HTTP status (403, 429, 503).
+  int? brifingHatasi;
+
+  @override
+  Future<Brifing> brifingBugun() async {
+    _brifingKontrol('brifingBugun');
+    final b = brifingYaniti;
+    if (b == null) {
+      final istek = RequestOptions(path: 'brifingBugun');
+      throw DioException.badResponse(statusCode: 404, requestOptions: istek, response: Response(requestOptions: istek, statusCode: 404));
+    }
+    return b;
+  }
+
+  @override
+  Future<Brifing> brifingOyVer(String gun, int sira, int oy) async {
+    _brifingKontrol('brifingOyVer');
+    brifingOylari.add((gun, sira, oy));
+    return brifingYaniti = brifingYaniti!.oyla(sira, oy);
+  }
+
+  @override
+  Future<Brifing> brifingYenile() async {
+    _brifingKontrol('brifingYenile');
+    brifingYenilemeleri++;
+    return brifingYaniti!;
+  }
+
   // ---- Voice and text ----
 
   /// What `isCikar` answers (the preview).
@@ -306,6 +356,7 @@ class SahteApi extends ApiService {
   /// The texts `isCikar` and `metniYenidenYaz` were sent, and the suggestions `isCikarUygula` was sent, per call.
   final List<String> isCikarMetinleri = [];
   final List<List<IsOnerisi>> uygulananIstekler = [];
+  final List<String?> uygulamaKaynaklari = [];
   final List<(String, YenidenYazKipi)> yenidenYazIstekleri = [];
 
   /// What `metniYenidenYaz` answers.
@@ -333,9 +384,10 @@ class SahteApi extends ApiService {
   }
 
   @override
-  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler) async {
+  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler, {String? kaynak}) async {
     _sesKontrol('isCikarUygula');
     uygulananIstekler.add(secilenler);
+    uygulamaKaynaklari.add(kaynak);
     return uygulaYaniti ??
         IsCikarUygulaYaniti(
           uygulanan: secilenler.length,
@@ -763,6 +815,7 @@ class TestOrtami {
     hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
     gelen = GelenRepository(api: this.api, db: db, esitleyici: esitleyici);
+    brifing = BrifingRepository(api: this.api, db: db, simdi: () => sabitAn);
   }
 
   final SahteApi api;
@@ -775,6 +828,7 @@ class TestOrtami {
   late final HatirlaticiRepository hatirlaticilar;
   late final EylemRepository eylemler;
   late final GelenRepository gelen;
+  late final BrifingRepository brifing;
 
   /// Where the photo copies of the captures go in tests.
   final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');

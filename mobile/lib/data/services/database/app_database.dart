@@ -183,6 +183,27 @@ class SabahBirakilanlar extends Table {
   Set<Column> get primaryKey => {id, tarih};
 }
 
+/// The briefing the phone read (`BrifingDto` JSON per day, K2.7), so the briefing screen shows the last one offline. Only the
+/// days read lately are kept.
+class BrifingOnbellek extends Table {
+  /// "2026-11-07".
+  TextColumn get gun => text()();
+  TextColumn get govde => text()();
+  DateTimeColumn get okunma => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {gun};
+}
+
+/// The phone's own settings, one text value per key (the briefing hour, K2.7). Not synced.
+class AyarKayitlari extends Table {
+  TextColumn get anahtar => text()();
+  TextColumn get deger => text()();
+
+  @override
+  Set<Column> get primaryKey => {anahtar};
+}
+
 /// The last `GET /api/ben` answer, so the role is known when offline.
 class KullaniciOnbellek extends Table {
   IntColumn get id => integer()();
@@ -243,13 +264,15 @@ class BekleyenIslemler extends Table {
     GunPlaniOnbellek,
     SabahBirakilanlar,
     GelenOnbellek,
+    BrifingOnbellek,
+    AyarKayitlari,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -279,6 +302,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 8) {
             await m.createTable(gelenOnbellek);
           }
+          if (from < 9) {
+            await m.createTable(brifingOnbellek);
+            await m.createTable(ayarKayitlari);
+          }
         },
       );
 
@@ -296,5 +323,7 @@ class AppDatabase extends _$AppDatabase {
         await delete(gunPlaniOnbellek).go();
         await delete(sabahBirakilanlar).go();
         await delete(gelenOnbellek).go();
+        await delete(brifingOnbellek).go();
+        await delete(ayarKayitlari).go();
       });
 }

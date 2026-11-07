@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/models/yonetim.dart';
+import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
+import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
 import 'package:kafamdakiler/ui/profil/profil_screen.dart';
 import 'package:kafamdakiler/ui/profil/profil_view_model.dart';
@@ -213,7 +215,8 @@ void main() {
 
   group('entry from Profil', () {
     Future<void> profil(WidgetTester tester, {required String rol}) async {
-      tester.view.physicalSize = const Size(375, 900);
+      // Tall: the list builds only what is on screen, and Profil has grown with the briefing rows.
+      tester.view.physicalSize = const Size(375, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final kullanici = KullaniciRepository(api: ortam.api, db: ortam.db);
@@ -222,8 +225,20 @@ void main() {
       final vm = ProfilViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
       await tester.runAsync(vm.yukle);
       await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: kullanici,
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: kullanici),
+            // The briefing rows of Profil (K2.7).
+            Provider<BrifingRepository>.value(value: ortam.brifing),
+            Provider<HatirlaticiBildirimYoneticisi>.value(
+              value: HatirlaticiBildirimYoneticisi(
+                repo: ortam.hatirlaticilar,
+                esitleyici: ortam.esitleyici,
+                servis: SahteBildirimServisi(),
+                yazabilir: () => true,
+              ),
+            ),
+          ],
           child: MaterialApp(home: ProfilScreen(viewModel: vm)),
         ),
       );

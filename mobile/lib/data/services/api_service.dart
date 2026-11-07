@@ -7,6 +7,7 @@ import '../models/aliskanlik.dart';
 import '../models/ben.dart';
 import '../models/beyin.dart';
 import '../models/beyin_yazma.dart';
+import '../models/brifing.dart';
 import '../models/enums.dart';
 import '../models/eylem.dart';
 import '../models/gelen.dart';
@@ -317,14 +318,42 @@ class ApiService {
 
   /// `POST /api/is-cikar/uygula`: applies the suggestions the person picked, one by one. 200 when all went through, 207
   /// when some did not; both are answers (the results tell them apart), the applied ones stay applied.
-  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler) async {
+  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler, {String? kaynak}) async {
     final yanit = await _dio.post<Map<String, dynamic>>(
       '/api/is-cikar/uygula',
       data: {
         'secilenler': [for (final s in secilenler) s.toJson()],
+        'kaynak': ?kaynak,
       },
     );
     return IsCikarUygulaYaniti.fromJson(yanit.data!);
+  }
+
+  // ---- Morning briefing (K2.7) ----
+  // Needs the `brifing.oku` permission (403 without). 404 before the briefing hour, 503 when it could not be made.
+
+  /// `GET /api/brifing/bugun`: today's briefing; the server makes it now if the hour has passed and none exists yet.
+  Future<Brifing> brifingBugun() async {
+    final yanit = await _dio.get<Map<String, dynamic>>(
+      '/api/brifing/bugun',
+      options: Options(receiveTimeout: const Duration(seconds: 150)),
+    );
+    return Brifing.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/brifing/{gun}/kartlar/{sira}/oy`: [oy] is 1, -1, or 0 to take the vote back.
+  Future<Brifing> brifingOyVer(String gun, int sira, int oy) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/brifing/$gun/kartlar/$sira/oy', data: {'oy': oy});
+    return Brifing.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/brifing/bugun/yenile` (the Sahip; three times a day at most, 429 after that).
+  Future<Brifing> brifingYenile() async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/brifing/bugun/yenile',
+      options: Options(receiveTimeout: const Duration(seconds: 150)),
+    );
+    return Brifing.fromJson(yanit.data!);
   }
 
   /// `POST /api/metin/yeniden-yaz`: the text as a summary or a bullet list. Saves nothing.

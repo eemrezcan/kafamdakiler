@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../utils/bildirim_plani.dart';
 import '../models/hatirlatici.dart';
 import '../services/bildirim_servisi.dart';
+import 'brifing_repository.dart';
 import 'esitleyici.dart';
 import 'eylem_bildirim_yoneticisi.dart';
 import 'hatirlatici_repository.dart';
@@ -19,8 +20,11 @@ class HatirlaticiBildirimYoneticisi {
     required this._servis,
     required this._yazabilir,
     this.eylemler,
+    this.brifing,
+    bool Function()? brifingOkuyabilir,
     DateTime Function()? simdi,
-  }) : _simdi = simdi ?? DateTime.now;
+  })  : _brifingOkuyabilir = brifingOkuyabilir ?? (() => false),
+        _simdi = simdi ?? DateTime.now;
 
   final HatirlaticiRepository _repo;
   final Esitleyici _esitleyici;
@@ -29,6 +33,11 @@ class HatirlaticiBildirimYoneticisi {
   /// The approval queue's notifications share the plugin and its one response callback; its responses go here.
   final EylemBildirimYoneticisi? eylemler;
 
+  /// The morning briefing's setting lives here; without it (or when the user may not read the briefing) no briefing
+  /// notification is planned. It joins the reminders in the one plan, because setting a plan up cancels every other.
+  final BrifingRepository? brifing;
+  final bool Function() _brifingOkuyabilir;
+
   /// Whether the user may change reminders (the Sahip); the buttons are offered only then.
   final bool Function() _yazabilir;
   final DateTime Function() _simdi;
@@ -36,10 +45,15 @@ class HatirlaticiBildirimYoneticisi {
   bool _tekrar = false;
 
   /// Starts the plugin, listens to local changes and answers the notification that opened the app, if any.
-  /// [listeyiAc] is called when a tap (not a button) should show the reminders list, [kuyruguAc] for the approval queue.
-  Future<void> baslat({required void Function() listeyiAc, void Function()? kuyruguAc}) async {
+  /// [listeyiAc] is called when a tap (not a button) should show the reminders list, [kuyruguAc] for the approval queue,
+  /// [brifingiAc] for the morning briefing.
+  Future<void> baslat({required void Function() listeyiAc, void Function()? kuyruguAc, void Function()? brifingiAc}) async {
     _repo.addListener(_yerelDegisti);
     Future<void> yanitla(BildirimYaniti y) async {
+      if (y.brifing) {
+        brifingiAc?.call();
+        return;
+      }
       if (y.eylemId != null) {
         if (await (eylemler?.yanitla(y) ?? Future.value(true))) kuyruguAc?.call();
         return;
@@ -68,7 +82,11 @@ class HatirlaticiBildirimYoneticisi {
       do {
         _tekrar = false;
         final liste = await _repo.yerelListe();
-        await _servis.kur(bildirimleriPlanla(liste, _simdi(), eylemler: _yazabilir()));
+        final plan = bildirimleriPlanla(liste, _simdi(), eylemler: _yazabilir());
+        final sabah = brifing == null
+            ? null
+            : brifingBildirimiPlanla(await brifing!.ayar(), _simdi(), okuyabilir: _brifingOkuyabilir());
+        await _servis.kur(sabah == null ? plan : (plan..add(sabah)..sort((a, b) => a.an.compareTo(b.an))));
       } while (_tekrar);
     } finally {
       _calisiyor = false;

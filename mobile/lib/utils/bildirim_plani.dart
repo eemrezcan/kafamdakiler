@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../data/models/brifing.dart';
 import '../data/models/eylem.dart';
 import '../data/models/hatirlatici.dart';
 import 'hatirlatici_gorunum.dart';
@@ -74,6 +75,33 @@ List<EylemBildirimi> eylemBildirimleriPlanla(List<Eylem> yeniler, {bool eylemler
   ];
 }
 
+/// The payload of the morning briefing notification (a reminder id is a Guid, so the two never meet).
+const brifingBildirimYuku = 'brifing';
+
+/// The id of the briefing notification (a stable small number, apart from the summary's and the hashed ones).
+const brifingBildirimKimligi = 8;
+
+/// The morning briefing's notification (K2.7): the next [ayar] hour in Istanbul time (UTC+3, no daylight saving), repeating
+/// every day at that hour so it keeps coming even if the app is not opened. Null when the person turned it off or may not read
+/// the briefing ([okuyabilir] false). Planned again with the rest after every sync and at every app start.
+PlanliBildirim? brifingBildirimiPlanla(BrifingAyari ayar, DateTime simdi, {required bool okuyabilir}) {
+  if (!okuyabilir || !ayar.acik) return null;
+  final an = simdi.toUtc();
+  // The hour of the day in UTC, then the first such moment after [simdi].
+  var sonraki = DateTime.utc(an.year, an.month, an.day, ayar.saat - 3, ayar.dakika);
+  if (!sonraki.isAfter(an)) sonraki = sonraki.add(const Duration(days: 1));
+  return PlanliBildirim(
+    id: brifingBildirimKimligi,
+    an: sonraki,
+    baslik: 'Sabah brifingi',
+    govde: 'Bugünün özeti hazır. Dokun, göz at.',
+    hatirlaticiId: brifingBildirimYuku,
+    onceUyarisi: false,
+    eylemler: false,
+    gunlukTekrar: true,
+  );
+}
+
 /// One notification to schedule.
 class PlanliBildirim {
   const PlanliBildirim({
@@ -84,7 +112,13 @@ class PlanliBildirim {
     required this.hatirlaticiId,
     required this.onceUyarisi,
     required this.eylemler,
+    this.gunlukTekrar = false,
   });
+
+  /// Repeats every day at the same hour (the briefing).
+  final bool gunlukTekrar;
+
+  bool get brifingMi => hatirlaticiId == brifingBildirimYuku;
 
   final int id;
 

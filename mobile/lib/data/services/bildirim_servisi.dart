@@ -6,7 +6,10 @@ import '../../utils/bildirim_plani.dart';
 
 /// What the user did with a notification: [eylem] is a [BildirimEylemi] id, or null for a tap on the notification.
 class BildirimYaniti {
-  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId});
+  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId, this.brifing = false});
+
+  /// A tap on the morning briefing notification.
+  final bool brifing;
 
   final String? eylem;
   final String? hatirlaticiId;
@@ -48,6 +51,7 @@ class YerelBildirimServisi implements BildirimServisi {
 
   static const _kanalKimligi = 'hatirlaticilar';
   static const _eylemKanalKimligi = 'eylemler';
+  static const _brifingKanalKimligi = 'brifing';
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _eklenti.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -57,6 +61,7 @@ class YerelBildirimServisi implements BildirimServisi {
     final eylem = y.actionId;
     final secilen = eylem == null || eylem.isEmpty ? null : eylem;
     final yuk = y.payload;
+    if (yuk == brifingBildirimYuku) return const BildirimYaniti(brifing: true);
     if (yuk != null && yuk.startsWith(eylemBildirimOneki)) {
       return BildirimYaniti(eylem: secilen, eylemId: yuk.substring(eylemBildirimOneki.length));
     }
@@ -124,6 +129,8 @@ class YerelBildirimServisi implements BildirimServisi {
             // Without the exact alarm permission an approximate alarm is used instead of failing.
             androidScheduleMode: kesin ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
             payload: b.hatirlaticiId,
+            // The briefing comes every day at its hour.
+            matchDateTimeComponents: b.gunlukTekrar ? DateTimeComponents.time : null,
           );
         } on Object catch (e) {
           debugPrint('Bildirim kurulamadı (${b.id}): $e');
@@ -173,7 +180,17 @@ class YerelBildirimServisi implements BildirimServisi {
     }
   }
 
-  AndroidNotificationDetails _ayrinti(PlanliBildirim b) => AndroidNotificationDetails(
+  AndroidNotificationDetails _ayrinti(PlanliBildirim b) => b.brifingMi
+      ? const AndroidNotificationDetails(
+          _brifingKanalKimligi,
+          'Sabah brifingi',
+          channelDescription: 'Her sabah günün özeti',
+          importance: Importance.high,
+          priority: Priority.high,
+        )
+      : _hatirlaticiAyrintisi(b);
+
+  AndroidNotificationDetails _hatirlaticiAyrintisi(PlanliBildirim b) => AndroidNotificationDetails(
         _kanalKimligi,
         'Hatırlatıcılar',
         channelDescription: 'Hatırlatıcıların zamanı ve "kaç gün önce" uyarıları',

@@ -7,6 +7,7 @@ import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
+import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
 import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
@@ -113,6 +114,7 @@ void main() {
               yazabilir: () => true,
             ),
           ),
+          Provider<BrifingRepository>.value(value: ortam.brifing),
           Provider<BeyinRepository>.value(value: ortam.beyin),
           ChangeNotifierProvider<GunPlaniRepository>.value(value: ortam.gunPlani),
           Provider<KronometreRepository>.value(value: KronometreRepository(db: ortam.db)),
@@ -258,6 +260,29 @@ void main() {
     await tester.tap(find.text('Onay kuyruğu'));
     await bekle(tester);
     expect(router.state.matchedLocation, '/eylemler');
+  });
+
+  testWidgets('Profil has the briefing rows for the Sahip: the notification can be turned off and its hour is kept', (tester) async {
+    await uygulamayiAc(tester);
+    await sekme(tester, 'Profil');
+
+    expect(find.text('Sabah brifingi'), findsOneWidget);
+    expect(find.text('Her gün 06:30'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const ValueKey('brifing-bildirim')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('brifing-bildirim')));
+    await bekle(tester);
+    expect(find.text('Kapalı'), findsOneWidget);
+    expect(find.byKey(const ValueKey('brifing-saat')), findsNothing);
+    expect((await tester.runAsync(ortam.brifing.ayar))!.acik, isFalse);
+  });
+
+  testWidgets('Profil has no briefing rows for a user without the permission', (tester) async {
+    await uygulamayiAc(tester, rol: 'Asistan');
+    await sekme(tester, 'Profil');
+
+    expect(find.text('Sabah brifingi'), findsNothing);
   });
 
   testWidgets('with nothing waiting the Today tab has no "Onay bekleyen" card', (tester) async {

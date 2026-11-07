@@ -22,6 +22,11 @@ class KullaniciRepository extends ChangeNotifier {
   /// Only the Sahip role sees and may open the management screens (M07).
   bool get sahip => _ben?.sahip ?? false;
 
+  /// The morning briefing (K2.7) is read with the `brifing.oku` permission; the Sahip always may.
+  bool get brifingOkuyabilir => sahip || (_ben?.izinler.contains(brifingIzni) ?? false);
+
+  static const brifingIzni = 'brifing.oku';
+
   /// Reads the cached answer (no network): called at app start.
   Future<void> baslat() async {
     final satir = await (_db.select(_db.kullaniciOnbellek)..where((t) => t.id.equals(1))).getSingleOrNull();

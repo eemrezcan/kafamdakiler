@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repositories/aliskanlik_repository.dart';
+import '../data/models/ses.dart';
 import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
+import '../data/repositories/brifing_repository.dart';
 import '../data/repositories/esitleyici.dart';
 import '../data/repositories/gun_plani_repository.dart';
 import '../data/repositories/eylem_repository.dart';
@@ -27,6 +29,8 @@ import '../ui/aliskanliklar/aliskanlik_liste_view_model.dart';
 import '../ui/ara/ara_screen.dart';
 import '../ui/ara/ara_view_model.dart';
 import '../ui/ara/not_screen.dart';
+import '../ui/brifing/brifing_screen.dart';
+import '../ui/brifing/brifing_view_model.dart';
 import '../ui/bugun/bugun_screen.dart';
 import '../ui/bugun/bugun_view_model.dart';
 import '../ui/bugun/gun_plani_view_model.dart';
@@ -88,6 +92,9 @@ abstract final class Rotalar {
 
   /// The inbox: opened from Profil, a full-screen page.
   static const gelen = '/gelen';
+
+  /// The morning briefing: opened from Profil and from its notification, a full-screen page.
+  static const brifing = '/brifing';
   static const profil = '/profil';
 
   /// The Sahip's management screen: opened from Profil, a full-screen page.
@@ -315,6 +322,21 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
             beyin: c.read<BeyinRepository>(),
           )..yukle(),
           (vm) => GelenListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.brifing,
+        builder: (context, state) => _sayfa(
+          (c) => BrifingViewModel(repo: c.read<BrifingRepository>(), yenileyebilir: () => kullanici.sahip)..yukle(),
+          (vm) => _sayfa(
+            (c) => SesViewModel(
+              api: c.read<ApiService>(),
+              dikte: SpeechDikteServisi(),
+              baglanti: ConnectivityBaglantiServisi(),
+              kaynak: IsCikarKaynagi.brifing,
+            ),
+            (ses) => BrifingScreen(viewModel: vm, sesViewModel: ses),
+          ),
         ),
       ),
       GoRoute(
