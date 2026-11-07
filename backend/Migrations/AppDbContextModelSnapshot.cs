@@ -248,6 +248,140 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Dosyalar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Eylemler.Eylem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("DisKaynak")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Durum")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Gerekce")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("GeriAlmaAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GeriAlmaBilgisi")
+                        .HasColumnType("jsonb");
+
+                    b.Property<double?>("Guven")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("HataMesaji")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("KararAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("KararVerenId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kaynak")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Ozet")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("UygulamaAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Yuk")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Durum", "CreatedAt");
+
+                    b.ToTable("Eylemler");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Eylemler.EylemGunlugu", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Aciklama")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("EylemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Olay")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("Zaman")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Zaman");
+
+                    b.ToTable("EylemGunlukleri");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Eylemler.EylemIzni", b =>
+                {
+                    b.Property<string>("Tur")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("ArdArdaRed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("GuncellemeAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kip")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Tur");
+
+                    b.ToTable("EylemIzinleri");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Hatirlaticilar.Hatirlatici", b =>
                 {
                     b.Property<Guid>("Id")

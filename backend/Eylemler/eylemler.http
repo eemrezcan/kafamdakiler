@@ -1,0 +1,101 @@
+### Approval queue scenario: list what waits, approve, correct and approve, reject, undo, and the mode settings.
+### There is no request that adds a suggestion: the inbox, voice and briefing modules make them inside the app
+### (EylemServisi.OnerAsync). To get something to approve while trying this by hand, call OnerAsync from a test or a scratch endpoint.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+
+# Take an id from request 3 (a pending action) and paste it here.
+@eylemId = 00000000-0000-0000-0000-000000000000
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. The mode of every action kind (sor is the default; Sahip only)
+GET {{host}}/api/yonetim/eylem-izinleri
+Authorization: Bearer {{token}}
+
+### 3. Pending actions, newest first. ?durum=uygulandi|reddedildi|geriAlindi|hatali for the others
+GET {{host}}/api/eylemler
+Authorization: Bearer {{token}}
+
+### 4. One action: payload, summary, source, reason, confidence
+GET {{host}}/api/eylemler/{{eylemId}}
+Authorization: Bearer {{token}}
+
+### 5. Approve as suggested -> 200 (applied; "geriAlmaBilgisi" says what undo will touch). Again -> 409
+POST {{host}}/api/eylemler/{{eylemId}}/uygula
+Authorization: Bearer {{token}}
+
+### 6. Approve with a corrected payload (checked again) -> 200, or 400 under "yuk" if it is wrong
+POST {{host}}/api/eylemler/{{eylemId}}/uygula
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "yuk": { "baslik": "Ali'yi ara", "gun": "2026-12-01", "saat": "10:30:00" } }
+
+### 7. Reject -> 200
+POST {{host}}/api/eylemler/{{eylemId}}/reddet
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "birDahaOnerme": false }
+
+### 8. Reject and never suggest this kind again -> the kind becomes yasak for good
+POST {{host}}/api/eylemler/{{eylemId}}/reddet
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "birDahaOnerme": true }
+
+### 9. Undo an applied action -> 200 (a reminder is archived, not deleted). An action that was not applied -> 409
+POST {{host}}/api/eylemler/{{eylemId}}/geri-al
+Authorization: Bearer {{token}}
+
+### 10. Set a mode: sor (ask first), kendinYap (apply at once; outside-source suggestions still wait) or yasak (never suggest)
+PUT {{host}}/api/yonetim/eylem-izinleri/hatirlatici-kur
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "kip": "kendinYap" }
+
+### 11. Back to asking first
+PUT {{host}}/api/yonetim/eylem-izinleri/hatirlatici-kur
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "kip": "sor" }
+
+### 12. Log in as Asistan
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+@asistanToken = {{asistanLogin.response.body.accessToken}}
+
+### 13. Without the eylem.oku permission -> 403 (grant it with PUT /api/yonetim/izinler/eylem.oku)
+GET {{host}}/api/eylemler
+Authorization: Bearer {{asistanToken}}
+
+### 14. The modes are the Sahip's alone, whatever the Asistan holds -> 403
+PUT {{host}}/api/yonetim/eylem-izinleri/hatirlatici-kur
+Authorization: Bearer {{asistanToken}}
+Content-Type: application/json
+
+{ "kip": "kendinYap" }

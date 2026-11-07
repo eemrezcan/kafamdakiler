@@ -3,8 +3,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
+using Kafamdakiler.Eylemler;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
@@ -50,6 +52,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(HatirlaticiPolicies.Oku, policy => IzinPolicy(policy, [HatirlaticiPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(HatirlaticiPolicies.Yaz, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz], IdentityConstants.BearerScheme))
     .AddPolicy(BeyinPolicies.Oku, policy => IzinPolicy(policy, [BeyinPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(EylemPolicies.Oku, policy => IzinPolicy(policy, [EylemPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(EylemPolicies.Onayla, policy => IzinPolicy(policy, [EylemPolicies.Onayla], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
     .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
@@ -71,6 +75,10 @@ builder.Services.AddHostedService<YetimDosyaTemizleyici>();
 var beyinAyari = BeyinAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSingleton(beyinAyari);
 builder.Services.AddSingleton<BeyinIstemcisi>();
+// Claude Code as a child process (K2.6): off when Claude:Komut is empty. Its answers only ever become suggestions in the approval queue.
+builder.Services.AddSingleton(ClaudeAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath));
+builder.Services.AddSingleton<ClaudeIstemcisi>();
+builder.Services.AddEylemler();
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -189,6 +197,7 @@ app.MapDosyaEndpoints();
 app.MapYakalamaEndpoints();
 app.MapHatirlaticiEndpoints();
 app.MapBeyinEndpoints();
+app.MapEylemEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
 

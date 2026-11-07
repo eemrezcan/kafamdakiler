@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
+using Kafamdakiler.Eylemler;
 using Microsoft.AspNetCore.Identity;
 using static Kafamdakiler.Aliskanliklar.AliskanlikEndpoints;
 
@@ -34,7 +36,21 @@ public static class YonetimEndpoints
                 : Results.ValidationProblem(new Dictionary<string, string[]> { ["yeniSifre"] = sonuc.Errors.Select(e => e.Description).ToArray() });
         });
 
-        yonetim.MapGet("/beyin", async (AppDbContext db, BeyinIstemcisi beyin, BeyinAyari ayar, CancellationToken ct) =>
+        // The mode of every action kind: sor (ask first, the default), kendinYap (apply at once, undo stays possible) or yasak (never suggest).
+        yonetim.MapGet("/eylem-izinleri", async (EylemServisi servis, CancellationToken ct) =>
+            Results.Ok(await servis.KipleriGetirAsync(ct)));
+
+        yonetim.MapPut("/eylem-izinleri/{tur}", async (string tur, EylemKipYazDto dto, EylemServisi servis, ClaimsPrincipal kullanici, CancellationToken ct) =>
+        {
+            if (!Enum.IsDefined(dto.Kip!.Value))
+                return Sorun("kip", "Kip sor, kendinYap ya da yasak olmalı.");
+
+            return await servis.KipAyarlaAsync(tur, dto.Kip.Value, EylemEndpoints.KullaniciId(kullanici), ct) is { } kip
+                ? Results.Ok(kip)
+                : Results.NotFound();
+        });
+
+        yonetim.MapGet("/beyin",async (AppDbContext db, BeyinIstemcisi beyin, BeyinAyari ayar, CancellationToken ct) =>
             Results.Ok(await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, DateTimeOffset.UtcNow, ct)));
 
         // Every capture, the ones that need a look first (a failed send, or one stuck after a crash or a timeout).

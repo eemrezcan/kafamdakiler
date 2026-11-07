@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Dosyalar;
+using Kafamdakiler.Eylemler;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +19,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Dosya> Dosyalar => Set<Dosya>();
     public DbSet<Yakalama> Yakalamalar => Set<Yakalama>();
     public DbSet<Hatirlatici> Hatirlaticilar => Set<Hatirlatici>();
+    public DbSet<Eylem> Eylemler => Set<Eylem>();
+    public DbSet<EylemIzni> EylemIzinleri => Set<EylemIzni>();
+    public DbSet<EylemGunlugu> EylemGunlukleri => Set<EylemGunlugu>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -91,6 +95,36 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
             e.Ignore(x => x.EtkinAn);
             e.HasIndex(x => new { x.Durum, x.SonrakiAn });
+        });
+
+        builder.Entity<Eylem>(e =>
+        {
+            e.Property(x => x.Tur).HasMaxLength(50);
+            e.Property(x => x.Yuk).HasColumnType("jsonb");
+            e.Property(x => x.GeriAlmaBilgisi).HasColumnType("jsonb");
+            e.Property(x => x.Ozet).HasMaxLength(200);
+            e.Property(x => x.Kaynak).HasMaxLength(30);
+            e.Property(x => x.Gerekce).HasMaxLength(1000);
+            e.Property(x => x.HataMesaji).HasMaxLength(500);
+            e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => new { x.Durum, x.CreatedAt });
+            // PostgreSQL's row version: two approvals of the same action at once cannot both apply it.
+            e.Property<uint>("xmin").IsRowVersion();
+        });
+
+        builder.Entity<EylemIzni>(e =>
+        {
+            e.HasKey(x => x.Tur);
+            e.Property(x => x.Tur).HasMaxLength(50);
+            e.Property(x => x.Kip).HasConversion<string>().HasMaxLength(20);
+        });
+
+        builder.Entity<EylemGunlugu>(e =>
+        {
+            e.Property(x => x.Tur).HasMaxLength(50);
+            e.Property(x => x.Olay).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Aciklama).HasMaxLength(500);
+            e.HasIndex(x => x.Zaman);
         });
 
         builder.Entity<Dosya>(e =>

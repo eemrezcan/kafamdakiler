@@ -109,6 +109,16 @@ Under `/api/hatirlaticilar` (permissions `hatirlatici.oku` for reading, `hatirla
 
 Examples: `backend/Hatirlaticilar/hatirlaticilar.http`.
 
+## Approval queue and Claude (K2.6)
+Anything Claude (or a voice command, the inbox, the briefing...) wants to do is first a suggestion in the approval queue (`Eylem`), never an action. Under `/api/eylemler` (permissions `eylem.oku` for reading, `eylem.onayla` for deciding; the Sahip always passes):
+
+- `GET /` pending actions, newest first (`?durum=uygulandi|reddedildi|geriAlindi|hatali` for the others), `GET /{id}`
+- `POST /{id}/uygula` approve, optionally with a corrected payload `{ "yuk": { ... } }` that is checked again; `POST /{id}/reddet` with `{ "birDahaOnerme": bool }`; `POST /{id}/geri-al` (409 unless the action was applied)
+
+There is no endpoint to add a suggestion: the other modules call `EylemServisi.OnerAsync`. Each kind of action has a mode, set by the Sahip with `GET/PUT /api/yonetim/eylem-izinleri[/{tur}]`: `sor` (default), `kendinYap` or `yasak`. A suggestion is checked in this order: `yasak` (dropped, only a log line), outside-source text (always waits), `kendinYap` (applied at once, undo stays possible), else it waits. "Never suggest again" on a rejection sets `yasak`; three rejections in a row take `kendinYap` back to `sor`. Examples: `backend/Eylemler/eylemler.http`.
+
+Claude Code runs as a child process (`claude -p`) with no tools, no settings, no MCP servers and no session on disk, in an empty temp folder; the text goes through stdin and the answer must match a JSON schema or it is rejected. Settings (section `Claude`; on a server `Claude__Komut` and so on): `Komut` (path or name of `claude`; empty means off), `Model` (default `sonnet`), `ZamanAsimiSaniye`, `EsZamanliEnCok` (default 1), `GunlukEnCokCagri` (default 50, counted since the app started; Europe/Istanbul days).
+
 ## Migrations
 The schema is created with EF Core migrations (Identity tables, then habits). Apply them before the first run and after pulling new ones:
 

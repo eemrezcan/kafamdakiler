@@ -75,6 +75,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Backend: `backend/Beyin/NotGovdesi.cs` (not gövdesi Markdown'ı kapalı HTML'e çeviren tek yer; Markdig, ham HTML kapalı, görsel yok, yalnız http/https/mailto bağlantı), `BeyinGorunum.cs` (gösterim metinleri), `BeyinOkuma.cs` içindeki tipli okumalar (`ProjelerAl`, `ProjeAl`, `GunAl`, `AraAl`, `NotAl`; `/api/beyin` işleyicileri artık bunların üstünde) ve `BeyinDtos.cs` içindeki `BeyinYaniti<T>`, `Kafamdakiler.csproj` içindeki `Markdig` paketi.
   - Web: `backend/Pages/Beyin/` (Index, Proje, Gun, Ara, Not, ortak `BeyinSayfasi`, `_BeyinMenu`, `_BeyinHata`), `_Layout.cshtml` menü ve çekmece satırları, `site.css` sonundaki "Beyin" bölümü.
   - Testler: `backend.Tests/NotGovdesiTests.cs`, `BeyinSayfalariTests.cs`, `WebOturumu.cs`.
+- K2.6 onay kuyruğu, izin kipi ve Claude çağrı katmanı, Faz A1 (backend): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Claude çağrı katmanı: `backend/Claude/` (`ClaudeAyari`, `ClaudeIstemcisi`: araçsız, ayarsız `claude -p` alt süreci; yanıt şemaya uymazsa reddedilir), `Program.cs` kayıtları.
+  - Onay kuyruğu: `backend/Eylemler/` (`Eylem`, `EylemIzni`, `EylemGunlugu`, `IEylemTuru` ve `EylemTurleri` kaydı, `HatirlaticiKurTuru`, `EylemServisi`, `Dtos`, `EylemEndpoints`, `EylemPolicies`, `eylemler.http`), `YonetimEndpoints` içindeki `eylem-izinleri` uçları, `Izinler.cs` (`eylem.oku`, `eylem.onayla`), `AppDbContext` ayarları, migration `AddActionQueue`.
+  - Testler: `backend.Tests/SahteClaude.cs`, `ClaudeIstemcisiTests.cs`, `EylemApiTests.cs`.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

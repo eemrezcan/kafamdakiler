@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Eylemler;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Yakalamalar;
 
@@ -20,6 +21,8 @@ public static class Izinler
         new(HatirlaticiPolicies.Oku, "Hatırlatıcıları okur"),
         new(HatirlaticiPolicies.Yaz, "Hatırlatıcı ekler, değiştirir, siler, yaptım ve ertele işaretler"),
         new(BeyinPolicies.Oku, "Beyni okur: proje, gün planı, arama, not"),
+        new(EylemPolicies.Oku, "Onay kuyruğunu okur: bekleyen ve karara bağlanmış eylemler"),
+        new(EylemPolicies.Onayla, "Onay kuyruğundaki eylemi uygular, reddeder, geri alır"),
     ];
 
     public static bool Gecerli(string? ad) => Tumu.Any(i => i.Ad == ad);
