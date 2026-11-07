@@ -1,0 +1,18 @@
+# Only backend/ is copied into the image (deploy/Dockerfile); keep everything else out of the build context.
+**/bin/
+**/obj/
+**/TestResults/
+.git/
+.claude/
+.github/
+backend.Tests/
+mobile/
+ornek-beyin/
+.ornek-beyin-calisma/
+.dosyalar/
+docs/
+deploy/
+*.md
+.env
+.env.*
+**/appsettings.Development.json
