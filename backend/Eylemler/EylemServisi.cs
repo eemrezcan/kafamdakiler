@@ -174,6 +174,10 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             .OrderByDescending(e => e.KararAni ?? e.CreatedAt).ThenByDescending(e => e.Id)
             .Take(ListeSiniri).ToListAsync(ct);
 
+    // For the badge in the menu.
+    public async Task<int> BekleyenSayisiAsync(CancellationToken ct) =>
+        await db.Eylemler.CountAsync(e => e.Durum == EylemDurumu.Bekliyor, ct);
+
     public async Task<Eylem?> GetirAsync(Guid id, CancellationToken ct) =>
         await db.Eylemler.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, ct);
 

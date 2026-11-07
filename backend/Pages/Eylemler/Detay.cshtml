@@ -1,0 +1,89 @@
+@page "{id:guid}"
+@using Kafamdakiler.Eylemler
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.Eylemler.DetayModel
+@{
+    ViewData["Title"] = "Eylem";
+    var e = Model.Eylem;
+    var bekliyor = e.Durum == EylemDurumu.Bekliyor;
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">@Model.TurAdi</p>
+        <h1 class="kd-page-title">@e.Ozet</h1>
+    </div>
+    <a class="btn btn-outline-primary" asp-page="Index">Onay kuyruğu</a>
+</div>
+
+@if (ViewData["SayfaHatasi"] is string sayfaHatasi)
+{
+    <div class="kd-alert" role="alert">@sayfaHatasi</div>
+}
+
+<dl class="kd-facts kd-yonetim-blok">
+    <div>
+        <dt>Durum</dt>
+        <dd>@EylemGorunum.DurumAdi(e.Durum)</dd>
+    </div>
+    <div>
+        <dt>Kaynak</dt>
+        <dd>@EylemGorunum.KaynakAdi(e.Kaynak)@(e.DisKaynak ? " (dış kaynak)" : "")</dd>
+    </div>
+    @if (e.Guven is { } guven)
+    {
+        <div>
+            <dt>Güven</dt>
+            <dd>@EylemGorunum.GuvenMetni(guven)@(EylemGorunum.EminDegil(e) ? " (emin değil)" : "")</dd>
+        </div>
+    }
+    <div>
+        <dt>Önerildi</dt>
+        <dd>@YakalamaGorunum.Zaman(e.CreatedAt)</dd>
+    </div>
+    @if (e.Gerekce is not null)
+    {
+        <div>
+            <dt>Gerekçe</dt>
+            <dd>@e.Gerekce</dd>
+        </div>
+    }
+    @if (e.HataMesaji is not null)
+    {
+        <div>
+            <dt>Hata</dt>
+            <dd>@e.HataMesaji</dd>
+        </div>
+    }
+</dl>
+
+<section class="kd-yonetim-blok" aria-labelledby="yuk-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="yuk-baslik">Yük</h2>
+
+    @if (bekliyor)
+    {
+        <p class="kd-muted">Uygulamadan önce düzeltebilirsin; uygularken yeniden doğrulanır.</p>
+        <form method="post" asp-page-handler="Uygula" asp-route-id="@e.Id">
+            <textarea class="form-control kd-eylem-yuk" asp-for="Yuk" rows="12" spellcheck="false" aria-labelledby="yuk-baslik"></textarea>
+            <div class="kd-eylem-actions mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>Uygula
+                </button>
+            </div>
+        </form>
+
+        <form method="post" asp-page-handler="Reddet" asp-route-id="@e.Id" class="kd-eylem-reddet mt-3">
+            <label class="kd-eylem-bir-daha">
+                <input type="checkbox" name="birDahaOnerme" value="true" />
+                Bir daha önerme
+            </label>
+            <button type="submit" class="btn btn-outline-primary">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-x"></use></svg>Reddet
+            </button>
+        </form>
+    }
+    else
+    {
+        <pre class="kd-eylem-yuk-salt">@Model.Yuk</pre>
+    }
+</section>

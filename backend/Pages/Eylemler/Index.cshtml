@@ -1,0 +1,135 @@
+@page
+@using Kafamdakiler.Eylemler
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.Eylemler.IndexModel
+@inject EylemTurleri Turler
+@{
+    ViewData["Title"] = "Onay kuyruğu";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Asistan öneriyor, sen onaylıyorsun</p>
+        <h1 class="kd-page-title">Onay kuyruğu</h1>
+    </div>
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+<section aria-labelledby="bekleyen-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="bekleyen-baslik">Bekleyenler <span>@Model.Bekleyenler.Count</span></h2>
+
+    @if (Model.Bekleyenler.Count == 0)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Onay bekleyen bir şey yok.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var e in Model.Bekleyenler)
+        {
+            <article class="kd-eylem kd-c-violet" id="e-@e.Id">
+                <div class="kd-eylem-body">
+                    <p class="kd-eylem-ozet"><a asp-page="Detay" asp-route-id="@e.Id">@e.Ozet</a></p>
+                    <p class="kd-eylem-meta">
+                        <span class="kd-status">@(Turler.Bul(e.Tur)?.GorunenAd ?? e.Tur)</span>
+                        <span>Kaynak: @EylemGorunum.KaynakAdi(e.Kaynak)</span>
+                        @if (e.DisKaynak)
+                        {
+                            <span class="kd-status is-hata" title="Başkasının yazdığı metinden çıkarıldı; kendiliğinden uygulanmaz.">Dış kaynak</span>
+                        }
+                        @if (e.Guven is { } guven)
+                        {
+                            <span>Güven: @EylemGorunum.GuvenMetni(guven)</span>
+                        }
+                        @if (EylemGorunum.EminDegil(e))
+                        {
+                            <span class="kd-status is-birakildi">Emin değil</span>
+                        }
+                        <time datetime="@e.CreatedAt.ToString("o")">@YakalamaGorunum.Zaman(e.CreatedAt)</time>
+                    </p>
+                    @if (e.Gerekce is not null)
+                    {
+                        <p class="kd-eylem-gerekce">@e.Gerekce</p>
+                    }
+                </div>
+
+                <div class="kd-eylem-actions">
+                    <form method="post" asp-page-handler="Uygula" asp-route-id="@e.Id">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>Uygula
+                        </button>
+                    </form>
+                    <form method="post" asp-page-handler="Reddet" asp-route-id="@e.Id" class="kd-eylem-reddet">
+                        <label class="kd-eylem-bir-daha">
+                            <input type="checkbox" name="birDahaOnerme" value="true" />
+                            Bir daha önerme
+                        </label>
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-x"></use></svg>Reddet
+                        </button>
+                    </form>
+                    <a class="btn btn-outline-primary btn-sm" asp-page="Detay" asp-route-id="@e.Id">Ayrıntı</a>
+                </div>
+            </article>
+        }
+    }
+</section>
+
+@if (Model.Hatalilar.Count > 0)
+{
+    <section class="mt-4" aria-labelledby="hatali-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="hatali-baslik">Uygulanamayanlar <span>@Model.Hatalilar.Count</span></h2>
+        @foreach (var e in Model.Hatalilar)
+        {
+            <article class="kd-eylem kd-eylem--sakin kd-c-red" id="e-@e.Id">
+                <div class="kd-eylem-body">
+                    <p class="kd-eylem-ozet"><a asp-page="Detay" asp-route-id="@e.Id">@e.Ozet</a></p>
+                    <p class="kd-eylem-meta">
+                        <span class="kd-status is-hata">Hatalı</span>
+                        <span>@(e.HataMesaji ?? "Uygulanamadı.")</span>
+                    </p>
+                </div>
+            </article>
+        }
+    </section>
+}
+
+<section class="mt-4" aria-labelledby="uygulanan-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="uygulanan-baslik">Son uygulananlar</h2>
+
+    @if (Model.SonUygulananlar.Count == 0)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Henüz uygulanan bir şey yok.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var e in Model.SonUygulananlar)
+        {
+            <article class="kd-eylem kd-eylem--sakin kd-c-green" id="e-@e.Id">
+                <div class="kd-eylem-body">
+                    <p class="kd-eylem-ozet"><a asp-page="Detay" asp-route-id="@e.Id">@e.Ozet</a></p>
+                    <p class="kd-eylem-meta">
+                        <span class="kd-status is-bitti">Uygulandı</span>
+                        <span>@(e.KararVerenId is null ? "Kendiliğinden" : "Onayınla")</span>
+                        @if (e.UygulamaAni is { } an)
+                        {
+                            <time datetime="@an.ToString("o")">@YakalamaGorunum.Zaman(an)</time>
+                        }
+                    </p>
+                </div>
+                <div class="kd-eylem-actions">
+                    <form method="post" asp-page-handler="GeriAl" asp-route-id="@e.Id">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Geri al</button>
+                    </form>
+                </div>
+            </article>
+        }
+    }
+</section>

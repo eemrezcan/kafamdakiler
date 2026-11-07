@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
+using Kafamdakiler.Eylemler;
 using Kafamdakiler.Yonetim;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,9 +11,12 @@ namespace Kafamdakiler.Pages.Yonetim;
 
 // The Sahip's panel (T08): the Asistan's permissions, its sessions, the brain and the sending queue.
 // The rules live in YonetimIslemleri, shared with /api/yonetim.
-public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar) : PageModel
+public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler) : PageModel
 {
     public List<IzinDto> IzinListesi { get; private set; } = [];
+
+    // The mode of every kind of action the Asistan may suggest (K2.6).
+    public List<EylemKipiDto> EylemKipleri { get; private set; } = [];
 
     public BeyinDurumDto BeyinDurumu { get; private set; } = new(false, null, 0, 0);
 
@@ -50,6 +54,7 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
     {
         var simdi = DateTimeOffset.UtcNow;
         IzinListesi = await YonetimIslemleri.IzinleriGetirAsync(kullanicilar);
+        EylemKipleri = await eylemler.KipleriGetirAsync(ct);
         BeyinDurumu = await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, simdi, ct);
         Kuyruk = await YonetimIslemleri.KuyrukAsync(db, simdi, yalnizIlgilenilecek: true, ct);
     }
@@ -61,6 +66,19 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
 
         await YonetimIslemleri.IzinAyarlaAsync(kullanicilar, izin, acik);
         Bildirim = acik ? "İzin açıldı" : "İzin kapatıldı";
+        return RedirectToPage();
+    }
+
+    // `kip` is read as text: a value that is not a mode name must not silently become the default mode.
+    public async Task<IActionResult> OnPostEylemKipiAsync(string tur, string kip, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(kip) || !char.IsLetter(kip[0]) || !Enum.TryParse<EylemKipi>(kip, ignoreCase: true, out var yeniKip) || !Enum.IsDefined(yeniKip))
+            return BadRequest();
+
+        if (await eylemler.KipAyarlaAsync(tur, yeniKip, EylemEndpoints.KullaniciId(User), ct) is null)
+            return NotFound();
+
+        Bildirim = "Kip kaydedildi";
         return RedirectToPage();
     }
 

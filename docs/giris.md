@@ -79,6 +79,9 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Claude çağrı katmanı: `backend/Claude/` (`ClaudeAyari`, `ClaudeIstemcisi`: araçsız, ayarsız `claude -p` alt süreci; yanıt şemaya uymazsa reddedilir), `Program.cs` kayıtları.
   - Onay kuyruğu: `backend/Eylemler/` (`Eylem`, `EylemIzni`, `EylemGunlugu`, `IEylemTuru` ve `EylemTurleri` kaydı, `HatirlaticiKurTuru`, `EylemServisi`, `Dtos`, `EylemEndpoints`, `EylemPolicies`, `eylemler.http`), `YonetimEndpoints` içindeki `eylem-izinleri` uçları, `Izinler.cs` (`eylem.oku`, `eylem.onayla`), `AppDbContext` ayarları, migration `AddActionQueue`.
   - Testler: `backend.Tests/SahteClaude.cs`, `ClaudeIstemcisiTests.cs`, `EylemApiTests.cs`.
+- K2.6 onay kuyruğu, Faz A2 (web): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Sayfalar: `backend/Pages/Eylemler/` (Index, Detay), `backend/Eylemler/EylemGorunum.cs` (gösterim metinleri), `EylemServisi.BekleyenSayisiAsync`, `Pages/Yonetim/Index.cshtml(.cs)` içindeki "Asistan'ın eylem kipleri" bölümü, `_Layout.cshtml` menü ve çekmece satırları ile bekleyen sayısı rozeti, `site.css` sonundaki "Approval queue" bölümü.
+  - Test: `backend.Tests/EylemSayfalariTests.cs`.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
