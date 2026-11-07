@@ -22,6 +22,7 @@ import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
 import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
+import 'data/repositories/zaman_cizelgesi_repository.dart';
 import 'data/repositories/surum_denetcisi.dart';
 import 'data/repositories/yakala_yonlendirici.dart';
 import 'data/repositories/yakalama_repository.dart';
@@ -63,6 +64,7 @@ Future<void> main() async {
     yazabilir: () => kullanici.sahip,
   );
   final brifing = BrifingRepository(api: api, db: db);
+  final zamanCizelgesi = ZamanCizelgesiRepository(api: api, db: db);
   final bildirimler = HatirlaticiBildirimYoneticisi(
     repo: hatirlaticilar,
     esitleyici: esitleyici,
@@ -116,6 +118,7 @@ Future<void> main() async {
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
     brifing: brifing,
+    zamanCizelgesi: zamanCizelgesi,
     beyin: beyin,
     gunPlani: gunPlani,
     kronometre: KronometreRepository(db: db),
@@ -138,6 +141,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.bildirimler,
     required this.eylemBildirimleri,
     required this.brifing,
+    required this.zamanCizelgesi,
     required this.beyin,
     required this.gunPlani,
     required this.kronometre,
@@ -156,6 +160,7 @@ class KafamdakilerApp extends StatefulWidget {
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
   final BrifingRepository brifing;
+  final ZamanCizelgesiRepository zamanCizelgesi;
   final BeyinRepository beyin;
   final GunPlaniRepository gunPlani;
   final KronometreRepository kronometre;
@@ -238,6 +243,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.gelen),
         Provider.value(value: widget.bildirimler),
         Provider.value(value: widget.brifing),
+        Provider.value(value: widget.zamanCizelgesi),
         Provider.value(value: widget.beyin),
         ChangeNotifierProvider.value(value: widget.gunPlani),
         Provider.value(value: widget.kronometre),

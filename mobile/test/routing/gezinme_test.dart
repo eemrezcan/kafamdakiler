@@ -8,6 +8,7 @@ import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
+import 'package:kafamdakiler/data/repositories/zaman_cizelgesi_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
 import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
@@ -115,6 +116,7 @@ void main() {
             ),
           ),
           Provider<BrifingRepository>.value(value: ortam.brifing),
+          Provider<ZamanCizelgesiRepository>.value(value: ortam.zamanCizelgesi),
           Provider<BeyinRepository>.value(value: ortam.beyin),
           ChangeNotifierProvider<GunPlaniRepository>.value(value: ortam.gunPlani),
           Provider<KronometreRepository>.value(value: KronometreRepository(db: ortam.db)),

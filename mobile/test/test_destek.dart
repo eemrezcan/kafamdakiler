@@ -8,6 +8,8 @@ import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/beyin_yazma.dart';
 import 'package:kafamdakiler/data/models/brifing.dart';
+import 'package:kafamdakiler/data/models/zaman_cizelgesi.dart';
+import 'package:kafamdakiler/data/repositories/zaman_cizelgesi_repository.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/gelen.dart';
@@ -343,6 +345,29 @@ class SahteApi extends ApiService {
     _brifingKontrol('brifingYenile');
     brifingYenilemeleri++;
     return brifingYaniti!;
+  }
+
+  // ---- Timeline ----
+
+  /// What `zamanCizelgesi` answers; null means the server has nothing for the day (404).
+  ZamanCizelgesi? zamanCizelgesiYaniti;
+
+  /// The days asked for, in order.
+  final List<String> zamanCizelgesiGunleri = [];
+
+  /// When set, the timeline call fails with this HTTP status (403, 503) even when online.
+  int? zamanCizelgesiHatasi;
+
+  @override
+  Future<ZamanCizelgesi> zamanCizelgesi(String gun) async {
+    _kontrol('zamanCizelgesi');
+    zamanCizelgesiGunleri.add(gun);
+    final kod = zamanCizelgesiHatasi ?? (zamanCizelgesiYaniti == null ? 404 : null);
+    if (kod != null) {
+      final istek = RequestOptions(path: 'zamanCizelgesi');
+      throw DioException.badResponse(statusCode: kod, requestOptions: istek, response: Response(requestOptions: istek, statusCode: kod));
+    }
+    return zamanCizelgesiYaniti!;
   }
 
   // ---- Voice and text ----
@@ -816,6 +841,7 @@ class TestOrtami {
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
     gelen = GelenRepository(api: this.api, db: db, esitleyici: esitleyici);
     brifing = BrifingRepository(api: this.api, db: db, simdi: () => sabitAn);
+    zamanCizelgesi = ZamanCizelgesiRepository(api: this.api, db: db, simdi: () => sabitAn);
   }
 
   final SahteApi api;
@@ -829,6 +855,7 @@ class TestOrtami {
   late final EylemRepository eylemler;
   late final GelenRepository gelen;
   late final BrifingRepository brifing;
+  late final ZamanCizelgesiRepository zamanCizelgesi;
 
   /// Where the photo copies of the captures go in tests.
   final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');

@@ -195,6 +195,18 @@ class BrifingOnbellek extends Table {
   Set<Column> get primaryKey => {gun};
 }
 
+/// The timeline the phone read (`ZamanCizelgesiDto` JSON per day, K2.3c), so the Today tab shows the last one offline. Only the
+/// days read lately are kept.
+class ZamanCizelgesiOnbellek extends Table {
+  /// "2026-11-08".
+  TextColumn get gun => text()();
+  TextColumn get govde => text()();
+  DateTimeColumn get okunma => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {gun};
+}
+
 /// The phone's own settings, one text value per key (the briefing hour, K2.7). Not synced.
 class AyarKayitlari extends Table {
   TextColumn get anahtar => text()();
@@ -266,13 +278,14 @@ class BekleyenIslemler extends Table {
     GelenOnbellek,
     BrifingOnbellek,
     AyarKayitlari,
+    ZamanCizelgesiOnbellek,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -306,6 +319,9 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(brifingOnbellek);
             await m.createTable(ayarKayitlari);
           }
+          if (from < 10) {
+            await m.createTable(zamanCizelgesiOnbellek);
+          }
         },
       );
 
@@ -325,5 +341,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(gelenOnbellek).go();
         await delete(brifingOnbellek).go();
         await delete(ayarKayitlari).go();
+        await delete(zamanCizelgesiOnbellek).go();
       });
 }

@@ -8,6 +8,7 @@ import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/brifing_repository.dart';
+import '../data/repositories/zaman_cizelgesi_repository.dart';
 import '../data/repositories/esitleyici.dart';
 import '../data/repositories/gun_plani_repository.dart';
 import '../data/repositories/eylem_repository.dart';
@@ -42,6 +43,7 @@ import '../ui/eylemler/eylem_liste_view_model.dart';
 import '../ui/gelen/gelen_liste_screen.dart';
 import '../ui/gelen/gelen_liste_view_model.dart';
 import '../ui/bugun/yaklasanlar_view_model.dart';
+import '../ui/bugun/zaman_cizelgesi_view_model.dart';
 import '../ui/giris/giris_screen.dart';
 import '../ui/hatirlaticilar/hatirlatici_form_screen.dart';
 import '../ui/hatirlaticilar/hatirlatici_form_view_model.dart';
@@ -177,6 +179,7 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
                   ChangeNotifierProvider(
                     create: (c) => YaklasanlarViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
+                  ChangeNotifierProvider(create: (c) => ZamanCizelgesiViewModel(repo: c.read<ZamanCizelgesiRepository>())..yukle()),
                   ChangeNotifierProvider(
                     create: (c) => OnayBekleyenViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
@@ -187,6 +190,7 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
                     gunPlani: context.read<GunPlaniViewModel>(),
                     yaklasanlar: context.read<YaklasanlarViewModel>(),
                     onayBekleyen: context.read<OnayBekleyenViewModel>(),
+                    zamanCizelgesi: context.read<ZamanCizelgesiViewModel>(),
                   ),
                 ),
               ),

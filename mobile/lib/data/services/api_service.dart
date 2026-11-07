@@ -8,6 +8,7 @@ import '../models/ben.dart';
 import '../models/beyin.dart';
 import '../models/beyin_yazma.dart';
 import '../models/brifing.dart';
+import '../models/zaman_cizelgesi.dart';
 import '../models/enums.dart';
 import '../models/eylem.dart';
 import '../models/gelen.dart';
@@ -354,6 +355,15 @@ class ApiService {
       options: Options(receiveTimeout: const Duration(seconds: 150)),
     );
     return Brifing.fromJson(yanit.data!);
+  }
+
+  // ---- Timeline (K2.3c) ----
+  // Needs the `takvim.oku` permission (403 without).
+
+  /// `GET /api/zaman-cizelgesi?gun=yyyy-MM-dd`: the day's events, timed reminders and plan items in one list.
+  Future<ZamanCizelgesi> zamanCizelgesi(String gun) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/zaman-cizelgesi', queryParameters: {'gun': gun});
+    return ZamanCizelgesi.fromJson(yanit.data!);
   }
 
   /// `POST /api/metin/yeniden-yaz`: the text as a summary or a bullet list. Saves nothing.

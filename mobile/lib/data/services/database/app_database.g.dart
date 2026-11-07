@@ -3816,6 +3816,277 @@ class AyarKayitlariCompanion extends UpdateCompanion<AyarKayitlariData> {
   }
 }
 
+class $ZamanCizelgesiOnbellekTable extends ZamanCizelgesiOnbellek
+    with TableInfo<$ZamanCizelgesiOnbellekTable, ZamanCizelgesiOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ZamanCizelgesiOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _gunMeta = const VerificationMeta('gun');
+  @override
+  late final GeneratedColumn<String> gun = GeneratedColumn<String>(
+    'gun',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _okunmaMeta = const VerificationMeta('okunma');
+  @override
+  late final GeneratedColumn<DateTime> okunma = GeneratedColumn<DateTime>(
+    'okunma',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [gun, govde, okunma];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'zaman_cizelgesi_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ZamanCizelgesiOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('gun')) {
+      context.handle(
+        _gunMeta,
+        gun.isAcceptableOrUnknown(data['gun']!, _gunMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_gunMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    if (data.containsKey('okunma')) {
+      context.handle(
+        _okunmaMeta,
+        okunma.isAcceptableOrUnknown(data['okunma']!, _okunmaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_okunmaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {gun};
+  @override
+  ZamanCizelgesiOnbellekData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ZamanCizelgesiOnbellekData(
+      gun: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gun'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+      okunma: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}okunma'],
+      )!,
+    );
+  }
+
+  @override
+  $ZamanCizelgesiOnbellekTable createAlias(String alias) {
+    return $ZamanCizelgesiOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class ZamanCizelgesiOnbellekData extends DataClass
+    implements Insertable<ZamanCizelgesiOnbellekData> {
+  /// "2026-11-08".
+  final String gun;
+  final String govde;
+  final DateTime okunma;
+  const ZamanCizelgesiOnbellekData({
+    required this.gun,
+    required this.govde,
+    required this.okunma,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['gun'] = Variable<String>(gun);
+    map['govde'] = Variable<String>(govde);
+    map['okunma'] = Variable<DateTime>(okunma);
+    return map;
+  }
+
+  ZamanCizelgesiOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return ZamanCizelgesiOnbellekCompanion(
+      gun: Value(gun),
+      govde: Value(govde),
+      okunma: Value(okunma),
+    );
+  }
+
+  factory ZamanCizelgesiOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ZamanCizelgesiOnbellekData(
+      gun: serializer.fromJson<String>(json['gun']),
+      govde: serializer.fromJson<String>(json['govde']),
+      okunma: serializer.fromJson<DateTime>(json['okunma']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'gun': serializer.toJson<String>(gun),
+      'govde': serializer.toJson<String>(govde),
+      'okunma': serializer.toJson<DateTime>(okunma),
+    };
+  }
+
+  ZamanCizelgesiOnbellekData copyWith({
+    String? gun,
+    String? govde,
+    DateTime? okunma,
+  }) => ZamanCizelgesiOnbellekData(
+    gun: gun ?? this.gun,
+    govde: govde ?? this.govde,
+    okunma: okunma ?? this.okunma,
+  );
+  ZamanCizelgesiOnbellekData copyWithCompanion(
+    ZamanCizelgesiOnbellekCompanion data,
+  ) {
+    return ZamanCizelgesiOnbellekData(
+      gun: data.gun.present ? data.gun.value : this.gun,
+      govde: data.govde.present ? data.govde.value : this.govde,
+      okunma: data.okunma.present ? data.okunma.value : this.okunma,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ZamanCizelgesiOnbellekData(')
+          ..write('gun: $gun, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(gun, govde, okunma);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ZamanCizelgesiOnbellekData &&
+          other.gun == this.gun &&
+          other.govde == this.govde &&
+          other.okunma == this.okunma);
+}
+
+class ZamanCizelgesiOnbellekCompanion
+    extends UpdateCompanion<ZamanCizelgesiOnbellekData> {
+  final Value<String> gun;
+  final Value<String> govde;
+  final Value<DateTime> okunma;
+  final Value<int> rowid;
+  const ZamanCizelgesiOnbellekCompanion({
+    this.gun = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.okunma = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ZamanCizelgesiOnbellekCompanion.insert({
+    required String gun,
+    required String govde,
+    required DateTime okunma,
+    this.rowid = const Value.absent(),
+  }) : gun = Value(gun),
+       govde = Value(govde),
+       okunma = Value(okunma);
+  static Insertable<ZamanCizelgesiOnbellekData> custom({
+    Expression<String>? gun,
+    Expression<String>? govde,
+    Expression<DateTime>? okunma,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (gun != null) 'gun': gun,
+      if (govde != null) 'govde': govde,
+      if (okunma != null) 'okunma': okunma,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ZamanCizelgesiOnbellekCompanion copyWith({
+    Value<String>? gun,
+    Value<String>? govde,
+    Value<DateTime>? okunma,
+    Value<int>? rowid,
+  }) {
+    return ZamanCizelgesiOnbellekCompanion(
+      gun: gun ?? this.gun,
+      govde: govde ?? this.govde,
+      okunma: okunma ?? this.okunma,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (gun.present) {
+      map['gun'] = Variable<String>(gun.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (okunma.present) {
+      map['okunma'] = Variable<DateTime>(okunma.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ZamanCizelgesiOnbellekCompanion(')
+          ..write('gun: $gun, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3846,6 +4117,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $AyarKayitlariTable ayarKayitlari = $AyarKayitlariTable(this);
+  late final $ZamanCizelgesiOnbellekTable zamanCizelgesiOnbellek =
+      $ZamanCizelgesiOnbellekTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3865,6 +4138,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     gelenOnbellek,
     brifingOnbellek,
     ayarKayitlari,
+    zamanCizelgesiOnbellek,
   ];
 }
 
@@ -6450,6 +6724,199 @@ typedef $$AyarKayitlariTableProcessedTableManager =
       AyarKayitlariData,
       PrefetchHooks Function()
     >;
+typedef $$ZamanCizelgesiOnbellekTableCreateCompanionBuilder =
+    ZamanCizelgesiOnbellekCompanion Function({
+      required String gun,
+      required String govde,
+      required DateTime okunma,
+      Value<int> rowid,
+    });
+typedef $$ZamanCizelgesiOnbellekTableUpdateCompanionBuilder =
+    ZamanCizelgesiOnbellekCompanion Function({
+      Value<String> gun,
+      Value<String> govde,
+      Value<DateTime> okunma,
+      Value<int> rowid,
+    });
+
+class $$ZamanCizelgesiOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $ZamanCizelgesiOnbellekTable> {
+  $$ZamanCizelgesiOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get gun => $composableBuilder(
+    column: $table.gun,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ZamanCizelgesiOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $ZamanCizelgesiOnbellekTable> {
+  $$ZamanCizelgesiOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get gun => $composableBuilder(
+    column: $table.gun,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ZamanCizelgesiOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ZamanCizelgesiOnbellekTable> {
+  $$ZamanCizelgesiOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get gun =>
+      $composableBuilder(column: $table.gun, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get okunma =>
+      $composableBuilder(column: $table.okunma, builder: (column) => column);
+}
+
+class $$ZamanCizelgesiOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ZamanCizelgesiOnbellekTable,
+          ZamanCizelgesiOnbellekData,
+          $$ZamanCizelgesiOnbellekTableFilterComposer,
+          $$ZamanCizelgesiOnbellekTableOrderingComposer,
+          $$ZamanCizelgesiOnbellekTableAnnotationComposer,
+          $$ZamanCizelgesiOnbellekTableCreateCompanionBuilder,
+          $$ZamanCizelgesiOnbellekTableUpdateCompanionBuilder,
+          (
+            ZamanCizelgesiOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $ZamanCizelgesiOnbellekTable,
+              ZamanCizelgesiOnbellekData
+            >,
+          ),
+          ZamanCizelgesiOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$ZamanCizelgesiOnbellekTableTableManager(
+    _$AppDatabase db,
+    $ZamanCizelgesiOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ZamanCizelgesiOnbellekTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ZamanCizelgesiOnbellekTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ZamanCizelgesiOnbellekTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> gun = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<DateTime> okunma = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ZamanCizelgesiOnbellekCompanion(
+                gun: gun,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String gun,
+                required String govde,
+                required DateTime okunma,
+                Value<int> rowid = const Value.absent(),
+              }) => ZamanCizelgesiOnbellekCompanion.insert(
+                gun: gun,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ZamanCizelgesiOnbellekTable,
+                    ZamanCizelgesiOnbellekData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ZamanCizelgesiOnbellekTable,
+                    ZamanCizelgesiOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ZamanCizelgesiOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ZamanCizelgesiOnbellekTable,
+      ZamanCizelgesiOnbellekData,
+      $$ZamanCizelgesiOnbellekTableFilterComposer,
+      $$ZamanCizelgesiOnbellekTableOrderingComposer,
+      $$ZamanCizelgesiOnbellekTableAnnotationComposer,
+      $$ZamanCizelgesiOnbellekTableCreateCompanionBuilder,
+      $$ZamanCizelgesiOnbellekTableUpdateCompanionBuilder,
+      (
+        ZamanCizelgesiOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $ZamanCizelgesiOnbellekTable,
+          ZamanCizelgesiOnbellekData
+        >,
+      ),
+      ZamanCizelgesiOnbellekData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6482,4 +6949,9 @@ class $AppDatabaseManager {
       $$BrifingOnbellekTableTableManager(_db, _db.brifingOnbellek);
   $$AyarKayitlariTableTableManager get ayarKayitlari =>
       $$AyarKayitlariTableTableManager(_db, _db.ayarKayitlari);
+  $$ZamanCizelgesiOnbellekTableTableManager get zamanCizelgesiOnbellek =>
+      $$ZamanCizelgesiOnbellekTableTableManager(
+        _db,
+        _db.zamanCizelgesiOnbellek,
+      );
 }
