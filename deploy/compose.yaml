@@ -49,8 +49,10 @@ services:
       # Empty: the brain screens say "not connected" and the rest of the app works (K-0023).
       Beyin__Komut: ${BEYIN_KOMUT:-}
       Beyin__Vault: ${BEYIN_VAULT:-}
+    # Host folders outside the git clone (/srv/<project>/veri, /srv/<project>/beyin), so a fresh clone never
+    # touches the data and the backup takes plain paths. veri/ must belong to the container user (uid 1654).
     volumes:
-      - appdata:/data
+      - ${VERI_KLASORU:-./veri}:/data
       - ${BEYIN_KLASORU:-./beyin}:/beyin
     healthcheck:
       # The image has no curl; Python is there for beyin.py anyway.
@@ -77,6 +79,6 @@ networks:
       config:
         - subnet: 172.30.0.0/24
 
+# The database stays in a Docker volume: it is backed up with pg_dump, never by copying its files.
 volumes:
   pgdata:
-  appdata:
