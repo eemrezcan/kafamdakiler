@@ -221,6 +221,41 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Oturumlar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Beyin.BeyinIslemi", b =>
+                {
+                    b.Property<Guid>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Anahtar")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Cevap")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Durum")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("DurumKodu")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Parmakizi")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("KullaniciId", "Anahtar");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("BeyinIslemleri");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Dosyalar.Dosya", b =>
                 {
                     b.Property<Guid>("Id")

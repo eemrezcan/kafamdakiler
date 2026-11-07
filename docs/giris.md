@@ -86,6 +86,9 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Veri: `mobile/lib/data/models/eylem.dart`, `repositories/eylem_repository.dart` (önbellek ve çevrimdışı kararlar), `eylem_bildirim_yoneticisi.dart` (yeni bekleyen eylem bildirimi ve Onayla / Reddet düğmeleri), `esitleyici.dart` ve `bekleyen_uygula.dart` eklemeleri (üç yeni kuyruk türü), `app_database.dart` şema 6 (`EylemOnbellek`), `api_service.dart` uçları, `utils/eylem_gorunum.dart`, `bildirim_plani.dart` ve `bildirim_servisi.dart` eklemeleri, `main.dart` bağlantıları.
   - Ekranlar: `lib/ui/eylemler/` (liste: sağa kaydır uygula, sola reddet, Geri al; ayrıntı ve yük düzeltme), `lib/ui/bugun/onay_bekleyen_*` (Bugün kartı), `router.dart`, `profil_screen.dart` satırı, `lib/ui/yonetim/` içindeki "Asistan'ın eylem kipleri" bölümü.
   - Testler: `mobile/test/data/eylem_kuyruk_test.dart`, `eylem_bildirim_yoneticisi_test.dart`, `ui/eylem_screen_test.dart`, `veritabani_yukseltme_test.dart` ve `gezinme_test.dart` eklemeleri, `test_destek.dart`.
+- K2.3a gün planı ve görevler, Faz B1 (backend): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 9); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Yazma: `backend/Beyin/BeyinYazma.cs` (madde ekle / işaretle / devret / not, görev ekle / bitir, günlere bölme, hata eşleme, "yazılmış olabilir" sonucu), `BeyinYazmaDtos.cs`, `BeyinYazmaEndpoints.cs`, `GunSiniri.cs` (05:00 gün sınırı ve `Gun:KapasiteSaat` ayarı), `TekrarGuvenligi.cs` ve `BeyinIslemi.cs` (`Idempotency-Key`), `BeyinOkuma.cs` eklemeleri (kapasite uyarısı, sabah kartı `/api/beyin/sabah`), `BeyinPolicies.cs` ve `Izinler.cs` (`plan.yaz`, `gorev.yaz`), `Program.cs` policy ve kayıt satırları, `AppDbContext` ayarı, migration `AddBeyinIslemleri`.
+  - Testler: `backend.Tests/GunSiniriTests.cs`, `BeyinYazmaTests.cs`, `BeyinYazmaApiTests.cs`, `GercekBeyinYazmaTests.cs`, `SahteBeyin.cs` eklemeleri.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

@@ -1,4 +1,5 @@
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Beyin;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Hatirlaticilar;
@@ -22,6 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Eylem> Eylemler => Set<Eylem>();
     public DbSet<EylemIzni> EylemIzinleri => Set<EylemIzni>();
     public DbSet<EylemGunlugu> EylemGunlukleri => Set<EylemGunlugu>();
+    public DbSet<BeyinIslemi> BeyinIslemleri => Set<BeyinIslemi>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -125,6 +127,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Olay).HasConversion<string>().HasMaxLength(30);
             e.Property(x => x.Aciklama).HasMaxLength(500);
             e.HasIndex(x => x.Zaman);
+        });
+
+        builder.Entity<BeyinIslemi>(e =>
+        {
+            e.HasKey(x => new { x.KullaniciId, x.Anahtar });
+            e.Property(x => x.Anahtar).HasMaxLength(100);
+            e.Property(x => x.Parmakizi).HasMaxLength(64);
+            e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => x.CreatedAt);
         });
 
         builder.Entity<Dosya>(e =>

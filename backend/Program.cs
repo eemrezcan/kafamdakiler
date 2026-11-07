@@ -52,6 +52,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(HatirlaticiPolicies.Oku, policy => IzinPolicy(policy, [HatirlaticiPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(HatirlaticiPolicies.Yaz, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz], IdentityConstants.BearerScheme))
     .AddPolicy(BeyinPolicies.Oku, policy => IzinPolicy(policy, [BeyinPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(BeyinPolicies.PlanYaz, policy => IzinPolicy(policy, [BeyinPolicies.PlanYaz], IdentityConstants.BearerScheme))
+    .AddPolicy(BeyinPolicies.GorevYaz, policy => IzinPolicy(policy, [BeyinPolicies.GorevYaz], IdentityConstants.BearerScheme))
     .AddPolicy(EylemPolicies.Oku, policy => IzinPolicy(policy, [EylemPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(EylemPolicies.Onayla, policy => IzinPolicy(policy, [EylemPolicies.Onayla], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
@@ -75,6 +77,8 @@ builder.Services.AddHostedService<YetimDosyaTemizleyici>();
 var beyinAyari = BeyinAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath);
 builder.Services.AddSingleton(beyinAyari);
 builder.Services.AddSingleton<BeyinIstemcisi>();
+// The day plan and task writes (K2.3a): the day's capacity setting and the Idempotency-Key guard.
+builder.Services.AddBeyinYazma(builder.Configuration);
 // Claude Code as a child process (K2.6): off when Claude:Komut is empty. Its answers only ever become suggestions in the approval queue.
 builder.Services.AddSingleton(ClaudeAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath));
 builder.Services.AddSingleton<ClaudeIstemcisi>();

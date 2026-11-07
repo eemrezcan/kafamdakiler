@@ -22,6 +22,9 @@ public sealed class SahteBeyin : IDisposable
                 kayit["gorsel_bas"] = open(p, "rb").read(3).hex()
         with open(os.path.join(d, "log.jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(kayit) + "\n")
+        gecikme = os.path.join(d, "gecikme.txt")
+        if os.path.exists(gecikme):
+            time.sleep(float(open(gecikme).read()))
         if mod == "uyku":
             time.sleep(60)
         if mod == "yavas":
@@ -33,6 +36,19 @@ public sealed class SahteBeyin : IDisposable
             print("???")
             sys.exit(0)
         if mod == "cikti":
+            onek = "-".join(argv[:2])
+            sira = os.path.join(d, "sira-" + onek + ".json")
+            if os.path.exists(sira):
+                adimlar = json.load(open(sira, encoding="utf-8"))
+                n = sum(1 for satir in open(os.path.join(d, "log.jsonl"), encoding="utf-8") if json.loads(satir)["argv"][:2] == argv[:2])
+                adim = adimlar[min(n, len(adimlar)) - 1]
+                print(adim["cikti"])
+                sys.exit(adim["cikis"])
+            ozel = os.path.join(d, "cikti-" + onek + ".json")
+            if os.path.exists(ozel):
+                print(open(ozel, encoding="utf-8").read())
+                ozel_cikis = os.path.join(d, "cikis-" + onek + ".txt")
+                sys.exit(int(open(ozel_cikis).read()) if os.path.exists(ozel_cikis) else 0)
             print(open(os.path.join(d, "cikti.json"), encoding="utf-8").read())
             sys.exit(int(open(os.path.join(d, "cikis.txt")).read()) if os.path.exists(os.path.join(d, "cikis.txt")) else 0)
         print(json.dumps({"yol": "gelen/x.md"}))
@@ -62,6 +78,26 @@ public sealed class SahteBeyin : IDisposable
     {
         File.WriteAllText(Path.Combine(Klasor, "cikti.json"), json);
         File.WriteAllText(Path.Combine(Klasor, "cikis.txt"), cikis.ToString());
+        Mod = "cikti";
+    }
+
+    // Every call waits this long before it answers (whatever the mode): to have two requests in flight at once.
+    public void Gecikme(double saniye) => File.WriteAllText(Path.Combine(Klasor, "gecikme.txt"), saniye.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    // From now on this command (its first two words, e.g. "gun ekle") prints this JSON, whatever Cikti says for the others.
+    public void Cikti(string komut, string json, int cikis = 0)
+    {
+        var onek = komut.Replace(' ', '-');
+        File.WriteAllText(Path.Combine(Klasor, $"cikti-{onek}.json"), json);
+        File.WriteAllText(Path.Combine(Klasor, $"cikis-{onek}.txt"), cikis.ToString());
+        Mod = "cikti";
+    }
+
+    // The 1st call of this command prints the 1st step, the 2nd the 2nd... (the last step repeats).
+    public void Sirali(string komut, params (string Json, int Cikis)[] adimlar)
+    {
+        var liste = adimlar.Select(a => new { cikti = a.Json, cikis = a.Cikis });
+        File.WriteAllText(Path.Combine(Klasor, $"sira-{komut.Replace(' ', '-')}.json"), JsonSerializer.Serialize(liste));
         Mod = "cikti";
     }
 

@@ -35,7 +35,7 @@ public static partial class BeyinOkuma
     };
 
     // Fixed texts: the brain's own message can contain paths, so it goes to the log, not to the client.
-    private static BeyinYaniti<T> Hata<T>(BeyinSonucu sonuc, ILogger log)
+    internal static BeyinYaniti<T> Hata<T>(BeyinSonucu sonuc, ILogger log)
     {
         var durum = DurumKodu(sonuc);
         if (durum >= 500 && sonuc.Durum != BeyinDurumu.BagliDegil)
@@ -99,8 +99,11 @@ public static partial class BeyinOkuma
     public static async Task<IResult> Proje(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         (await ProjeAl(kimlik, beyin, log, ct)).Sonuc();
 
-    public static async Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
-        (await GunAl(tarih, beyin, log, ct)).Sonuc();
+    public static async Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null) =>
+        (await GunAl(tarih, beyin, log, ct, ayar)).Sonuc();
+
+    public static async Task<IResult> Sabah(BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct) =>
+        (await SabahAl(beyin, log, saat, ct)).Sonuc();
 
     public static async Task<IResult> Ara(string? q, string? proje, int? limit, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         (await AraAl(q, proje, limit, beyin, log, ct)).Sonuc();
@@ -122,12 +125,31 @@ public static partial class BeyinOkuma
         return CalistirAsync(beyin, log, ["proje", "goster"], [kimlik], ProjeAyrintisi, ct);
     }
 
-    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null)
     {
         if (!DateOnly.TryParseExact(tarih, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var gun))
             return Task.FromResult(Sorun<BeyinGunDto>("tarih", "Tarih yyyy-MM-dd biçiminde olmalı."));
 
-        return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, GunAyrintisi, ct);
+        var kapasiteDk = (ayar ?? new GunAyari()).KapasiteDk;
+        return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, g => GunAyrintisi(g, kapasiteDk), ct);
+    }
+
+    // Yesterday's plan, by the day-turn rule (05:00): only what is still open. "Taşı" is `gun devret` on that date;
+    // "bırak" writes nothing to the brain (closing yesterday is the closing job's work).
+    public static async Task<BeyinYaniti<SabahKartiDto>> SabahAl(BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct)
+    {
+        var an = saat.GetUtcNow();
+        var bugun = GunSiniri.Bugun(an);
+        var dun = GunSiniri.Dun(an);
+        var yanit = await GunAl($"{dun:yyyy-MM-dd}", beyin, log, ct);
+        if (!yanit.Basarili)
+            return new BeyinYaniti<SabahKartiDto>(yanit.Durum, Baslik: yanit.Baslik, Ayrinti: yanit.Ayrinti, Alanlar: yanit.Alanlar);
+
+        var gun = yanit.Veri!;
+        var acik = gun.Bolumler
+            .SelectMany(b => b.Maddeler.Where(m => m.Durum == "acik").Select(m => new SabahMaddesiDto(m.Id, m.Baslik, b.Ad, m.TahminDk, m.Proje, m.Gorev)))
+            .ToList();
+        return new BeyinYaniti<SabahKartiDto>(StatusCodes.Status200OK, new SabahKartiDto(bugun, dun, gun.Kapandi, acik));
     }
 
     public static Task<BeyinYaniti<List<AramaSonucuDto>>> AraAl(string? q, string? proje, int? limit, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
@@ -159,7 +181,7 @@ public static partial class BeyinOkuma
         return CalistirAsync(beyin, log, ["not", "oku"], [yol!], NotAyrintisi, ct);
     }
 
-    private static BeyinYaniti<T> Sorun<T>(string alan, string mesaj) =>
+    internal static BeyinYaniti<T> Sorun<T>(string alan, string mesaj) =>
         new(StatusCodes.Status400BadRequest, Alanlar: new Dictionary<string, string[]> { [alan] = [mesaj] });
 
     // Conversions: beyin.py's JSON -> our DTOs. A missing required field is an InvalidDataException (a 502).
@@ -179,19 +201,28 @@ public static partial class BeyinOkuma
             DiziAlani(p, "son_gunluk").Select(s => new GunlukSatiriDto(Metin(s, "zaman"), Metin(s, "baslik"), Metin(s, "metin"))).ToList());
     }
 
-    private static BeyinGunDto GunAyrintisi(JsonElement g) => new(
-        Tarih(g, "tarih") ?? throw new InvalidDataException("tarih yok"), Metin(g, "gun_adi"), Metin(g, "hafta_gunu"),
-        Bool(g, "bugun"), Bool(g, "plan_var"), Bool(g, "kapandi"),
-        DiziAlani(g, "bolumler").Select(b => new BeyinGunBolumuDto(
+    private static BeyinGunDto GunAyrintisi(JsonElement g, int kapasiteDk)
+    {
+        var bolumler = DiziAlani(g, "bolumler").Select(b => new BeyinGunBolumuDto(
             Gerekli(b, "ad"),
             DiziAlani(b, "maddeler").Where(Gorunur).Select(m => new BeyinGunMaddesiDto(
                 Gerekli(m, "id"), Gerekli(m, "baslik"), Metin(m, "durum"), Sayi(m, "tahmin_dk"), Sayi(m, "sure_dk"),
-                Metin(m, "proje"), Metin(m, "gorev"))).ToList())).ToList(),
-        DiziAlani(g, "geciken").Where(Gorunur).Where(AcikYol).Select(x => new GecikenGorevDto(
-            Gerekli(x, "kimlik"), Gerekli(x, "baslik"), Tarih(x, "bitis"), Sayi(x, "gun"), Metin(x, "proje"), Metin(x, "oncelik"))).ToList(),
-        g.TryGetProperty("toplam", out var t) && t.ValueKind == JsonValueKind.Object
-            ? new BeyinGunToplamiDto(Sayi(t, "madde") ?? 0, Sayi(t, "yapildi") ?? 0, Sayi(t, "acik") ?? 0)
-            : null);
+                Metin(m, "proje"), Metin(m, "gorev"))).ToList())).ToList();
+
+        // Only open items count; one without an estimate counts as zero.
+        var acikTahmin = bolumler.SelectMany(b => b.Maddeler).Where(m => m.Durum == "acik").Sum(m => m.TahminDk ?? 0);
+
+        return new BeyinGunDto(
+            Tarih(g, "tarih") ?? throw new InvalidDataException("tarih yok"), Metin(g, "gun_adi"), Metin(g, "hafta_gunu"),
+            Bool(g, "bugun"), Bool(g, "plan_var"), Bool(g, "kapandi"),
+            bolumler,
+            DiziAlani(g, "geciken").Where(Gorunur).Where(AcikYol).Select(x => new GecikenGorevDto(
+                Gerekli(x, "kimlik"), Gerekli(x, "baslik"), Tarih(x, "bitis"), Sayi(x, "gun"), Metin(x, "proje"), Metin(x, "oncelik"))).ToList(),
+            g.TryGetProperty("toplam", out var t) && t.ValueKind == JsonValueKind.Object
+                ? new BeyinGunToplamiDto(Sayi(t, "madde") ?? 0, Sayi(t, "yapildi") ?? 0, Sayi(t, "acik") ?? 0)
+                : null,
+            acikTahmin > kapasiteDk ? new GunKapasiteUyarisi(acikTahmin, kapasiteDk, acikTahmin - kapasiteDk) : null);
+    }
 
     private static List<AramaSonucuDto> AramaSonuclari(JsonElement veri) =>
         Dizi(veri).Where(Gorunur).Where(AcikYol).Select(s => new AramaSonucuDto(
@@ -212,35 +243,35 @@ public static partial class BeyinOkuma
 
     // Fail closed: a record is shown only when it says it is not hidden or says nothing about it.
     // (`gizli` present and anything but false hides it; the brain already leaves hidden ones out.)
-    private static bool Gorunur(JsonElement kayit) =>
+    internal static bool Gorunur(JsonElement kayit) =>
         !kayit.TryGetProperty("gizli", out var g) || g.ValueKind == JsonValueKind.False || g.ValueKind == JsonValueKind.Null;
 
     // Whatever lives in `finans/` or `kisisel/` never leaves through this API, wherever it shows up (a search hit,
     // a project's task, an overdue task). A record that names no path is left alone: the day plan has none.
-    private static bool AcikYol(JsonElement kayit) => !NotYolu.Kapali(Metin(kayit, "yol"));
+    internal static bool AcikYol(JsonElement kayit) => !NotYolu.Kapali(Metin(kayit, "yol"));
 
-    private static IEnumerable<JsonElement> Dizi(JsonElement e) =>
+    internal static IEnumerable<JsonElement> Dizi(JsonElement e) =>
         e.ValueKind == JsonValueKind.Array ? e.EnumerateArray() : throw new InvalidDataException("liste bekleniyordu");
 
-    private static IEnumerable<JsonElement> DiziAlani(JsonElement e, string ad) =>
+    internal static IEnumerable<JsonElement> DiziAlani(JsonElement e, string ad) =>
         e.TryGetProperty(ad, out var d) && d.ValueKind == JsonValueKind.Array ? d.EnumerateArray() : [];
 
-    private static string? Metin(JsonElement e, string ad) =>
+    internal static string? Metin(JsonElement e, string ad) =>
         e.TryGetProperty(ad, out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null;
 
-    private static string Gerekli(JsonElement e, string ad) =>
+    internal static string Gerekli(JsonElement e, string ad) =>
         Metin(e, ad) is { Length: > 0 } m ? m : throw new InvalidDataException($"'{ad}' alanı yok");
 
-    private static int? Sayi(JsonElement e, string ad) =>
+    internal static int? Sayi(JsonElement e, string ad) =>
         e.TryGetProperty(ad, out var d) && d.ValueKind == JsonValueKind.Number && d.TryGetInt32(out var n) ? n : null;
 
-    private static bool Bool(JsonElement e, string ad) => e.TryGetProperty(ad, out var d) && d.ValueKind == JsonValueKind.True;
+    internal static bool Bool(JsonElement e, string ad) => e.TryGetProperty(ad, out var d) && d.ValueKind == JsonValueKind.True;
 
-    private static DateOnly? Tarih(JsonElement e, string ad) =>
+    internal static DateOnly? Tarih(JsonElement e, string ad) =>
         DateOnly.TryParseExact(Metin(e, ad), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var t) ? t : null;
 
     [GeneratedRegex(@"^[a-z0-9]+(-[a-z0-9]+)*\z", RegexOptions.CultureInvariant)]
-    private static partial Regex KimlikKalibi();
+    internal static partial Regex KimlikKalibi();
 }
 
 // The note path the API accepts (the brain checks again, this is the first lock): relative, ends in .md, no ".."

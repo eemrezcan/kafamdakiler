@@ -18,7 +18,16 @@ public record GunlukSatiriDto(string? Zaman, string? Baslik, string? Metin);
 
 public record BeyinGunDto(
     DateOnly Tarih, string? GunAdi, string? HaftaGunu, bool Bugun, bool PlanVar, bool Kapandi,
-    List<BeyinGunBolumuDto> Bolumler, List<GecikenGorevDto> Geciken, BeyinGunToplamiDto? Toplam);
+    List<BeyinGunBolumuDto> Bolumler, List<GecikenGorevDto> Geciken, BeyinGunToplamiDto? Toplam,
+    GunKapasiteUyarisi? KapasiteUyarisi = null);
+
+// "Bugün sığmıyor": the estimates of the open items add up to more than a day holds (Gun:KapasiteSaat).
+public record GunKapasiteUyarisi(int AcikTahminDk, int KapasiteDk, int AsimDk);
+
+// The morning card: what yesterday's plan left open, and the day the app counts as today.
+public record SabahKartiDto(DateOnly Bugun, DateOnly Dun, bool DunKapandi, List<SabahMaddesiDto> Maddeler);
+
+public record SabahMaddesiDto(string Id, string Baslik, string Bolum, int? TahminDk, string? Proje, string? Gorev);
 
 public record BeyinGunBolumuDto(string Ad, List<BeyinGunMaddesiDto> Maddeler);
 

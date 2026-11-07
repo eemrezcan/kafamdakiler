@@ -21,7 +21,9 @@ public static class Izinler
         new(HatirlaticiPolicies.Oku, "Hatırlatıcıları okur"),
         new(HatirlaticiPolicies.Yaz, "Hatırlatıcı ekler, değiştirir, siler, yaptım ve ertele işaretler"),
         new(BeyinPolicies.Oku, "Beyni okur: proje, gün planı, arama, not"),
-        new(EylemPolicies.Oku, "Onay kuyruğunu okur: bekleyen ve karara bağlanmış eylemler"),
+        new(BeyinPolicies.PlanYaz, "Gün planına madde ekler, işaretler, devreder, not yazar; görevi günlere böler"),
+        new(BeyinPolicies.GorevYaz, "Görev ekler ve bitirir"),
+        new(EylemPolicies.Oku,"Onay kuyruğunu okur: bekleyen ve karara bağlanmış eylemler"),
         new(EylemPolicies.Onayla, "Onay kuyruğundaki eylemi uygular, reddeder, geri alır"),
     ];
 
