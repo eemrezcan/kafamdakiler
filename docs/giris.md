@@ -108,6 +108,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Veri: `mobile/lib/data/models/gelen.dart` (elle yazılmış JSON), `eylem.dart` ve `eylem.g.dart` (`geriAlinabilir`), `repositories/gelen_repository.dart` (önbellek, yerleştir / sil kuyruğu, yeniden öner), `bekleyen_uygula.dart` (`gelenKartlarinaBekleyenleriUygula`), `esitleyici.dart` (iki yeni kuyruk türü, 404 = bitti), `api_service.dart` (`/api/gelen` dört çağrı), `app_database.dart` şema 8 (`GelenOnbellek`, `gelenIsle` / `gelenSil`), `main.dart` ve `router.dart` bağlantıları.
   - Ekran: `lib/ui/gelen/` (`gelen_liste_screen.dart`: sağa kaydır uygula, sola "Sonra", dokununca önizleme; `gelen_liste_view_model.dart`; `gelen_isle_dialog.dart`: elle yerleştir), Profil'e "Gelen kutusu" satırı, onay kuyruğunda geri alınamayan türde "Geri al" gizli.
   - Testler: `mobile/test/data/gelen_kuyruk_test.dart`, `ui/gelen_screen_test.dart`, `data/veritabani_yukseltme_test.dart` (7 -> 8), `ui/eylem_screen_test.dart` ve `test_destek.dart` eklemeleri.
+- K2.4 D1 metinden iş çıkarma (backend): `backend/Ses/` (`IsCikarServisi`, `SesEndpoints`, `SesPolicies`), `backend/Eylemler/` içindeki `PlanEkleTuru`, `GorevEkleTuru`, `EylemDogrulama` ve `EylemServisi.OnayliUygulaAsync`, `Izinler.cs` (`asistan.kullan`), `Program.cs` kayıtları, `backend.Tests/SesApiTests.cs` ve `GercekBeyinSesTests.cs`: Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 1).
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

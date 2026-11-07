@@ -52,6 +52,8 @@ public static class EylemServisleri
         // The kinds. A new module adds its own line here.
         services.AddSingleton<IEylemTuru, HatirlaticiKurTuru>();
         services.AddSingleton<IEylemTuru, YerlestirTuru>();
+        services.AddSingleton<IEylemTuru, PlanEkleTuru>();
+        services.AddSingleton<IEylemTuru, GorevEkleTuru>();
 
         services.AddSingleton<EylemTurleri>();
         services.AddScoped<EylemServisi>();

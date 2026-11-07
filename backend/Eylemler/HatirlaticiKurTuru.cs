@@ -15,7 +15,9 @@ public class HatirlaticiKurTuru(HatirlaticiAyari ayar) : IEylemTuru
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
 
-    public string Ad => "hatirlatici-kur";
+    public const string Anahtar = "hatirlatici-kur";
+
+    public string Ad => Anahtar;
 
     public string GorunenAd => "Hatırlatıcı kur";
 

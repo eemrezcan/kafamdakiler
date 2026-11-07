@@ -35,17 +35,10 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
     // A suggestion arrives. The order of the checks is the safety rule: Yasak, then outside source, then KendinYap, else Sor.
     public async Task<EylemSonucu> OnerAsync(EylemOnerisi oneri, CancellationToken ct)
     {
-        if (turler.Bul(oneri.Tur) is not { } tur)
-            return Gecersiz("tur", "Bilinmeyen eylem türü.");
-        if (string.IsNullOrWhiteSpace(oneri.Ozet) || oneri.Ozet.Length > 200)
-            return Gecersiz("ozet", "Özet zorunlu ve en çok 200 karakter olabilir.");
-        if (string.IsNullOrWhiteSpace(oneri.Kaynak) || oneri.Kaynak.Length > 30)
-            return Gecersiz("kaynak", "Kaynak zorunlu ve en çok 30 karakter olabilir.");
-        if (oneri.Gerekce is { Length: > 1000 })
-            return Gecersiz("gerekce", "Gerekçe en çok 1000 karakter olabilir.");
-        if (oneri.Guven is < 0 or > 1)
-            return Gecersiz("guven", "Güven 0 ile 1 arasında olmalı.");
+        if (OneriyiDenetle(oneri, out var bulunan) is { } hata)
+            return hata;
 
+        var tur = bulunan!;
         var simdi = saat.GetUtcNow();
         var izin = await db.EylemIzinleri.FindAsync([tur.Ad], ct);
         var kip = izin?.Kip ?? EylemKipi.Sor;
@@ -61,17 +54,7 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
         if (!dogrulama.Basarili)
             return new EylemSonucu(EylemSonucuTuru.Gecersiz, Alan: dogrulama.Alan, Mesaj: dogrulama.Mesaj);
 
-        var eylem = new Eylem
-        {
-            Tur = tur.Ad,
-            Yuk = oneri.Yuk.GetRawText(),
-            Ozet = oneri.Ozet.Trim(),
-            Kaynak = oneri.Kaynak.Trim(),
-            DisKaynak = oneri.DisKaynak,
-            Gerekce = string.IsNullOrWhiteSpace(oneri.Gerekce) ? null : oneri.Gerekce.Trim(),
-            Guven = oneri.Guven,
-            CreatedAt = simdi,
-        };
+        var eylem = Olustur(oneri, tur, simdi);
         db.Eylemler.Add(eylem);
         Gunluk(eylem.Id, tur.Ad, EylemOlayi.Onerildi, $"Öneri geldi ({eylem.Kaynak}): {eylem.Ozet}", null, simdi);
         // Stored as Bekliyor first: if applying it fails, the suggestion and its log line are still there.
@@ -82,6 +65,29 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             return await EtkiyiUygulaAsync(eylem, tur, null, otomatik: true, ct);
 
         return Tamam(eylem);
+    }
+
+    // A person's own request that they already approved where they made it (the voice preview, K2.4): it is stored and applied
+    // in one go. The kind's mode is not asked: the mode is about what the Asistan may do without asking, and here a person asked.
+    // Everything else holds: the checks of a suggestion, the kind's own validation, the log, the undo information, and an effect that
+    // fails leaves a Hatali action instead of nothing. The caller has checked that the person may do what the kind does.
+    public async Task<EylemSonucu> OnayliUygulaAsync(EylemOnerisi oneri, Guid? kullanici, CancellationToken ct)
+    {
+        if (OneriyiDenetle(oneri, out var bulunan) is { } hata)
+            return hata;
+
+        var tur = bulunan!;
+        var dogrulama = await tur.DogrulaAsync(oneri.Yuk, ct);
+        if (!dogrulama.Basarili)
+            return new EylemSonucu(EylemSonucuTuru.Gecersiz, Alan: dogrulama.Alan, Mesaj: dogrulama.Mesaj);
+
+        var simdi = saat.GetUtcNow();
+        var eylem = Olustur(oneri, tur, simdi);
+        db.Eylemler.Add(eylem);
+        Gunluk(eylem.Id, tur.Ad, EylemOlayi.Onerildi, $"Kullanıcı onayıyla geldi ({eylem.Kaynak}): {eylem.Ozet}", kullanici, simdi);
+        await db.SaveChangesAsync(ct);
+
+        return await EtkiyiUygulaAsync(eylem, tur, kullanici, otomatik: false, ct);
     }
 
     public async Task<EylemSonucu> UygulaAsync(Guid id, JsonElement? duzeltilmisYuk, Guid? kullanici, CancellationToken ct)
@@ -277,6 +283,36 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             return new EylemSonucu(EylemSonucuTuru.Hata, hatali, Mesaj: "Eylem uygulanamadı.");
         }
     }
+
+    // The checks every suggestion passes, whoever made it: the refusal, or null with the kind it names.
+    private EylemSonucu? OneriyiDenetle(EylemOnerisi oneri, out IEylemTuru? tur)
+    {
+        tur = turler.Bul(oneri.Tur);
+        if (tur is null)
+            return Gecersiz("tur", "Bilinmeyen eylem türü.");
+        if (string.IsNullOrWhiteSpace(oneri.Ozet) || oneri.Ozet.Length > 200)
+            return Gecersiz("ozet", "Özet zorunlu ve en çok 200 karakter olabilir.");
+        if (string.IsNullOrWhiteSpace(oneri.Kaynak) || oneri.Kaynak.Length > 30)
+            return Gecersiz("kaynak", "Kaynak zorunlu ve en çok 30 karakter olabilir.");
+        if (oneri.Gerekce is { Length: > 1000 })
+            return Gecersiz("gerekce", "Gerekçe en çok 1000 karakter olabilir.");
+        if (oneri.Guven is < 0 or > 1)
+            return Gecersiz("guven", "Güven 0 ile 1 arasında olmalı.");
+
+        return null;
+    }
+
+    private static Eylem Olustur(EylemOnerisi oneri, IEylemTuru tur, DateTimeOffset simdi) => new()
+    {
+        Tur = tur.Ad,
+        Yuk = oneri.Yuk.GetRawText(),
+        Ozet = oneri.Ozet.Trim(),
+        Kaynak = oneri.Kaynak.Trim(),
+        DisKaynak = oneri.DisKaynak,
+        Gerekce = string.IsNullOrWhiteSpace(oneri.Gerekce) ? null : oneri.Gerekce.Trim(),
+        Guven = oneri.Guven,
+        CreatedAt = simdi,
+    };
 
     private async Task<EylemSonucu> KaydetAsync(Eylem eylem, CancellationToken ct)
     {

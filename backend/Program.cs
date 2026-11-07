@@ -11,6 +11,7 @@ using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
+using Kafamdakiler.Ses;
 using Kafamdakiler.Uretim;
 using Kafamdakiler.Yakalamalar;
 using Kafamdakiler.Yonetim;
@@ -59,6 +60,10 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(EylemPolicies.Onayla, policy => IzinPolicy(policy, [EylemPolicies.Onayla], IdentityConstants.BearerScheme))
     .AddPolicy(GelenPolicies.Oku, policy => IzinPolicy(policy, [GelenPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(GelenPolicies.Yaz, policy => IzinPolicy(policy, [GelenPolicies.Yaz], IdentityConstants.BearerScheme))
+    // Voice and text (K2.4): the Claude calls need `asistan.kullan`; applying what a person chose needs one of the three write permissions
+    // (each suggestion is then checked against the permission of its own kind).
+    .AddPolicy(SesPolicies.AsistanKullan, policy => IzinPolicy(policy, [SesPolicies.AsistanKullan], IdentityConstants.BearerScheme))
+    .AddPolicy(SesPolicies.Uygula, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz, BeyinPolicies.PlanYaz, BeyinPolicies.GorevYaz], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
     .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
@@ -88,6 +93,8 @@ builder.Services.AddSingleton<ClaudeIstemcisi>();
 builder.Services.AddEylemler();
 // The inbox (K2.2): new cards get a suggestion from Claude, which waits in the approval queue.
 builder.Services.AddGelen(builder.Configuration);
+// Voice (K2.4): work out of dictated text, and rewriting it.
+builder.Services.AddSes();
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -208,6 +215,7 @@ app.MapHatirlaticiEndpoints();
 app.MapBeyinEndpoints();
 app.MapEylemEndpoints();
 app.MapGelenEndpoints();
+app.MapSesEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
 

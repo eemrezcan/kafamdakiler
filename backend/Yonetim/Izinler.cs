@@ -3,6 +3,7 @@ using Kafamdakiler.Beyin;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Ses;
 using Kafamdakiler.Yakalamalar;
 
 namespace Kafamdakiler.Yonetim;
@@ -28,6 +29,7 @@ public static class Izinler
         new(EylemPolicies.Onayla, "Onay kuyruğundaki eylemi uygular, reddeder, geri alır"),
         new(GelenPolicies.Oku, "Gelen kutusunu okur: kartlar ve Claude'un yerleştirme önerileri"),
         new(GelenPolicies.Yaz, "Gelen kartı için yeniden öneri ister, kartı elle yerleştirir"),
+        new(SesPolicies.AsistanKullan, "Asistanı kullanır: metinden iş çıkarır, metni özetler ya da maddeler (Claude'u çağırır, kaydetmez)"),
     ];
 
     public static bool Gecerli(string? ad) => Tumu.Any(i => i.Ad == ad);

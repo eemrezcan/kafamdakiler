@@ -9,7 +9,7 @@ public static class GelenYolu
 {
     // Top folders a card may go to besides projects/<project>/notlar/. finans/ and kisisel/ stay closed: the API puts
     // nothing there, as for tasks (BeyinYazma) and reads (NotYolu).
-    private static readonly string[] AcikKokler = ["ogrenme", "spor", "aliskanliklar"];
+    public static readonly string[] AcikKokler = ["ogrenme", "spor", "aliskanliklar"];
 
     public const string KokMesaji = "Yol projects/<proje>/notlar/<ad>.md, ogrenme/, spor/ ya da aliskanliklar/ altında olmalı.";
 

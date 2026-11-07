@@ -1,0 +1,54 @@
+### Voice scenario (K2.4): work out of dictated text, look at the preview, apply the chosen ones; rewrite a text.
+### The phone turns speech into text; the server only ever gets the text. Claude must be set up (Claude:Komut) and the brain
+### connected (the projects go into the answer schema). The preview saves nothing; only `uygula` writes.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword. Do not commit real values.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. Preview: what could be done with this text? Nothing is saved.
+### Relative dates ("yarın", "cuma") come back as yyyy-MM-dd, worked out from the server's day (it turns at 05:00).
+### `bugun` is optional (yyyy-MM-dd, one day from the server's at most).
+POST {{host}}/api/is-cikar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "metin": "Yarın sabah dokuzda Ali'yi aramayı unutma. Cuma günü raporu bitirmem lazım, bir saate yakın sürer. Kitap kulübü sitesine üye girişi ekranını da yapmalıyım." }
+
+### 3. Apply: send back the suggestions the person picked (corrected or not). 200 when all went through, 207 when some did not.
+### Each result says uygulandi, hata, gecersiz or izinYok; the applied ones are in the approval queue (kaynak "ses") and can be undone there
+### unless the kind cannot be (plan-ekle).
+POST {{host}}/api/is-cikar/uygula
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "secilenler": [
+    { "tur": "hatirlatici-kur", "baslik": "Ali'yi ara", "gun": "2026-11-08", "saat": "09:00" },
+    { "tur": "plan-ekle", "baslik": "Raporu bitir", "gun": "2026-11-13", "tahminDk": 60 },
+    { "tur": "gorev-ekle", "baslik": "Üye girişi ekranı", "proje": "kitap-kulubu" }
+  ]
+}
+
+### 4. Rewrite: kip is ozet or madde. Saves nothing.
+POST {{host}}/api/metin/yeniden-yaz
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "metin": "Bugün önce Ali'yi arayacağım, sonra raporu bitireceğim, akşama da markete uğrayıp süt alacağım.", "kip": "madde" }
+
+### 5. Applied from the voice (Son uygulananlar)
+GET {{host}}/api/eylemler?durum=uygulandi
+Authorization: Bearer {{token}}

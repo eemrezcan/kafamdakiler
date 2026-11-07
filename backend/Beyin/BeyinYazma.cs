@@ -223,6 +223,17 @@ public static partial class BeyinYazma
 
     public static async Task<YazmaYaniti> GorevEkle(GorevEkleGirdi girdi, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {
+        if (GorevEkleKomutu(girdi, out var komut) is { } hata)
+            return hata;
+
+        return await YazAsync(beyin, log, komut, null, r => new GorevEklendiDto(BeyinOkuma.Gerekli(r, "kimlik")), ct);
+    }
+
+    // The checks of a new task and the `gorev ekle` command that follows from them: the refusal, or null with the command.
+    // Shared with the approval queue's "gorev-ekle" kind, so a task made from a voice note passes the same rules.
+    internal static YazmaYaniti? GorevEkleKomutu(GorevEkleGirdi girdi, out List<string> komut)
+    {
+        komut = [];
         if (MetinDenetle(girdi.Baslik, "baslik", EnUzunBaslik, out var baslik) is { } baslikHatasi) return baslikHatasi;
         if (Istege(girdi.Proje, "proje", 100, out var proje) is { } projeHatasi) return projeHatasi;
         if (Istege(girdi.Alan, "alan", 100, out var alan) is { } alanHatasi) return alanHatasi;
@@ -238,14 +249,13 @@ public static partial class BeyinYazma
         if (Istege(girdi.SonrakiAdim, "sonrakiAdim", EnUzunAyrinti, out var sonraki) is { } sonrakiHatasi) return sonrakiHatasi;
         if (Istege(girdi.Olcut, "olcut", EnUzunAyrinti, out var olcut) is { } olcutHatasi) return olcutHatasi;
 
-        var komut = new List<string> { "gorev", "ekle", $"--baslik={baslik}" };
+        komut = ["gorev", "ekle", $"--baslik={baslik}"];
         if (proje is not null) komut.Add($"--proje={proje}");
         if (alan is not null) komut.Add($"--alan={alan}");
         if (bitis is not null) komut.Add($"--bitis={bitis}");
         if (sonraki is not null) komut.Add($"--sonraki-adim={sonraki}");
         if (olcut is not null) komut.Add($"--olcut={olcut}");
-
-        return await YazAsync(beyin, log, komut, null, r => new GorevEklendiDto(BeyinOkuma.Gerekli(r, "kimlik")), ct);
+        return null;
     }
 
     // The user's own "done" in the app is the proof the brain asks of a project task (`onay:` is checked for its shape only).
