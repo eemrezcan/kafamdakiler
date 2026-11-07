@@ -83,7 +83,7 @@ Tasarımda hazır UI paketleri serbest; değerlendirme işlevsellik ve mühendis
 | G10 | Hızlı not: yazı, fotoğraf, ekran görüntüsü; dosyalar herkese açık değil | hayır | |
 | G11 | Web: yönetim ve analiz ekranları (Razor Pages) | hayır | |
 | G12 | Mobil: günlük giriş ekranları (Flutter) | hayır | |
-| G13 | Deploy: HTTPS, yedek | hayır | |
+| G13 | Deploy: HTTPS, yedek | evet | HTTPS: `tailscale serve` (`*.ts.net` sertifikası), 2026-11-07. Yedek: her sabah 06:00 `pg_dump` + restic → Backblaze B2 (`deploy/yedek/`); ilk yedek `dfdf1487` alındı, geri yükleme denendi (dosyalar birebir, döküm boş Postgres'e yüklendi: 15 tablo, 2 kullanıcı, 6 migration), 2026-11-07 |
 
 ## Faz 2
 - MCP kapısı (Claude bölgesi), haftalık değerlendirme, hayat dersleri günlüğü, vücut fotoğrafı, adım, kas grubu başına haftalık set grafiği, mobilite oynatıcısı (Claude bölgesi), günlük ruh hali ve enerji, Android "Paylaş" menüsü (öneri).
