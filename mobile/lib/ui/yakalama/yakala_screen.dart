@@ -6,16 +6,22 @@ import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/models/yakala_girdisi.dart';
+import '../../data/models/ses.dart';
 import '../core/widgets.dart';
+import 'is_onizleme_sheet.dart';
+import 'ses_view_model.dart';
 import 'yakala_view_model.dart';
 
 /// Quick capture: the keyboard is ready on open, Save writes to the phone and
 /// clears the form for the next thought (the screen stays). With a view model
 /// in edit mode the same form changes a capture that still waits, then closes.
 class YakalaScreen extends StatefulWidget {
-  const YakalaScreen({super.key, required this.viewModel, this.fotografSecici, this.baslangic});
+  const YakalaScreen({super.key, required this.viewModel, this.sesViewModel, this.fotografSecici, this.baslangic});
 
   final YakalaViewModel viewModel;
+
+  /// Dictation and the voice tools (K2.4); without it the form has none (the edit of a waiting capture).
+  final SesViewModel? sesViewModel;
 
   /// Text and photo shared from another app (new captures only).
   final YakalaGirdisi? baslangic;
@@ -45,6 +51,7 @@ class _YakalaScreenState extends State<YakalaScreen> {
   bool _fotografKaldirildi = false;
 
   YakalaViewModel get _vm => widget.viewModel;
+  SesViewModel? get _ses => widget.sesViewModel;
 
   @override
   void initState() {
@@ -92,7 +99,51 @@ class _YakalaScreenState extends State<YakalaScreen> {
     }
   }
 
+  /// Dictation streams the whole field text; the cursor stays at the end.
+  void _dikteMetni(String metin) {
+    _metin.value = TextEditingValue(text: metin, selection: TextSelection.collapsed(offset: metin.length));
+    _vm.hatayiTemizle();
+    setState(() {});
+  }
+
+  Future<void> _dikteyiDegistir() async {
+    final ses = _ses!;
+    if (ses.dinliyor) {
+      await ses.dikteDurdur();
+    } else {
+      await ses.dikteBaslat(temel: _metin.text, metinDegisti: _dikteMetni);
+    }
+  }
+
+  Future<void> _iseCevir() async {
+    final ses = _ses!;
+    await ses.dikteDurdur();
+    await ses.isCikar(_metin.text);
+    if (!mounted || ses.akis != IsAkisi.onizleme) return;
+    await isOnizlemesiniGoster(context, ses);
+  }
+
+  Future<void> _yenidenYaz(YenidenYazKipi kip) async {
+    final ses = _ses!;
+    await ses.dikteDurdur();
+    final yeni = await ses.yenidenYaz(_metin.text, kip);
+    if (yeni == null || !mounted) return;
+    final kabul = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(kip.ad),
+        content: SingleChildScrollView(child: SelectableText(yeni)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Vazgeç')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Metnin yerine koy')),
+        ],
+      ),
+    );
+    if (kabul == true && mounted) setState(() => _metin.text = yeni);
+  }
+
   Future<void> _kaydet() async {
+    await _ses?.dikteDurdur();
     if (!_form.currentState!.validate()) return;
     final kaydedildi = await _vm.kaydet(
       metin: _metin.text,
@@ -117,7 +168,7 @@ class _YakalaScreenState extends State<YakalaScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _vm,
+      listenable: Listenable.merge([_vm, ?_ses]),
       builder: (context, _) {
         final mevcut = _vm.mevcut;
         if (mevcut != null && !_dolduruldu) {
@@ -174,6 +225,85 @@ class _YakalaScreenState extends State<YakalaScreen> {
     );
   }
 
+  /// Dictation (works on the phone) and the tools that need the server: turn the text into work, summarize, bullet.
+  Widget _sesAraclari(BuildContext context, SesViewModel ses) {
+    final tema = Theme.of(context);
+    final soluk = TextStyle(color: tema.colorScheme.onSurfaceVariant);
+    final metinVar = _metin.text.trim().isNotEmpty;
+    final calisiyor = ses.akis == IsAkisi.yukleniyor || ses.yenidenYaziliyor;
+    // The server tools need a connection, some text and no other call running.
+    final sunucuIsi = ses.cevrimici && metinVar && !calisiyor;
+    const dar = Size(48, 48);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (ses.dinliyor)
+              FilledButton.icon(
+                style: FilledButton.styleFrom(minimumSize: dar),
+                onPressed: _dikteyiDegistir,
+                icon: const Icon(LucideIcons.micOff),
+                label: const Text('Durdur'),
+              )
+            else
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: dar),
+                onPressed: _dikteyiDegistir,
+                icon: const Icon(LucideIcons.mic),
+                label: const Text('Dikte'),
+              ),
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(minimumSize: dar),
+              onPressed: sunucuIsi ? _iseCevir : null,
+              icon: ses.akis == IsAkisi.yukleniyor
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(LucideIcons.sparkles),
+              label: const Text('İşe çevir'),
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(minimumSize: dar),
+              onPressed: sunucuIsi ? () => _yenidenYaz(YenidenYazKipi.ozet) : null,
+              icon: const Icon(LucideIcons.textAlignStart),
+              label: const Text('Özetle'),
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(minimumSize: dar),
+              onPressed: sunucuIsi ? () => _yenidenYaz(YenidenYazKipi.madde) : null,
+              icon: const Icon(LucideIcons.list),
+              label: const Text('Maddele'),
+            ),
+          ],
+        ),
+        if (ses.dinliyor)
+          Padding(padding: const EdgeInsets.only(top: 8), child: Text('Dinliyorum… konuşmayı bitirince durur.', style: soluk)),
+        if (calisiyor)
+          Padding(padding: const EdgeInsets.only(top: 8), child: Text('Asistan çalışıyor…', style: soluk)),
+        if (!ses.cevrimici)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Çevrimdışısın: İşe çevir, Özetle ve Maddele internet ister. Metni yine de Kaydet ile yakalayabilirsin.',
+              style: soluk,
+            ),
+          ),
+        if (ses.dikteMesaji != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(ses.dikteMesaji!, style: TextStyle(color: tema.colorScheme.error)),
+          ),
+        // While the preview is open it shows its own errors.
+        if (ses.hata != null && ses.akis == IsAkisi.yok)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(ses.hata!, style: TextStyle(color: tema.colorScheme.error)),
+          ),
+      ],
+    );
+  }
+
   Widget _formu(BuildContext context) {
     final tema = Theme.of(context);
     return Form(
@@ -186,6 +316,8 @@ class _YakalaScreenState extends State<YakalaScreen> {
             controller: _metin,
             focusNode: _odak,
             autofocus: !_vm.duzenleme,
+            // Dictation rewrites the whole text on every result, so typing in between would be lost.
+            readOnly: _ses?.dinliyor ?? false,
             minLines: 4,
             maxLines: 10,
             maxLength: _metinSiniri,
@@ -210,6 +342,10 @@ class _YakalaScreenState extends State<YakalaScreen> {
               child: Text('Birden çok görsel paylaşıldı; yalnız ilki alındı.'),
             ),
           const SizedBox(height: 8),
+          if (_ses != null) ...[
+            _sesAraclari(context, _ses!),
+            const SizedBox(height: 8),
+          ],
           if (_vm.projeSecici) ...[
             _ProjeSecici(viewModel: _vm),
             const SizedBox(height: 8),

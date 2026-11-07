@@ -16,6 +16,8 @@ import '../data/repositories/kronometre_repository.dart';
 import '../data/repositories/kullanici_repository.dart';
 import '../data/repositories/yakalama_repository.dart';
 import '../data/services/api_service.dart';
+import '../data/services/baglanti_servisi.dart';
+import '../data/services/dikte_servisi.dart';
 import '../ui/aliskanliklar/aliskanlik_detay_screen.dart';
 import '../ui/aliskanliklar/aliskanlik_detay_view_model.dart';
 import '../ui/aliskanliklar/aliskanlik_form_screen.dart';
@@ -60,6 +62,7 @@ import '../ui/raf/oge_form_view_model.dart';
 import '../ui/raf/raf_screen.dart';
 import '../ui/raf/raf_view_model.dart';
 import '../ui/shell/ana_iskele.dart';
+import '../ui/yakalama/ses_view_model.dart';
 import '../ui/yakalama/yakala_screen.dart';
 import '../ui/yakalama/yakala_view_model.dart';
 import '../ui/yakalama/yakalama_liste_screen.dart';
@@ -269,7 +272,11 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
             esitleyici: c.read<Esitleyici>(),
             beyin: c.read<BeyinRepository>(),
           ),
-          (vm) => YakalaScreen(viewModel: vm, baslangic: state.extra as YakalaGirdisi?),
+          // Dictation and the voice tools only for a new capture, not for the edit of one that waits.
+          (vm) => _sayfa(
+            (c) => SesViewModel(api: c.read<ApiService>(), dikte: SpeechDikteServisi(), baglanti: ConnectivityBaglantiServisi()),
+            (ses) => YakalaScreen(viewModel: vm, sesViewModel: ses, baslangic: state.extra as YakalaGirdisi?),
+          ),
         ),
       ),
       GoRoute(

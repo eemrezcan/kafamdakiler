@@ -15,6 +15,7 @@ import '../models/hatirlatici.dart';
 import '../models/gun.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
+import '../models/ses.dart';
 import '../models/yonetim.dart';
 import '../models/yakalama.dart';
 import 'token_depo.dart';
@@ -297,6 +298,43 @@ class ApiService {
       options: Options(receiveTimeout: const Duration(seconds: 150)),
     );
     return GelenOneriYaniti.fromJson(yanit.data!);
+  }
+
+  // ---- Voice and text (K2.4) ----
+  // The phone turns speech into text; only the text is sent. 403: no `asistan.kullan` permission, 503: Claude is not set
+  // up, 429: the daily Claude cap, 502: Claude's answer was unusable.
+
+  /// `POST /api/is-cikar`: what could be done with [metin]. Saves nothing. The server waits for Claude, so the wait is
+  /// longer than for the other calls. 400 when the text is empty or over about 4000 characters.
+  Future<IsCikarYaniti> isCikar(String metin) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/is-cikar',
+      data: {'metin': metin},
+      options: Options(receiveTimeout: const Duration(seconds: 150)),
+    );
+    return IsCikarYaniti.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/is-cikar/uygula`: applies the suggestions the person picked, one by one. 200 when all went through, 207
+  /// when some did not; both are answers (the results tell them apart), the applied ones stay applied.
+  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/is-cikar/uygula',
+      data: {
+        'secilenler': [for (final s in secilenler) s.toJson()],
+      },
+    );
+    return IsCikarUygulaYaniti.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/metin/yeniden-yaz`: the text as a summary or a bullet list. Saves nothing.
+  Future<String> metniYenidenYaz(String metin, YenidenYazKipi kip) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/metin/yeniden-yaz',
+      data: {'metin': metin, 'kip': kip.name},
+      options: Options(receiveTimeout: const Duration(seconds: 150)),
+    );
+    return yanit.data!['metin'] as String;
   }
 
   // ---- Second brain (read only, /api/beyin) ----

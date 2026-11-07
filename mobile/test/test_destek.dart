@@ -15,6 +15,7 @@ import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
+import 'package:kafamdakiler/data/models/ses.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
@@ -292,6 +293,62 @@ class SahteApi extends ApiService {
       );
     }
     return gelenOneriYaniti;
+  }
+
+  // ---- Voice and text ----
+
+  /// What `isCikar` answers (the preview).
+  IsCikarYaniti isCikarYaniti = const IsCikarYaniti(bugun: '2026-11-07', haftaninGunu: 'Cumartesi', oneriler: [], atlananlar: []);
+
+  /// What `isCikarUygula` answers; null means "all applied", built from the request.
+  IsCikarUygulaYaniti? uygulaYaniti;
+
+  /// The texts `isCikar` and `metniYenidenYaz` were sent, and the suggestions `isCikarUygula` was sent, per call.
+  final List<String> isCikarMetinleri = [];
+  final List<List<IsOnerisi>> uygulananIstekler = [];
+  final List<(String, YenidenYazKipi)> yenidenYazIstekleri = [];
+
+  /// What `metniYenidenYaz` answers.
+  String yenidenYazSonucu = 'Kısa özet.';
+
+  /// When set, the voice calls fail with this HTTP status (503, 429, 502, 403).
+  int? sesHatasi;
+
+  void _sesKontrol(String ad) {
+    _kontrol(ad);
+    if (sesHatasi == null) return;
+    final istek = RequestOptions(path: ad);
+    throw DioException.badResponse(
+      statusCode: sesHatasi!,
+      requestOptions: istek,
+      response: Response(requestOptions: istek, statusCode: sesHatasi),
+    );
+  }
+
+  @override
+  Future<IsCikarYaniti> isCikar(String metin) async {
+    _sesKontrol('isCikar');
+    isCikarMetinleri.add(metin);
+    return isCikarYaniti;
+  }
+
+  @override
+  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler) async {
+    _sesKontrol('isCikarUygula');
+    uygulananIstekler.add(secilenler);
+    return uygulaYaniti ??
+        IsCikarUygulaYaniti(
+          uygulanan: secilenler.length,
+          basarisiz: 0,
+          sonuclar: [for (var i = 0; i < secilenler.length; i++) IsUygulaSonucu(sira: i, durum: 'uygulandi')],
+        );
+  }
+
+  @override
+  Future<String> metniYenidenYaz(String metin, YenidenYazKipi kip) async {
+    _sesKontrol('metniYenidenYaz');
+    yenidenYazIstekleri.add((metin, kip));
+    return yenidenYazSonucu;
   }
 
   // ---- Second brain ----

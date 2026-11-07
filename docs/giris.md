@@ -109,6 +109,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Ekran: `lib/ui/gelen/` (`gelen_liste_screen.dart`: sağa kaydır uygula, sola "Sonra", dokununca önizleme; `gelen_liste_view_model.dart`; `gelen_isle_dialog.dart`: elle yerleştir), Profil'e "Gelen kutusu" satırı, onay kuyruğunda geri alınamayan türde "Geri al" gizli.
   - Testler: `mobile/test/data/gelen_kuyruk_test.dart`, `ui/gelen_screen_test.dart`, `data/veritabani_yukseltme_test.dart` (7 -> 8), `ui/eylem_screen_test.dart` ve `test_destek.dart` eklemeleri.
 - K2.4 D1 metinden iş çıkarma (backend): `backend/Ses/` (`IsCikarServisi`, `SesEndpoints`, `SesPolicies`), `backend/Eylemler/` içindeki `PlanEkleTuru`, `GorevEkleTuru`, `EylemDogrulama` ve `EylemServisi.OnayliUygulaAsync`, `Izinler.cs` (`asistan.kullan`), `Program.cs` kayıtları, `backend.Tests/SesApiTests.cs` ve `GercekBeyinSesTests.cs`: Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 1).
+- K2.4 D2 ses ve sesten iş (mobil): `mobile/lib/data/services/dikte_servisi.dart` (`speech_to_text` sarmalayıcısı) ve `baglanti_servisi.dart`, `lib/data/models/ses.dart`, `lib/ui/yakalama/ses_view_model.dart` ve `is_onizleme_sheet.dart`, `yakala_screen.dart` ve `router.dart` bağlantıları, `api_service.dart` uçları, `AndroidManifest.xml` mikrofon izni, `pubspec.yaml`, testler `mobile/test/ui/ses_test.dart` ve `test/data/ses_api_test.dart`: Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 1).
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
