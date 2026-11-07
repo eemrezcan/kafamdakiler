@@ -1,0 +1,12 @@
+[Unit]
+Description=Kafamdakiler nightly backup (pg_dump + restic to B2)
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/kafamdakiler/app/deploy/yedek/yedek.sh
+# restic keeps a local cache here.
+Environment=RESTIC_CACHE_DIR=/var/cache/restic
+Nice=10
+IOSchedulingClass=idle

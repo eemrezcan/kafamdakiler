@@ -1,0 +1,14 @@
+[Unit]
+Description=Run the Kafamdakiler backup every morning after the brain's day turns
+
+[Timer]
+# The brain's day turns at 05:00 Turkish time (gun.py GUN_DONUS_SAATI) and the day-closing worker may run up to
+# 30 minutes (kapanis_zaman_asimi_dk), so the backup runs at 06:00 and catches the closed day.
+# The time zone is given here because the server itself runs on UTC.
+OnCalendar=*-*-* 06:00:00 Europe/Istanbul
+RandomizedDelaySec=10min
+# A morning missed while the server was off runs at the next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

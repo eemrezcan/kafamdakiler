@@ -37,6 +37,8 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     environment: &api-ortami
+      # The server runs on UTC; the app and beyin.py (its day turns at 05:00, gun.py GUN_DONUS_SAATI) need Turkish time.
+      TZ: Europe/Istanbul
       ConnectionStrings__Default: Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Dosyalar__Klasor: /data/dosyalar
       VeriKoruma__Klasor: /data/anahtarlar
