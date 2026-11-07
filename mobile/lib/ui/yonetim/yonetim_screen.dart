@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../data/models/yakalama.dart';
 import '../../data/models/yonetim.dart';
 import '../core/widgets.dart';
+import 'asistan_sifre_dialog.dart';
 import 'yonetim_view_model.dart';
 
 /// The Sahip's management screen (M07): the Asistan's permissions (with their
@@ -23,6 +24,15 @@ class YonetimScreen extends StatelessWidget {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(mesaj)));
+  }
+
+  Future<void> _asistanSifresi(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final yenilendi = await showDialog<bool>(
+      context: context,
+      builder: (context) => AsistanSifreDialog(gonder: viewModel.asistanSifresiniYenile),
+    );
+    if (yenilendi == true) _bildir(messenger, 'Asistan\'ın şifresi değişti, oturumları kapatıldı.');
   }
 
   Future<void> _yenidenDene(BuildContext context, Gonderim g) async {
@@ -92,6 +102,17 @@ class YonetimScreen extends StatelessWidget {
                                   },
                           ),
                       ],
+                    ),
+                  ),
+                  const _Baslik('Asistan\'ın şifresi'),
+                  Card(
+                    child: ListTile(
+                      minTileHeight: 56,
+                      leading: const Icon(LucideIcons.keyRound),
+                      title: const Text('Asistan\'ın şifresini yenile'),
+                      subtitle: const Text('Oturumları da kapanır'),
+                      trailing: const Icon(LucideIcons.chevronRight),
+                      onTap: () => _asistanSifresi(context),
                     ),
                   ),
                   const _Baslik('Beyin'),

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Yonetim;
@@ -25,7 +26,27 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
     [TempData]
     public string? Hata { get; set; }
 
-    public async Task OnGetAsync(CancellationToken ct)
+    // The "Asistan'ın şifresi" form. Only OnPostAsistanSifre looks at it; the other handlers ignore it.
+    [BindProperty]
+    public AsistanSifreGirdisi Sifre { get; set; } = new();
+
+    public class AsistanSifreGirdisi
+    {
+        [Required(ErrorMessage = "Yeni şifre zorunlu.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Yeni şifre")]
+        public string YeniSifre { get; set; } = "";
+
+        [Required(ErrorMessage = "Şifreyi tekrar yaz.")]
+        [Compare(nameof(YeniSifre), ErrorMessage = "Şifreler aynı değil.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Yeni şifre (tekrar)")]
+        public string YeniSifreTekrar { get; set; } = "";
+    }
+
+    public async Task OnGetAsync(CancellationToken ct) => await YukleAsync(ct);
+
+    private async Task YukleAsync(CancellationToken ct)
     {
         var simdi = DateTimeOffset.UtcNow;
         IzinListesi = await YonetimIslemleri.IzinleriGetirAsync(kullanicilar);
@@ -47,6 +68,29 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
     {
         await YonetimIslemleri.AsistaninOturumlariniKapatAsync(kullanicilar);
         Bildirim = "Asistan'ın oturumları kapatıldı";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostAsistanSifreAsync(CancellationToken ct)
+    {
+        // Only this form's fields count; the other handlers' posts carry none of them.
+        if (!ModelState.IsValid)
+        {
+            await YukleAsync(ct);
+            return Page();
+        }
+
+        var sonuc = await YonetimIslemleri.AsistaninSifresiniYenileAsync(kullanicilar, Sifre.YeniSifre);
+        if (!sonuc.Succeeded)
+        {
+            foreach (var hata in sonuc.Errors)
+                ModelState.AddModelError($"{nameof(Sifre)}.{nameof(Sifre.YeniSifre)}", hata.Description);
+
+            await YukleAsync(ct);
+            return Page();
+        }
+
+        Bildirim = "Asistan'ın şifresi değişti, oturumları kapatıldı";
         return RedirectToPage();
     }
 

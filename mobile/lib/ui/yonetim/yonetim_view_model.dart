@@ -82,6 +82,23 @@ class YonetimViewModel extends ChangeNotifier {
     }
   }
 
+  bool _sifreGonderiliyor = false;
+
+  /// Sets a new password for the Asistan; the server closes its sessions too.
+  /// Returns a message for the user when it failed, null when it worked.
+  Future<String?> asistanSifresiniYenile(String yeniSifre) async {
+    if (_sifreGonderiliyor) return 'Zaten gönderiliyor.';
+    _sifreGonderiliyor = true;
+    try {
+      await _api.asistaninSifresiniYenile(yeniSifre);
+      return null;
+    } on Object catch (e) {
+      return sifreHataMetni(e);
+    } finally {
+      _sifreGonderiliyor = false;
+    }
+  }
+
   /// Gives a failed or stuck capture back to the server's sender. Returns the
   /// message to show (success or failure).
   Future<String> yenidenDene(Gonderim g) async {

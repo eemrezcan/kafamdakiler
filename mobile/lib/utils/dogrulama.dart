@@ -90,4 +90,25 @@ String? onceGunDogrula(String? v) {
   return null;
 }
 
+String? mevcutSifreDogrula(String? v) => (v ?? '').isEmpty ? 'Mevcut şifre gerekli.' : null;
+
+/// Identity's default password rules, in the order the user fixes them (never trimmed: spaces count).
+String? yeniSifreDogrula(String? v) {
+  final s = v ?? '';
+  if (s.isEmpty) return 'Yeni şifre gerekli.';
+  if (s.length < 6) return 'Şifre en az 6 karakter olmalı.';
+  if (!RegExp(r'[0-9]').hasMatch(s)) return 'Şifre en az bir rakam içermeli (0-9).';
+  if (!RegExp(r'\p{Ll}', unicode: true).hasMatch(s)) return 'Şifre en az bir küçük harf içermeli (a-z).';
+  if (!RegExp(r'\p{Lu}', unicode: true).hasMatch(s)) return 'Şifre en az bir büyük harf içermeli (A-Z).';
+  if (!RegExp(r'[^\p{L}\p{Nd}]', unicode: true).hasMatch(s)) {
+    return 'Şifre en az bir harf ve rakam olmayan karakter içermeli (örneğin !).';
+  }
+  return null;
+}
+
+String? sifreTekrarDogrula(String? v, String yeni) {
+  if ((v ?? '').isEmpty) return 'Şifreyi tekrar yaz.';
+  return v == yeni ? null : 'Şifreler aynı değil.';
+}
+
 String? kimeDogrula(String? v) => (v?.trim().length ?? 0) > 100 ? 'Kime en çok 100 karakter olabilir.' : null;

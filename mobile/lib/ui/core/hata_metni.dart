@@ -24,7 +24,13 @@ String hataMetni(Object hata, {String islem = 'İşlem tamamlanamadı'}) {
   }
 }
 
-/// `ValidationProblem`: `{ "errors": { "alan": ["mesaj"] } }`.
+/// For a password change. It cannot wait in the offline queue (the new password must be known to the server before
+/// anything else), so without a connection the text says nothing was sent.
+String sifreHataMetni(Object hata) => cevrimdisiHata(hata)
+    ? 'Çevrimdışısın: şifre gönderilmedi. Bağlantın gelince tekrar dene.'
+    : hataMetni(hata, islem: 'Şifre değiştirilemedi');
+
+/// `ValidationProblem`:`{ "errors": { "alan": ["mesaj"] } }`.
 List<String> _dogrulamaMesajlari(Object? veri) {
   if (veri is! Map || veri['errors'] is! Map) return const [];
   return [

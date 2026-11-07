@@ -31,6 +31,34 @@ void main() {
     });
   });
 
+  group('password rules', () {
+    test('the new password follows Identity\'s defaults, one message at a time', () {
+      expect(yeniSifreDogrula(''), 'Yeni şifre gerekli.');
+      expect(yeniSifreDogrula('Ab1!'), 'Şifre en az 6 karakter olmalı.');
+      expect(yeniSifreDogrula('Abcdef!'), contains('rakam'));
+      expect(yeniSifreDogrula('ABCDE1!'), contains('küçük harf'));
+      expect(yeniSifreDogrula('abcde1!'), contains('büyük harf'));
+      expect(yeniSifreDogrula('Abcde12'), contains('harf ve rakam olmayan'));
+      expect(yeniSifreDogrula('Yeni-Parola-2!'), isNull);
+    });
+
+    test('Turkish letters count as letters, a space counts as the special character', () {
+      expect(yeniSifreDogrula('Şifre1ç!'), isNull);
+      expect(yeniSifreDogrula('Abcde 1'), isNull);
+    });
+
+    test('the repeat must be filled and equal', () {
+      expect(sifreTekrarDogrula('', 'Abc1!x'), 'Şifreyi tekrar yaz.');
+      expect(sifreTekrarDogrula('Abc1!y', 'Abc1!x'), 'Şifreler aynı değil.');
+      expect(sifreTekrarDogrula('Abc1!x', 'Abc1!x'), isNull);
+    });
+
+    test('the current password only has to be given', () {
+      expect(mevcutSifreDogrula(''), 'Mevcut şifre gerekli.');
+      expect(mevcutSifreDogrula(' '), isNull);
+    });
+  });
+
   group('habit form rules', () {
     test('EnAz target must be above zero, EnCok may be zero', () {
       expect(hedefDogrula('0', HedefYonu.enAz), isNotNull);

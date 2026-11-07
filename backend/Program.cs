@@ -95,6 +95,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddIdentityApiEndpoints<IdentityUser<Guid>>()
     .AddRoles<IdentityRole<Guid>>()
+    .AddErrorDescriber<TurkceIdentityHatalari>()
     .AddEntityFrameworkStores<AppDbContext>();
 
 // The `izin` claims are read from the database on every request, not from the token (K-0009 eki).

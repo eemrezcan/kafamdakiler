@@ -1,0 +1,55 @@
+@page
+@model Kafamdakiler.Pages.Hesap.SifreModel
+@{
+    ViewData["Title"] = "Şifremi değiştir";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Hesap</p>
+        <h1 class="kd-page-title">Şifremi değiştir</h1>
+    </div>
+</div>
+
+<section class="kd-yonetim-blok" aria-labelledby="sifre-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="sifre-baslik">Yeni şifre</h2>
+    <p class="kd-muted">
+        Bu tarayıcıda oturumun açık kalır. Telefondaki oturumun en geç bir saat içinde kapanır; yeni şifreyle yeniden girersin.
+    </p>
+
+    <form method="post" class="kd-sifre-form">
+        <div asp-validation-summary="ModelOnly" class="kd-form-error" role="alert"></div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.MevcutSifre"></label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Input.MevcutSifre" autocomplete="current-password" />
+                <button type="button" class="kd-field-action" data-kd-password-toggle aria-label="Şifreyi göster">Göster</button>
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.MevcutSifre"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.YeniSifre"></label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Input.YeniSifre" autocomplete="new-password" />
+                <button type="button" class="kd-field-action" data-kd-password-toggle aria-label="Şifreyi göster">Göster</button>
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.YeniSifre"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Input.YeniSifreTekrar"></label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Input.YeniSifreTekrar" autocomplete="new-password" />
+            </div>
+            <span class="kd-field-error" asp-validation-for="Input.YeniSifreTekrar"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Şifreyi değiştir</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

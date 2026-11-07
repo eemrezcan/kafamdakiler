@@ -30,7 +30,8 @@ void main() {
   tearDown(() async => ortam.kapat());
 
   Future<YonetimViewModel> goster(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(375, 900);
+    // Tall enough that the list builds every row: a ListView only builds what is on screen.
+    tester.view.physicalSize = const Size(375, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final vm = YonetimViewModel(api: ortam.api);
@@ -139,6 +140,77 @@ void main() {
     expect(find.text('Tekrar dene'), findsOneWidget);
   });
 
+  group('the Asistan\'s password', () {
+    Future<void> diyalogAc(WidgetTester tester) async {
+      await goster(tester);
+      await tester.tap(find.text('Asistan\'ın şifresini yenile'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> doldur(WidgetTester tester, {String yeni = 'Yeni-Parola-2!', String? tekrar}) async {
+      final alanlar = find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextFormField));
+      await tester.enterText(alanlar.at(0), yeni);
+      await tester.enterText(alanlar.at(1), tekrar ?? yeni);
+    }
+
+    Future<void> yenile(WidgetTester tester) async {
+      await tester.tap(find.widgetWithText(FilledButton, 'Yenile'));
+      await tester.pump();
+      await tester.pump();
+    }
+
+    bool cagriVar() => ortam.api.cagrilar.any((c) => c.startsWith('asistaninSifresiniYenile'));
+
+    testWidgets('the form stops a password that breaks the rules or does not match, before any request', (tester) async {
+      await diyalogAc(tester);
+
+      await doldur(tester, yeni: 'kisa');
+      await yenile(tester);
+      expect(find.text('Şifre en az 6 karakter olmalı.'), findsOneWidget);
+
+      await doldur(tester, tekrar: 'Baska-Parola-3!');
+      await yenile(tester);
+      expect(find.text('Şifreler aynı değil.'), findsOneWidget);
+
+      expect(cagriVar(), isFalse);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('a good password goes to the server, the dialog closes and the message says the sessions are closed', (tester) async {
+      await diyalogAc(tester);
+
+      await doldur(tester);
+      await yenile(tester);
+      await tester.pumpAndSettle();
+
+      expect(ortam.api.cagrilar, contains('asistaninSifresiniYenile:Yeni-Parola-2!'));
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Asistan\'ın şifresi değişti, oturumları kapatıldı.'), findsOneWidget);
+    });
+
+    testWidgets('a password the server refuses shows its message and the dialog stays open', (tester) async {
+      await diyalogAc(tester);
+      ortam.api.sifreHatasi = 400;
+
+      await doldur(tester);
+      await yenile(tester);
+
+      expect(find.text('Mevcut şifre yanlış.'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('without a connection nothing is sent and the dialog says so', (tester) async {
+      await diyalogAc(tester);
+      ortam.api.cevrimdisi = true;
+
+      await doldur(tester);
+      await yenile(tester);
+
+      expect(find.textContaining('Çevrimdışısın'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+  });
+
   group('entry from Profil', () {
     Future<void> profil(WidgetTester tester, {required String rol}) async {
       tester.view.physicalSize = const Size(375, 900);
@@ -166,6 +238,13 @@ void main() {
     testWidgets('the Asistan does not', (tester) async {
       await profil(tester, rol: 'Asistan');
       expect(find.text('Yönetim'), findsNothing);
+    });
+
+    testWidgets('both roles can change their own password from here', (tester) async {
+      await profil(tester, rol: 'Sahip');
+      expect(find.text('Şifremi değiştir'), findsOneWidget);
+      await profil(tester, rol: 'Asistan');
+      expect(find.text('Şifremi değiştir'), findsOneWidget);
     });
   });
 }

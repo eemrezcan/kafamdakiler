@@ -50,6 +50,33 @@
     </form>
 </section>
 
+<section class="kd-yonetim-blok" aria-labelledby="sifre-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="sifre-baslik">Asistan'ın şifresi</h2>
+    <p class="kd-muted">
+        Eski şifreyi bilmen gerekmez. Kaydedince Asistan'ın oturumları da kapanır; yeni şifreyle yeniden giriş yapması gerekir.
+    </p>
+    <form method="post" asp-page-handler="AsistanSifre" class="kd-sifre-form" autocomplete="off">
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Sifre.YeniSifre"></label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Sifre.YeniSifre" autocomplete="new-password" />
+                <button type="button" class="kd-field-action" data-kd-password-toggle aria-label="Şifreyi göster">Göster</button>
+            </div>
+            <span class="kd-field-error" asp-validation-for="Sifre.YeniSifre"></span>
+        </div>
+
+        <div class="kd-field">
+            <label class="kd-field-label" asp-for="Sifre.YeniSifreTekrar"></label>
+            <div class="kd-field-control">
+                <input class="form-control" asp-for="Sifre.YeniSifreTekrar" autocomplete="new-password" />
+            </div>
+            <span class="kd-field-error" asp-validation-for="Sifre.YeniSifreTekrar"></span>
+        </div>
+
+        <button type="submit" class="btn btn-outline-primary">Şifreyi yenile</button>
+    </form>
+</section>
+
 <section class="kd-yonetim-blok" aria-labelledby="beyin-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="beyin-baslik">Beyin</h2>
     <dl class="kd-facts">
@@ -112,3 +139,7 @@
         }
     }
 </section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

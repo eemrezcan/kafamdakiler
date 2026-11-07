@@ -56,6 +56,16 @@ class ApiService {
     return Ben.fromJson(yanit.data!);
   }
 
+  /// Changes the signed-in user's own password (Identity's manage endpoint). A wrong current password or a
+  /// password that breaks the rules is a 400 with Turkish messages. The server renews the security stamp, so the
+  /// refresh token held before is refused afterwards: the caller signs in again with the new password.
+  Future<void> sifreDegistir({required String mevcutSifre, required String yeniSifre}) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/hesap/manage/info',
+      data: {'oldPassword': mevcutSifre, 'newPassword': yeniSifre},
+    );
+  }
+
   /// Lowest app build number the API accepts (anonymous; no token, no refresh).
   Future<int> enAzMobilSurumKodu() async {
     final yanit = await _dio.get<Map<String, dynamic>>(
@@ -271,6 +281,11 @@ class ApiService {
     final yanit = await _dio.put<Map<String, dynamic>>('/api/yonetim/izinler/$izin', data: {'acik': acik});
     return Izin.fromJson(yanit.data!);
   }
+
+  /// Sets a new password for the Asistan without the old one (204). 400 with Turkish messages when it breaks
+  /// the rules. The Asistan's sessions are closed on the server.
+  Future<void> asistaninSifresiniYenile(String yeniSifre) =>
+      _dio.put<void>('/api/yonetim/asistan/sifre', data: {'yeniSifre': yeniSifre});
 
   Future<YonetimBeyinDurumu> yonetimBeyinDurumu() async {
     final yanit = await _dio.get<Map<String, dynamic>>('/api/yonetim/beyin');

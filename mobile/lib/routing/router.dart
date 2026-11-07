@@ -38,6 +38,8 @@ import '../ui/oturum/oturum_view_model.dart';
 import '../ui/oturum/sayac_kronometre_screen.dart';
 import '../ui/profil/profil_screen.dart';
 import '../ui/profil/profil_view_model.dart';
+import '../ui/profil/sifre_screen.dart';
+import '../ui/profil/sifre_view_model.dart';
 import '../ui/projeler/proje_detay_screen.dart';
 import '../ui/projeler/proje_liste_screen.dart';
 import '../ui/projeler/proje_view_model.dart';
@@ -71,6 +73,9 @@ abstract final class Rotalar {
 
   /// The Sahip's management screen: opened from Profil, a full-screen page.
   static const yonetim = '/yonetim';
+
+  /// "Şifremi değiştir": opened from Profil, a full-screen page for every signed-in user.
+  static const sifre = '/sifre';
   static const giris = '/giris';
 }
 
@@ -208,6 +213,17 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
         builder: (context, state) => _sayfa(
           (c) => YonetimViewModel(api: c.read<ApiService>())..yukle(),
           (vm) => YonetimScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.sifre,
+        builder: (context, state) => _sayfa(
+          (c) => SifreViewModel(
+            api: c.read<ApiService>(),
+            auth: c.read<AuthRepository>(),
+            email: () => c.read<KullaniciRepository>().ben?.email,
+          ),
+          (vm) => SifreScreen(viewModel: vm),
         ),
       ),
       GoRoute(

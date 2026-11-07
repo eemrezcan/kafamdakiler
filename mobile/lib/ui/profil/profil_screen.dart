@@ -74,6 +74,16 @@ class ProfilScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  minTileHeight: 56,
+                  leading: const Icon(LucideIcons.keyRound),
+                  title: const Text('Şifremi değiştir'),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => context.push(Rotalar.sifre),
+                ),
+              ),
+              const SizedBox(height: 16),
               // The habit list is not a tab any more; it opens from here.
               Card(
                 child: ListTile(

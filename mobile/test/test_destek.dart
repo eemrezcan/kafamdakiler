@@ -67,6 +67,13 @@ class SahteApi extends ApiService {
     return ben_!;
   }
 
+  // Only recorded, never failed: the sign-in after a password change must not depend on the other switches.
+  @override
+  Future<GirisYaniti> girisYap(GirisIstegi istek) async {
+    cagrilar.add('girisYap:${istek.email}:${istek.password}');
+    return const GirisYaniti(tokenType: 'Bearer', accessToken: 'yeni-a', expiresIn: 3600, refreshToken: 'yeni-r');
+  }
+
   @override
   Future<List<Aliskanlik>> aliskanliklariGetir({bool arsiv = false}) async {
     _kontrol('aliskanliklariGetir');
@@ -285,6 +292,39 @@ class SahteApi extends ApiService {
     final yeni = Izin(izin: izin, aciklama: izinler.firstWhere((i) => i.izin == izin).aciklama, acik: acik);
     izinler = [for (final i in izinler) i.izin == izin ? yeni : i];
     return yeni;
+  }
+
+  /// When set, the password calls fail with this HTTP status (400: the server refused the password).
+  int? sifreHatasi;
+
+  @override
+  Future<void> sifreDegistir({required String mevcutSifre, required String yeniSifre}) async {
+    _kontrol('sifreDegistir:$mevcutSifre:$yeniSifre');
+    _sifreHatasiniFirlat();
+  }
+
+  @override
+  Future<void> asistaninSifresiniYenile(String yeniSifre) async {
+    _kontrol('asistaninSifresiniYenile:$yeniSifre');
+    _sifreHatasiniFirlat();
+  }
+
+  void _sifreHatasiniFirlat() {
+    if (sifreHatasi == null) return;
+    final istek = RequestOptions(path: 'sifre');
+    throw DioException.badResponse(
+      statusCode: sifreHatasi!,
+      requestOptions: istek,
+      response: Response(
+        requestOptions: istek,
+        statusCode: sifreHatasi,
+        data: {
+          'errors': {
+            'PasswordMismatch': ['Mevcut şifre yanlış.'],
+          },
+        },
+      ),
+    );
   }
 
   @override

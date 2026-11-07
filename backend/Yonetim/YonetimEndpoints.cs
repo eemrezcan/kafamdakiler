@@ -25,6 +25,15 @@ public static class YonetimEndpoints
             return Results.Ok((await YonetimIslemleri.IzinleriGetirAsync(kullanicilar)).Single(i => i.Izin == izin));
         });
 
+        // 400 when the new password breaks Identity's rules (Turkish messages under `yeniSifre`); on success the Asistan's sessions are closed too.
+        yonetim.MapPut("/asistan/sifre", async (AsistanSifreYazDto dto, UserManager<IdentityUser<Guid>> kullanicilar) =>
+        {
+            var sonuc = await YonetimIslemleri.AsistaninSifresiniYenileAsync(kullanicilar, dto.YeniSifre!);
+            return sonuc.Succeeded
+                ? Results.NoContent()
+                : Results.ValidationProblem(new Dictionary<string, string[]> { ["yeniSifre"] = sonuc.Errors.Select(e => e.Description).ToArray() });
+        });
+
         yonetim.MapGet("/beyin", async (AppDbContext db, BeyinIstemcisi beyin, BeyinAyari ayar, CancellationToken ct) =>
             Results.Ok(await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, DateTimeOffset.UtcNow, ct)));
 

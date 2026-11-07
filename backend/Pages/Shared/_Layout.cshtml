@@ -37,6 +37,7 @@
 
             <div class="kd-account">
                 <span class="kd-account-name" title="@User.Identity?.Name">@User.Identity?.Name</span>
+                <a class="kd-text-btn" asp-area="" asp-page="/Hesap/Sifre">Şifremi değiştir</a>
                 <form method="post" asp-page="/Hesap/Cikis">
                     <button type="submit" class="kd-text-btn">Çıkış</button>
                 </form>
@@ -64,6 +65,7 @@
             <section class="kd-drawer-section" aria-labelledby="kd-account-title">
                 <h3 class="kd-eyebrow kd-section-title" id="kd-account-title">Hesap</h3>
                 <p class="kd-drawer-account">@User.Identity?.Name</p>
+                <a class="btn btn-outline-primary w-100 mb-2" asp-area="" asp-page="/Hesap/Sifre">Şifremi değiştir</a>
                 <form method="post" asp-page="/Hesap/Cikis">
                     <button type="submit" class="btn btn-outline-primary w-100">Çıkış yap</button>
                 </form>

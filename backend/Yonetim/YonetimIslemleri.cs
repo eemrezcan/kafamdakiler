@@ -24,6 +24,12 @@ public class IzinYazDto
     public bool? Acik { get; set; }
 }
 
+public class AsistanSifreYazDto
+{
+    [Required(ErrorMessage = "Yeni şifre zorunlu.")]
+    public string? YeniSifre { get; set; }
+}
+
 // Where a capture is on its way to the brain.
 public enum GonderimDurumu
 {
@@ -83,6 +89,19 @@ public static class YonetimIslemleri
     // keeps working until it expires (at most 1 hour); permissions are cut at once by IzinAyarlaAsync instead.
     public static async Task AsistaninOturumlariniKapatAsync(UserManager<IdentityUser<Guid>> kullanicilar) =>
         Basarili(await kullanicilar.UpdateSecurityStampAsync(await AsistanAsync(kullanicilar)));
+
+    // Sets a new password for the Asistan (the Sahip does not need the old one) under Identity's password rules.
+    // A refused password changes nothing: the reset validates before it writes. On success the Asistan's sessions
+    // are closed the same way as the button above, so a phone that still holds the old password is signed out.
+    public static async Task<IdentityResult> AsistaninSifresiniYenileAsync(UserManager<IdentityUser<Guid>> kullanicilar, string yeniSifre)
+    {
+        var asistan = await AsistanAsync(kullanicilar);
+        var sonuc = await kullanicilar.ResetPasswordAsync(asistan, await kullanicilar.GeneratePasswordResetTokenAsync(asistan), yeniSifre);
+        if (sonuc.Succeeded)
+            await AsistaninOturumlariniKapatAsync(kullanicilar);
+
+        return sonuc;
+    }
 
     private static void Basarili(IdentityResult sonuc)
     {

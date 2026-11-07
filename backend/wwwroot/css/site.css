@@ -324,6 +324,7 @@ body {
   letter-spacing: 0.06em;
   font-weight: 500;
   text-transform: uppercase;
+  text-decoration: none;
   color: var(--kd-text);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -2673,4 +2674,10 @@ textarea.form-control {
 
 .kd-yonetim-blok .kd-capture form {
   margin: 0;
+}
+
+/* Password forms (Yönetim, Hesap/Sifre): fields stay a readable width. */
+.kd-sifre-form {
+  max-width: 24rem;
+  margin-top: 0.75rem;
 }
