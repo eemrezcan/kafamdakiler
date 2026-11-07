@@ -70,6 +70,31 @@ enum BekleyenTur {
 
   /// `POST /api/eylemler/{hedefId}/geri-al`.
   eylemGeriAl,
+
+  // The day plan and task writes (K2.3a, `/api/beyin`). The queue id doubles as the `Idempotency-Key`, so a send repeated
+  // after a lost answer is not applied twice. Each body is `{"istek": <the request body>, ...what the screen needs to
+  // show the write before it is sent}`; [BekleyenIslemler.tarih] is the plan day of the route. Appended last.
+
+  /// `POST /api/beyin/gunler/{tarih}/maddeler`; [hedefId] is the queue id (the new item has no id yet).
+  beyinMaddeEkle,
+
+  /// `POST /api/beyin/gunler/{tarih}/isaretle`; [hedefId] is the plan item id.
+  beyinMaddeIsaretle,
+
+  /// `POST /api/beyin/gunler/{tarih}/devret`; [hedefId] is the plan item id.
+  beyinMaddeDevret,
+
+  /// `POST /api/beyin/gunler/{tarih}/not`; [hedefId] is the plan item id.
+  beyinMaddeNot,
+
+  /// `POST /api/beyin/gorevler`; [hedefId] is the queue id.
+  beyinGorevEkle,
+
+  /// `POST /api/beyin/gorevler/{hedefId}/bitir`; [hedefId] is the task id.
+  beyinGorevBitir,
+
+  /// `POST /api/beyin/gorevler/{hedefId}/gunlere-bol`; [hedefId] is the task id.
+  beyinGunlereBol,
 }
 
 /// Cache of `GET /api/yakalamalar` (`YakalamaDto` JSON, newest first), replaced as a whole.
@@ -117,6 +142,28 @@ class ProjeOnbellek extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// The last `GET /api/beyin/gunler/{tarih}` answer per day (`BeyinGunDto` JSON), so the plan card shows a day offline and
+/// the queued plan writes have something to be laid on. Only the days read lately are kept.
+class GunPlaniOnbellek extends Table {
+  /// "2026-11-03".
+  TextColumn get tarih => text()();
+  TextColumn get govde => text()();
+  DateTimeColumn get okunma => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {tarih};
+}
+
+/// Morning card items the user let go ("Bırak"). Nothing is written to the brain for these; the phone only stops
+/// offering them. [tarih] is the plan day the item was left open on.
+class SabahBirakilanlar extends Table {
+  TextColumn get id => text()();
+  TextColumn get tarih => text()();
+
+  @override
+  Set<Column> get primaryKey => {id, tarih};
+}
+
 /// The last `GET /api/ben` answer, so the role is known when offline.
 class KullaniciOnbellek extends Table {
   IntColumn get id => integer()();
@@ -155,6 +202,10 @@ class BekleyenIslemler extends Table {
   /// Set when the server refused the entry for good (4xx); it is skipped later.
   TextColumn get hata => text().nullable()();
 
+  /// A sent entry the user should still look at: the server said the write may have happened without a clear answer
+  /// (202), or a split stopped half way (207). Cleared by dismissing it.
+  TextColumn get uyari => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -170,13 +221,15 @@ class BekleyenIslemler extends Table {
     ProjeOnbellek,
     HatirlaticiOnbellek,
     EylemOnbellek,
+    GunPlaniOnbellek,
+    SabahBirakilanlar,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -198,6 +251,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 6) {
             await m.createTable(eylemOnbellek);
           }
+          if (from < 7) {
+            await m.createTable(gunPlaniOnbellek);
+            await m.createTable(sabahBirakilanlar);
+            await m.addColumn(bekleyenIslemler, bekleyenIslemler.uyari);
+          }
         },
       );
 
@@ -212,5 +270,7 @@ class AppDatabase extends _$AppDatabase {
         await delete(projeOnbellek).go();
         await delete(hatirlaticiOnbellek).go();
         await delete(eylemOnbellek).go();
+        await delete(gunPlaniOnbellek).go();
+        await delete(sabahBirakilanlar).go();
       });
 }

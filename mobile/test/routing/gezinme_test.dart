@@ -8,6 +8,7 @@ import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
@@ -113,6 +114,7 @@ void main() {
             ),
           ),
           Provider<BeyinRepository>.value(value: ortam.beyin),
+          ChangeNotifierProvider<GunPlaniRepository>.value(value: ortam.gunPlani),
           Provider<KronometreRepository>.value(value: KronometreRepository(db: ortam.db)),
         ],
         child: MaterialApp.router(routerConfig: router),

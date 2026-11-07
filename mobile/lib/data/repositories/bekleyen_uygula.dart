@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../utils/aliskanlik_gunu.dart';
 import '../../utils/gun_degeri.dart';
 import '../models/aliskanlik.dart';
+import '../models/beyin.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/eylem.dart';
@@ -216,4 +217,142 @@ List<Hatirlatici> hatirlaticilaraBekleyenleriUygula(List<Hatirlatici> sunucu, Li
     }
   }
   return harita.values.toList();
+}
+
+/// Lays the queued plan and task writes over the brain's plan of one day (optimistic update), in queue order, so a tick,
+/// a carry-over or a new item shows at once, offline too. [bekleyenler] holds the unsent entries without the refused
+/// ones: a write the server refused is no longer applied, so the screen goes back to what the brain has.
+///
+/// - A new item is shown with the id `yerel:<queue id>`: it cannot be ticked or carried until it is sent.
+/// - A tick on an item linked to a task also takes the task off the overdue list (the brain closes it too).
+/// - A carry-over marks the item `devredildi` on its day and adds it to the next day's plan.
+/// - The tally and the "does not fit" warning are worked out again from the items. The warning is only kept or dropped,
+///   never started: the day's capacity is a server setting the phone only learns from the warning itself.
+BeyinGun gunPlaninaBekleyenleriUygula(BeyinGun gun, List<BekleyenIslemlerData> bekleyenler) {
+  final bugun = tarihMetni(gun.tarih);
+  final dun = tarihMetni(gun.tarih.subtract(const Duration(days: 1)));
+  final bolumler = <String, List<BeyinGunMaddesi>>{
+    for (final b in gun.bolumler) b.ad: [...b.maddeler],
+  };
+  final geciken = [...gun.geciken];
+  final varsayilanBolum = gun.bolumler.isEmpty ? 'Yapılacaklar' : gun.bolumler.first.ad;
+  var degisti = false;
+
+  void maddeDegistir(String id, BeyinGunMaddesi Function(BeyinGunMaddesi) f) {
+    for (final liste in bolumler.values) {
+      for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == id) {
+          liste[i] = f(liste[i]);
+          degisti = true;
+        }
+      }
+    }
+  }
+
+  BeyinGunMaddesi kopya(BeyinGunMaddesi m, {String? durum}) => BeyinGunMaddesi(
+        id: m.id,
+        baslik: m.baslik,
+        durum: durum ?? m.durum,
+        tahminDk: m.tahminDk,
+        sureDk: m.sureDk,
+        proje: m.proje,
+        gorev: m.gorev,
+      );
+
+  for (final b in bekleyenler) {
+    final govde = jsonDecode(b.govde) as Map<String, dynamic>;
+    switch (b.tur) {
+      case BekleyenTur.beyinMaddeEkle when b.tarih == bugun:
+        final (baslik, dk) = tahminAyir(govde['baslik'] as String);
+        (bolumler[govde['bolum'] as String? ?? varsayilanBolum] ??= []).add(
+          BeyinGunMaddesi(id: '${BeyinGunMaddesi.yerelOnek}${b.id}', baslik: baslik, durum: 'acik', tahminDk: dk),
+        );
+        degisti = true;
+      case BekleyenTur.beyinMaddeIsaretle when b.tarih == bugun:
+        final geri = (govde['istek'] as Map)['geri'] == true;
+        String? gorev;
+        maddeDegistir(b.hedefId, (m) {
+          gorev = m.gorev;
+          return kopya(m, durum: geri ? 'acik' : 'yapildi');
+        });
+        if (!geri && gorev != null) geciken.removeWhere((g) => g.kimlik == gorev);
+      case BekleyenTur.beyinMaddeDevret when b.tarih == bugun:
+        maddeDegistir(b.hedefId, (m) => kopya(m, durum: 'devredildi'));
+      case BekleyenTur.beyinMaddeDevret when b.tarih == dun:
+        // Carried here from the day before: the brain skips it when an open item with the same text is already there.
+        final baslik = govde['baslik'] as String;
+        if (bolumler.values.any((l) => l.any((m) => m.baslik == baslik && m.acik))) break;
+        (bolumler[govde['bolum'] as String? ?? varsayilanBolum] ??= []).add(
+          BeyinGunMaddesi(id: '${BeyinGunMaddesi.yerelOnek}${b.id}', baslik: baslik, durum: 'acik', tahminDk: govde['tahminDk'] as int?),
+        );
+        degisti = true;
+      case BekleyenTur.beyinGorevBitir:
+        final once = geciken.length;
+        geciken.removeWhere((g) => g.kimlik == b.hedefId);
+        degisti |= geciken.length != once;
+        maddeDegistirGorev(bolumler, b.hedefId, kopya, () => degisti = true);
+      default:
+        break;
+    }
+  }
+  if (!degisti) return gun;
+
+  final maddeler = [for (final l in bolumler.values) ...l];
+  final acikDk = maddeler.where((m) => m.acik).fold<int>(0, (t, m) => t + (m.tahminDk ?? 0));
+  final uyari = gun.kapasiteUyarisi;
+  return BeyinGun(
+    tarih: gun.tarih,
+    gunAdi: gun.gunAdi,
+    haftaGunu: gun.haftaGunu,
+    bugun: gun.bugun,
+    planVar: gun.planVar || maddeler.isNotEmpty,
+    kapandi: gun.kapandi,
+    bolumler: [
+      for (final e in bolumler.entries)
+        if (e.value.isNotEmpty || gun.bolumler.any((b) => b.ad == e.key)) BeyinGunBolumu(ad: e.key, maddeler: e.value),
+    ],
+    geciken: geciken,
+    toplam: BeyinGunToplami(
+      madde: maddeler.length,
+      yapildi: maddeler.where((m) => m.yapildi).length,
+      acik: maddeler.where((m) => m.acik).length,
+    ),
+    kapasiteUyarisi: uyari != null && acikDk > uyari.kapasiteDk
+        ? GunKapasiteUyarisi(acikTahminDk: acikDk, kapasiteDk: uyari.kapasiteDk, asimDk: acikDk - uyari.kapasiteDk)
+        : null,
+  );
+}
+
+/// A finished task also finishes the plan items linked to it (the brain does the same).
+void maddeDegistirGorev(
+  Map<String, List<BeyinGunMaddesi>> bolumler,
+  String gorev,
+  BeyinGunMaddesi Function(BeyinGunMaddesi, {String? durum}) kopya,
+  void Function() degisti,
+) {
+  for (final liste in bolumler.values) {
+    for (var i = 0; i < liste.length; i++) {
+      if (liste[i].gorev == gorev && liste[i].acik) {
+        liste[i] = kopya(liste[i], durum: 'yapildi');
+        degisti();
+      }
+    }
+  }
+}
+
+final _saatDakika = RegExp(r'~(\d+(?:[.,]\d+)?)\s*(?:saat|sa|s)(?:\s*(\d+)\s*(?:dk|d))?(?![\wçğıöşüÇĞİÖŞÜ])');
+final _dakika = RegExp(r'~(\d+)\s*(?:dk|d)(?![\wçğıöşüÇĞİÖŞÜ])');
+
+/// "Teklif hazırla ~1s30dk" -> ("Teklif hazırla", 90): the estimate tag is taken out of the text and read, as the brain does
+/// when it writes the line. No tag: the text as it is and null.
+(String, int?) tahminAyir(String metin) {
+  String temiz(String s) => s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final sa = _saatDakika.firstMatch(metin);
+  if (sa != null) {
+    final dk = (double.parse(sa.group(1)!.replaceAll(',', '.')) * 60).round() + (int.tryParse(sa.group(2) ?? '') ?? 0);
+    return (temiz(metin.replaceRange(sa.start, sa.end, '')), dk);
+  }
+  final d = _dakika.firstMatch(metin);
+  if (d != null) return (temiz(metin.replaceRange(d.start, d.end, '')), int.parse(d.group(1)!));
+  return (temiz(metin), null);
 }

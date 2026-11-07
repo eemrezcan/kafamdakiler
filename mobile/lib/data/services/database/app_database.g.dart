@@ -614,6 +614,15 @@ class $BekleyenIslemlerTable extends BekleyenIslemler
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _uyariMeta = const VerificationMeta('uyari');
+  @override
+  late final GeneratedColumn<String> uyari = GeneratedColumn<String>(
+    'uyari',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -624,6 +633,7 @@ class $BekleyenIslemlerTable extends BekleyenIslemler
     olusturulma,
     gonderildi,
     hata,
+    uyari,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -687,6 +697,12 @@ class $BekleyenIslemlerTable extends BekleyenIslemler
         hata.isAcceptableOrUnknown(data['hata']!, _hataMeta),
       );
     }
+    if (data.containsKey('uyari')) {
+      context.handle(
+        _uyariMeta,
+        uyari.isAcceptableOrUnknown(data['uyari']!, _uyariMeta),
+      );
+    }
     return context;
   }
 
@@ -730,6 +746,10 @@ class $BekleyenIslemlerTable extends BekleyenIslemler
         DriftSqlType.string,
         data['${effectivePrefix}hata'],
       ),
+      uyari: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uyari'],
+      ),
     );
   }
 
@@ -758,6 +778,10 @@ class BekleyenIslemlerData extends DataClass
 
   /// Set when the server refused the entry for good (4xx); it is skipped later.
   final String? hata;
+
+  /// A sent entry the user should still look at: the server said the write may have happened without a clear answer
+  /// (202), or a split stopped half way (207). Cleared by dismissing it.
+  final String? uyari;
   const BekleyenIslemlerData({
     required this.id,
     required this.tur,
@@ -767,6 +791,7 @@ class BekleyenIslemlerData extends DataClass
     required this.olusturulma,
     required this.gonderildi,
     this.hata,
+    this.uyari,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -787,6 +812,9 @@ class BekleyenIslemlerData extends DataClass
     if (!nullToAbsent || hata != null) {
       map['hata'] = Variable<String>(hata);
     }
+    if (!nullToAbsent || uyari != null) {
+      map['uyari'] = Variable<String>(uyari);
+    }
     return map;
   }
 
@@ -802,6 +830,9 @@ class BekleyenIslemlerData extends DataClass
       olusturulma: Value(olusturulma),
       gonderildi: Value(gonderildi),
       hata: hata == null && nullToAbsent ? const Value.absent() : Value(hata),
+      uyari: uyari == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uyari),
     );
   }
 
@@ -821,6 +852,7 @@ class BekleyenIslemlerData extends DataClass
       olusturulma: serializer.fromJson<DateTime>(json['olusturulma']),
       gonderildi: serializer.fromJson<bool>(json['gonderildi']),
       hata: serializer.fromJson<String?>(json['hata']),
+      uyari: serializer.fromJson<String?>(json['uyari']),
     );
   }
   @override
@@ -837,6 +869,7 @@ class BekleyenIslemlerData extends DataClass
       'olusturulma': serializer.toJson<DateTime>(olusturulma),
       'gonderildi': serializer.toJson<bool>(gonderildi),
       'hata': serializer.toJson<String?>(hata),
+      'uyari': serializer.toJson<String?>(uyari),
     };
   }
 
@@ -849,6 +882,7 @@ class BekleyenIslemlerData extends DataClass
     DateTime? olusturulma,
     bool? gonderildi,
     Value<String?> hata = const Value.absent(),
+    Value<String?> uyari = const Value.absent(),
   }) => BekleyenIslemlerData(
     id: id ?? this.id,
     tur: tur ?? this.tur,
@@ -858,6 +892,7 @@ class BekleyenIslemlerData extends DataClass
     olusturulma: olusturulma ?? this.olusturulma,
     gonderildi: gonderildi ?? this.gonderildi,
     hata: hata.present ? hata.value : this.hata,
+    uyari: uyari.present ? uyari.value : this.uyari,
   );
   BekleyenIslemlerData copyWithCompanion(BekleyenIslemlerCompanion data) {
     return BekleyenIslemlerData(
@@ -873,6 +908,7 @@ class BekleyenIslemlerData extends DataClass
           ? data.gonderildi.value
           : this.gonderildi,
       hata: data.hata.present ? data.hata.value : this.hata,
+      uyari: data.uyari.present ? data.uyari.value : this.uyari,
     );
   }
 
@@ -886,7 +922,8 @@ class BekleyenIslemlerData extends DataClass
           ..write('govde: $govde, ')
           ..write('olusturulma: $olusturulma, ')
           ..write('gonderildi: $gonderildi, ')
-          ..write('hata: $hata')
+          ..write('hata: $hata, ')
+          ..write('uyari: $uyari')
           ..write(')'))
         .toString();
   }
@@ -901,6 +938,7 @@ class BekleyenIslemlerData extends DataClass
     olusturulma,
     gonderildi,
     hata,
+    uyari,
   );
   @override
   bool operator ==(Object other) =>
@@ -913,7 +951,8 @@ class BekleyenIslemlerData extends DataClass
           other.govde == this.govde &&
           other.olusturulma == this.olusturulma &&
           other.gonderildi == this.gonderildi &&
-          other.hata == this.hata);
+          other.hata == this.hata &&
+          other.uyari == this.uyari);
 }
 
 class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
@@ -925,6 +964,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
   final Value<DateTime> olusturulma;
   final Value<bool> gonderildi;
   final Value<String?> hata;
+  final Value<String?> uyari;
   final Value<int> rowid;
   const BekleyenIslemlerCompanion({
     this.id = const Value.absent(),
@@ -935,6 +975,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
     this.olusturulma = const Value.absent(),
     this.gonderildi = const Value.absent(),
     this.hata = const Value.absent(),
+    this.uyari = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BekleyenIslemlerCompanion.insert({
@@ -946,6 +987,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
     required DateTime olusturulma,
     this.gonderildi = const Value.absent(),
     this.hata = const Value.absent(),
+    this.uyari = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        tur = Value(tur),
@@ -961,6 +1003,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
     Expression<DateTime>? olusturulma,
     Expression<bool>? gonderildi,
     Expression<String>? hata,
+    Expression<String>? uyari,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -972,6 +1015,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
       if (olusturulma != null) 'olusturulma': olusturulma,
       if (gonderildi != null) 'gonderildi': gonderildi,
       if (hata != null) 'hata': hata,
+      if (uyari != null) 'uyari': uyari,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -985,6 +1029,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
     Value<DateTime>? olusturulma,
     Value<bool>? gonderildi,
     Value<String?>? hata,
+    Value<String?>? uyari,
     Value<int>? rowid,
   }) {
     return BekleyenIslemlerCompanion(
@@ -996,6 +1041,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
       olusturulma: olusturulma ?? this.olusturulma,
       gonderildi: gonderildi ?? this.gonderildi,
       hata: hata ?? this.hata,
+      uyari: uyari ?? this.uyari,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1029,6 +1075,9 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
     if (hata.present) {
       map['hata'] = Variable<String>(hata.value);
     }
+    if (uyari.present) {
+      map['uyari'] = Variable<String>(uyari.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1046,6 +1095,7 @@ class BekleyenIslemlerCompanion extends UpdateCompanion<BekleyenIslemlerData> {
           ..write('olusturulma: $olusturulma, ')
           ..write('gonderildi: $gonderildi, ')
           ..write('hata: $hata, ')
+          ..write('uyari: $uyari, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2557,6 +2607,478 @@ class EylemOnbellekCompanion extends UpdateCompanion<EylemOnbellekData> {
   }
 }
 
+class $GunPlaniOnbellekTable extends GunPlaniOnbellek
+    with TableInfo<$GunPlaniOnbellekTable, GunPlaniOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GunPlaniOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _tarihMeta = const VerificationMeta('tarih');
+  @override
+  late final GeneratedColumn<String> tarih = GeneratedColumn<String>(
+    'tarih',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _okunmaMeta = const VerificationMeta('okunma');
+  @override
+  late final GeneratedColumn<DateTime> okunma = GeneratedColumn<DateTime>(
+    'okunma',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [tarih, govde, okunma];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'gun_plani_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GunPlaniOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('tarih')) {
+      context.handle(
+        _tarihMeta,
+        tarih.isAcceptableOrUnknown(data['tarih']!, _tarihMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tarihMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    if (data.containsKey('okunma')) {
+      context.handle(
+        _okunmaMeta,
+        okunma.isAcceptableOrUnknown(data['okunma']!, _okunmaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_okunmaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {tarih};
+  @override
+  GunPlaniOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GunPlaniOnbellekData(
+      tarih: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tarih'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+      okunma: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}okunma'],
+      )!,
+    );
+  }
+
+  @override
+  $GunPlaniOnbellekTable createAlias(String alias) {
+    return $GunPlaniOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class GunPlaniOnbellekData extends DataClass
+    implements Insertable<GunPlaniOnbellekData> {
+  /// "2026-11-03".
+  final String tarih;
+  final String govde;
+  final DateTime okunma;
+  const GunPlaniOnbellekData({
+    required this.tarih,
+    required this.govde,
+    required this.okunma,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['tarih'] = Variable<String>(tarih);
+    map['govde'] = Variable<String>(govde);
+    map['okunma'] = Variable<DateTime>(okunma);
+    return map;
+  }
+
+  GunPlaniOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return GunPlaniOnbellekCompanion(
+      tarih: Value(tarih),
+      govde: Value(govde),
+      okunma: Value(okunma),
+    );
+  }
+
+  factory GunPlaniOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GunPlaniOnbellekData(
+      tarih: serializer.fromJson<String>(json['tarih']),
+      govde: serializer.fromJson<String>(json['govde']),
+      okunma: serializer.fromJson<DateTime>(json['okunma']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'tarih': serializer.toJson<String>(tarih),
+      'govde': serializer.toJson<String>(govde),
+      'okunma': serializer.toJson<DateTime>(okunma),
+    };
+  }
+
+  GunPlaniOnbellekData copyWith({
+    String? tarih,
+    String? govde,
+    DateTime? okunma,
+  }) => GunPlaniOnbellekData(
+    tarih: tarih ?? this.tarih,
+    govde: govde ?? this.govde,
+    okunma: okunma ?? this.okunma,
+  );
+  GunPlaniOnbellekData copyWithCompanion(GunPlaniOnbellekCompanion data) {
+    return GunPlaniOnbellekData(
+      tarih: data.tarih.present ? data.tarih.value : this.tarih,
+      govde: data.govde.present ? data.govde.value : this.govde,
+      okunma: data.okunma.present ? data.okunma.value : this.okunma,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GunPlaniOnbellekData(')
+          ..write('tarih: $tarih, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(tarih, govde, okunma);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GunPlaniOnbellekData &&
+          other.tarih == this.tarih &&
+          other.govde == this.govde &&
+          other.okunma == this.okunma);
+}
+
+class GunPlaniOnbellekCompanion extends UpdateCompanion<GunPlaniOnbellekData> {
+  final Value<String> tarih;
+  final Value<String> govde;
+  final Value<DateTime> okunma;
+  final Value<int> rowid;
+  const GunPlaniOnbellekCompanion({
+    this.tarih = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.okunma = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GunPlaniOnbellekCompanion.insert({
+    required String tarih,
+    required String govde,
+    required DateTime okunma,
+    this.rowid = const Value.absent(),
+  }) : tarih = Value(tarih),
+       govde = Value(govde),
+       okunma = Value(okunma);
+  static Insertable<GunPlaniOnbellekData> custom({
+    Expression<String>? tarih,
+    Expression<String>? govde,
+    Expression<DateTime>? okunma,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (tarih != null) 'tarih': tarih,
+      if (govde != null) 'govde': govde,
+      if (okunma != null) 'okunma': okunma,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GunPlaniOnbellekCompanion copyWith({
+    Value<String>? tarih,
+    Value<String>? govde,
+    Value<DateTime>? okunma,
+    Value<int>? rowid,
+  }) {
+    return GunPlaniOnbellekCompanion(
+      tarih: tarih ?? this.tarih,
+      govde: govde ?? this.govde,
+      okunma: okunma ?? this.okunma,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (tarih.present) {
+      map['tarih'] = Variable<String>(tarih.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (okunma.present) {
+      map['okunma'] = Variable<DateTime>(okunma.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GunPlaniOnbellekCompanion(')
+          ..write('tarih: $tarih, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SabahBirakilanlarTable extends SabahBirakilanlar
+    with TableInfo<$SabahBirakilanlarTable, SabahBirakilanlarData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SabahBirakilanlarTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tarihMeta = const VerificationMeta('tarih');
+  @override
+  late final GeneratedColumn<String> tarih = GeneratedColumn<String>(
+    'tarih',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, tarih];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sabah_birakilanlar';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SabahBirakilanlarData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tarih')) {
+      context.handle(
+        _tarihMeta,
+        tarih.isAcceptableOrUnknown(data['tarih']!, _tarihMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tarihMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id, tarih};
+  @override
+  SabahBirakilanlarData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SabahBirakilanlarData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tarih: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tarih'],
+      )!,
+    );
+  }
+
+  @override
+  $SabahBirakilanlarTable createAlias(String alias) {
+    return $SabahBirakilanlarTable(attachedDatabase, alias);
+  }
+}
+
+class SabahBirakilanlarData extends DataClass
+    implements Insertable<SabahBirakilanlarData> {
+  final String id;
+  final String tarih;
+  const SabahBirakilanlarData({required this.id, required this.tarih});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tarih'] = Variable<String>(tarih);
+    return map;
+  }
+
+  SabahBirakilanlarCompanion toCompanion(bool nullToAbsent) {
+    return SabahBirakilanlarCompanion(id: Value(id), tarih: Value(tarih));
+  }
+
+  factory SabahBirakilanlarData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SabahBirakilanlarData(
+      id: serializer.fromJson<String>(json['id']),
+      tarih: serializer.fromJson<String>(json['tarih']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tarih': serializer.toJson<String>(tarih),
+    };
+  }
+
+  SabahBirakilanlarData copyWith({String? id, String? tarih}) =>
+      SabahBirakilanlarData(id: id ?? this.id, tarih: tarih ?? this.tarih);
+  SabahBirakilanlarData copyWithCompanion(SabahBirakilanlarCompanion data) {
+    return SabahBirakilanlarData(
+      id: data.id.present ? data.id.value : this.id,
+      tarih: data.tarih.present ? data.tarih.value : this.tarih,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SabahBirakilanlarData(')
+          ..write('id: $id, ')
+          ..write('tarih: $tarih')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, tarih);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SabahBirakilanlarData &&
+          other.id == this.id &&
+          other.tarih == this.tarih);
+}
+
+class SabahBirakilanlarCompanion
+    extends UpdateCompanion<SabahBirakilanlarData> {
+  final Value<String> id;
+  final Value<String> tarih;
+  final Value<int> rowid;
+  const SabahBirakilanlarCompanion({
+    this.id = const Value.absent(),
+    this.tarih = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SabahBirakilanlarCompanion.insert({
+    required String id,
+    required String tarih,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tarih = Value(tarih);
+  static Insertable<SabahBirakilanlarData> custom({
+    Expression<String>? id,
+    Expression<String>? tarih,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tarih != null) 'tarih': tarih,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SabahBirakilanlarCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tarih,
+    Value<int>? rowid,
+  }) {
+    return SabahBirakilanlarCompanion(
+      id: id ?? this.id,
+      tarih: tarih ?? this.tarih,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tarih.present) {
+      map['tarih'] = Variable<String>(tarih.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SabahBirakilanlarCompanion(')
+          ..write('id: $id, ')
+          ..write('tarih: $tarih, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2577,6 +3099,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $HatirlaticiOnbellekTable hatirlaticiOnbellek =
       $HatirlaticiOnbellekTable(this);
   late final $EylemOnbellekTable eylemOnbellek = $EylemOnbellekTable(this);
+  late final $GunPlaniOnbellekTable gunPlaniOnbellek = $GunPlaniOnbellekTable(
+    this,
+  );
+  late final $SabahBirakilanlarTable sabahBirakilanlar =
+      $SabahBirakilanlarTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2591,6 +3118,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     projeOnbellek,
     hatirlaticiOnbellek,
     eylemOnbellek,
+    gunPlaniOnbellek,
+    sabahBirakilanlar,
   ];
 }
 
@@ -2963,6 +3492,7 @@ typedef $$BekleyenIslemlerTableCreateCompanionBuilder =
       required DateTime olusturulma,
       Value<bool> gonderildi,
       Value<String?> hata,
+      Value<String?> uyari,
       Value<int> rowid,
     });
 typedef $$BekleyenIslemlerTableUpdateCompanionBuilder =
@@ -2975,6 +3505,7 @@ typedef $$BekleyenIslemlerTableUpdateCompanionBuilder =
       Value<DateTime> olusturulma,
       Value<bool> gonderildi,
       Value<String?> hata,
+      Value<String?> uyari,
       Value<int> rowid,
     });
 
@@ -3027,6 +3558,11 @@ class $$BekleyenIslemlerTableFilterComposer
     column: $table.hata,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get uyari => $composableBuilder(
+    column: $table.uyari,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$BekleyenIslemlerTableOrderingComposer
@@ -3077,6 +3613,11 @@ class $$BekleyenIslemlerTableOrderingComposer
     column: $table.hata,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get uyari => $composableBuilder(
+    column: $table.uyari,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BekleyenIslemlerTableAnnotationComposer
@@ -3115,6 +3656,9 @@ class $$BekleyenIslemlerTableAnnotationComposer
 
   GeneratedColumn<String> get hata =>
       $composableBuilder(column: $table.hata, builder: (column) => column);
+
+  GeneratedColumn<String> get uyari =>
+      $composableBuilder(column: $table.uyari, builder: (column) => column);
 }
 
 class $$BekleyenIslemlerTableTableManager
@@ -3162,6 +3706,7 @@ class $$BekleyenIslemlerTableTableManager
                 Value<DateTime> olusturulma = const Value.absent(),
                 Value<bool> gonderildi = const Value.absent(),
                 Value<String?> hata = const Value.absent(),
+                Value<String?> uyari = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BekleyenIslemlerCompanion(
                 id: id,
@@ -3172,6 +3717,7 @@ class $$BekleyenIslemlerTableTableManager
                 olusturulma: olusturulma,
                 gonderildi: gonderildi,
                 hata: hata,
+                uyari: uyari,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3184,6 +3730,7 @@ class $$BekleyenIslemlerTableTableManager
                 required DateTime olusturulma,
                 Value<bool> gonderildi = const Value.absent(),
                 Value<String?> hata = const Value.absent(),
+                Value<String?> uyari = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BekleyenIslemlerCompanion.insert(
                 id: id,
@@ -3194,6 +3741,7 @@ class $$BekleyenIslemlerTableTableManager
                 olusturulma: olusturulma,
                 gonderildi: gonderildi,
                 hata: hata,
+                uyari: uyari,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -4298,6 +4846,351 @@ typedef $$EylemOnbellekTableProcessedTableManager =
       EylemOnbellekData,
       PrefetchHooks Function()
     >;
+typedef $$GunPlaniOnbellekTableCreateCompanionBuilder =
+    GunPlaniOnbellekCompanion Function({
+      required String tarih,
+      required String govde,
+      required DateTime okunma,
+      Value<int> rowid,
+    });
+typedef $$GunPlaniOnbellekTableUpdateCompanionBuilder =
+    GunPlaniOnbellekCompanion Function({
+      Value<String> tarih,
+      Value<String> govde,
+      Value<DateTime> okunma,
+      Value<int> rowid,
+    });
+
+class $$GunPlaniOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $GunPlaniOnbellekTable> {
+  $$GunPlaniOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get tarih => $composableBuilder(
+    column: $table.tarih,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GunPlaniOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $GunPlaniOnbellekTable> {
+  $$GunPlaniOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get tarih => $composableBuilder(
+    column: $table.tarih,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GunPlaniOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GunPlaniOnbellekTable> {
+  $$GunPlaniOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get tarih =>
+      $composableBuilder(column: $table.tarih, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get okunma =>
+      $composableBuilder(column: $table.okunma, builder: (column) => column);
+}
+
+class $$GunPlaniOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GunPlaniOnbellekTable,
+          GunPlaniOnbellekData,
+          $$GunPlaniOnbellekTableFilterComposer,
+          $$GunPlaniOnbellekTableOrderingComposer,
+          $$GunPlaniOnbellekTableAnnotationComposer,
+          $$GunPlaniOnbellekTableCreateCompanionBuilder,
+          $$GunPlaniOnbellekTableUpdateCompanionBuilder,
+          (
+            GunPlaniOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $GunPlaniOnbellekTable,
+              GunPlaniOnbellekData
+            >,
+          ),
+          GunPlaniOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$GunPlaniOnbellekTableTableManager(
+    _$AppDatabase db,
+    $GunPlaniOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GunPlaniOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GunPlaniOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GunPlaniOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> tarih = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<DateTime> okunma = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GunPlaniOnbellekCompanion(
+                tarih: tarih,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String tarih,
+                required String govde,
+                required DateTime okunma,
+                Value<int> rowid = const Value.absent(),
+              }) => GunPlaniOnbellekCompanion.insert(
+                tarih: tarih,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$GunPlaniOnbellekTable, GunPlaniOnbellekData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $GunPlaniOnbellekTable,
+                    GunPlaniOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GunPlaniOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GunPlaniOnbellekTable,
+      GunPlaniOnbellekData,
+      $$GunPlaniOnbellekTableFilterComposer,
+      $$GunPlaniOnbellekTableOrderingComposer,
+      $$GunPlaniOnbellekTableAnnotationComposer,
+      $$GunPlaniOnbellekTableCreateCompanionBuilder,
+      $$GunPlaniOnbellekTableUpdateCompanionBuilder,
+      (
+        GunPlaniOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $GunPlaniOnbellekTable,
+          GunPlaniOnbellekData
+        >,
+      ),
+      GunPlaniOnbellekData,
+      PrefetchHooks Function()
+    >;
+typedef $$SabahBirakilanlarTableCreateCompanionBuilder =
+    SabahBirakilanlarCompanion Function({
+      required String id,
+      required String tarih,
+      Value<int> rowid,
+    });
+typedef $$SabahBirakilanlarTableUpdateCompanionBuilder =
+    SabahBirakilanlarCompanion Function({
+      Value<String> id,
+      Value<String> tarih,
+      Value<int> rowid,
+    });
+
+class $$SabahBirakilanlarTableFilterComposer
+    extends Composer<_$AppDatabase, $SabahBirakilanlarTable> {
+  $$SabahBirakilanlarTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tarih => $composableBuilder(
+    column: $table.tarih,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SabahBirakilanlarTableOrderingComposer
+    extends Composer<_$AppDatabase, $SabahBirakilanlarTable> {
+  $$SabahBirakilanlarTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tarih => $composableBuilder(
+    column: $table.tarih,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SabahBirakilanlarTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SabahBirakilanlarTable> {
+  $$SabahBirakilanlarTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tarih =>
+      $composableBuilder(column: $table.tarih, builder: (column) => column);
+}
+
+class $$SabahBirakilanlarTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SabahBirakilanlarTable,
+          SabahBirakilanlarData,
+          $$SabahBirakilanlarTableFilterComposer,
+          $$SabahBirakilanlarTableOrderingComposer,
+          $$SabahBirakilanlarTableAnnotationComposer,
+          $$SabahBirakilanlarTableCreateCompanionBuilder,
+          $$SabahBirakilanlarTableUpdateCompanionBuilder,
+          (
+            SabahBirakilanlarData,
+            BaseReferences<
+              _$AppDatabase,
+              $SabahBirakilanlarTable,
+              SabahBirakilanlarData
+            >,
+          ),
+          SabahBirakilanlarData,
+          PrefetchHooks Function()
+        > {
+  $$SabahBirakilanlarTableTableManager(
+    _$AppDatabase db,
+    $SabahBirakilanlarTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SabahBirakilanlarTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SabahBirakilanlarTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SabahBirakilanlarTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> tarih = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => SabahBirakilanlarCompanion(id: id, tarih: tarih, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tarih,
+                Value<int> rowid = const Value.absent(),
+              }) => SabahBirakilanlarCompanion.insert(
+                id: id,
+                tarih: tarih,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SabahBirakilanlarTable, SabahBirakilanlarData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SabahBirakilanlarTable,
+                    SabahBirakilanlarData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SabahBirakilanlarTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SabahBirakilanlarTable,
+      SabahBirakilanlarData,
+      $$SabahBirakilanlarTableFilterComposer,
+      $$SabahBirakilanlarTableOrderingComposer,
+      $$SabahBirakilanlarTableAnnotationComposer,
+      $$SabahBirakilanlarTableCreateCompanionBuilder,
+      $$SabahBirakilanlarTableUpdateCompanionBuilder,
+      (
+        SabahBirakilanlarData,
+        BaseReferences<
+          _$AppDatabase,
+          $SabahBirakilanlarTable,
+          SabahBirakilanlarData
+        >,
+      ),
+      SabahBirakilanlarData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4320,4 +5213,8 @@ class $AppDatabaseManager {
       $$HatirlaticiOnbellekTableTableManager(_db, _db.hatirlaticiOnbellek);
   $$EylemOnbellekTableTableManager get eylemOnbellek =>
       $$EylemOnbellekTableTableManager(_db, _db.eylemOnbellek);
+  $$GunPlaniOnbellekTableTableManager get gunPlaniOnbellek =>
+      $$GunPlaniOnbellekTableTableManager(_db, _db.gunPlaniOnbellek);
+  $$SabahBirakilanlarTableTableManager get sabahBirakilanlar =>
+      $$SabahBirakilanlarTableTableManager(_db, _db.sabahBirakilanlar);
 }

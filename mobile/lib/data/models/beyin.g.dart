@@ -95,6 +95,11 @@ BeyinGun _$BeyinGunFromJson(Map<String, dynamic> json) => BeyinGun(
   toplam: json['toplam'] == null
       ? null
       : BeyinGunToplami.fromJson(json['toplam'] as Map<String, dynamic>),
+  kapasiteUyarisi: json['kapasiteUyarisi'] == null
+      ? null
+      : GunKapasiteUyarisi.fromJson(
+          json['kapasiteUyarisi'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$BeyinGunToJson(BeyinGun instance) => <String, dynamic>{
@@ -107,6 +112,7 @@ Map<String, dynamic> _$BeyinGunToJson(BeyinGun instance) => <String, dynamic>{
   'bolumler': instance.bolumler.map((e) => e.toJson()).toList(),
   'geciken': instance.geciken.map((e) => e.toJson()).toList(),
   'toplam': instance.toplam?.toJson(),
+  'kapasiteUyarisi': instance.kapasiteUyarisi?.toJson(),
 };
 
 BeyinGunBolumu _$BeyinGunBolumuFromJson(Map<String, dynamic> json) =>
@@ -178,6 +184,20 @@ Map<String, dynamic> _$BeyinGunToplamiToJson(BeyinGunToplami instance) =>
       'madde': instance.madde,
       'yapildi': instance.yapildi,
       'acik': instance.acik,
+    };
+
+GunKapasiteUyarisi _$GunKapasiteUyarisiFromJson(Map<String, dynamic> json) =>
+    GunKapasiteUyarisi(
+      acikTahminDk: (json['acikTahminDk'] as num).toInt(),
+      kapasiteDk: (json['kapasiteDk'] as num).toInt(),
+      asimDk: (json['asimDk'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$GunKapasiteUyarisiToJson(GunKapasiteUyarisi instance) =>
+    <String, dynamic>{
+      'acikTahminDk': instance.acikTahminDk,
+      'kapasiteDk': instance.kapasiteDk,
+      'asimDk': instance.asimDk,
     };
 
 AramaSonucu _$AramaSonucuFromJson(Map<String, dynamic> json) => AramaSonucu(

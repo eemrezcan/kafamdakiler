@@ -15,6 +15,7 @@ import 'data/repositories/beyin_repository.dart';
 import 'data/repositories/esitleyici.dart';
 import 'data/repositories/eylem_bildirim_yoneticisi.dart';
 import 'data/repositories/eylem_repository.dart';
+import 'data/repositories/gun_plani_repository.dart';
 import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
 import 'data/repositories/kronometre_repository.dart';
@@ -66,6 +67,7 @@ Future<void> main() async {
     eylemler: eylemBildirimleri,
   );
   final beyin = BeyinRepository(api: api, db: db);
+  final gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici);
   auth = AuthRepository(
     api: api,
     depo: depo,
@@ -107,6 +109,7 @@ Future<void> main() async {
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
     beyin: beyin,
+    gunPlani: gunPlani,
     kronometre: KronometreRepository(db: db),
     surum: surum,
   ));
@@ -126,6 +129,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.bildirimler,
     required this.eylemBildirimleri,
     required this.beyin,
+    required this.gunPlani,
     required this.kronometre,
     required this.surum,
   });
@@ -141,6 +145,7 @@ class KafamdakilerApp extends StatefulWidget {
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
   final BeyinRepository beyin;
+  final GunPlaniRepository gunPlani;
   final KronometreRepository kronometre;
   final SurumDenetcisi surum;
 
@@ -218,6 +223,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.eylemler),
         Provider.value(value: widget.bildirimler),
         Provider.value(value: widget.beyin),
+        ChangeNotifierProvider.value(value: widget.gunPlani),
         Provider.value(value: widget.kronometre),
         ChangeNotifierProvider.value(value: widget.surum),
       ],

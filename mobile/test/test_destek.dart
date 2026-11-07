@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:kafamdakiler/data/models/aliskanlik.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
+import 'package:kafamdakiler/data/models/beyin_yazma.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
@@ -18,6 +19,7 @@ import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
 import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
@@ -244,6 +246,35 @@ class SahteApi extends ApiService {
 
   /// When true, only the `/api/beyin` calls fail like a lost connection.
   bool beyinCevrimdisi = false;
+
+  /// Every plan or task write the fake server was sent: the path, the body and the Idempotency-Key.
+  final List<({String yol, Map<String, dynamic> govde, String anahtar})> beyinYazimlari = [];
+
+  /// What the next plan or task writes answer, by order of arrival (a list consumed from the front; the last one repeats).
+  /// An entry is a status: 200/202/207 with `beyinYazmaGovdesi`, or a 4xx/5xx that is thrown like the server's refusal.
+  List<int> beyinYazmaKodlari = [];
+
+  /// The JSON body that goes with 202 and 207.
+  Map<String, dynamic> beyinYazmaGovdesi = {};
+
+  /// A ProblemDetails body for a refusal.
+  Map<String, dynamic> beyinYazmaProblemi = {'title': 'İşlem uygulanamadı', 'detail': 'Beyin işlemi uygulamadı.'};
+
+  @override
+  Future<BeyinYazmaSonucu> beyinYaz(String yol, Map<String, dynamic> govde, {required String anahtar}) async {
+    _beyinKontrol('beyinYaz:$yol');
+    beyinYazimlari.add((yol: yol, govde: govde, anahtar: anahtar));
+    final kod = beyinYazmaKodlari.length > 1 ? beyinYazmaKodlari.removeAt(0) : (beyinYazmaKodlari.firstOrNull ?? 200);
+    if (kod >= 400) {
+      final istek = RequestOptions(path: yol);
+      throw DioException.badResponse(
+        statusCode: kod,
+        requestOptions: istek,
+        response: Response(requestOptions: istek, statusCode: kod, data: beyinYazmaProblemi),
+      );
+    }
+    return BeyinYazmaSonucu.durumKodundan(kod, beyinYazmaGovdesi);
+  }
 
   void _beyinKontrol(String ad) {
     cagrilar.add(ad);
@@ -575,6 +606,7 @@ class TestOrtami {
       simdi: () => sabitAn,
     );
     beyin = BeyinRepository(api: this.api, db: db);
+    gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici, simdi: () => sabitAn);
     hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
   }
@@ -585,6 +617,7 @@ class TestOrtami {
   late final AliskanlikRepository repo;
   late final YakalamaRepository yakalamalar;
   late final BeyinRepository beyin;
+  late final GunPlaniRepository gunPlani;
   late final HatirlaticiRepository hatirlaticilar;
   late final EylemRepository eylemler;
 

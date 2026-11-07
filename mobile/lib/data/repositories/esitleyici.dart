@@ -204,8 +204,9 @@ class Esitleyici extends ChangeNotifier {
           // queue is being sent (a photo upload takes a while): read it again.
           final islem = _yakalamaTuru(siradaki.tur) ? await _satir(siradaki.id) : siradaki;
           if (islem == null || islem.gonderildi || islem.hata != null) continue;
+          String? uyari;
           try {
-            await _gonderTek(islem);
+            uyari = await _gonderTek(islem);
           } on _KaliciHata catch (e) {
             await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
                 .write(BekleyenIslemlerCompanion(hata: Value(e.mesaj)));
@@ -216,12 +217,12 @@ class Esitleyici extends ChangeNotifier {
             final kalici = kod != null && kod >= 400 && kod < 500 && kod != 401 && kod != 408 && kod != 429;
             if (!kalici || _gonderiliyor(e)) break;
             await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
-                .write(BekleyenIslemlerCompanion(hata: Value('$kod: ${e.response?.data}')));
+                .write(BekleyenIslemlerCompanion(hata: Value(_beyinTuru(islem.tur) ? _ayrinti(e) : '$kod: ${e.response?.data}')));
             degisti = true;
             continue;
           }
           await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
-              .write(const BekleyenIslemlerCompanion(gonderildi: Value(true)));
+              .write(BekleyenIslemlerCompanion(gonderildi: const Value(true), uyari: Value(uyari)));
           gonderilen++;
           degisti = true;
         }
@@ -268,11 +269,132 @@ class Esitleyici extends ChangeNotifier {
   Future<String> eylemGeriAlKuyrugaAl(String id) =>
       _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.eylemGeriAl, hedefId: id, govde: const {});
 
+  // Day plan and task writes (K2.3a). Each is its own entry; the entry id is the `Idempotency-Key` of its send, so a send
+  // repeated after a lost answer is applied once. [govde]`['istek']` is the request body; the other keys are what the
+  // plan card needs to show the write before it is sent ([gunPlaninaBekleyenleriUygula]).
+
+  /// Queues "add [metin] to the plan of [tarih]" (optionally in section [bolum]).
+  Future<String> beyinMaddeEkleKuyrugaAl(DateTime tarih, {required String metin, String? bolum}) {
+    final id = _uuid.v7();
+    return _kuyrugaAl(
+      id: id,
+      tur: BekleyenTur.beyinMaddeEkle,
+      hedefId: id,
+      tarih: tarihMetni(tarih),
+      govde: {
+        'istek': {'metin': metin, 'bolum': ?bolum},
+        'baslik': metin,
+        'bolum': ?bolum,
+      },
+    );
+  }
+
+  /// Queues a tick of plan item [madde] on [tarih]; [geri] takes the tick away.
+  Future<String> beyinMaddeIsaretleKuyrugaAl(DateTime tarih, String madde, {bool geri = false}) => _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.beyinMaddeIsaretle,
+        hedefId: madde,
+        tarih: tarihMetni(tarih),
+        govde: {
+          'istek': {'madde': madde, 'geri': geri},
+        },
+      );
+
+  /// Queues "carry [madde] of [tarih] to the next day". [baslik], [bolum] and [tahminDk] are kept so the next day's plan
+  /// can show the item before it is sent.
+  Future<String> beyinMaddeDevretKuyrugaAl(DateTime tarih, String madde, {required String baslik, String? bolum, int? tahminDk}) =>
+      _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.beyinMaddeDevret,
+        hedefId: madde,
+        tarih: tarihMetni(tarih),
+        govde: {
+          'istek': {'madde': madde},
+          'baslik': baslik,
+          'bolum': ?bolum,
+          'tahminDk': ?tahminDk,
+        },
+      );
+
+  Future<String> beyinMaddeNotKuyrugaAl(DateTime tarih, String madde, String metin) => _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.beyinMaddeNot,
+        hedefId: madde,
+        tarih: tarihMetni(tarih),
+        govde: {
+          'istek': {'madde': madde, 'metin': metin},
+        },
+      );
+
+  /// Queues a new task in project [proje] (optionally due on [bitis]).
+  Future<String> beyinGorevEkleKuyrugaAl({required String baslik, required String proje, DateTime? bitis}) {
+    final id = _uuid.v7();
+    return _kuyrugaAl(
+      id: id,
+      tur: BekleyenTur.beyinGorevEkle,
+      hedefId: id,
+      govde: {
+        'istek': {'baslik': baslik, 'proje': proje, 'bitis': ?(bitis == null ? null : tarihMetni(bitis))},
+      },
+    );
+  }
+
+  /// Queues "finish task [kimlik]". The server adds the app's own proof; none travels from the phone.
+  Future<String> beyinGorevBitirKuyrugaAl(String kimlik) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.beyinGorevBitir, hedefId: kimlik, govde: {'istek': const {}});
+
+  /// Queues "split task [kimlik] over [gunSayisi] days" from [baslangic] (default: the server's today).
+  Future<String> beyinGunlereBolKuyrugaAl(String kimlik, {required int gunSayisi, DateTime? baslangic}) => _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.beyinGunlereBol,
+        hedefId: kimlik,
+        govde: {
+          'istek': {'gunSayisi': gunSayisi, 'baslangic': ?(baslangic == null ? null : tarihMetni(baslangic))},
+        },
+      );
+
+  /// Sent entries the user should still look at (an unclear answer, a split that stopped half way), oldest first.
+  Future<List<BekleyenIslemlerData>> uyarilar() {
+    return (_db.select(_db.bekleyenIslemler)
+          ..where((t) => t.gonderildi.equals(true) & t.uyari.isNotNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.olusturulma)]))
+        .get();
+  }
+
+  static bool _beyinTuru(BekleyenTur t) => switch (t) {
+        BekleyenTur.beyinMaddeEkle ||
+        BekleyenTur.beyinMaddeIsaretle ||
+        BekleyenTur.beyinMaddeDevret ||
+        BekleyenTur.beyinMaddeNot ||
+        BekleyenTur.beyinGorevEkle ||
+        BekleyenTur.beyinGorevBitir ||
+        BekleyenTur.beyinGunlereBol =>
+          true,
+        _ => false,
+      };
+
+  /// The reason in a refusal of the brain API (a ProblemDetails): its `detail`, else its `title`, else the status.
+  static String _ayrinti(DioException e) {
+    final veri = e.response?.data;
+    if (veri is Map) {
+      final detay = veri['detail'] ?? veri['title'];
+      final alanlar = veri['errors'];
+      if (alanlar is Map && alanlar.isNotEmpty) {
+        return alanlar.values.expand((m) => m is List ? m : [m]).join(' ');
+      }
+      if (detay is String && detay.isNotEmpty) return detay;
+    }
+    return 'Sunucu reddetti (${e.response?.statusCode}).';
+  }
+
   Future<BekleyenIslemlerData?> _satir(String id) =>
       (_db.select(_db.bekleyenIslemler)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  Future<void> _gonderTek(BekleyenIslemlerData islem) async {
+  /// Sends one entry. Returns a note for the user when the server accepted it without a clear "done" (see
+  /// [BeyinYazmaSonucu.uyari]), else null.
+  Future<String?> _gonderTek(BekleyenIslemlerData islem) async {
     final govde = jsonDecode(islem.govde) as Map<String, dynamic>;
+    if (_beyinTuru(islem.tur)) return _beyinGonder(islem, govde);
     switch (islem.tur) {
       case BekleyenTur.gunYaz:
         await _api.gunYaz(islem.hedefId, tarihCoz(islem.tarih!), GunYaz.fromJson(govde));
@@ -331,7 +453,34 @@ class Esitleyici extends ChangeNotifier {
           // (the corrected payload broke the rules) or 403 is shown as a refused entry on the profile screen.
           if (e.response?.statusCode != 409) rethrow;
         }
+      case BekleyenTur.beyinMaddeEkle ||
+            BekleyenTur.beyinMaddeIsaretle ||
+            BekleyenTur.beyinMaddeDevret ||
+            BekleyenTur.beyinMaddeNot ||
+            BekleyenTur.beyinGorevEkle ||
+            BekleyenTur.beyinGorevBitir ||
+            BekleyenTur.beyinGunlereBol:
+        break; // handled above
     }
+    return null;
+  }
+
+  /// The brain writes. 200 is done; 202 and 207 are accepted with a note for the user and are never sent again (the
+  /// write may have happened). A 4xx the server means (the item is gone, the day is closed, no permission) is a refusal
+  /// kept on the entry; 5xx and "being processed right now" stay queued and are tried again with the same key.
+  Future<String?> _beyinGonder(BekleyenIslemlerData islem, Map<String, dynamic> govde) async {
+    final tarih = islem.tarih;
+    final yol = switch (islem.tur) {
+      BekleyenTur.beyinMaddeEkle => '/api/beyin/gunler/$tarih/maddeler',
+      BekleyenTur.beyinMaddeIsaretle => '/api/beyin/gunler/$tarih/isaretle',
+      BekleyenTur.beyinMaddeDevret => '/api/beyin/gunler/$tarih/devret',
+      BekleyenTur.beyinMaddeNot => '/api/beyin/gunler/$tarih/not',
+      BekleyenTur.beyinGorevEkle => '/api/beyin/gorevler',
+      BekleyenTur.beyinGorevBitir => '/api/beyin/gorevler/${Uri.encodeComponent(islem.hedefId)}/bitir',
+      _ => '/api/beyin/gorevler/${Uri.encodeComponent(islem.hedefId)}/gunlere-bol',
+    };
+    final sonuc = await _api.beyinYaz(yol, Map<String, dynamic>.from(govde['istek'] as Map), anahtar: islem.id);
+    return sonuc.uyari;
   }
 
   /// 409 "the capture is being sent to the brain right now": temporary, the same
@@ -339,7 +488,12 @@ class Esitleyici extends ChangeNotifier {
   /// `bekliyor`) stay permanent. The server's message carries the word "gönderiliyor"
   /// (YakalamaIslemleri.GonderiliyorMesaji); a test on both sides keeps them in step.
   static bool _gonderiliyor(DioException e) =>
-      e.response?.statusCode == 409 && '${e.response?.data}'.contains('gönderiliyor');
+      e.response?.statusCode == 409 &&
+      ('${e.response?.data}'.contains('gönderiliyor') || '${e.response?.data}'.contains(_isleniyor));
+
+  /// The title of the brain API's 409 for "the first request under this Idempotency-Key is still running"
+  /// (backend/Beyin/TekrarGuvenligi.cs): the entry works a moment later. A test on the mobile side keeps the words.
+  static const _isleniyor = 'İstek işleniyor';
 
   /// Uploads the photo first (once), writes the returned id into the queued
   /// body, then sends the capture. A retry after a failed send finds the id in

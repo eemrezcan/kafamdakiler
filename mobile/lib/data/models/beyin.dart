@@ -95,6 +95,7 @@ class BeyinGun {
     this.bolumler = const [],
     this.geciken = const [],
     this.toplam,
+    this.kapasiteUyarisi,
   });
 
   final DateTime tarih;
@@ -106,6 +107,12 @@ class BeyinGun {
   final List<BeyinGunBolumu> bolumler;
   final List<GecikenGorev> geciken;
   final BeyinGunToplami? toplam;
+
+  /// "Bugün sığmıyor": the open items' estimates add up to more than a day holds. The server sends it only then.
+  final GunKapasiteUyarisi? kapasiteUyarisi;
+
+  /// Every plan item of the day, in order.
+  Iterable<BeyinGunMaddesi> get maddeler => bolumler.expand((b) => b.maddeler);
 
   /// Nothing to show for the day: no plan lines and no overdue tasks.
   bool get bos => bolumler.every((b) => b.maddeler.isEmpty) && geciken.isEmpty;
@@ -149,6 +156,23 @@ class BeyinGunMaddesi {
 
   bool get yapildi => durum == 'yapildi';
 
+  /// Carried to the next day (the brain's `devredildi`, or a carry-over queued on the phone).
+  bool get devredildi => durum == 'devredildi';
+
+  bool get acik => !yapildi && !devredildi && durum != 'iptal' && durum != 'beklemede';
+
+  /// An item added on the phone that has not reached the brain yet: it has no id of the brain's, so it cannot be ticked or
+  /// carried until it is sent.
+  bool get yerel => id.startsWith(yerelOnek);
+
+  static const yerelOnek = 'yerel:';
+
+  static final _kaliciKimlik = RegExp(r'^(?:(?=[0-9a-f]*[a-f])[0-9a-f]{6}|g:[a-z0-9]+(?:-[a-z0-9]+)*)$');
+
+  /// The brain's permanent id of the item (six hex digits with a letter in them, or `g:<task>`): the only kind the plan
+  /// writes accept (backend/Beyin/BeyinYazma.cs). A phone-only line and an id the brain did not write do not qualify.
+  bool get kalici => _kaliciKimlik.hasMatch(id);
+
   factory BeyinGunMaddesi.fromJson(Map<String, dynamic> json) => _$BeyinGunMaddesiFromJson(json);
   Map<String, dynamic> toJson() => _$BeyinGunMaddesiToJson(this);
 }
@@ -181,6 +205,19 @@ class BeyinGunToplami {
 
   factory BeyinGunToplami.fromJson(Map<String, dynamic> json) => _$BeyinGunToplamiFromJson(json);
   Map<String, dynamic> toJson() => _$BeyinGunToplamiToJson(this);
+}
+
+/// `GunKapasiteUyarisi`: minutes.
+@JsonSerializable()
+class GunKapasiteUyarisi {
+  const GunKapasiteUyarisi({required this.acikTahminDk, required this.kapasiteDk, required this.asimDk});
+
+  final int acikTahminDk;
+  final int kapasiteDk;
+  final int asimDk;
+
+  factory GunKapasiteUyarisi.fromJson(Map<String, dynamic> json) => _$GunKapasiteUyarisiFromJson(json);
+  Map<String, dynamic> toJson() => _$GunKapasiteUyarisiToJson(this);
 }
 
 /// `AramaSonucuDto`: one search hit.

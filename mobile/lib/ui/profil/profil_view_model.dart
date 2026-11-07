@@ -60,6 +60,13 @@ class ProfilViewModel extends ChangeNotifier {
       BekleyenTur.eylemUygula => 'Onay kuyruğu: uygulama',
       BekleyenTur.eylemReddet => 'Onay kuyruğu: reddetme',
       BekleyenTur.eylemGeriAl => 'Onay kuyruğu: geri alma',
+      BekleyenTur.beyinMaddeEkle => 'Gün planı: madde ekleme (${b.tarih})',
+      BekleyenTur.beyinMaddeIsaretle => 'Gün planı: madde işaretleme (${b.tarih})',
+      BekleyenTur.beyinMaddeDevret => 'Gün planı: madde devretme (${b.tarih})',
+      BekleyenTur.beyinMaddeNot => 'Gün planı: madde notu (${b.tarih})',
+      BekleyenTur.beyinGorevEkle => 'Görev: ekleme',
+      BekleyenTur.beyinGorevBitir => 'Görev: bitirme',
+      BekleyenTur.beyinGunlereBol => 'Görev: günlere bölme',
     };
   }
 

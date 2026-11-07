@@ -7,6 +7,7 @@ import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/esitleyici.dart';
+import '../data/repositories/gun_plani_repository.dart';
 import '../data/repositories/eylem_repository.dart';
 import '../data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import '../data/repositories/hatirlatici_repository.dart';
@@ -156,7 +157,7 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
                   ChangeNotifierProvider(
                     create: (c) => BugunViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
-                  ChangeNotifierProvider(create: (c) => GunPlaniViewModel(repo: c.read<BeyinRepository>())..yukle()),
+                  ChangeNotifierProvider(create: (c) => GunPlaniViewModel(repo: c.read<GunPlaniRepository>(), esitleyici: c.read<Esitleyici>())..yukle()),
                   ChangeNotifierProvider(
                     create: (c) => YaklasanlarViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),

@@ -6,6 +6,7 @@ import '../../utils/aliskanlik_gunu.dart';
 import '../models/aliskanlik.dart';
 import '../models/ben.dart';
 import '../models/beyin.dart';
+import '../models/beyin_yazma.dart';
 import '../models/enums.dart';
 import '../models/eylem.dart';
 import '../models/giris.dart';
@@ -290,6 +291,19 @@ class ApiService {
       queryParameters: {'q': q, 'proje': ?proje, 'limit': ?limit},
     );
     return _liste(yanit, AramaSonucu.fromJson);
+  }
+
+  /// A plan or task write (`POST /api/beyin/...`, K2.3a). [anahtar] is the `Idempotency-Key`: the same key sent twice is
+  /// applied once, the second send gets the first answer. 200 written, 202 the brain's answer was unclear (the write may
+  /// have happened), 207 a split stopped half way: all three are accepted answers, told apart in the result. 4xx/5xx are
+  /// thrown as [DioException] (nothing was written for those).
+  Future<BeyinYazmaSonucu> beyinYaz(String yol, Map<String, dynamic> govde, {required String anahtar}) async {
+    final yanit = await _dio.post<Object>(
+      yol,
+      data: govde,
+      options: Options(headers: {'Idempotency-Key': anahtar}),
+    );
+    return BeyinYazmaSonucu.durumKodundan(yanit.statusCode, yanit.data);
   }
 
   Future<BeyinNotu> beyinNot(String yol) async {

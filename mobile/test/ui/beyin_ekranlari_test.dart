@@ -336,7 +336,7 @@ void main() {
       ortam.api.aliskanliklar = [ornekAliskanlik()];
       final bugun = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
       await tester.runAsync(bugun.yukle);
-      final plan = GunPlaniViewModel(repo: ortam.beyin, simdi: () => sabitAn);
+      final plan = GunPlaniViewModel(repo: ortam.gunPlani, esitleyici: ortam.esitleyici);
       await plan.yukle();
       await tester.pumpWidget(MaterialApp(home: BugunScreen(viewModel: bugun, gunPlani: plan)));
       await tester.pump();
@@ -383,8 +383,9 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.text('Takvim ay görünümü'), findsOneWidget);
-      // opening, tomorrow, two taps back (tomorrow -> today -> yesterday), then "Bugüne dön"
-      expect(ortam.api.cagrilar.where((c) => c == 'beyinGun'), hasLength(5));
+      // opening, tomorrow, two taps back (tomorrow -> today -> yesterday), then "Bugüne dön" = 5 reads of the day on screen;
+      // every time the plan is on today the morning card also reads yesterday (opening, back on today, "Bugüne dön") = 3 more.
+      expect(ortam.api.cagrilar.where((c) => c == 'beyinGun'), hasLength(8));
     });
 
     testWidgets('a day without a plan says so', (tester) async {

@@ -93,6 +93,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Bölme kuralı düzeltmesi (B1 sonrası karar): `BeyinYazma.GunlereBol` artık yalnız son günün maddesini göreve bağlıyor; `BeyinYazmaTests` ve `GercekBeyinYazmaTests` buna çevrildi.
   - Sayfalar: `backend/Pages/Beyin/Gun.cshtml(.cs)` (madde ekle, tik / geri al / devret / not, "bugün sığmıyor" uyarısı, görev ekle ve bitir, günlere böl, dünden kalanlar kartı), `Proje.cshtml(.cs)` (görev ekle ve bitir), `BeyinSayfasi.cs` (yazma sonucunu ileti yapan `Don`), `BeyinOkuma.AcikGorevlerAl`, `BeyinYazma.MaddeKimligiGecerli`, `site.css` sonundaki "Gün planı writes" bölümü.
   - Testler: `backend.Tests/BeyinGunYazmaSayfalariTests.cs`, `BeyinSayfalariTests.cs` güncellemesi.
+- K2.3a gün planı ve görevler, Faz B3 (mobil): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 9); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Veri: `mobile/lib/data/models/beyin_yazma.dart` (200 / 202 / 207 cevabı), `beyin.dart` eklemeleri (kapasite uyarısı, kalıcı madde kimliği), `repositories/gun_plani_repository.dart` (gün önbelleği, yazmalar, sabah kartı, bildirimler), `bekleyen_uygula.dart` içindeki `gunPlaninaBekleyenleriUygula` (iyimser güncelleme), `esitleyici.dart` (yedi yeni kuyruk türü, kuyruk kimliği = `Idempotency-Key`, 202 / 207 uyarıları, "İstek işleniyor" beklemesi), `api_service.dart` `beyinYaz`, `app_database.dart` şema 7 (`GunPlaniOnbellek`, `SabahBirakilanlar`, `BekleyenIslemler.uyari`), `main.dart` ve `router.dart` bağlantıları, `profil_view_model.dart` başlıkları.
+  - Ekran: `lib/ui/bugun/gun_plani_karti.dart` (tik, madde ekle, devret, not, görev ekle / bitir / günlere böl, "Dünden kalanlar" taşı / bırak, "Bugün sığmıyor" uyarısı, reddedilen ve belirsiz yazma iletileri), `gun_plani_view_model.dart`, `gun_plani_dialoglari.dart`.
+  - Testler: `mobile/test/data/gun_plani_kuyruk_test.dart`, `ui/gun_plani_yazma_test.dart`, `data/veritabani_yukseltme_test.dart` (6 -> 7 ve sıra testi), `test_destek.dart`, `ui/beyin_ekranlari_test.dart` güncellemeleri.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
