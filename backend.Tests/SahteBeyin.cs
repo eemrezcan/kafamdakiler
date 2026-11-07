@@ -44,6 +44,13 @@ public sealed class SahteBeyin : IDisposable
                 adim = adimlar[min(n, len(adimlar)) - 1]
                 print(adim["cikti"])
                 sys.exit(adim["cikis"])
+            konum = argv[argv.index("--") + 1:] if "--" in argv else []
+            if konum:
+                konumlu = os.path.join(d, "cikti-" + onek + "@" + konum[0].replace("/", "_") + ".json")
+                if os.path.exists(konumlu):
+                    print(open(konumlu, encoding="utf-8").read())
+                    konumlu_cikis = os.path.join(d, "cikis-" + onek + "@" + konum[0].replace("/", "_") + ".txt")
+                    sys.exit(int(open(konumlu_cikis).read()) if os.path.exists(konumlu_cikis) else 0)
             ozel = os.path.join(d, "cikti-" + onek + ".json")
             if os.path.exists(ozel):
                 print(open(ozel, encoding="utf-8").read())
@@ -90,6 +97,15 @@ public sealed class SahteBeyin : IDisposable
         var onek = komut.Replace(' ', '-');
         File.WriteAllText(Path.Combine(Klasor, $"cikti-{onek}.json"), json);
         File.WriteAllText(Path.Combine(Klasor, $"cikis-{onek}.txt"), cikis.ToString());
+        Mod = "cikti";
+    }
+
+    // From now on this command prints this JSON when its first positional value (the one after `--`, e.g. a note path) is `konumsal`.
+    public void CiktiKonumsal(string komut, string konumsal, string json, int cikis = 0)
+    {
+        var anahtar = $"{komut.Replace(' ', '-')}@{konumsal.Replace('/', '_')}";
+        File.WriteAllText(Path.Combine(Klasor, $"cikti-{anahtar}.json"), json);
+        File.WriteAllText(Path.Combine(Klasor, $"cikis-{anahtar}.txt"), cikis.ToString());
         Mod = "cikti";
     }
 

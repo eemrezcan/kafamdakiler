@@ -2,6 +2,7 @@ using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
+using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
@@ -24,6 +25,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<EylemIzni> EylemIzinleri => Set<EylemIzni>();
     public DbSet<EylemGunlugu> EylemGunlukleri => Set<EylemGunlugu>();
     public DbSet<BeyinIslemi> BeyinIslemleri => Set<BeyinIslemi>();
+    public DbSet<GelenKartDurumu> GelenKartlari => Set<GelenKartDurumu>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -136,6 +138,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Parmakizi).HasMaxLength(64);
             e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(x => x.CreatedAt);
+        });
+
+        builder.Entity<GelenKartDurumu>(e =>
+        {
+            e.HasKey(x => x.Kart);
+            e.Property(x => x.Kart).HasMaxLength(200);
+            e.Property(x => x.LaptopNotu).HasMaxLength(1000);
+            e.Property(x => x.SonHata).HasMaxLength(500);
         });
 
         builder.Entity<Dosya>(e =>

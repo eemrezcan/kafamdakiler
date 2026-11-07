@@ -417,6 +417,37 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("EylemIzinleri");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Gelen.GelenKartDurumu", b =>
+                {
+                    b.Property<string>("Kart")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("DenemeSayisi")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LaptopNotu")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("LaptoptaIslenecek")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("OneriAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SonDenemeAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SonHata")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Kart");
+
+                    b.ToTable("GelenKartlari");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Hatirlaticilar.Hatirlatici", b =>
                 {
                     b.Property<Guid>("Id")

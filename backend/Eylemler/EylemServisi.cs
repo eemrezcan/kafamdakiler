@@ -57,7 +57,7 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             return new EylemSonucu(EylemSonucuTuru.Atlandi, Mesaj: "Bu tür yasak olduğu için öneri kaydedilmedi.");
         }
 
-        var dogrulama = tur.Dogrula(oneri.Yuk);
+        var dogrulama = await tur.DogrulaAsync(oneri.Yuk, ct);
         if (!dogrulama.Basarili)
             return new EylemSonucu(EylemSonucuTuru.Gecersiz, Alan: dogrulama.Alan, Mesaj: dogrulama.Mesaj);
 
@@ -77,7 +77,8 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
         // Stored as Bekliyor first: if applying it fails, the suggestion and its log line are still there.
         await db.SaveChangesAsync(ct);
 
-        if (kip == EylemKipi.KendinYap && !eylem.DisKaynak)
+        // A kind that cannot be undone is never applied by itself: "Kendin yap" promises an undo.
+        if (kip == EylemKipi.KendinYap && !eylem.DisKaynak && tur.GeriAlinabilir)
             return await EtkiyiUygulaAsync(eylem, tur, null, otomatik: true, ct);
 
         return Tamam(eylem);
@@ -96,7 +97,7 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
         // A corrected payload is checked like a new suggestion; so is the stored one (the rules may have changed).
         using var kayitli = JsonDocument.Parse(eylem.Yuk);
         var yuk = duzeltilmisYuk ?? kayitli.RootElement;
-        var dogrulama = tur.Dogrula(yuk);
+        var dogrulama = await tur.DogrulaAsync(yuk, ct);
         if (!dogrulama.Basarili)
             return new EylemSonucu(EylemSonucuTuru.Gecersiz, Alan: dogrulama.Alan, Mesaj: dogrulama.Mesaj);
 
@@ -149,6 +150,8 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             return Catisma($"Eylem '{DurumAdi(eylem.Durum)}' durumunda; yalnız uygulanmış eylem geri alınabilir.");
         if (turler.Bul(eylem.Tur) is not { } tur)
             return Catisma("Bu eylem türü artık tanınmıyor.");
+        if (!tur.GeriAlinabilir)
+            return Catisma("Bu türdeki eylem geri alınamaz.");
 
         var simdi = saat.GetUtcNow();
         try
@@ -221,7 +224,8 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
 
         return new EylemDto(
             e.Id, e.Tur, turler.Bul(e.Tur)?.GorunenAd ?? e.Tur, yuk.RootElement.Clone(), e.Ozet, e.Kaynak, e.DisKaynak, e.Gerekce, e.Guven,
-            e.Durum, geriAlma, e.HataMesaji, e.CreatedAt, e.KararAni, e.UygulamaAni, e.GeriAlmaAni, e.KararVerenId);
+            e.Durum, geriAlma, e.HataMesaji, e.CreatedAt, e.KararAni, e.UygulamaAni, e.GeriAlmaAni, e.KararVerenId,
+            turler.Bul(e.Tur)?.GeriAlinabilir ?? true);
     }
 
     // The effect and the status change are saved together. If the effect throws, nothing of it is kept and the action
@@ -256,6 +260,9 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             var hatali = await db.Eylemler.FindAsync([eylem.Id], ct);
             if (hatali is null)
                 return new EylemSonucu(EylemSonucuTuru.Hata, Mesaj: "Eylem uygulanamadı.");
+            // An effect outside the database (the brain) can fail on the second of two approvals at once while the first one went through.
+            if (hatali.Durum != EylemDurumu.Bekliyor)
+                return Catisma("Eylem aynı anda başka bir istekle değiştirildi.");
 
             hatali.Durum = EylemDurumu.Hatali;
             hatali.HataMesaji = "Uygulanırken beklenmeyen bir hata oluştu.";

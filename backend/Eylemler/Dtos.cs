@@ -7,7 +7,7 @@ namespace Kafamdakiler.Eylemler;
 public record EylemDto(
     Guid Id, string Tur, string TurAdi, JsonElement Yuk, string Ozet, string Kaynak, bool DisKaynak, string? Gerekce, double? Guven,
     EylemDurumu Durum, JsonElement? GeriAlmaBilgisi, string? HataMesaji, DateTimeOffset CreatedAt, DateTimeOffset? KararAni,
-    DateTimeOffset? UygulamaAni, DateTimeOffset? GeriAlmaAni, Guid? KararVerenId);
+    DateTimeOffset? UygulamaAni, DateTimeOffset? GeriAlmaAni, Guid? KararVerenId, bool GeriAlinabilir = true);
 
 // A person may correct the payload before approving; left out, the suggested payload is applied.
 public class EylemUygulaDto

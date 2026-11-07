@@ -7,6 +7,7 @@ using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
+using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
@@ -56,6 +57,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(BeyinPolicies.GorevYaz, policy => IzinPolicy(policy, [BeyinPolicies.GorevYaz], IdentityConstants.BearerScheme))
     .AddPolicy(EylemPolicies.Oku, policy => IzinPolicy(policy, [EylemPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(EylemPolicies.Onayla, policy => IzinPolicy(policy, [EylemPolicies.Onayla], IdentityConstants.BearerScheme))
+    .AddPolicy(GelenPolicies.Oku, policy => IzinPolicy(policy, [GelenPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(GelenPolicies.Yaz, policy => IzinPolicy(policy, [GelenPolicies.Yaz], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
     .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
@@ -83,6 +86,8 @@ builder.Services.AddBeyinYazma(builder.Configuration);
 builder.Services.AddSingleton(ClaudeAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath));
 builder.Services.AddSingleton<ClaudeIstemcisi>();
 builder.Services.AddEylemler();
+// The inbox (K2.2): new cards get a suggestion from Claude, which waits in the approval queue.
+builder.Services.AddGelen(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -202,6 +207,7 @@ app.MapYakalamaEndpoints();
 app.MapHatirlaticiEndpoints();
 app.MapBeyinEndpoints();
 app.MapEylemEndpoints();
+app.MapGelenEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
 

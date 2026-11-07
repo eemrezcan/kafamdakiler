@@ -17,6 +17,14 @@ public interface IEylemTuru
     // Checks a payload against the shape of this kind (also used on a payload a person corrected).
     Sonuc Dogrula(JsonElement yuk);
 
+    // The same check for a kind that has to look outside the payload (the brain, say). The queue calls this one, before it
+    // stores a suggestion and before it applies one; most kinds need nothing beyond Dogrula.
+    Task<Sonuc> DogrulaAsync(JsonElement yuk, CancellationToken ct) => Task.FromResult(Dogrula(yuk));
+
+    // False when the effect cannot be taken back. Such a kind is never applied by itself, whatever its mode says,
+    // and the undo is refused (409).
+    bool GeriAlinabilir => true;
+
     // Puts the effect on the context without saving; the caller saves it together with the status change, so both
     // happen or neither does. Returns what undo needs.
     Task<JsonElement> UygulaAsync(JsonElement yuk, EylemBaglami baglam, CancellationToken ct);
@@ -43,6 +51,7 @@ public static class EylemServisleri
     {
         // The kinds. A new module adds its own line here.
         services.AddSingleton<IEylemTuru, HatirlaticiKurTuru>();
+        services.AddSingleton<IEylemTuru, YerlestirTuru>();
 
         services.AddSingleton<EylemTurleri>();
         services.AddScoped<EylemServisi>();
