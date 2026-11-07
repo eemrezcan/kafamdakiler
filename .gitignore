@@ -506,3 +506,6 @@ ornek-beyin/.beyin/
 
 # Flutter Android debug source set (the Visual Studio [Dd]ebug/ rule above would hide it)
 !mobile/android/app/src/debug/
+
+# Server-side brain folder mounted by deploy/compose.yaml
+deploy/beyin/

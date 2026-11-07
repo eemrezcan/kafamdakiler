@@ -1,0 +1,82 @@
+# Kafamdakiler on the server (K-0020, Kat 2 K2.1). Run from this folder, next to a filled-in `.env`:
+#   docker compose build
+#   docker compose run --rm migrate      # apply the database migrations (after every update that adds one)
+#   docker compose up -d
+# The app answers only on 127.0.0.1:8080; `tailscale serve` gives it HTTPS inside the tailnet (Kat 2 karar 3).
+
+# Not "kafamdakiler": that is the project name of the development compose.yaml at the repo root, and the two
+# would share containers and the pgdata volume on a machine that runs both.
+name: kafamdakiler-sunucu
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # No ports: only the api service reaches the database, by the name `db` on the compose network.
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: kafamdakiler-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment: &api-ortami
+      ConnectionStrings__Default: Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Dosyalar__Klasor: /data/dosyalar
+      VeriKoruma__Klasor: /data/anahtarlar
+      # Requests reach the app from the compose network's gateway (see `networks` below).
+      Vekil__GuvenilenAglar__0: 172.30.0.0/24
+      Seed__SahipEmail: ${SAHIP_EMAIL}
+      Seed__SahipPassword: ${SAHIP_PASSWORD}
+      Seed__AsistanEmail: ${ASISTAN_EMAIL}
+      Seed__AsistanPassword: ${ASISTAN_PASSWORD}
+      # Empty: the brain screens say "not connected" and the rest of the app works (K-0023).
+      Beyin__Komut: ${BEYIN_KOMUT:-}
+      Beyin__Vault: ${BEYIN_VAULT:-}
+    volumes:
+      - appdata:/data
+      - ${BEYIN_KLASORU:-./beyin}:/beyin
+    healthcheck:
+      # The image has no curl; Python is there for beyin.py anyway.
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/saglik', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  # One-off: `docker compose run --rm migrate`. Same image, runs the EF Core migration bundle.
+  migrate:
+    image: kafamdakiler-api
+    profiles: ["araclar"]
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["./efbundle"]
+    environment: *api-ortami
+
+networks:
+  default:
+    # A fixed subnet so that Vekil__GuvenilenAglar trusts exactly this network.
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  pgdata:
+  appdata:

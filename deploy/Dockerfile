@@ -32,6 +32,10 @@ WORKDIR /app
 COPY --from=build /app .
 COPY --from=migrations /out/efbundle ./efbundle
 
+# /data holds the uploaded photos and the Data Protection keys (deploy/compose.yaml mounts a volume here).
+# Owned by the app user: Docker copies this ownership into a new, empty named volume.
+RUN mkdir -p /data/dosyalar /data/anahtarlar && chown -R $APP_UID:$APP_UID /data
+
 # The non-root user that the .NET images ship with.
 USER $APP_UID
 
