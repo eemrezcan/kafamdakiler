@@ -13,7 +13,7 @@ public record BrifingOnayi(string Kimlik, string Tur, string Ozet);
 
 public record BrifingKapasitesi(int AcikDk, int KapasiteDk, int AsimDk);
 
-// Calendar events of the day (K2.3c). Nothing fills this yet.
+// Calendar events of the day (K2.3c), from the synced Google calendar. `Saat` is "HH:mm–HH:mm" or "Tüm gün".
 public record BrifingTakvimi(string Kimlik, string Baslik, string Saat);
 
 public record BrifingGirdisi(

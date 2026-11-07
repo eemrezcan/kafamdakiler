@@ -556,6 +556,136 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Hatirlaticilar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Takvim.GoogleBaglantisi", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("BaglananAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("BaglayanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Durum")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Kapsamlar")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("YenilemeTokeni")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GoogleBaglantilari");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Takvim.GoogleYetkilendirmesi", b =>
+                {
+                    b.Property<string>("StateOzeti")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("BitisAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("KodDogrulayici")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("StateOzeti");
+
+                    b.HasIndex("BitisAni");
+
+                    b.ToTable("GoogleYetkilendirmeleri");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Takvim.TakvimEsitlemeDurumu", b =>
+                {
+                    b.Property<string>("TakvimKimligi")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("SonEsitleme")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SonTamEsitleme")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SyncToken")
+                        .HasColumnType("text");
+
+                    b.HasKey("TakvimKimligi");
+
+                    b.ToTable("TakvimEsitlemeleri");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Takvim.TakvimEtkinligi", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("Baslangic")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("BaslangicGunu")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Baslik")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("Bitis")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("BitisGunu")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Etag")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("GoogleKimligi")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<DateTimeOffset>("GuncellemeAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TakvimKimligi")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("TumGun")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Yer")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Baslangic");
+
+                    b.HasIndex("TakvimKimligi", "GoogleKimligi")
+                        .IsUnique();
+
+                    b.ToTable("TakvimEtkinlikleri");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Yakalamalar.Yakalama", b =>
                 {
                     b.Property<Guid>("Id")

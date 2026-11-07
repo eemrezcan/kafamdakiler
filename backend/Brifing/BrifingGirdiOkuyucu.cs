@@ -2,6 +2,7 @@ using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Takvim;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kafamdakiler.Brifing;
@@ -22,6 +23,7 @@ public class BrifingGirdiOkuyucu(AppDbContext db, BeyinIstemcisi beyin, GunAyari
     public const int EnCokMadde = 15;
     public const int EnCokHatirlatici = 15;
     public const int EnCokOnay = 5;
+    public const int EnCokTakvim = 15;
 
     public async Task<GirdiSonucu> OkuAsync(DateOnly gun, CancellationToken ct)
     {
@@ -53,7 +55,17 @@ public class BrifingGirdiOkuyucu(AppDbContext db, BeyinIstemcisi beyin, GunAyari
 
         return new GirdiSonucu(new BrifingGirdisi(
             gun, toplam, yapildi, plan, kalan, await HatirlaticilariAlAsync(gun, ct), await BekleyenSayisiAsync(ct),
-            await OnaylariAlAsync(ct), kapasite, []));
+            await OnaylariAlAsync(ct), kapasite, await TakvimiAlAsync(gun, ct)));
+    }
+
+    // The briefing's day's events from the synced calendar (K2.3c): all-day ones first, then by the clock. With Google not connected
+    // the table is empty and so is this. The id is the event's own, which the card links to.
+    private async Task<List<BrifingTakvimi>> TakvimiAlAsync(DateOnly gun, CancellationToken ct)
+    {
+        var satirlar = await db.TakvimEtkinlikleri.AsNoTracking().GununEtkinlikleri(gun).Take(EnCokTakvim).ToListAsync(ct);
+        return satirlar.Select(e => new BrifingTakvimi(
+            e.Id.ToString(), e.Baslik,
+            e.TumGun ? "Tüm gün" : $"{TakvimZamani.SaatMetni(e.Baslangic)}–{TakvimZamani.SaatMetni(e.Bitis)}")).ToList();
     }
 
     // Open reminders that fire from the start of the briefing's day to the end of the third day after it (the days turn at 05:00).

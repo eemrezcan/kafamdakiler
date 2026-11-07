@@ -17,7 +17,7 @@ public static class BrifingTurleri
     // Actions waiting in the approval queue.
     public const string Onay = "onay";
 
-    // Today's calendar events (K2.3c; nothing makes them yet).
+    // Today's calendar events (K2.3c).
     public const string Takvim = "takvim";
 
     // The open items do not fit in the day.

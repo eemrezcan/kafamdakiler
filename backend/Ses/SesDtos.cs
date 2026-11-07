@@ -18,15 +18,18 @@ public record IsCikarUygulaGirdi(List<IsOnerisi>? Secilenler, string? Kaynak = n
 public record YenidenYazGirdi(string? Metin, string? Kip);
 
 // One suggestion, in the shape of the preview and of the apply request alike: the person may correct any field in between.
-// `Tur` is hatirlatici-kur, plan-ekle or gorev-ekle; `Baslik` is the reminder's title, the plan item's text or the task's title.
-// Dates are yyyy-MM-dd, `Saat` is HH:mm, `Tekrar` is yok, gunluk, haftalik, aylik or yillik.
+// `Tur` is hatirlatici-kur, plan-ekle, gorev-ekle or takvim-ekle; `Baslik` is the reminder's title, the plan item's text, the task's
+// title or the event's title.
+// Dates are yyyy-MM-dd, `Saat` and `BitisSaati` are HH:mm, `Tekrar` is yok, gunluk, haftalik, aylik or yillik.
 //   hatirlatici-kur: Gun (required), Saat, Tekrar
 //   plan-ekle:       Gun (required), Bolum, TahminDk
 //   gorev-ekle:      Proje or Alan (exactly one), Bitis
+//   takvim-ekle:     Gun (required), Saat (left out: an all-day event), BitisSaati (left out: an hour after Saat), Yer
 // `KaynakParca` (the sentence it came from) and `Guven` (0 to 1) only travel along.
 public record IsOnerisi(
     string Tur, string Baslik, string? Gun = null, string? Saat = null, string? Tekrar = null, string? Bolum = null,
-    int? TahminDk = null, string? Proje = null, string? Alan = null, string? Bitis = null, string? KaynakParca = null, double? Guven = null);
+    int? TahminDk = null, string? Proje = null, string? Alan = null, string? Bitis = null, string? KaynakParca = null, double? Guven = null,
+    string? BitisSaati = null, string? Yer = null);
 
 // Answers
 

@@ -169,6 +169,11 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
             Gunluk(eylem.Id, eylem.Tur, EylemOlayi.GeriAlindi, $"Geri alındı: {eylem.Ozet}", kullanici, simdi);
             return await KaydetAsync(eylem, ct);
         }
+        catch (GeriAlmaCatismasiException e)
+        {
+            db.ChangeTracker.Clear();
+            return Catisma(e.Message);
+        }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             gunluk.LogError(e, "Undoing action {EylemId} failed", eylem.Id);

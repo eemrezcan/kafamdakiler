@@ -13,6 +13,7 @@ using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
 using Kafamdakiler.Ses;
+using Kafamdakiler.Takvim;
 using Kafamdakiler.Uretim;
 using Kafamdakiler.Yakalamalar;
 using Kafamdakiler.Yonetim;
@@ -64,9 +65,13 @@ builder.Services.AddAuthorizationBuilder()
     // Voice and text (K2.4): the Claude calls need `asistan.kullan`; applying what a person chose needs one of the three write permissions
     // (each suggestion is then checked against the permission of its own kind).
     .AddPolicy(SesPolicies.AsistanKullan, policy => IzinPolicy(policy, [SesPolicies.AsistanKullan], IdentityConstants.BearerScheme))
-    .AddPolicy(SesPolicies.Uygula, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz, BeyinPolicies.PlanYaz, BeyinPolicies.GorevYaz], IdentityConstants.BearerScheme))
+    .AddPolicy(SesPolicies.Uygula, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz, BeyinPolicies.PlanYaz, BeyinPolicies.GorevYaz, TakvimPolicies.Yaz], IdentityConstants.BearerScheme))
     // The morning briefing (K2.7): reading it and voting on its cards. Asking for a new one is the Sahip's (YonetimPolicies.Sahip).
     .AddPolicy(BrifingPolicies.Oku, policy => IzinPolicy(policy, [BrifingPolicies.Oku], IdentityConstants.BearerScheme))
+    // Google Calendar (K2.3c): the one timeline is read with `takvim.oku`; `takvim.yaz` is the write permission of the calendar action kinds
+    // (checked for the voice route; the approval queue itself asks `eylem.onayla`). Connecting and cutting Google is the Sahip's (YonetimPolicies.Sahip).
+    .AddPolicy(TakvimPolicies.Oku, policy => IzinPolicy(policy, [TakvimPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(TakvimPolicies.Yaz, policy => IzinPolicy(policy, [TakvimPolicies.Yaz], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
     .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
@@ -100,6 +105,8 @@ builder.Services.AddGelen(builder.Configuration);
 builder.Services.AddSes();
 // The morning briefing (K2.7): made once a day at the set hour, by Claude or, failing that, by fixed rules.
 builder.Services.AddBrifing(builder.Configuration);
+// Google Calendar (K2.3c): off until the Google settings are given. Events are synced into the database; writes go through the approval queue.
+builder.Services.AddTakvim(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -222,6 +229,7 @@ app.MapEylemEndpoints();
 app.MapGelenEndpoints();
 app.MapSesEndpoints();
 app.MapBrifingEndpoints();
+app.MapTakvimEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
 

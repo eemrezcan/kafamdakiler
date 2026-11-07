@@ -7,6 +7,7 @@ using Kafamdakiler.Claude;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Takvim;
 using Microsoft.AspNetCore.Authorization;
 using static Kafamdakiler.Aliskanliklar.AliskanlikEndpoints;
 
@@ -51,6 +52,7 @@ public class IsCikarServisi(
         [HatirlaticiKurTuru.Anahtar] = HatirlaticiPolicies.Yaz,
         [PlanEkleTuru.Anahtar] = BeyinPolicies.PlanYaz,
         [GorevEkleTuru.Anahtar] = BeyinPolicies.GorevYaz,
+        [TakvimEkleTuru.Anahtar] = TakvimPolicies.Yaz,
     };
 
     private static readonly string[] Tekrarlar = Enum.GetNames<Tekrar>().Select(CamelCase).ToArray();
@@ -236,7 +238,7 @@ public class IsCikarServisi(
 
         var yuk = new JsonObject();
         string ozet;
-        var yeni = o with { Baslik = baslik, Gun = null, Saat = null, Tekrar = null, Bolum = null, TahminDk = null, Proje = null, Alan = null, Bitis = null };
+        var yeni = o with { Baslik = baslik, Gun = null, Saat = null, Tekrar = null, Bolum = null, TahminDk = null, Proje = null, Alan = null, Bitis = null, BitisSaati = null, Yer = null };
         switch (o.Tur)
         {
             case HatirlaticiKurTuru.Anahtar:
@@ -280,6 +282,61 @@ public class IsCikarServisi(
                     yuk["tahminDk"] = dk;
                 ozet = $"Plan ({gun:yyyy-MM-dd}): {baslik}";
                 yeni = yeni with { Gun = $"{gun:yyyy-MM-dd}", Bolum = bolum, TahminDk = o.TahminDk };
+                break;
+            }
+
+            case TakvimEkleTuru.Anahtar:
+            {
+                if (gun is null)
+                    return (null, "Tarih belirtilmemiş.");
+
+                TimeOnly? baslangicSaati = null, bitisSaati = null;
+                if (!string.IsNullOrWhiteSpace(o.Saat))
+                {
+                    if (!TimeOnly.TryParseExact(o.Saat.Trim(), SaatBicimleri, CultureInfo.InvariantCulture, DateTimeStyles.None, out var s))
+                        return (null, "Saat HH:mm biçiminde olmalı.");
+                    baslangicSaati = s;
+                }
+
+                if (!string.IsNullOrWhiteSpace(o.BitisSaati))
+                {
+                    if (baslangicSaati is null)
+                        return (null, "Bitiş saati için başlangıç saati de verilmeli.");
+                    if (!TimeOnly.TryParseExact(o.BitisSaati.Trim(), SaatBicimleri, CultureInfo.InvariantCulture, DateTimeStyles.None, out var s))
+                        return (null, "Bitiş saati HH:mm biçiminde olmalı.");
+                    bitisSaati = s;
+                }
+
+                var yer = string.IsNullOrWhiteSpace(o.Yer) ? null : o.Yer.Trim();
+                yuk["baslik"] = baslik;
+                if (baslangicSaati is not { } bas)
+                {
+                    // No hour: an all-day event.
+                    yuk["tumGun"] = true;
+                    yuk["gun"] = $"{gun:yyyy-MM-dd}";
+                    ozet = $"Takvim: {baslik} ({gun:yyyy-MM-dd}, tüm gün)";
+                }
+                else
+                {
+                    var baslangic = TakvimZamani.YerelAn(gun.Value, bas);
+                    var bitis = bitisSaati is { } bit ? TakvimZamani.YerelAn(gun.Value, bit) : baslangic.AddHours(1);
+                    if (bitis <= baslangic)
+                        return (null, "Bitiş saati başlangıç saatinden sonra olmalı.");
+
+                    yuk["baslangic"] = baslangic.ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture);
+                    yuk["bitis"] = bitis.ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture);
+                    ozet = $"Takvim: {baslik} ({gun:yyyy-MM-dd} {bas:HH:mm})";
+                }
+
+                if (yer is not null)
+                    yuk["yer"] = yer;
+                yeni = yeni with
+                {
+                    Gun = $"{gun:yyyy-MM-dd}",
+                    Saat = baslangicSaati is { } sa2 ? $"{sa2:HH:mm}" : null,
+                    BitisSaati = bitisSaati is { } bs ? $"{bs:HH:mm}" : null,
+                    Yer = yer,
+                };
                 break;
             }
 
@@ -365,7 +422,10 @@ public class IsCikarServisi(
             "- plan-ekle: belirli bir günün planına girecek iş. gun zorunlu (söylenmediyse bugünün tarihi); bolum ve tahminDk (dakika) isteğe bağlı, söylenmediyse boş bırak. baslik: işin kısa adı.\n" +
             "- gorev-ekle: günü belli olmayan ya da uzun süren, kalıcı görev. Bir projeye aitse proje, yalnız şu listeden:\n" +
             (projeSatirlari.Count > 0 ? string.Join('\n', projeSatirlari) : "    (hiç proje yok; proje alanını kullanma)") + "\n" +
-            $"  değilse alan ({string.Join(", ", GelenYolu.AcikKokler)}). proje ve alandan tam biri verilir. bitis isteğe bağlı (yyyy-MM-dd).\n\n" +
+            $"  değilse alan ({string.Join(", ", GelenYolu.AcikKokler)}). proje ve alandan tam biri verilir. bitis isteğe bağlı (yyyy-MM-dd).\n" +
+            "- takvim-ekle: belirli bir gün ve saatte olacak bir toplantı, randevu ya da etkinlik (takvime yazılır). gun zorunlu; saat (başlangıç) söylendiyse yaz, " +
+            "söylenmediyse boş bırak (tüm gün etkinlik olur); bitisSaati ve yer isteğe bağlı, söylenmediyse boş bırak. baslik: etkinliğin kısa adı. " +
+            "Başkasıyla ya da bir yerde buluşma olmayan, yalnız unutulmaması istenen şeyler hatirlatici-kur'dur.\n\n" +
             "Bir cümlede birden çok iş varsa ayrı öneriler yaz. Metinde olmayan iş uydurma; iş yoksa oneriler boş dizi olsun. " + $"En çok {EnCokOneri} öneri.\n" +
             "kaynakParca: önerinin dayandığı cümle ya da cümle parçası, metinden olduğu gibi. guven: 0 ile 1 arasında bir sayı; tür ya da tarih konusunda emin değilsen düşük ver.";
     }
@@ -387,8 +447,8 @@ public class IsCikarServisi(
         {
             ["tur"] = new JsonObject { ["type"] = "string", ["enum"] = Dizi(TurIzinleri.Keys) },
             ["baslik"] = Metin("Hatırlatıcının başlığı, plan maddesinin metni ya da görevin başlığı"),
-            ["gun"] = Metin("yyyy-MM-dd; hatırlatıcı ve plan maddesi için"),
-            ["saat"] = Metin("HH:mm; hatırlatıcı için"),
+            ["gun"] = Metin("yyyy-MM-dd; hatırlatıcı, plan maddesi ve takvim etkinliği için"),
+            ["saat"] = Metin("HH:mm; hatırlatıcı ve takvim etkinliğinin başlangıcı için"),
             ["tekrar"] = new JsonObject { ["type"] = "string", ["enum"] = Dizi(Tekrarlar) },
             ["bolum"] = Metin("Plan maddesinin bölümü"),
             ["tahminDk"] = new JsonObject { ["type"] = "integer", ["description"] = "Plan maddesinin süre tahmini, dakika" },
@@ -398,6 +458,8 @@ public class IsCikarServisi(
             ozellikler["proje"] = new JsonObject { ["type"] = "string", ["enum"] = Dizi(proje) };
         ozellikler["alan"] = new JsonObject { ["type"] = "string", ["enum"] = Dizi(GelenYolu.AcikKokler) };
         ozellikler["bitis"] = Metin("yyyy-MM-dd; görev için");
+        ozellikler["bitisSaati"] = Metin("HH:mm; takvim etkinliği için");
+        ozellikler["yer"] = Metin("Takvim etkinliğinin yeri");
         ozellikler["kaynakParca"] = Metin("Önerinin dayandığı cümle, metinden olduğu gibi");
         ozellikler["guven"] = new JsonObject { ["type"] = "number" };
 

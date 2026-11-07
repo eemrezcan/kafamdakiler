@@ -5,6 +5,7 @@ using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Takvim;
 using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -29,6 +30,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<GelenKartDurumu> GelenKartlari => Set<GelenKartDurumu>();
     public DbSet<GunlukBrifing> Brifingler => Set<GunlukBrifing>();
     public DbSet<BrifingOyu> BrifingOylari => Set<BrifingOyu>();
+    public DbSet<GoogleBaglantisi> GoogleBaglantilari => Set<GoogleBaglantisi>();
+    public DbSet<GoogleYetkilendirmesi> GoogleYetkilendirmeleri => Set<GoogleYetkilendirmesi>();
+    public DbSet<TakvimEsitlemeDurumu> TakvimEsitlemeleri => Set<TakvimEsitlemeDurumu>();
+    public DbSet<TakvimEtkinligi> TakvimEtkinlikleri => Set<TakvimEtkinligi>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -162,6 +167,40 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.HasKey(x => new { x.Gun, x.Sira });
             e.Property(x => x.Tur).HasMaxLength(20);
+        });
+
+        builder.Entity<GoogleBaglantisi>(e =>
+        {
+            // One connection, always row 1.
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Kapsamlar).HasMaxLength(1000);
+        });
+
+        builder.Entity<GoogleYetkilendirmesi>(e =>
+        {
+            e.HasKey(x => x.StateOzeti);
+            e.Property(x => x.StateOzeti).HasMaxLength(64);
+            e.HasIndex(x => x.BitisAni);
+        });
+
+        builder.Entity<TakvimEsitlemeDurumu>(e =>
+        {
+            e.HasKey(x => x.TakvimKimligi);
+            e.Property(x => x.TakvimKimligi).HasMaxLength(200);
+        });
+
+        builder.Entity<TakvimEtkinligi>(e =>
+        {
+            e.Property(x => x.TakvimKimligi).HasMaxLength(200);
+            e.Property(x => x.GoogleKimligi).HasMaxLength(1024);
+            e.Property(x => x.Baslik).HasMaxLength(500);
+            e.Property(x => x.Yer).HasMaxLength(500);
+            e.Property(x => x.Etag).HasMaxLength(200);
+            // A synced event is one row per calendar and Google id: the sync updates it in place.
+            e.HasIndex(x => new { x.TakvimKimligi, x.GoogleKimligi }).IsUnique();
+            e.HasIndex(x => x.Baslangic);
         });
 
         builder.Entity<Dosya>(e =>

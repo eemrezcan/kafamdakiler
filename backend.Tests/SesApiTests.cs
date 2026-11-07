@@ -282,7 +282,7 @@ public sealed class SesApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygu
         using var sema = JsonDocument.Parse(Sema());
         var ozellikler = sema.RootElement.GetProperty("properties").GetProperty("oneriler").GetProperty("items").GetProperty("properties");
         Assert.Equal(["kitap-kulubu"], ozellikler.GetProperty("proje").GetProperty("enum").EnumerateArray().Select(e => e.GetString()));
-        Assert.Equal(["hatirlatici-kur", "plan-ekle", "gorev-ekle"], ozellikler.GetProperty("tur").GetProperty("enum").EnumerateArray().Select(e => e.GetString()));
+        Assert.Equal(["hatirlatici-kur", "plan-ekle", "gorev-ekle", "takvim-ekle"], ozellikler.GetProperty("tur").GetProperty("enum").EnumerateArray().Select(e => e.GetString()));
         // The closed areas are not offered at all.
         Assert.DoesNotContain("finans", ozellikler.GetProperty("alan").GetRawText());
         Assert.DoesNotContain("kisisel", ozellikler.GetProperty("alan").GetRawText());

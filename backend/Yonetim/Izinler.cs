@@ -5,6 +5,7 @@ using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Ses;
+using Kafamdakiler.Takvim;
 using Kafamdakiler.Yakalamalar;
 
 namespace Kafamdakiler.Yonetim;
@@ -32,6 +33,8 @@ public static class Izinler
         new(GelenPolicies.Yaz, "Gelen kartı için yeniden öneri ister, kartı elle yerleştirir"),
         new(SesPolicies.AsistanKullan, "Asistanı kullanır: metinden iş çıkarır, metni özetler ya da maddeler (Claude'u çağırır, kaydetmez)"),
         new(BrifingPolicies.Oku, "Sabah brifingini okur ve kartlarına oy verir (yeniden hazırlatmak yalnız Sahip'in)"),
+        new(TakvimPolicies.Oku, "Tek zaman çizelgesini okur: takvim etkinlikleri, hatırlatıcılar ve günün planı (Google'ı bağlamak yalnız Sahip'in)"),
+        new(TakvimPolicies.Yaz, "Google Takvim'e etkinlik ekler ve taşır (onay kuyruğundan geçerek)"),
     ];
 
     public static bool Gecerli(string? ad) => Tumu.Any(i => i.Ad == ad);
