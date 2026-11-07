@@ -15,6 +15,7 @@ import 'data/repositories/beyin_repository.dart';
 import 'data/repositories/esitleyici.dart';
 import 'data/repositories/eylem_bildirim_yoneticisi.dart';
 import 'data/repositories/eylem_repository.dart';
+import 'data/repositories/gelen_repository.dart';
 import 'data/repositories/gun_plani_repository.dart';
 import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
@@ -51,6 +52,7 @@ Future<void> main() async {
   final yakalamalar = YakalamaRepository(api: api, db: db, esitleyici: esitleyici);
   final hatirlaticilar = HatirlaticiRepository(api: api, db: db, esitleyici: esitleyici);
   final eylemler = EylemRepository(api: api, db: db, esitleyici: esitleyici);
+  final gelen = GelenRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
   final bildirimServisi = YerelBildirimServisi();
   final eylemBildirimleri = EylemBildirimYoneticisi(
@@ -106,6 +108,7 @@ Future<void> main() async {
     yakalamalar: yakalamalar,
     hatirlaticilar: hatirlaticilar,
     eylemler: eylemler,
+    gelen: gelen,
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
     beyin: beyin,
@@ -126,6 +129,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.yakalamalar,
     required this.hatirlaticilar,
     required this.eylemler,
+    required this.gelen,
     required this.bildirimler,
     required this.eylemBildirimleri,
     required this.beyin,
@@ -142,6 +146,7 @@ class KafamdakilerApp extends StatefulWidget {
   final YakalamaRepository yakalamalar;
   final HatirlaticiRepository hatirlaticilar;
   final EylemRepository eylemler;
+  final GelenRepository gelen;
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
   final BeyinRepository beyin;
@@ -221,6 +226,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.yakalamalar),
         ChangeNotifierProvider.value(value: widget.hatirlaticilar),
         ChangeNotifierProvider.value(value: widget.eylemler),
+        ChangeNotifierProvider.value(value: widget.gelen),
         Provider.value(value: widget.bildirimler),
         Provider.value(value: widget.beyin),
         ChangeNotifierProvider.value(value: widget.gunPlani),

@@ -30,6 +30,7 @@ Eylem _$EylemFromJson(Map<String, dynamic> json) => Eylem(
       ? null
       : DateTime.parse(json['geriAlmaAni'] as String),
   kararVerenId: json['kararVerenId'] as String?,
+  geriAlinabilir: json['geriAlinabilir'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$EylemToJson(Eylem instance) => <String, dynamic>{
@@ -50,6 +51,7 @@ Map<String, dynamic> _$EylemToJson(Eylem instance) => <String, dynamic>{
   'uygulamaAni': instance.uygulamaAni?.toIso8601String(),
   'geriAlmaAni': instance.geriAlmaAni?.toIso8601String(),
   'kararVerenId': instance.kararVerenId,
+  'geriAlinabilir': instance.geriAlinabilir,
 };
 
 const _$EylemDurumuEnumMap = {

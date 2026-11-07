@@ -9,6 +9,7 @@ import '../models/beyin.dart';
 import '../models/beyin_yazma.dart';
 import '../models/enums.dart';
 import '../models/eylem.dart';
+import '../models/gelen.dart';
 import '../models/giris.dart';
 import '../models/hatirlatici.dart';
 import '../models/gun.dart';
@@ -265,6 +266,37 @@ class ApiService {
   Future<Eylem> eylemGeriAl(String id) async {
     final yanit = await _dio.post<Map<String, dynamic>>('/api/eylemler/$id/geri-al');
     return Eylem.fromJson(yanit.data!);
+  }
+
+  // ---- Inbox (/api/gelen, K2.2) ----
+
+  /// `GET /api/gelen`: the cards in the brain's inbox (hidden ones never come), each with its waiting suggestion.
+  /// 403 without the `gelen.oku` permission, 503 when the brain is not set up.
+  Future<List<GelenKarti>> gelenGetir() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/gelen');
+    return _liste(yanit, GelenKarti.fromJson);
+  }
+
+  /// `POST /api/gelen/{kart}/isle`: places the card by hand. 400 when the path or a tag breaks the rules, 404 when the
+  /// card is gone.
+  Future<void> gelenIsle(String kart, GelenIsleGirdi girdi) async {
+    await _dio.post<Map<String, dynamic>>('/api/gelen/${Uri.encodeComponent(kart)}/isle', data: girdi.toJson());
+  }
+
+  /// `DELETE /api/gelen/{kart}` (the Sahip only). 404 when the card is gone.
+  Future<void> gelenSil(String kart) async {
+    await _dio.delete<Map<String, dynamic>>('/api/gelen/${Uri.encodeComponent(kart)}');
+  }
+
+  /// `POST /api/gelen/{kart}/oneri`: asks Claude again now. The server answers when Claude is done, which can take
+  /// a couple of minutes, so the wait is longer than for the other calls. 409 when a suggestion already waits,
+  /// 422 when the card may not be sent, 429 at the daily cap, 503 when Claude is off.
+  Future<GelenOneriYaniti> gelenOner(String kart) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/gelen/${Uri.encodeComponent(kart)}/oneri',
+      options: Options(receiveTimeout: const Duration(seconds: 150)),
+    );
+    return GelenOneriYaniti.fromJson(yanit.data!);
   }
 
   // ---- Second brain (read only, /api/beyin) ----

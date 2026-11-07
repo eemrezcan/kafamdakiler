@@ -104,6 +104,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Düzeltme: `GelenOnerici.Denetle` artık 1-6 etiketi kabul ediyor (talimat 3-6 istemeye devam ediyor).
   - Sayfa: `backend/Pages/Gelen/Index.cshtml(.cs)` (kartlar, öneri, Uygula / Düzelt / Reddet, elle yerleştir, sil, yeniden öner, "laptopta işlenecek" işareti), `_Layout.cshtml` "Gelen kutusu" menü satırları ve rozeti, `site.css` sonundaki "Gelen kutusu" bölümü, `EylemServisi.BekleyenSayisiAsync(tur)`, `Pages/Eylemler/Index.cshtml` (geri alınamayan türde "Geri al" gizli).
   - Testler: `backend.Tests/GelenSayfalariTests.cs`, `GelenKurallariTests.cs` güncellemesi.
+- K2.2 gelen kutusu ve yerleştirme, Faz C3 (mobil): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Veri: `mobile/lib/data/models/gelen.dart` (elle yazılmış JSON), `eylem.dart` ve `eylem.g.dart` (`geriAlinabilir`), `repositories/gelen_repository.dart` (önbellek, yerleştir / sil kuyruğu, yeniden öner), `bekleyen_uygula.dart` (`gelenKartlarinaBekleyenleriUygula`), `esitleyici.dart` (iki yeni kuyruk türü, 404 = bitti), `api_service.dart` (`/api/gelen` dört çağrı), `app_database.dart` şema 8 (`GelenOnbellek`, `gelenIsle` / `gelenSil`), `main.dart` ve `router.dart` bağlantıları.
+  - Ekran: `lib/ui/gelen/` (`gelen_liste_screen.dart`: sağa kaydır uygula, sola "Sonra", dokununca önizleme; `gelen_liste_view_model.dart`; `gelen_isle_dialog.dart`: elle yerleştir), Profil'e "Gelen kutusu" satırı, onay kuyruğunda geri alınamayan türde "Geri al" gizli.
+  - Testler: `mobile/test/data/gelen_kuyruk_test.dart`, `ui/gelen_screen_test.dart`, `data/veritabani_yukseltme_test.dart` (7 -> 8), `ui/eylem_screen_test.dart` ve `test_destek.dart` eklemeleri.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

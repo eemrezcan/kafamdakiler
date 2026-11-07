@@ -117,6 +117,17 @@ class ProfilScreen extends StatelessWidget {
                   onTap: () => context.push(Rotalar.eylemler),
                 ),
               ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  minTileHeight: 56,
+                  leading: const Icon(LucideIcons.inbox),
+                  title: const Text('Gelen kutusu'),
+                  subtitle: const Text('Yakaladıkların ve Asistan\'ın yerleştirme önerileri'),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => context.push(Rotalar.gelen),
+                ),
+              ),
               // Permissions, brain status and the sending queue: the Sahip's only.
               if (kullanici.sahip) ...[
                 const SizedBox(height: 16),

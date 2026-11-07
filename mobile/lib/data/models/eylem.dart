@@ -50,6 +50,7 @@ class Eylem {
     this.uygulamaAni,
     this.geriAlmaAni,
     this.kararVerenId,
+    this.geriAlinabilir = true,
   });
 
   /// Below this a suggestion is marked "not sure" (the same threshold as the web page).
@@ -77,6 +78,9 @@ class Eylem {
   final DateTime? geriAlmaAni;
   final String? kararVerenId;
 
+  /// False for a kind whose effect cannot be taken back (placing an inbox card): the screens show no "Geri al".
+  final bool geriAlinabilir;
+
   bool get eminDegil => guven != null && guven! < guvenEsigi;
 
   Eylem copyWith({EylemDurumu? durum, Map<String, dynamic>? yuk, DateTime? kararAni, DateTime? uygulamaAni, DateTime? geriAlmaAni}) => Eylem(
@@ -97,6 +101,7 @@ class Eylem {
         uygulamaAni: uygulamaAni ?? this.uygulamaAni,
         geriAlmaAni: geriAlmaAni ?? this.geriAlmaAni,
         kararVerenId: kararVerenId,
+        geriAlinabilir: geriAlinabilir,
       );
 
   factory Eylem.fromJson(Map<String, dynamic> json) => _$EylemFromJson(json);

@@ -139,6 +139,15 @@ void main() {
       expect(find.text('Henüz uygulanan bir şey yok.'), findsOneWidget);
     });
 
+    testWidgets('an applied action that cannot be undone (a placed inbox card) offers no "Geri al"', (tester) async {
+      ortam.api.eylemler = [ornekEylem(id: 'u', ozet: 'Kart yerleştirildi', durum: EylemDurumu.uygulandi, geriAlinabilir: false)];
+
+      await listeGoster(tester);
+
+      expect(find.text('Kart yerleştirildi'), findsOneWidget);
+      expect(find.text('Geri al'), findsNothing);
+    });
+
     testWidgets('offline, the decision is made on the phone and the screen says so', (tester) async {
       await listeGoster(tester, cevrimdisiOl: true);
 

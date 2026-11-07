@@ -3079,6 +3079,264 @@ class SabahBirakilanlarCompanion
   }
 }
 
+class $GelenOnbellekTable extends GelenOnbellek
+    with TableInfo<$GelenOnbellekTable, GelenOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GelenOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'gelen_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GelenOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GelenOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GelenOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+    );
+  }
+
+  @override
+  $GelenOnbellekTable createAlias(String alias) {
+    return $GelenOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class GelenOnbellekData extends DataClass
+    implements Insertable<GelenOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  const GelenOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    return map;
+  }
+
+  GelenOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return GelenOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+    );
+  }
+
+  factory GelenOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GelenOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+    };
+  }
+
+  GelenOnbellekData copyWith({String? id, int? sira, String? govde}) =>
+      GelenOnbellekData(
+        id: id ?? this.id,
+        sira: sira ?? this.sira,
+        govde: govde ?? this.govde,
+      );
+  GelenOnbellekData copyWithCompanion(GelenOnbellekCompanion data) {
+    return GelenOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GelenOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GelenOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde);
+}
+
+class GelenOnbellekCompanion extends UpdateCompanion<GelenOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<int> rowid;
+  const GelenOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GelenOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<GelenOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GelenOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<int>? rowid,
+  }) {
+    return GelenOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GelenOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3104,6 +3362,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $SabahBirakilanlarTable sabahBirakilanlar =
       $SabahBirakilanlarTable(this);
+  late final $GelenOnbellekTable gelenOnbellek = $GelenOnbellekTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3120,6 +3379,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     eylemOnbellek,
     gunPlaniOnbellek,
     sabahBirakilanlar,
+    gelenOnbellek,
   ];
 }
 
@@ -5191,6 +5451,181 @@ typedef $$SabahBirakilanlarTableProcessedTableManager =
       SabahBirakilanlarData,
       PrefetchHooks Function()
     >;
+typedef $$GelenOnbellekTableCreateCompanionBuilder =
+    GelenOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<int> rowid,
+    });
+typedef $$GelenOnbellekTableUpdateCompanionBuilder =
+    GelenOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<int> rowid,
+    });
+
+class $$GelenOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $GelenOnbellekTable> {
+  $$GelenOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GelenOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $GelenOnbellekTable> {
+  $$GelenOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GelenOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GelenOnbellekTable> {
+  $$GelenOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+}
+
+class $$GelenOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GelenOnbellekTable,
+          GelenOnbellekData,
+          $$GelenOnbellekTableFilterComposer,
+          $$GelenOnbellekTableOrderingComposer,
+          $$GelenOnbellekTableAnnotationComposer,
+          $$GelenOnbellekTableCreateCompanionBuilder,
+          $$GelenOnbellekTableUpdateCompanionBuilder,
+          (
+            GelenOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $GelenOnbellekTable,
+              GelenOnbellekData
+            >,
+          ),
+          GelenOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$GelenOnbellekTableTableManager(_$AppDatabase db, $GelenOnbellekTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GelenOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GelenOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GelenOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GelenOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<int> rowid = const Value.absent(),
+              }) => GelenOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$GelenOnbellekTable, GelenOnbellekData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $GelenOnbellekTable,
+                    GelenOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GelenOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GelenOnbellekTable,
+      GelenOnbellekData,
+      $$GelenOnbellekTableFilterComposer,
+      $$GelenOnbellekTableOrderingComposer,
+      $$GelenOnbellekTableAnnotationComposer,
+      $$GelenOnbellekTableCreateCompanionBuilder,
+      $$GelenOnbellekTableUpdateCompanionBuilder,
+      (
+        GelenOnbellekData,
+        BaseReferences<_$AppDatabase, $GelenOnbellekTable, GelenOnbellekData>,
+      ),
+      GelenOnbellekData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5217,4 +5652,6 @@ class $AppDatabaseManager {
       $$GunPlaniOnbellekTableTableManager(_db, _db.gunPlaniOnbellek);
   $$SabahBirakilanlarTableTableManager get sabahBirakilanlar =>
       $$SabahBirakilanlarTableTableManager(_db, _db.sabahBirakilanlar);
+  $$GelenOnbellekTableTableManager get gelenOnbellek =>
+      $$GelenOnbellekTableTableManager(_db, _db.gelenOnbellek);
 }

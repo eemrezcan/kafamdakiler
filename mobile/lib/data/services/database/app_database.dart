@@ -95,6 +95,14 @@ enum BekleyenTur {
 
   /// `POST /api/beyin/gorevler/{hedefId}/gunlere-bol`; [hedefId] is the task id.
   beyinGunlereBol,
+
+  // The inbox (K2.2, `/api/gelen`). Appended last.
+
+  /// `POST /api/gelen/{hedefId}/isle` with a `GelenIsleGirdi` body; [hedefId] is the card name.
+  gelenIsle,
+
+  /// `DELETE /api/gelen/{hedefId}`; [hedefId] is the card name.
+  gelenSil,
 }
 
 /// Cache of `GET /api/yakalamalar` (`YakalamaDto` JSON, newest first), replaced as a whole.
@@ -126,6 +134,17 @@ class EylemOnbellek extends Table {
   IntColumn get sira => integer()();
   TextColumn get govde => text()();
   BoolColumn get bildirildi => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cache of `GET /api/gelen` (`GelenKartDto` JSON, in server order), replaced as a whole. The inbox screen reads it
+/// offline, with the queued placements, deletions and approval decisions laid on top.
+class GelenOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -223,13 +242,14 @@ class BekleyenIslemler extends Table {
     EylemOnbellek,
     GunPlaniOnbellek,
     SabahBirakilanlar,
+    GelenOnbellek,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -256,6 +276,9 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(sabahBirakilanlar);
             await m.addColumn(bekleyenIslemler, bekleyenIslemler.uyari);
           }
+          if (from < 8) {
+            await m.createTable(gelenOnbellek);
+          }
         },
       );
 
@@ -272,5 +295,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(eylemOnbellek).go();
         await delete(gunPlaniOnbellek).go();
         await delete(sabahBirakilanlar).go();
+        await delete(gelenOnbellek).go();
       });
 }

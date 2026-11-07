@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../utils/aliskanlik_gunu.dart';
+import '../models/gelen.dart';
 import '../models/gun.dart';
 import '../models/hatirlatici.dart';
 import '../models/oturum.dart';
@@ -217,7 +218,8 @@ class Esitleyici extends ChangeNotifier {
             final kalici = kod != null && kod >= 400 && kod < 500 && kod != 401 && kod != 408 && kod != 429;
             if (!kalici || _gonderiliyor(e)) break;
             await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
-                .write(BekleyenIslemlerCompanion(hata: Value(_beyinTuru(islem.tur) ? _ayrinti(e) : '$kod: ${e.response?.data}')));
+                .write(BekleyenIslemlerCompanion(
+                    hata: Value(_beyinTuru(islem.tur) || _gelenTuru(islem.tur) ? _ayrinti(e) : '$kod: ${e.response?.data}')));
             degisti = true;
             continue;
           }
@@ -353,6 +355,17 @@ class Esitleyici extends ChangeNotifier {
         },
       );
 
+  // The inbox (K2.2). A placement or a deletion is its own entry; sending it twice is harmless (the second try finds the
+  // card gone, a 404, which counts as done).
+
+  /// Queues "place card [kart] as [girdi]".
+  Future<String> gelenIsleKuyrugaAl(String kart, GelenIsleGirdi girdi) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.gelenIsle, hedefId: kart, govde: girdi.toJson());
+
+  /// Queues "delete card [kart]".
+  Future<String> gelenSilKuyrugaAl(String kart) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.gelenSil, hedefId: kart, govde: const {});
+
   /// Sent entries the user should still look at (an unclear answer, a split that stopped half way), oldest first.
   Future<List<BekleyenIslemlerData>> uyarilar() {
     return (_db.select(_db.bekleyenIslemler)
@@ -372,6 +385,8 @@ class Esitleyici extends ChangeNotifier {
           true,
         _ => false,
       };
+
+  static bool _gelenTuru(BekleyenTur t) => t == BekleyenTur.gelenIsle || t == BekleyenTur.gelenSil;
 
   /// The reason in a refusal of the brain API (a ProblemDetails): its `detail`, else its `title`, else the status.
   static String _ayrinti(DioException e) {
@@ -452,6 +467,18 @@ class Esitleyici extends ChangeNotifier {
           // 409: already decided (on the web, or this entry was sent once before). Nothing left to do. A 404 or 400
           // (the corrected payload broke the rules) or 403 is shown as a refused entry on the profile screen.
           if (e.response?.statusCode != 409) rethrow;
+        }
+      case BekleyenTur.gelenIsle || BekleyenTur.gelenSil:
+        try {
+          if (islem.tur == BekleyenTur.gelenIsle) {
+            await _api.gelenIsle(islem.hedefId, GelenIsleGirdi.fromJson(govde));
+          } else {
+            await _api.gelenSil(islem.hedefId);
+          }
+        } on DioException catch (e) {
+          // 404: the card is gone (placed on the web or the laptop, or this entry was sent once before). Nothing left to do.
+          // A 400 (the path or a tag broke the rules) or 403 is shown as a refused entry on the profile screen.
+          if (e.response?.statusCode != 404) rethrow;
         }
       case BekleyenTur.beyinMaddeEkle ||
             BekleyenTur.beyinMaddeIsaretle ||

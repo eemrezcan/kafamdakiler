@@ -67,6 +67,8 @@ class ProfilViewModel extends ChangeNotifier {
       BekleyenTur.beyinGorevEkle => 'Görev: ekleme',
       BekleyenTur.beyinGorevBitir => 'Görev: bitirme',
       BekleyenTur.beyinGunlereBol => 'Görev: günlere bölme',
+      BekleyenTur.gelenIsle => 'Gelen kutusu: yerleştirme',
+      BekleyenTur.gelenSil => 'Gelen kutusu: silme',
     };
   }
 

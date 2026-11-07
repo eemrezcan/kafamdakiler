@@ -9,6 +9,7 @@ import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/beyin_yazma.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
+import 'package:kafamdakiler/data/models/gelen.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
@@ -21,6 +22,7 @@ import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
 import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
+import 'package:kafamdakiler/data/repositories/gelen_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
 import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
 import 'package:kafamdakiler/data/services/api_service.dart';
@@ -229,6 +231,67 @@ class SahteApi extends ApiService {
     final yeni = EylemKipDurumu(tur: tur, turAdi: eski.turAdi, kip: kip);
     eylemKipleri = [for (final k in eylemKipleri) k.tur == tur ? yeni : k];
     return yeni;
+  }
+
+  // ---- Inbox ----
+
+  /// Server cards for `/api/gelen`; a placement or a deletion removes the card like the server would.
+  List<GelenKarti> gelenKartlari = [];
+
+  /// When set, `gelenIsle` and `gelenSil` fail with this HTTP status (400: the placement broke a rule).
+  int? gelenYazmaHatasi;
+
+  /// What `gelenOner` answers.
+  GelenOneriYaniti gelenOneriYaniti = const GelenOneriYaniti(durum: 'olustu');
+
+  /// When set, `gelenOner` fails with this HTTP status (409, 422, 429, 503).
+  int? gelenOneriHatasi;
+
+  @override
+  Future<List<GelenKarti>> gelenGetir() async {
+    _kontrol('gelenGetir');
+    return gelenKartlari;
+  }
+
+  void _gelenYazmaKontrol(String ad) {
+    _kontrol(ad);
+    if (gelenYazmaHatasi == null) return;
+    final istek = RequestOptions(path: ad);
+    throw DioException.badResponse(
+      statusCode: gelenYazmaHatasi!,
+      requestOptions: istek,
+      response: Response(requestOptions: istek, statusCode: gelenYazmaHatasi, data: {
+        'errors': {
+          'yol': ['Yol vault\'a göreli olmalı.'],
+        },
+      }),
+    );
+  }
+
+  @override
+  Future<void> gelenIsle(String kart, GelenIsleGirdi girdi) async {
+    _gelenYazmaKontrol('gelenIsle:$kart:${girdi.yol}:${girdi.baslik}:${girdi.etiketler.join(',')}');
+    gelenKartlari = [for (final k in gelenKartlari) if (k.kimlik != kart) k];
+  }
+
+  @override
+  Future<void> gelenSil(String kart) async {
+    _gelenYazmaKontrol('gelenSil:$kart');
+    gelenKartlari = [for (final k in gelenKartlari) if (k.kimlik != kart) k];
+  }
+
+  @override
+  Future<GelenOneriYaniti> gelenOner(String kart) async {
+    _kontrol('gelenOner:$kart');
+    if (gelenOneriHatasi != null) {
+      final istek = RequestOptions(path: 'oneri');
+      throw DioException.badResponse(
+        statusCode: gelenOneriHatasi!,
+        requestOptions: istek,
+        response: Response(requestOptions: istek, statusCode: gelenOneriHatasi, data: {'detail': 'Kart elle yerleştirilir.'}),
+      );
+    }
+    return gelenOneriYaniti;
   }
 
   // ---- Second brain ----
@@ -491,6 +554,7 @@ Eylem ornekEylem({
   Map<String, dynamic>? yuk,
   DateTime? createdAt,
   String? kararVerenId,
+  bool geriAlinabilir = true,
 }) {
   return Eylem(
     id: id,
@@ -505,6 +569,38 @@ Eylem ornekEylem({
     durum: durum,
     createdAt: createdAt ?? DateTime.utc(2026, 11, 1, 8),
     kararVerenId: kararVerenId,
+    geriAlinabilir: geriAlinabilir,
+  );
+}
+
+/// An inbox card; with [eylemId] it has a placement suggestion waiting in the approval queue.
+GelenKarti ornekGelenKarti({
+  String kimlik = '2026-11-03-1840-kitap-onerisi',
+  String ozet = 'Kitap önerisi: Simyacı',
+  String? eylemId,
+  bool disKaynak = false,
+  double? guven = 0.9,
+  bool laptoptaIslenecek = false,
+  bool gorselVar = false,
+}) {
+  return GelenKarti(
+    kimlik: kimlik,
+    ozet: ozet,
+    gorselVar: gorselVar,
+    yakalandi: '2026-11-03T18:40',
+    laptoptaIslenecek: laptoptaIslenecek,
+    laptopNotu: laptoptaIslenecek ? 'Sözlükte \'mimari-karar\' yok.' : null,
+    oneri: eylemId == null
+        ? null
+        : GelenOneri(
+            eylemId: eylemId,
+            yol: 'projects/kitap-kulubu/notlar/simyaci.md',
+            baslik: 'Simyacı önerisi',
+            etiketler: const ['kaynak', 'okul'],
+            gerekce: 'Kitap önerisi.',
+            guven: guven,
+            disKaynak: disKaynak,
+          ),
   );
 }
 
@@ -609,6 +705,7 @@ class TestOrtami {
     gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici, simdi: () => sabitAn);
     hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
+    gelen = GelenRepository(api: this.api, db: db, esitleyici: esitleyici);
   }
 
   final SahteApi api;
@@ -620,6 +717,7 @@ class TestOrtami {
   late final GunPlaniRepository gunPlani;
   late final HatirlaticiRepository hatirlaticilar;
   late final EylemRepository eylemler;
+  late final GelenRepository gelen;
 
   /// Where the photo copies of the captures go in tests.
   final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');

@@ -114,7 +114,7 @@ class EylemListeScreen extends StatelessWidget {
                         durumMetni: 'Uygulandı',
                         renk: tamamRengi(context),
                         ayrinti: e.kararVerenId == null ? 'Kendiliğinden' : 'Onayınla',
-                        onGeriAl: sahip ? () => viewModel.geriAl(e.id) : null,
+                        onGeriAl: sahip && e.geriAlinabilir ? () => viewModel.geriAl(e.id) : null,
                       ),
                     ),
                 ],

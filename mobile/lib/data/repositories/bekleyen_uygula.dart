@@ -7,6 +7,7 @@ import '../models/beyin.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/eylem.dart';
+import '../models/gelen.dart';
 import '../models/gun.dart';
 import '../models/hatirlatici.dart';
 import '../../utils/hatirlatici_islemleri.dart';
@@ -191,6 +192,33 @@ List<Eylem> eylemlereBekleyenleriUygula(List<Eylem> sunucu, List<BekleyenIslemle
     }
   }
   return harita.values.toList();
+}
+
+/// Lays the queued inbox decisions over the server's (or cached) cards, in queue order, so a card placed, deleted or
+/// decided on offline moves at once. [bekleyenler] holds the unsent entries without the refused ones.
+///
+/// - A queued placement or deletion of a card takes the card off the list.
+/// - A queued approval of the card's suggestion places the card, so the card goes too; a queued rejection leaves the
+///   card without its suggestion.
+List<GelenKarti> gelenKartlarinaBekleyenleriUygula(List<GelenKarti> sunucu, List<BekleyenIslemlerData> bekleyenler) {
+  final kartlar = <String, GelenKarti>{for (final k in sunucu) k.kimlik: k};
+  for (final b in bekleyenler) {
+    switch (b.tur) {
+      case BekleyenTur.gelenIsle || BekleyenTur.gelenSil:
+        kartlar.remove(b.hedefId);
+      case BekleyenTur.eylemUygula || BekleyenTur.eylemReddet:
+        final kart = kartlar.values.where((k) => k.oneri?.eylemId == b.hedefId).firstOrNull;
+        if (kart == null) break;
+        if (b.tur == BekleyenTur.eylemUygula) {
+          kartlar.remove(kart.kimlik);
+        } else {
+          kartlar[kart.kimlik] = kart.oneriz();
+        }
+      default:
+        break;
+    }
+  }
+  return kartlar.values.toList();
 }
 
 /// Lays the queued reminder writes over the server's (or cached) reminders, in queue order, so a reminder made,

@@ -9,6 +9,7 @@ import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/esitleyici.dart';
 import '../data/repositories/gun_plani_repository.dart';
 import '../data/repositories/eylem_repository.dart';
+import '../data/repositories/gelen_repository.dart';
 import '../data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import '../data/repositories/hatirlatici_repository.dart';
 import '../data/repositories/kronometre_repository.dart';
@@ -32,6 +33,8 @@ import '../ui/eylemler/eylem_detay_screen.dart';
 import '../ui/eylemler/eylem_detay_view_model.dart';
 import '../ui/eylemler/eylem_liste_screen.dart';
 import '../ui/eylemler/eylem_liste_view_model.dart';
+import '../ui/gelen/gelen_liste_screen.dart';
+import '../ui/gelen/gelen_liste_view_model.dart';
 import '../ui/bugun/yaklasanlar_view_model.dart';
 import '../ui/giris/giris_screen.dart';
 import '../ui/hatirlaticilar/hatirlatici_form_screen.dart';
@@ -79,6 +82,9 @@ abstract final class Rotalar {
 
   /// The approval queue: opened from the Today card, from Profil and from its notifications, a full-screen page.
   static const eylemler = '/eylemler';
+
+  /// The inbox: opened from Profil, a full-screen page.
+  static const gelen = '/gelen';
   static const profil = '/profil';
 
   /// The Sahip's management screen: opened from Profil, a full-screen page.
@@ -290,6 +296,18 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
         builder: (context, state) => _sayfa(
           (c) => EylemListeViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
           (vm) => EylemListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.gelen,
+        builder: (context, state) => _sayfa(
+          (c) => GelenListeViewModel(
+            repo: c.read<GelenRepository>(),
+            eylemler: c.read<EylemRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            beyin: c.read<BeyinRepository>(),
+          )..yukle(),
+          (vm) => GelenListeScreen(viewModel: vm),
         ),
       ),
       GoRoute(
