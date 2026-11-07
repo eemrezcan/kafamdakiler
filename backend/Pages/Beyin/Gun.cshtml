@@ -46,6 +46,13 @@
     var bos = gun.Bolumler.All(b => b.Maddeler.Count == 0) && gun.Geciken.Count == 0;
     var yazilabilir = Model.Yazilabilir;
 
+    @if (Model.Cizelge is { } cizelge)
+    {
+        var cizelgeVeri = new ViewDataDictionary(ViewData);
+        cizelgeVeri["PlanGoster"] = false;
+        <partial name="_ZamanCizelgesi" model="cizelge" view-data="cizelgeVeri" />
+    }
+
     @if (Model.Sabah is { Maddeler.Count: > 0 } sabah)
     {
         <section class="kd-yonetim-blok" aria-labelledby="sabah-baslik">

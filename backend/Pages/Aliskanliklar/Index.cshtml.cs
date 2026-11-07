@@ -1,12 +1,17 @@
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Beyin;
+using Kafamdakiler.Brifing;
 using Kafamdakiler.Data;
+using Kafamdakiler.Takvim;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kafamdakiler.Pages.Aliskanliklar;
 
-public class IndexModel(AppDbContext db) : PageModel
+// The home page: today's briefing (K2.7) and timeline (K2.3c) on top, then the habit panel.
+public class IndexModel(
+    AppDbContext db, BrifingHazirlayici brifingler, ZamanCizelgesiServisi cizelgeler, TimeProvider saat, ILogger<IndexModel> gunluk) : PageModel
 {
     public record Kart(AliskanlikDto Aliskanlik, List<GunDto> SonGunler);
 
@@ -29,8 +34,19 @@ public class IndexModel(AppDbContext db) : PageModel
     [BindProperty(SupportsGet = true)]
     public bool Arsiv { get; set; }
 
+    // Today's briefing and timeline; null when they could not be had. The extras never turn the habit panel into an error page.
+    public BrifingPaneli? Brifing { get; private set; }
+
+    public ZamanCizelgesiDto? Cizelge { get; private set; }
+
     public async Task OnGetAsync(CancellationToken ct)
     {
+        if (!Arsiv)
+        {
+            await BrifingYukleAsync(ct);
+            await CizelgeYukleAsync(ct);
+        }
+
         var liste = await db.Aliskanliklar.Where(a => a.Arsivlendi == Arsiv)
             .OrderBy(a => a.Sira).ThenBy(a => a.CreatedAt).ToListAsync(ct);
         var dtolar = await AliskanlikEndpoints.DtoYapAsync(db, liste, ct);
@@ -41,6 +57,56 @@ public class IndexModel(AppDbContext db) : PageModel
             var gunler = await AliskanlikEndpoints.GunleriHesaplaAsync(db, liste[i], BugunTarihi.AddDays(-6), BugunTarihi, ct);
             (dtolar[i].Bugun.Planli ? Planli : Diger).Add(new Kart(dtolar[i], gunler));
         }
+    }
+
+    private async Task BrifingYukleAsync(CancellationToken ct)
+    {
+        try
+        {
+            var sonuc = await brifingler.BugunAsync(ct);
+            Brifing = sonuc.Basarili
+                ? new BrifingPaneli(await brifingler.DtoYapAsync(sonuc.Brifing!, ct), null)
+                : new BrifingPaneli(null, sonuc.Durum == BrifingDurumu.HenuzHazirDegil ? sonuc.Mesaj : "Bugünün brifingi şu an hazırlanamadı.");
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            gunluk.LogError(e, "The briefing panel of the home page failed.");
+            Brifing = new BrifingPaneli(null, "Bugünün brifingi şu an hazırlanamadı.");
+        }
+    }
+
+    private async Task CizelgeYukleAsync(CancellationToken ct)
+    {
+        try
+        {
+            Cizelge = await cizelgeler.GetirAsync(GunSiniri.Bugun(saat.GetUtcNow()), ct);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            gunluk.LogError(e, "The timeline of the home page failed.");
+        }
+    }
+
+    // A vote on a card of today's briefing: 1, -1, or 0 to take it back.
+    public async Task<IActionResult> OnPostBrifingOyAsync(int sira, int oy, CancellationToken ct)
+    {
+        var sonuc = await brifingler.OyVerAsync(brifingler.Bugun, sira, oy, ct);
+        if (!sonuc.Basarili)
+            Hata = sonuc.Mesaj;
+
+        return RedirectToPage("/Aliskanliklar/Index", null, null, "brifing");
+    }
+
+    // The Sahip asks for a new briefing (at most three times a day).
+    public async Task<IActionResult> OnPostBrifingYenileAsync(CancellationToken ct)
+    {
+        var sonuc = await brifingler.YenileAsync(ct);
+        if (sonuc.Basarili)
+            Bildirim = "Brifing yenilendi";
+        else
+            Hata = sonuc.Mesaj;
+
+        return RedirectToPage("/Aliskanliklar/Index", null, null, "brifing");
     }
 
     // Yes/no habit: one tap ticks today, another tap takes it back.

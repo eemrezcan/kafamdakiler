@@ -1,0 +1,52 @@
+@using Kafamdakiler.Brifing
+@model Kafamdakiler.Pages.BrifingPaneli
+@* Today's briefing (K2.7). The forms post to the home page's handlers (BrifingOy, BrifingYenile). *@
+<section class="kd-yonetim-blok kd-brifing" id="brifing" aria-labelledby="brifing-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="brifing-baslik">Bugünün brifingi</h2>
+
+    @if (Model.Brifing is not { } brifing)
+    {
+        <p class="kd-muted">@(Model.Mesaj ?? "Brifing yok.")</p>
+    }
+    else
+    {
+        <p class="kd-capture-meta">
+            <span>@brifing.UretimAni.ToLocalTime().ToString("HH:mm") · @(brifing.Yontem == BrifingYontemi.Claude ? "Claude hazırladı" : "kurallarla hazırlandı")</span>
+        </p>
+        @foreach (var kart in brifing.Kartlar)
+        {
+            <article class="kd-capture kd-c-violet">
+                <div class="kd-capture-body">
+                    <p class="kd-capture-meta mb-1"><span class="kd-status is-birakildi">@(kart.Tur switch
+                    {
+                        "plan" => "Plan",
+                        "kalan" => "Kalan",
+                        "hatirlatici" => "Hatırlatıcı",
+                        "onay" => "Onay",
+                        "takvim" => "Takvim",
+                        "kapasite" => "Kapasite",
+                        _ => "Kart",
+                    })</span></p>
+                    <p class="kd-capture-text mb-1"><strong>@kart.Baslik</strong></p>
+                    <p class="kd-capture-text mb-0">@kart.Metin</p>
+                </div>
+                <div class="kd-gun-actions">
+                    @foreach (var (oy, ad, etiket) in new[] { (1, "Beğendim", "👍"), (-1, "Beğenmedim", "👎") })
+                    {
+                        <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="BrifingOy">
+                            <input type="hidden" name="sira" value="@kart.Sira" />
+                            @* Pressing the vote already given takes it back. *@
+                            <input type="hidden" name="oy" value="@(kart.Oy == oy ? 0 : oy)" />
+                            <button type="submit" class="btn btn-sm @(kart.Oy == oy ? "btn-primary" : "btn-outline-primary")"
+                                    aria-pressed="@(kart.Oy == oy ? "true" : "false")" aria-label="@ad" title="@ad">@etiket</button>
+                        </form>
+                    }
+                </div>
+            </article>
+        }
+        <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="BrifingYenile">
+            <button type="submit" class="btn btn-outline-primary btn-sm" disabled="@(brifing.KalanYenileme <= 0)">Yenile</button>
+            <small class="kd-muted">Bugün @brifing.KalanYenileme yenileme hakkı kaldı.</small>
+        </form>
+    }
+</section>

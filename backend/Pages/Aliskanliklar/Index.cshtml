@@ -64,6 +64,18 @@
     <div class="kd-alert" role="alert">@Model.Hata</div>
 }
 
+@if (!Model.Arsiv)
+{
+    if (Model.Brifing is { } brifingPaneli)
+    {
+        <partial name="_Brifing" model="brifingPaneli" />
+    }
+    if (Model.Cizelge is { } cizelge)
+    {
+        <partial name="_ZamanCizelgesi" model="cizelge" />
+    }
+}
+
 @if (Model.Arsiv && Model.Planli.Count == 0 && Model.Diger.Count == 0)
 {
     <div class="kd-empty kd-empty--small">

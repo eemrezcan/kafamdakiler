@@ -39,7 +39,8 @@ public static class TakvimSorgulari
 public class ZamanCizelgesiServisi(
     AppDbContext db, BeyinIstemcisi beyin, GunAyari gunAyari, TakvimAyari ayar, ILogger<ZamanCizelgesiServisi> gunluk)
 {
-    public async Task<ZamanCizelgesiDto> GetirAsync(DateOnly gun, CancellationToken ct)
+    // `hazirPlan` is the day's plan when the caller has read it already (the day page): the brain is then not asked a second time.
+    public async Task<ZamanCizelgesiDto> GetirAsync(DateOnly gun, CancellationToken ct, BeyinGunDto? hazirPlan = null)
     {
         var (bas, son) = TakvimZamani.GunAraligi(gun);
 
@@ -52,7 +53,7 @@ public class ZamanCizelgesiServisi(
         var saatsiz = new List<ZamanCizelgesiOgesi>();
 
         // Plan items have no hour; they come first among the unhoured, then the all-day events, then the reminders without an hour.
-        var (planDurumu, planOgeleri, planAcikDk) = await PlanAlAsync(gun, ct);
+        var (planDurumu, planOgeleri, planAcikDk) = await PlanAlAsync(gun, hazirPlan, ct);
         saatsiz.AddRange(planOgeleri);
 
         var etkinlikDk = 0;
@@ -94,16 +95,21 @@ public class ZamanCizelgesiServisi(
 
     // The day's plan from the brain. A brain that is not set up gives no plan (and no warning); one that is set up but cannot be read
     // gives no plan and says so, so a day is never shown as empty because the read failed.
-    private async Task<(string Durum, List<ZamanCizelgesiOgesi> Ogeler, int AcikDk)> PlanAlAsync(DateOnly gun, CancellationToken ct)
+    private async Task<(string Durum, List<ZamanCizelgesiOgesi> Ogeler, int AcikDk)> PlanAlAsync(DateOnly gun, BeyinGunDto? hazirPlan, CancellationToken ct)
     {
         if (!beyin.Bagli)
             return ("yok", [], 0);
 
-        var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari);
-        if (!yanit.Basarili)
-            return ("okunamadi", [], 0);
+        var plan = hazirPlan;
+        if (plan is null)
+        {
+            var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari);
+            if (!yanit.Basarili)
+                return ("okunamadi", [], 0);
+            plan = yanit.Veri!;
+        }
 
-        var maddeler = yanit.Veri!.Bolumler.SelectMany(b => b.Maddeler.Select(m => (Bolum: b.Ad, Madde: m))).ToList();
+        var maddeler = plan.Bolumler.SelectMany(b => b.Maddeler.Select(m => (Bolum: b.Ad, Madde: m))).ToList();
         var ogeler = maddeler.Select(m => new ZamanCizelgesiOgesi(
             "plan", m.Madde.Id, m.Madde.Baslik, false, null, null, null, null, null, null, m.Madde.Durum, m.Bolum, m.Madde.TahminDk)).ToList();
         // Only open items count towards the day's weight; one without an estimate counts as zero (as the plan's own warning does).

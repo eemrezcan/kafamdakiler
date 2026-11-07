@@ -1,0 +1,98 @@
+@using Kafamdakiler.Takvim
+@model ZamanCizelgesiDto
+@* The one timeline of a day (K2.3c): what has an hour in the order of the clock, then what has none.
+   ViewData["PlanGoster"] = false leaves the plan items out (the day page shows the plan itself). *@
+@{
+    var planGoster = ViewData["PlanGoster"] as bool? ?? true;
+    var saatsiz = Model.Saatsiz.Where(o => planGoster || o.Tur != "plan").ToList();
+}
+<section class="kd-yonetim-blok" id="zaman-cizelgesi" aria-labelledby="cizelge-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="cizelge-baslik">Zaman çizelgesi</h2>
+
+    @if (Model.Google == "bagliDegil" || Model.Google == "yenidenBaglan")
+    {
+        <p class="kd-muted">
+            @(Model.Google == "yenidenBaglan" ? "Google Takvim bağlantısı koptu" : "Google Takvim bağlı değil"), etkinlikler görünmüyor.
+            <a asp-page="/Yonetim/Index">Yönetim</a>
+        </p>
+    }
+    @if (Model.Plan == "okunamadi" && planGoster)
+    {
+        <p class="kd-muted">Beyin okunamadığı için gün planı çizelgede yok.</p>
+    }
+
+    @if (Model.Kapasite is { } kapasite)
+    {
+        <div class="kd-gun-uyari" role="status">
+            <strong>Bugün sığmıyor.</strong>
+            Plan @(kapasite.PlanDk) dk ve etkinlikler @(kapasite.EtkinlikDk) dk, toplam @(kapasite.ToplamDk) dk; bir günlük kapasite @(kapasite.KapasiteDk) dk: @(kapasite.AsimDk) dk fazla.
+        </div>
+    }
+
+    @if (Model.Saatli.Count == 0 && saatsiz.Count == 0)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Bu gün için bir şey yok.</p>
+        </div>
+    }
+
+    @foreach (var oge in Model.Saatli)
+    {
+        <article class="kd-capture kd-c-violet">
+            <div class="kd-capture-body">
+                <p class="kd-capture-meta mb-1">
+                    <span class="kd-cizelge-saat">@oge.Saat@(oge.BitisSaati is not null ? $"–{oge.BitisSaati}" : "")</span>
+                    <span class="kd-status is-birakildi">@(oge.Tur == "etkinlik" ? "Etkinlik" : "Hatırlatıcı")</span>
+                </p>
+                @if (oge.Tur == "hatirlatici" && Guid.TryParse(oge.Kimlik, out var hatirlaticiId))
+                {
+                    <p class="kd-capture-text mb-0"><a asp-page="/Hatirlaticilar/Duzenle" asp-route-id="@hatirlaticiId">@oge.Baslik</a></p>
+                }
+                else
+                {
+                    <p class="kd-capture-text mb-0">@oge.Baslik</p>
+                }
+                @if (oge.Yer is not null)
+                {
+                    <p class="kd-capture-meta mt-1"><span>@oge.Yer</span></p>
+                }
+            </div>
+        </article>
+    }
+
+    @if (Model.Saatli.Count > 0 && saatsiz.Count > 0)
+    {
+        <h3 class="kd-eyebrow kd-section-title">Saati olmayanlar</h3>
+    }
+    @foreach (var oge in saatsiz)
+    {
+        <article class="kd-capture kd-c-violet">
+            <div class="kd-capture-body">
+                <p class="kd-capture-meta mb-1">
+                    <span class="kd-status is-birakildi">@(oge.Tur switch { "etkinlik" => "Tüm gün", "hatirlatici" => "Hatırlatıcı", _ => "Plan" })</span>
+                </p>
+                @if (oge.Tur == "hatirlatici" && Guid.TryParse(oge.Kimlik, out var hatirlaticiId))
+                {
+                    <p class="kd-capture-text mb-0"><a asp-page="/Hatirlaticilar/Duzenle" asp-route-id="@hatirlaticiId">@oge.Baslik</a></p>
+                }
+                else
+                {
+                    <p class="kd-capture-text mb-0 @(oge.Durum is not null && oge.Durum != "acik" ? "kd-beyin-yapildi" : "")">@oge.Baslik</p>
+                }
+                @if (oge.Yer is not null || oge.TahminDk is not null)
+                {
+                    <p class="kd-capture-meta mt-1">
+                        @if (oge.Yer is not null)
+                        {
+                            <span>@oge.Yer</span>
+                        }
+                        @if (oge.TahminDk is { } dk)
+                        {
+                            <span>@dk dk</span>
+                        }
+                    </p>
+                }
+            </div>
+        </article>
+    }
+</section>

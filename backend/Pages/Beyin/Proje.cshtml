@@ -31,6 +31,41 @@
         <p class="kd-beyin-metin @(proje.SiradakiAdim is null ? "kd-muted" : "")">@(proje.SiradakiAdim ?? "Sıradaki adım yazılmamış.")</p>
     </section>
 
+    @if (Model.Repo is { } repo)
+    {
+        <section class="kd-yonetim-blok" aria-labelledby="repo-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="repo-baslik">Depo</h2>
+            <p class="kd-beyin-metin"><a href="@repo.Baglanti" rel="noopener noreferrer" target="_blank">@repo.Depo</a></p>
+            @if (repo.Durum == "tamam")
+            {
+                <p class="kd-capture-meta"><span>Açık PR: @repo.AcikPrSayisi</span></p>
+                @foreach (var c in repo.Commitler ?? [])
+                {
+                    <article class="kd-capture kd-c-violet">
+                        <div class="kd-capture-body">
+                            <p class="kd-capture-text mb-1">@c.Mesaj</p>
+                            <p class="kd-capture-meta">
+                                <code>@c.Hash</code>
+                                @if (c.Yazar is not null)
+                                {
+                                    <span>@c.Yazar</span>
+                                }
+                                @if (c.Tarih is { } tarih)
+                                {
+                                    <time datetime="@tarih.ToString("o")">@tarih.ToLocalTime().ToString("dd.MM HH:mm")</time>
+                                }
+                            </p>
+                        </div>
+                    </article>
+                }
+            }
+            else
+            {
+                <p class="kd-muted">@repo.Mesaj</p>
+            }
+        </section>
+    }
+
     <section class="kd-yonetim-blok" aria-labelledby="gorev-baslik">
         <h2 class="kd-eyebrow kd-section-title" id="gorev-baslik">Açık görevler</h2>
         @if (proje.AcikGorevler.Count == 0)

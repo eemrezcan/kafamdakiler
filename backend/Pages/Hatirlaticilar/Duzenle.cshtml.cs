@@ -37,6 +37,8 @@ public class DuzenleModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider s
         {
             Baslik = h.Baslik, Not = h.Not, Tur = h.Tur, Kime = h.Kime, Gun = h.Gun, Saat = h.Saat,
             Tekrar = h.Tekrar, OnceGun = h.OnceGun, Durum = h.Durum,
+            // Left out, saving would put the persistent fields back to their defaults.
+            Israrli = h.Israrli, IsrarAraligiDakika = h.IsrarAraligiDakika, IsrarEnCok = h.IsrarEnCok, Acil = h.Acil,
         };
         return Page();
     }

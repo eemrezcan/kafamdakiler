@@ -1,5 +1,6 @@
 using System.Globalization;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Takvim;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kafamdakiler.Pages.Beyin;
@@ -8,7 +9,8 @@ namespace Kafamdakiler.Pages.Beyin;
 // add and finish a task, split a task over days. No date means today by the brain's own day-turn rule (05:00).
 // Every write goes through BeyinYazma, the same code and checks as /api/beyin (no Idempotency-Key: a form is not
 // resent by a queue), and each one names the date explicitly.
-public class GunModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunAyari ayar, TimeProvider saat) : BeyinSayfasi(beyin, gunluk)
+public class GunModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunAyari ayar, TimeProvider saat, ZamanCizelgesiServisi cizelgeler)
+    : BeyinSayfasi(beyin, gunluk)
 {
     // The morning card remembers what was let go in this browser only: letting go writes nothing to the brain.
     private const string SabahCerezi = "kd-sabah";
@@ -30,6 +32,9 @@ public class GunModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunA
 
     public List<AcikGorevDto> Gorevler { get; private set; } = [];
 
+    // The one timeline of the day (K2.3c); null when it could not be had.
+    public ZamanCizelgesiDto? Cizelge { get; private set; }
+
     public async Task OnGetAsync(string? tarih, CancellationToken ct)
     {
         var istenen = string.IsNullOrWhiteSpace(tarih) ? Bugun.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : tarih;
@@ -43,6 +48,18 @@ public class GunModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunA
         // The extras never turn a good page into an error page: if one fails, its part is simply not shown.
         Projeler = (await BeyinOkuma.ProjelerAl(Istemci, Gunluk, ct)).Veri ?? [];
         Gorevler = (await BeyinOkuma.AcikGorevlerAl(Istemci, Gunluk, ct)).Veri ?? [];
+
+        if (Tarih is { } cizelgeGunu)
+        {
+            try
+            {
+                Cizelge = await cizelgeler.GetirAsync(cizelgeGunu, ct, Gun);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                Gunluk.LogError(e, "The timeline of the day page failed.");
+            }
+        }
 
         if (Tarih == Bugun && (await BeyinOkuma.SabahAl(Istemci, Gunluk, saat, ct)).Veri is { } kart)
         {

@@ -3127,3 +3127,17 @@ textarea.form-control {
   gap: 0.3rem;
   min-height: 2.75rem;
 }
+
+/* ---------- Briefing and timeline (home page, day page) ---------- */
+
+/* The hour of a timeline row: fixed digits, so a column of rows lines up. */
+.kd-cizelge-saat {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--kd-text);
+}
+
+/* A briefing card keeps its vote buttons side by side. */
+.kd-brifing .kd-gun-actions {
+  flex-direction: row;
+}

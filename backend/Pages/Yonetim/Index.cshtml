@@ -125,6 +125,105 @@
     </dl>
 </section>
 
+<section class="kd-yonetim-blok" aria-labelledby="google-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="google-baslik">Google Takvim</h2>
+
+    @if (Model.GoogleSonucu is not null)
+    {
+        <div class="@(Model.GoogleSonucuHata ? "kd-alert" : "kd-gun-uyari")" role="@(Model.GoogleSonucuHata ? "alert" : "status")">@Model.GoogleSonucu</div>
+    }
+
+    @{
+        var g = Model.GoogleDurumu;
+    }
+    @if (g.Durum == "kapali")
+    {
+        <p class="kd-muted">Google ayarları (ClientId, ClientSecret, DonusAdresi) yapılmamış; takvim kapalı.</p>
+    }
+    else
+    {
+        <dl class="kd-facts">
+            <div>
+                <dt>Durum</dt>
+                <dd>@(g.Durum switch { "bagli" => "Bağlı", "yenidenBaglan" => "Bağlantı koptu, yeniden bağla", _ => "Bağlı değil" })</dd>
+            </div>
+            @if (g.Durum != "bagliDegil")
+            {
+                <div>
+                    <dt>Bağlandığı an</dt>
+                    <dd>@(g.BaglananAni is { } an ? an.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "-")</dd>
+                </div>
+                <div>
+                    <dt>Son eşitleme</dt>
+                    <dd>@(g.SonEsitleme is { } son ? son.ToLocalTime().ToString("dd.MM HH:mm") : "-")</dd>
+                </div>
+                <div>
+                    <dt>Etkinlik</dt>
+                    <dd>@g.EtkinlikSayisi</dd>
+                </div>
+                <div>
+                    <dt>Takvimler</dt>
+                    <dd>@(g.Takvimler.Count == 0 ? "-" : string.Join(", ", g.Takvimler))</dd>
+                </div>
+            }
+        </dl>
+        <div class="kd-gun-actions">
+            @if (g.Durum != "bagli")
+            {
+                <form method="post" asp-page-handler="GoogleBagla">
+                    <button type="submit" class="btn btn-primary">@(g.Durum == "yenidenBaglan" ? "Yeniden bağla" : "Google Takvim'i bağla")</button>
+                </form>
+            }
+            @if (g.Durum != "bagliDegil")
+            {
+                <form method="post" asp-page-handler="GoogleKes"
+                      onsubmit="return confirm('Bağlantı kesilecek ve eşitlenen etkinlikler silinecek. Emin misin?');">
+                    <button type="submit" class="btn btn-outline-primary">Bağlantıyı kes</button>
+                </form>
+            }
+        </div>
+    }
+</section>
+
+<section class="kd-yonetim-blok" aria-labelledby="repo-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="repo-baslik">Proje ↔ depo</h2>
+    <p class="kd-muted">Bir proje bir GitHub deposuna bağlanınca proje sayfasında son commit'ler ve açık PR sayısı görünür.</p>
+
+    @foreach (var r in Model.RepoEslemeleri)
+    {
+        <div class="kd-izin">
+            <div class="kd-izin-metin">
+                <code>@r.Proje</code>
+                <a href="@r.Baglanti" rel="noopener noreferrer" target="_blank">@r.Depo</a>
+            </div>
+            <form method="post" asp-page-handler="RepoSil">
+                <input type="hidden" name="proje" value="@r.Proje" />
+                <button type="submit" class="btn btn-outline-primary">Kaldır</button>
+            </form>
+        </div>
+    }
+
+    @if (Model.ProjeListesiHatasi is not null)
+    {
+        <p class="kd-muted">@Model.ProjeListesiHatasi</p>
+    }
+    else if (Model.Projeler.Count > 0)
+    {
+        <form method="post" asp-page-handler="RepoAyarla" class="kd-gun-form">
+            <label class="visually-hidden" for="repo-proje">Proje</label>
+            <select class="form-select" id="repo-proje" name="proje" required>
+                @foreach (var p in Model.Projeler)
+                {
+                    <option value="@p.Kimlik">@p.Baslik</option>
+                }
+            </select>
+            <label class="visually-hidden" for="repo-depo">Depo</label>
+            <input class="form-control" id="repo-depo" name="depo" maxlength="140" placeholder="owner/repo" autocomplete="off" required />
+            <button type="submit" class="btn btn-primary">Bağla</button>
+        </form>
+    }
+</section>
+
 <section class="kd-yonetim-blok" aria-labelledby="gonderim-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="gonderim-baslik">Takılı ya da hatalı gönderimler</h2>
 

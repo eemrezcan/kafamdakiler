@@ -1,6 +1,5 @@
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
-using Kafamdakiler.Gelen;
 using Microsoft.EntityFrameworkCore;
 using static Kafamdakiler.Aliskanliklar.AliskanlikEndpoints;
 
@@ -20,26 +19,15 @@ public static class ProjeRepoEndpoints
         yonetim.MapPut("/proje-repolari/{kimlik}", async (string kimlik, ProjeRepoYazDto dto, AppDbContext db, BeyinIstemcisi beyin,
             TimeProvider saat, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
         {
-            if (!KimlikGecerli(kimlik))
-                return Sorun("kimlik", "Proje kimliği küçük harf, rakam ve tire olmalı.");
-
-            var depo = dto.Depo!.Trim();
-            if (!DepoAdi.Gecerli(depo))
-                return Sorun("depo", DepoAdi.Mesaj);
-
-            var projeler = await GelenBeyin.ProjeleriAlAsync(beyin, log, ct);
-            if (!projeler.Basarili)
-                return projeler.Sonuc();
-            if (!projeler.Veri!.Contains(kimlik))
-                return Results.Problem(title: "Bulunamadı", detail: "Böyle bir proje yok.", statusCode: StatusCodes.Status404NotFound);
-
-            var satir = await db.ProjeRepolari.FindAsync([kimlik], ct);
-            if (satir is null)
-                db.ProjeRepolari.Add(satir = new ProjeRepo { ProjeKimligi = kimlik });
-            satir.Depo = depo;
-            satir.GuncellendiAt = saat.GetUtcNow();
-            await db.SaveChangesAsync(ct);
-            return Results.Ok(Dto(satir));
+            var sonuc = await ProjeRepoIslemleri.AyarlaAsync(db, beyin, saat, log, kimlik, dto.Depo, ct);
+            return sonuc.Tur switch
+            {
+                RepoEslemeTuru.Tamam => Results.Ok(Dto(sonuc.Satir!)),
+                RepoEslemeTuru.GecersizKimlik => Sorun("kimlik", sonuc.Mesaj!),
+                RepoEslemeTuru.GecersizDepo => Sorun("depo", sonuc.Mesaj!),
+                RepoEslemeTuru.ProjeYok => Results.Problem(title: "Bulunamadı", detail: sonuc.Mesaj, statusCode: StatusCodes.Status404NotFound),
+                _ => sonuc.BeyinYaniti!.Sonuc(),
+            };
         });
 
         yonetim.MapDelete("/proje-repolari/{kimlik}", async (string kimlik, AppDbContext db, CancellationToken ct) =>
@@ -70,7 +58,7 @@ public static class ProjeRepoEndpoints
         });
     }
 
-    private static bool KimlikGecerli(string kimlik) => kimlik.Length <= 100 && BeyinOkuma.KimlikKalibi().IsMatch(kimlik);
+    private static bool KimlikGecerli(string kimlik) => ProjeRepoIslemleri.KimlikGecerli(kimlik);
 
     private static ProjeRepoDto Dto(ProjeRepo r) => new(r.ProjeKimligi, r.Depo, RepoOzetServisi.Baglanti(r.Depo));
 

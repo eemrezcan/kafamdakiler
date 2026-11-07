@@ -75,6 +75,40 @@
             <span class="kd-field-error" asp-validation-for="Input.OnceGun"></span>
         </div>
 
+        <div class="kd-field">
+            <label class="form-check kd-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.Israrli" data-kd-reminder-israrli />
+                <span>Israrlı: yapılmazsa yeniden haber ver</span>
+            </label>
+            <small class="kd-muted">Telefon, asıl bildirimden sonra "Yaptım" ya da "Ertele" denmezse aralıkla yeniden bildirir.</small>
+        </div>
+
+        <div class="kd-field-row" data-kd-reminder-israr-ayar hidden="@(!Model.Input.Israrli)">
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.IsrarAraligiDakika">Kaç dakikada bir?</label>
+                <select class="form-select kd-narrow" asp-for="Input.IsrarAraligiDakika">
+                    @foreach (var dakika in new[] { 5, 15, 60 })
+                    {
+                        <option value="@dakika" selected="@(Model.Input.IsrarAraligiDakika == dakika)">@dakika dakika</option>
+                    }
+                </select>
+                <span class="kd-field-error" asp-validation-for="Input.IsrarAraligiDakika"></span>
+            </div>
+            <div class="kd-field">
+                <label class="kd-field-label" asp-for="Input.IsrarEnCok">En çok kaç kez?</label>
+                <input class="form-control kd-narrow" asp-for="Input.IsrarEnCok" type="number" min="1" max="4" inputmode="numeric" />
+                <small class="kd-muted">1 ile 4 arası.</small>
+                <span class="kd-field-error" asp-validation-for="Input.IsrarEnCok"></span>
+            </div>
+        </div>
+
+        <div class="kd-field">
+            <label class="form-check kd-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.Acil" />
+                <span>Acil: sessiz modu da delsin</span>
+            </label>
+        </div>
+
         @if (!Model.Yeni)
         {
             <div class="kd-field">

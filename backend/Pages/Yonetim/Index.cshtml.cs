@@ -2,16 +2,22 @@ using System.ComponentModel.DataAnnotations;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
+using Kafamdakiler.ProjeRepolari;
+using Kafamdakiler.Takvim;
 using Kafamdakiler.Yonetim;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kafamdakiler.Pages.Yonetim;
 
-// The Sahip's panel (T08): the Asistan's permissions, its sessions, the brain and the sending queue.
-// The rules live in YonetimIslemleri, shared with /api/yonetim.
-public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler) : PageModel
+// The Sahip's panel (T08): the Asistan's permissions, its sessions, the brain, the sending queue, the project ↔ repository links
+// (K2.5) and the Google Calendar connection (K2.3c). The rules live in YonetimIslemleri, ProjeRepoIslemleri and GoogleBaglanti,
+// shared with /api/yonetim and /api/google.
+public class IndexModel(
+    AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler,
+    GoogleBaglanti googleBaglanti, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
 {
     public List<IzinDto> IzinListesi { get; private set; } = [];
 
@@ -22,6 +28,21 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
 
     // Only the captures that need a look (a failed send, or one stuck after a crash or a timeout).
     public List<GonderimDto> Kuyruk { get; private set; } = [];
+
+    // The links of projects to repositories, and the projects of the brain to pick from (empty, with `ProjeListesiHatasi`, when the brain
+    // would not answer: the form is then left out, the existing links stay listed).
+    public List<ProjeRepoDto> RepoEslemeleri { get; private set; } = [];
+
+    public List<ProjeOzetDto> Projeler { get; private set; } = [];
+
+    public string? ProjeListesiHatasi { get; private set; }
+
+    public GoogleDurumDto GoogleDurumu { get; private set; } = new(false, "kapali", null, [], null, 0);
+
+    // How the Google callback went, from its redirect (?google=bagli, or ?google=hata&neden=...). Only fixed texts reach the page.
+    public string? GoogleSonucu { get; private set; }
+
+    public bool GoogleSonucuHata { get; private set; }
 
     // Short success message, shown once as a toast by the layout.
     [TempData]
@@ -48,7 +69,26 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
         public string YeniSifreTekrar { get; set; } = "";
     }
 
-    public async Task OnGetAsync(CancellationToken ct) => await YukleAsync(ct);
+    public async Task OnGetAsync(string? google, string? neden, CancellationToken ct)
+    {
+        (GoogleSonucu, GoogleSonucuHata) = google switch
+        {
+            "bagli" => ("Google Takvim bağlandı.", false),
+            "hata" => (GoogleHatasi(neden), true),
+            _ => (null, false),
+        };
+        await YukleAsync(ct);
+    }
+
+    private static string GoogleHatasi(string? neden) => neden switch
+    {
+        "kapali" => "Google ayarları yapılmamış.",
+        "state" or "sureDoldu" => "Bağlantı isteğinin süresi doldu ya da geçersiz. Bağla düğmesine yeniden bas.",
+        "kullanici" => "Bu bağlantı isteği başka bir oturuma ait. Bağla düğmesine yeniden bas.",
+        "reddedildi" => "Google'da izin verilmedi.",
+        "eksikIzin" => "Google gereken izinlerin hepsini vermedi. Bağlanırken takvim izinlerini işaretli bırak.",
+        _ => "Google bağlantıyı tamamlayamadı. Bağla düğmesine yeniden bas.",
+    };
 
     private async Task YukleAsync(CancellationToken ct)
     {
@@ -57,6 +97,15 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
         EylemKipleri = await eylemler.KipleriGetirAsync(ct);
         BeyinDurumu = await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, simdi, ct);
         Kuyruk = await YonetimIslemleri.KuyrukAsync(db, simdi, yalnizIlgilenilecek: true, ct);
+        GoogleDurumu = await googleBaglanti.DurumAsync(ct);
+
+        RepoEslemeleri = (await db.ProjeRepolari.AsNoTracking().OrderBy(r => r.ProjeKimligi).ToListAsync(ct))
+            .Select(r => new ProjeRepoDto(r.ProjeKimligi, r.Depo, RepoOzetServisi.Baglanti(r.Depo))).ToList();
+        var projeler = await BeyinOkuma.ProjelerAl(beyin, gunluk, ct);
+        if (projeler.Basarili)
+            Projeler = projeler.Veri!;
+        else
+            ProjeListesiHatasi = projeler.BagliDegil ? "Beyin bağlı değil; proje listesi alınamadı." : "Beyin okunamadı; proje listesi alınamadı.";
     }
 
     public async Task<IActionResult> OnPostIzinAsync(string izin, bool acik)
@@ -121,6 +170,65 @@ public class IndexModel(AppDbContext db, UserManager<IdentityUser<Guid>> kullani
             Hata = sonuc.Mesaj;
         else
             Bildirim = "Yeniden gönderilecek";
+
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostRepoAyarlaAsync(string? proje, string? depo, CancellationToken ct)
+    {
+        var sonuc = await ProjeRepoIslemleri.AyarlaAsync(db, beyin, saat, gunluk, proje ?? "", depo, ct);
+        switch (sonuc.Tur)
+        {
+            case RepoEslemeTuru.Tamam:
+                Bildirim = "Depo bağlandı";
+                break;
+            case RepoEslemeTuru.BeyinHatasi:
+                Hata = sonuc.BeyinYaniti!.BagliDegil ? "Beyin bağlı değil; proje doğrulanamadı." : "Beyin okunamadı; proje doğrulanamadı.";
+                break;
+            default:
+                Hata = sonuc.Mesaj;
+                break;
+        }
+
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostRepoSilAsync(string? proje, CancellationToken ct)
+    {
+        var satir = await db.ProjeRepolari.FindAsync([proje ?? ""], ct);
+        if (satir is null)
+            return NotFound();
+
+        db.ProjeRepolari.Remove(satir);
+        await db.SaveChangesAsync(ct);
+        Bildirim = "Depo bağlantısı kaldırıldı";
+        return RedirectToPage();
+    }
+
+    // To Google's consent screen; Google sends the browser back to /google/donus, which ends at this page.
+    public async Task<IActionResult> OnPostGoogleBaglaAsync(CancellationToken ct)
+    {
+        if (EylemEndpoints.KullaniciId(User) is not { } id)
+            return Forbid();
+
+        if (await googleBaglanti.BaslatAsync(id, ct) is not { } adres)
+        {
+            Hata = "Google ayarları (ClientId, ClientSecret, DonusAdresi) yapılmamış.";
+            return RedirectToPage();
+        }
+
+        return Redirect(adres.AbsoluteUri);
+    }
+
+    public async Task<IActionResult> OnPostGoogleKesAsync(CancellationToken ct)
+    {
+        var sonuc = await googleBaglanti.KesAsync(ct);
+        if (!sonuc.BaglantiVardi)
+            Bildirim = "Zaten bağlı değildi";
+        else if (sonuc.GoogleIptal)
+            Bildirim = "Google Takvim bağlantısı kesildi";
+        else
+            Hata = "Bağlantı bu uygulamada kesildi ama Google'da izin iptal edilemedi. Google hesabının güvenlik sayfasından da kaldır.";
 
         return RedirectToPage();
     }
