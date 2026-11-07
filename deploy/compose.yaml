@@ -56,6 +56,8 @@ services:
     volumes:
       - ${VERI_KLASORU:-./veri}:/data
       - ${BEYIN_KLASORU:-./beyin}:/beyin
+      # Claude Code's login and settings (CLAUDE_CONFIG_DIR in the image); owned by uid 1654, mode 700.
+      - ${CLAUDE_KLASORU:-./claude}:/claude
     healthcheck:
       # The image has no curl; Python is there for beyin.py anyway.
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/saglik', timeout=3)"]

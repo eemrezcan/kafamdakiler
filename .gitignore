@@ -510,4 +510,5 @@ ornek-beyin/.beyin/
 # Server-side brain folder mounted by deploy/compose.yaml
 deploy/beyin/
 deploy/veri/
+deploy/claude/
 deploy/yedek/restic.env
