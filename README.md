@@ -54,6 +54,14 @@ dotnet user-secrets list --project backend   # check that the keys exist
 
 Uploaded photos are stored on disk, outside `wwwroot`. The folder comes from `Dosyalar:Klasor`: in development it is `.dosyalar/` at the repository root (git-ignored, set in `appsettings.Development.json`); on a server set it with the environment variable `Dosyalar__Klasor`.
 
+## Production settings
+Behind a reverse proxy that ends TLS (the app listens on plain HTTP), two settings are given as environment variables; both are off when empty:
+
+- `VeriKoruma__Klasor`: folder for the Data Protection keys, on a volume. Without it the keys are lost when the container restarts and everyone is signed out.
+- `Vekil__GuvenilenAglar__0` (then `__1`, ...): network of the proxy in CIDR form, e.g. `172.16.0.0/12`. Only requests from there may set `X-Forwarded-For` and `X-Forwarded-Proto`, so the app sees HTTPS and the client's address. An invalid value stops the startup.
+
+HTTPS redirection runs only in development; HSTS runs in production.
+
 ## Brain
 Captures that wait in the app are sent to the second brain as inbox cards by calling its command, `beyin.py gelen ekle` (K-0023). The app does not write to the brain any other way. The `Beyin` settings:
 

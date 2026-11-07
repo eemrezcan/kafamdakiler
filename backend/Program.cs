@@ -8,11 +8,13 @@ using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
+using Kafamdakiler.Uretim;
 using Kafamdakiler.Yakalamalar;
 using Kafamdakiler.Yonetim;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -74,6 +76,20 @@ builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHostedService<YakalamaGondericisi>();
 
+// Production behind a TLS-ending proxy (K2.1). Both are off when their setting is empty.
+var veriKoruma = VeriKorumaAyari.Oku(builder.Configuration, builder.Environment.ContentRootPath);
+if (veriKoruma.Acik)
+{
+    // Persistent keys: the login cookies and antiforgery tokens survive a container restart.
+    builder.Services.AddDataProtection()
+        .SetApplicationName("Kafamdakiler")
+        .PersistKeysToFileSystem(veriKoruma.KlasoruHazirla());
+}
+
+var vekil = VekilAyari.Oku(builder.Configuration);
+if (vekil.Acik)
+    builder.Services.Configure<ForwardedHeadersOptions>(vekil.Uygula);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
@@ -114,6 +130,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+// First, so that everything after it sees the client's scheme and address (not the proxy's).
+if (vekil.Acik)
+    app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -121,7 +141,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Behind the proxy TLS ends outside the app, so a redirect is meaningless there; HSTS above covers production.
+if (app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 
 // Numbers in forms use a dot (<input type="number">), whatever the server's locale is; messages stay Turkish.
 app.UseRequestLocalization(new RequestLocalizationOptions
