@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Brifing;
 using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
@@ -64,6 +65,8 @@ builder.Services.AddAuthorizationBuilder()
     // (each suggestion is then checked against the permission of its own kind).
     .AddPolicy(SesPolicies.AsistanKullan, policy => IzinPolicy(policy, [SesPolicies.AsistanKullan], IdentityConstants.BearerScheme))
     .AddPolicy(SesPolicies.Uygula, policy => IzinPolicy(policy, [HatirlaticiPolicies.Yaz, BeyinPolicies.PlanYaz, BeyinPolicies.GorevYaz], IdentityConstants.BearerScheme))
+    // The morning briefing (K2.7): reading it and voting on its cards. Asking for a new one is the Sahip's (YonetimPolicies.Sahip).
+    .AddPolicy(BrifingPolicies.Oku, policy => IzinPolicy(policy, [BrifingPolicies.Oku], IdentityConstants.BearerScheme))
     // Photos are read by <img> tags (cookie) and by the mobile app (bearer). Habits and captures share them.
     .AddPolicy(AliskanlikPolicies.DosyaOku, policy => IzinPolicy(policy, [AliskanlikPolicies.Oku, YakalamaPolicies.Oku], IdentityConstants.BearerScheme, IdentityConstants.ApplicationScheme))
     .AddPolicy(AliskanlikPolicies.DosyaYaz, policy => IzinPolicy(policy, [AliskanlikPolicies.Yaz, YakalamaPolicies.Yaz], IdentityConstants.BearerScheme));
@@ -95,6 +98,8 @@ builder.Services.AddEylemler();
 builder.Services.AddGelen(builder.Configuration);
 // Voice (K2.4): work out of dictated text, and rewriting it.
 builder.Services.AddSes();
+// The morning briefing (K2.7): made once a day at the set hour, by Claude or, failing that, by fixed rules.
+builder.Services.AddBrifing(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -216,6 +221,7 @@ app.MapBeyinEndpoints();
 app.MapEylemEndpoints();
 app.MapGelenEndpoints();
 app.MapSesEndpoints();
+app.MapBrifingEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
 

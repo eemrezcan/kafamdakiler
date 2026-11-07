@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Brifing;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
@@ -30,6 +31,7 @@ public static class Izinler
         new(GelenPolicies.Oku, "Gelen kutusunu okur: kartlar ve Claude'un yerleştirme önerileri"),
         new(GelenPolicies.Yaz, "Gelen kartı için yeniden öneri ister, kartı elle yerleştirir"),
         new(SesPolicies.AsistanKullan, "Asistanı kullanır: metinden iş çıkarır, metni özetler ya da maddeler (Claude'u çağırır, kaydetmez)"),
+        new(BrifingPolicies.Oku, "Sabah brifingini okur ve kartlarına oy verir (yeniden hazırlatmak yalnız Sahip'in)"),
     ];
 
     public static bool Gecerli(string? ad) => Tumu.Any(i => i.Ad == ad);

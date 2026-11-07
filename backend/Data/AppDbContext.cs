@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Brifing;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
@@ -26,6 +27,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<EylemGunlugu> EylemGunlukleri => Set<EylemGunlugu>();
     public DbSet<BeyinIslemi> BeyinIslemleri => Set<BeyinIslemi>();
     public DbSet<GelenKartDurumu> GelenKartlari => Set<GelenKartDurumu>();
+    public DbSet<GunlukBrifing> Brifingler => Set<GunlukBrifing>();
+    public DbSet<BrifingOyu> BrifingOylari => Set<BrifingOyu>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -146,6 +149,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Kart).HasMaxLength(200);
             e.Property(x => x.LaptopNotu).HasMaxLength(1000);
             e.Property(x => x.SonHata).HasMaxLength(500);
+        });
+
+        builder.Entity<GunlukBrifing>(e =>
+        {
+            e.HasKey(x => x.Gun);
+            e.Property(x => x.Kartlar).HasColumnType("jsonb");
+            e.Property(x => x.Yontem).HasConversion<string>().HasMaxLength(10);
+        });
+
+        builder.Entity<BrifingOyu>(e =>
+        {
+            e.HasKey(x => new { x.Gun, x.Sira });
+            e.Property(x => x.Tur).HasMaxLength(20);
         });
 
         builder.Entity<Dosya>(e =>

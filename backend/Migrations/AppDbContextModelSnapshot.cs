@@ -256,6 +256,55 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("BeyinIslemleri");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Brifing.BrifingOyu", b =>
+                {
+                    b.Property<DateOnly>("Gun")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Sira")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Oy")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("Zaman")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Gun", "Sira");
+
+                    b.ToTable("BrifingOylari");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Brifing.GunlukBrifing", b =>
+                {
+                    b.Property<DateOnly>("Gun")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Kartlar")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("UretimAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("YenilemeSayisi")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Yontem")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Gun");
+
+                    b.ToTable("Brifingler");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Dosyalar.Dosya", b =>
                 {
                     b.Property<Guid>("Id")

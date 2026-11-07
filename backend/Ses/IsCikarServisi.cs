@@ -36,6 +36,9 @@ public class IsCikarServisi(
 
     public const string Kaynak = "ses";
 
+    // The text came from the box in the morning briefing (K2.7).
+    public const string BrifingKaynagi = "brifing";
+
     private const int KaynakParcaEnUzun = 300;
     private const int GorunenGunSayisi = 14;
     private const int YeniMetinEnUzun = 2 * EnUzunMetin;
@@ -119,6 +122,13 @@ public class IsCikarServisi(
         if (girdi.Secilenler.Count > EnCokSecilen)
             return new(Hata: Sorun("secilenler", $"En çok {EnCokSecilen} öneri seçilebilir."));
 
+        var kaynak = girdi.Kaynak?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(kaynak))
+            kaynak = Kaynak;
+        else if (kaynak is not (Kaynak or BrifingKaynagi))
+            return new(Hata: Sorun("kaynak", $"Kaynak {Kaynak} ya da {BrifingKaynagi} olmalı."));
+        var gerekceOnEki = kaynak == BrifingKaynagi ? "Brifingten" : "Sesten";
+
         var bugun = GunSiniri.Bugun(saat.GetUtcNow());
 
         // The project list is read once, and only when a task names a project.
@@ -136,7 +146,7 @@ public class IsCikarServisi(
         for (var sira = 0; sira < girdi.Secilenler.Count; sira++)
         {
             var o = girdi.Secilenler[sira];
-            var (cevrilmis, neden) = Cevir(o, bugun, projeKimlikleri);
+            var (cevrilmis, neden) = Cevir(o, bugun, projeKimlikleri, gerekceOnEki);
             if (cevrilmis is null)
             {
                 sonuclar.Add(new IsUygulaSonucu(sira, "gecersiz", null, null, neden));
@@ -149,7 +159,7 @@ public class IsCikarServisi(
                 continue;
             }
 
-            var oneri = new EylemOnerisi(cevrilmis.Oneri.Tur, cevrilmis.Yuk, cevrilmis.Ozet, Kaynak, DisKaynak: false, cevrilmis.Gerekce, cevrilmis.Oneri.Guven);
+            var oneri = new EylemOnerisi(cevrilmis.Oneri.Tur, cevrilmis.Yuk, cevrilmis.Ozet, kaynak, DisKaynak: false, cevrilmis.Gerekce, cevrilmis.Oneri.Guven);
             var sonuc = await eylemler.OnayliUygulaAsync(oneri, kullaniciId, ct);
             sonuclar.Add(sonuc.Tur switch
             {
@@ -208,7 +218,7 @@ public class IsCikarServisi(
 
     // The same rules for what Claude suggested and what a person sent back: the kind, the dates, the project, then the kind's own
     // shape check. Returns the suggestion in the queue's terms, or the reason it is refused. Nothing is written here.
-    private (Cevrilmis? Sonuc, string? Neden) Cevir(IsOnerisi? o, DateOnly bugun, IReadOnlySet<string> projeler)
+    private (Cevrilmis? Sonuc, string? Neden) Cevir(IsOnerisi? o, DateOnly bugun, IReadOnlySet<string> projeler, string gerekceOnEki = "Sesten")
     {
         if (o is null)
             return (null, "Boş öneri.");
@@ -307,7 +317,7 @@ public class IsCikarServisi(
 
         var kaynakParca = string.IsNullOrWhiteSpace(o.KaynakParca) ? null : Kisalt(o.KaynakParca.Trim(), KaynakParcaEnUzun);
         yeni = yeni with { KaynakParca = kaynakParca };
-        return (new Cevrilmis(yeni, yukElement, Kisalt(ozet, 200), kaynakParca is null ? null : $"Sesten: «{kaynakParca}»"), null);
+        return (new Cevrilmis(yeni, yukElement, Kisalt(ozet, 200), kaynakParca is null ? null : $"{gerekceOnEki}: «{kaynakParca}»"), null);
     }
 
     // Null when the date is fine or not given. A date before today is a slip (a year, a weekday) far more often than a wish.

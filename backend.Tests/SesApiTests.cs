@@ -541,6 +541,41 @@ public sealed class SesApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygu
         await KipAsync(sahip, "hatirlatici-kur", "sor", Acik);
     }
 
+    // The box in the morning briefing (K2.7) uses the same apply: only the label of the queue entry differs.
+    [Fact]
+    public async Task Apply_FromTheBriefingBox_LabelsTheActionBrifing_AndChecksTheSame()
+    {
+        BeyniKur();
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, Acik);
+        var baslik = Benzersiz("Brifingten");
+
+        var yanit = await GonderAsync(HttpMethod.Post, "/api/is-cikar/uygula", sahip, Acik, new { secilenler = new[] { Hatirlatici(baslik), Hatirlatici(Benzersiz("Geçmiş"), gun: "2026-11-01") }, kaynak = "brifing" });
+
+        Assert.Equal((HttpStatusCode)207, yanit.StatusCode);
+        var sonuclar = (await OkuAsync(yanit)).GetProperty("sonuclar").EnumerateArray().ToList();
+        Assert.Equal(["uygulandi", "gecersiz"], sonuclar.Select(s => s.GetProperty("durum").GetString()));
+        using var db = uygulama.YeniDb();
+        var eylem = await db.Eylemler.SingleAsync(e => e.Ozet.Contains(baslik), Ct);
+        Assert.Equal((EylemDurumu.Uygulandi, "brifing", false), (eylem.Durum, eylem.Kaynak, eylem.DisKaynak));
+        Assert.Equal($"Brifingten: «{baslik} dedi»", eylem.Gerekce);
+    }
+
+    // The label is not a free text field: a source the endpoint does not know is refused before anything is applied.
+    [Fact]
+    public async Task Apply_WithAnUnknownSource_IsRefused_AndAppliesNothing()
+    {
+        BeyniKur();
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, Acik);
+        var baslik = Benzersiz("Kaynaksız");
+
+        var yanit = await GonderAsync(HttpMethod.Post, "/api/is-cikar/uygula", sahip, Acik, new { secilenler = new[] { Hatirlatici(baslik) }, kaynak = "mail" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, yanit.StatusCode);
+        Assert.True((await OkuAsync(yanit)).GetProperty("errors").TryGetProperty("kaynak", out _));
+        using var db = uygulama.YeniDb();
+        Assert.Null(await db.Hatirlaticilar.SingleOrDefaultAsync(h => h.Baslik == baslik, Ct));
+    }
+
     [Fact]
     public async Task Apply_WhenOneFails_TheOthersStayApplied_207()
     {

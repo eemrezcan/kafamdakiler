@@ -10,7 +10,9 @@ namespace Kafamdakiler.Ses;
 // counts, by the 05:00 rule. It may differ from the server's day by one at most.
 public record IsCikarGirdi(string? Metin, string? Bugun = null);
 
-public record IsCikarUygulaGirdi(List<IsOnerisi>? Secilenler);
+// `Kaynak` says where the text was written: "ses" (the default: the voice and text screens) or "brifing" (the box in the morning
+// briefing, K2.7). It only labels the actions in the queue; what is checked and applied is the same.
+public record IsCikarUygulaGirdi(List<IsOnerisi>? Secilenler, string? Kaynak = null);
 
 // `Kip` is "ozet" or "madde".
 public record YenidenYazGirdi(string? Metin, string? Kip);
