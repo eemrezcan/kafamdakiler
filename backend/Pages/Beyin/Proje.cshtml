@@ -13,6 +13,10 @@
 </div>
 
 <partial name="_BeyinMenu" />
+@if (Model.YazmaHatasi is not null)
+{
+    <div class="kd-alert" role="alert">@Model.YazmaHatasi</div>
+}
 <partial name="_BeyinHata" model="Model" />
 
 @if (Model.Proje is { } proje)
@@ -33,6 +37,13 @@
         {
             <p class="kd-muted">Açık görev yok.</p>
         }
+        <form method="post" asp-page-handler="GorevEkle" asp-route-kimlik="@proje.Kimlik" class="kd-gun-form">
+            <label class="visually-hidden" for="gorev-baslik-girdi">Görev başlığı</label>
+            <input class="form-control" id="gorev-baslik-girdi" name="baslik" maxlength="@BeyinYazma.EnUzunBaslik" placeholder="Yeni görev" required />
+            <label class="visually-hidden" for="gorev-bitis">Bitiş</label>
+            <input class="form-control" type="date" id="gorev-bitis" name="bitis" />
+            <button type="submit" class="btn btn-primary">Görev ekle</button>
+        </form>
         @foreach (var g in proje.AcikGorevler)
         {
             var bilgi = string.Join(" · ", new[]
@@ -52,6 +63,12 @@
                     {
                         <p class="kd-capture-meta mt-1"><span>→ @g.SonrakiAdim</span></p>
                     }
+                </div>
+                <div class="kd-gun-actions">
+                    <form method="post" asp-page-handler="GorevBitir" asp-route-kimlik="@proje.Kimlik">
+                        <input type="hidden" name="gorev" value="@g.Kimlik" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Bitir</button>
+                    </form>
                 </div>
             </article>
         }

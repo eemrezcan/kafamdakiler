@@ -202,7 +202,7 @@ public sealed class GercekBeyinYazmaTests : IDisposable
     }
 
     [Fact]
-    public async Task SplitATask_ThreeDaysThreeLinkedItems_AndTheFirstTickClosesTheWholeTask()
+    public async Task SplitATask_OnlyTheLastDayIsLinked_SoOnlyTheLastTickClosesTheTask()
     {
         var beyin = Hazirla();
         var kimlik = await GorevOlustur(beyin, "Üç güne bölünen görev");
@@ -213,17 +213,29 @@ public sealed class GercekBeyinYazmaTests : IDisposable
         Assert.True(bol.Govde.GetProperty("tamamlandi").GetBoolean());
         var yazilan = bol.Govde.GetProperty("yazilanlar").EnumerateArray().ToArray();
         Assert.Equal(["2026-12-10", "2026-12-11", "2026-12-12"], yazilan.Select(g => g.GetProperty("tarih").GetString()).ToArray());
-        foreach (var gun in yazilan)
+        for (var i = 0; i < yazilan.Length; i++)
         {
-            var id = gun.GetProperty("madde").GetProperty("id").GetString()!;
-            var gunVerisi = await Gun(beyin, gun.GetProperty("tarih").GetString()!);
-            Assert.Equal(kimlik, Madde(gunVerisi, id).GetProperty("gorev").GetString());
+            var id = yazilan[i].GetProperty("madde").GetProperty("id").GetString()!;
+            var gunVerisi = await Gun(beyin, yazilan[i].GetProperty("tarih").GetString()!);
+            var baglanan = Madde(gunVerisi, id).GetProperty("gorev");
+            if (i == yazilan.Length - 1)
+                Assert.Equal(kimlik, baglanan.GetString());
+            else
+                Assert.Equal(JsonValueKind.Null, baglanan.ValueKind);
         }
 
-        // Measured on the real brain, and what the screens must know: one tick finishes the task for all the days.
-        var ilkId = yazilan[0].GetProperty("madde").GetProperty("id").GetString()!;
-        var tik = await Oku(await BeyinYazma.MaddeIsaretle("2026-12-10", new(ilkId), beyin, Gunluk, Ct));
-        Assert.True(tik.Govde.GetProperty("gorevKapandi").GetBoolean());
+        // Measured on the real brain: a tick on an unlinked day closes nothing, the tick on the linked last day closes the task.
+        foreach (var gun in yazilan.Take(2))
+        {
+            var oncekiId = gun.GetProperty("madde").GetProperty("id").GetString()!;
+            var oncekiTik = await Oku(await BeyinYazma.MaddeIsaretle(gun.GetProperty("tarih").GetString()!, new(oncekiId), beyin, Gunluk, Ct));
+            Assert.False(oncekiTik.Govde.GetProperty("gorevKapandi").GetBoolean());
+            Assert.Equal("aktif", (await Gorev(beyin, kimlik)).GetProperty("durum").GetString());
+        }
+
+        var sonId = yazilan[2].GetProperty("madde").GetProperty("id").GetString()!;
+        var son = await Oku(await BeyinYazma.MaddeIsaretle("2026-12-12", new(sonId), beyin, Gunluk, Ct));
+        Assert.True(son.Govde.GetProperty("gorevKapandi").GetBoolean());
         Assert.Equal("bitti", (await Gorev(beyin, kimlik)).GetProperty("durum").GetString());
     }
 

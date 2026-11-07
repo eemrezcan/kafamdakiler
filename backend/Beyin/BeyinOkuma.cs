@@ -117,6 +117,10 @@ public static partial class BeyinOkuma
     public static Task<BeyinYaniti<List<ProjeOzetDto>>> ProjelerAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         CalistirAsync(beyin, log, ["proje", "liste"], null, ProjeListesi, ct);
 
+    public static Task<BeyinYaniti<List<AcikGorevDto>>> AcikGorevlerAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+        CalistirAsync(beyin, log, ["gorev", "liste"], null, veri => Dizi(veri).Where(Gorunur).Where(AcikYol).Select(g => new AcikGorevDto(
+            Gerekli(g, "kimlik"), Gerekli(g, "baslik"), Metin(g, "proje"), Metin(g, "alan"), Tarih(g, "bitis"))).ToList(), ct);
+
     public static Task<BeyinYaniti<ProjeDto>> ProjeAl(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {
         if (!KimlikKalibi().IsMatch(kimlik) || kimlik.Length > 100)

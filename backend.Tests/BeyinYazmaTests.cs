@@ -424,7 +424,7 @@ public class BeyinYazmaTests : IDisposable
         $$"""{"tarih": "{{tarih}}", "madde": {"id": "{{id}}", "baslik": "{{metin}}", "bolum": "Yapılacaklar", "durum": "acik", "gorev": "uye-girisi"}, "tahmin_onerisi": null}""";
 
     [Fact]
-    public async Task GunlereBol_WritesOneLinkedItemPerDay_InOrder_FromTheDayTurnToday()
+    public async Task GunlereBol_WritesOneItemPerDay_OnlyTheLastLinkedToTheTask_FromTheDayTurnToday()
     {
         _beyin.Cikti("gorev liste", Gorevler);
         _beyin.Sirali("gun ekle",
@@ -441,9 +441,11 @@ public class BeyinYazmaTests : IDisposable
         Assert.Equal(["2026-11-06", "2026-11-07", "2026-11-08"], govde.GetProperty("yazilanlar").EnumerateArray().Select(g => g.GetProperty("tarih").GetString()).ToArray());
         var ekler = Cagrilar().Where(c => c[1] == "ekle").ToArray();
         Assert.Equal(3, ekler.Length);
-        Assert.Equal(["gun", "ekle", "--tarih=2026-11-06", "--gorev=uye-girisi", "--json", "--vault", _beyin.Vault, "--", "Üye girişi (1/3)"], ekler[0]);
-        Assert.Equal("--tarih=2026-11-08", ekler[2][2]);
-        Assert.Equal("Üye girişi (3/3)", ekler[2][^1]);
+        Assert.Equal(["gun", "ekle", "--tarih=2026-11-06", "--json", "--vault", _beyin.Vault, "--", "Üye girişi (1/3)"], ekler[0]);
+        Assert.Equal(["gun", "ekle", "--tarih=2026-11-07", "--json", "--vault", _beyin.Vault, "--", "Üye girişi (2/3)"], ekler[1]);
+        // Only the last day is linked: ticking a linked item finishes the whole task.
+        Assert.Equal(["gun", "ekle", "--tarih=2026-11-08", "--gorev=uye-girisi", "--json", "--vault", _beyin.Vault, "--", "Üye girişi (3/3)"], ekler[2]);
+        Assert.DoesNotContain(ekler.Take(2), e => e.Any(a => a.StartsWith("--gorev")));
     }
 
     [Fact]

@@ -3002,3 +3002,66 @@ textarea.form-control {
     width: 100%;
   }
 }
+
+/* ---------- Gün planı writes (Beyin/Gun, Beyin/Proje) ---------- */
+
+/* A one-line form: the fields and the button wrap on a narrow screen. */
+.kd-gun-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin: 0 0 0.75rem;
+}
+
+.kd-gun-form .form-control,
+.kd-gun-form .form-select {
+  flex: 1 1 10rem;
+  width: auto;
+  min-height: 2.75rem;
+}
+
+.kd-gun-form .btn {
+  min-height: 2.75rem;
+}
+
+/* The buttons on a plan item or a task: tick, carry over, finish. */
+.kd-gun-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.kd-gun-actions form {
+  margin: 0;
+}
+
+.kd-gun-actions .btn {
+  min-height: 2.75rem;
+}
+
+.kd-gun-not {
+  margin-top: 0.4rem;
+}
+
+.kd-gun-not summary {
+  cursor: pointer;
+  color: var(--kd-text-muted);
+  font-size: 0.85rem;
+}
+
+.kd-gun-not .kd-gun-form {
+  margin: 0.5rem 0 0;
+}
+
+/* "Bugün sığmıyor": a warning, not an error. */
+.kd-gun-uyari {
+  max-width: 48rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--kd-line);
+  border-left-width: 4px;
+  border-radius: 0.3rem;
+  background: var(--kd-field-bg);
+}

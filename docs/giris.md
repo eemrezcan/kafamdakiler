@@ -89,6 +89,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - K2.3a gün planı ve görevler, Faz B1 (backend): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 9); ana oturum denetleyecek, kullanıcı inceleyecek.
   - Yazma: `backend/Beyin/BeyinYazma.cs` (madde ekle / işaretle / devret / not, görev ekle / bitir, günlere bölme, hata eşleme, "yazılmış olabilir" sonucu), `BeyinYazmaDtos.cs`, `BeyinYazmaEndpoints.cs`, `GunSiniri.cs` (05:00 gün sınırı ve `Gun:KapasiteSaat` ayarı), `TekrarGuvenligi.cs` ve `BeyinIslemi.cs` (`Idempotency-Key`), `BeyinOkuma.cs` eklemeleri (kapasite uyarısı, sabah kartı `/api/beyin/sabah`), `BeyinPolicies.cs` ve `Izinler.cs` (`plan.yaz`, `gorev.yaz`), `Program.cs` policy ve kayıt satırları, `AppDbContext` ayarı, migration `AddBeyinIslemleri`.
   - Testler: `backend.Tests/GunSiniriTests.cs`, `BeyinYazmaTests.cs`, `BeyinYazmaApiTests.cs`, `GercekBeyinYazmaTests.cs`, `SahteBeyin.cs` eklemeleri.
+- K2.3a gün planı ve görevler, Faz B2 (web): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 9); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Bölme kuralı düzeltmesi (B1 sonrası karar): `BeyinYazma.GunlereBol` artık yalnız son günün maddesini göreve bağlıyor; `BeyinYazmaTests` ve `GercekBeyinYazmaTests` buna çevrildi.
+  - Sayfalar: `backend/Pages/Beyin/Gun.cshtml(.cs)` (madde ekle, tik / geri al / devret / not, "bugün sığmıyor" uyarısı, görev ekle ve bitir, günlere böl, dünden kalanlar kartı), `Proje.cshtml(.cs)` (görev ekle ve bitir), `BeyinSayfasi.cs` (yazma sonucunu ileti yapan `Don`), `BeyinOkuma.AcikGorevlerAl`, `BeyinYazma.MaddeKimligiGecerli`, `site.css` sonundaki "Gün planı writes" bölümü.
+  - Testler: `backend.Tests/BeyinGunYazmaSayfalariTests.cs`, `BeyinSayfalariTests.cs` güncellemesi.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

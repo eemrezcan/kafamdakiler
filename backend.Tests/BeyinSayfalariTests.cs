@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Beyin;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Kafamdakiler.Tests;
@@ -223,7 +224,10 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
         var (durum, _, metin) = await AlAsync(tarayici, "/Beyin/Gun");
 
         Assert.Equal(HttpStatusCode.OK, durum);
-        Assert.Contains($"--tarih={AliskanlikIslemleri.Bugun():yyyy-MM-dd}", SahteBeyin.Argumanlar(_beyin.Cagrilar().Single()));
+        // Today is the brain's today (the day turns at 05:00); the page asks for that day, and for yesterday for the morning card.
+        var gunCagrilari = _beyin.Cagrilar().Select(SahteBeyin.Argumanlar).Where(c => c[0] == "gun").ToArray();
+        Assert.Contains($"--tarih={GunSiniri.Bugun(DateTimeOffset.UtcNow):yyyy-MM-dd}", gunCagrilari[0]);
+        Assert.Contains($"--tarih={GunSiniri.Dun(DateTimeOffset.UtcNow):yyyy-MM-dd}", gunCagrilari[1]);
         Assert.Contains("Takvim sayfası", metin);
         Assert.Contains("1 sa 30 dk", metin);
         Assert.Contains("Kitap listesi", metin);
@@ -241,7 +245,7 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
 
         var (_, ham, metin) = await AlAsync(tarayici, "/Beyin/Gun/2026-11-03");
 
-        Assert.Contains("--tarih=2026-11-03", SahteBeyin.Argumanlar(_beyin.Cagrilar().Single()));
+        Assert.Contains("--tarih=2026-11-03", SahteBeyin.Argumanlar(_beyin.Cagrilar().Single(c => SahteBeyin.Argumanlar(c)[0] == "gun")));
         Assert.Contains("3 Kasım 2026 Salı", metin);
         Assert.Contains("href=\"/Beyin/Gun/2026-11-02\"", ham);
         Assert.Contains("href=\"/Beyin/Gun/2026-11-04\"", ham);

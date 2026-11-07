@@ -264,7 +264,7 @@ public static partial class BeyinYazma
             r.TryGetProperty("plan", out var p) && p.ValueKind == JsonValueKind.Object), ct);
     }
 
-    // Split a task over days: `gun ekle --tarih --gorev` for each day, in order. The brain is not a transaction: when a day
+    // Split a task over days: `gun ekle --tarih` for each day, in order, the last one with `--gorev`. The brain is not a transaction: when a day
     // fails the run stops, nothing is undone, and the answer says which days were written.
     public static async Task<YazmaYaniti> GunlereBol(string kimlik, GunlereBolGirdi girdi, BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct)
     {
@@ -290,7 +290,10 @@ public static partial class BeyinYazma
         {
             var gun = baslangic.AddDays(i);
             var metin = girdi.GunSayisi == 1 ? temel : $"{temel} ({i + 1}/{girdi.GunSayisi})";
-            var yanit = await MaddeYazAsync(gun, metin, bolum, kimlik, beyin, log, ct);
+            // Only the last day's item is linked to the task: a tick on a linked item finishes the whole task (the brain's
+            // rule), so the earlier days carry just the (1/3) count in their text and ticking them closes nothing.
+            var baglanacak = i == girdi.GunSayisi - 1 ? kimlik : null;
+            var yanit = await MaddeYazAsync(gun, metin, bolum, baglanacak, beyin, log, ct);
 
             if (yanit.Basarili)
             {
@@ -344,6 +347,9 @@ public static partial class BeyinYazma
 
     // Only the permanent id of a plan item (six hex digits, at least one a letter: a number alone is a list position to the
     // brain) or `g:<task>` for an item that exists only as a task. A title fragment or a position never gets through.
+    // For the pages: show a tick or carry-over button only for an id the writes would accept.
+    public static bool MaddeKimligiGecerli(string? madde) => MaddeDenetle(madde, out _) is null;
+
     internal static YazmaYaniti? MaddeDenetle(string? madde, out string? temiz)
     {
         temiz = madde?.Trim();

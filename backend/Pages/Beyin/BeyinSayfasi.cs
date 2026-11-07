@@ -1,4 +1,5 @@
 using Kafamdakiler.Beyin;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Kafamdakiler.Pages.Beyin;
@@ -20,6 +21,43 @@ public abstract class BeyinSayfasi(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi>
     public List<string> HataMesajlari { get; } = [];
 
     public bool Hatali => HataBasligi is not null;
+
+    // Short success message of a write, shown once as a toast by the layout.
+    [TempData]
+    public string? Bildirim { get; set; }
+
+    // Why a write did not (fully) happen, shown once above the page.
+    [TempData]
+    public string? YazmaHatasi { get; set; }
+
+    // A write's outcome as a message and a redirect back to the same page (post-redirect-get). Nothing is hidden: a
+    // refusal says why, a half-done split says which days were written, an uncertain write says it may have happened.
+    protected IActionResult Don(YazmaYaniti yanit, string basari)
+    {
+        switch (yanit.Tur)
+        {
+            case YazmaTuru.Tamam:
+                Bildirim = basari;
+                break;
+            case YazmaTuru.Kismi when yanit.Veri is GunlereBolSonucuDto bolme:
+                var yazilan = string.Join(", ", bolme.Yazilanlar.Select(g => BeyinGorunum.KisaTarih(g.Tarih)));
+                YazmaHatasi = $"Yarıda kaldı: {bolme.Yazilanlar.Count} gün yazıldı ({yazilan}). "
+                    + (bolme.Hata is { } h
+                        ? $"{BeyinGorunum.KisaTarih(h.Tarih)} günü yazılamadı: {h.Ayrinti ?? h.Baslik}" + (h.YazilmisOlabilir ? " (bu gün yazılmış olabilir, planı kontrol et)" : "")
+                        : "");
+                break;
+            case YazmaTuru.Belirsiz when yanit.Veri is BelirsizYazmaDto belirsiz:
+                YazmaHatasi = belirsiz.Ayrinti;
+                break;
+            default:
+                YazmaHatasi = yanit.Alanlar is not null
+                    ? string.Join(" ", yanit.Alanlar.Values.SelectMany(m => m))
+                    : yanit.Ayrinti ?? yanit.Baslik ?? "İşlem yapılamadı.";
+                break;
+        }
+
+        return RedirectToPage();
+    }
 
     // The data of a successful read, or null after writing the reason into the page. A missing or hidden record keeps
     // its 404 and a bad input its 400; any other trouble of the brain is a message on a normal page.

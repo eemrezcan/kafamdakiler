@@ -16,7 +16,7 @@ public record MaddeNotGirdi(string? Madde, string? Metin);
 // Exactly one of Proje and Alan. Bitis is yyyy-MM-dd.
 public record GorevEkleGirdi(string? Baslik, string? Proje, string? Alan, string? Bitis, string? SonrakiAdim, string? Olcut);
 
-// Splits a task over days: one linked plan item per day, from Baslangic (default: today by the day-turn rule).
+// Splits a task over days: one plan item per day (only the last is linked to the task), from Baslangic (default: today by the day-turn rule).
 public record GunlereBolGirdi(int GunSayisi, string? Baslangic, string? Metin, string? Bolum);
 
 // Answers
