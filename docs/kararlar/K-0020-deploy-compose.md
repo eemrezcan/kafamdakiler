@@ -18,6 +18,13 @@ tags: [karar]
 - Kurulum zamanı ve alan adı ayrıca kararlaştırılacak.
 - Alınmayan: Cloud Run + Cloud SQL. Konteynerin diski kalıcı değil (beynin klonu ve yüklenen dosyalar için kod değişir), Cloud SQL'in ücretsiz katmanı yok; yukarıdaki "bulut PaaS" reddiyle aynı gerekçe.
 
+## Ek (2026-11-06, kayıt 2026-11-07)
+- Sağlayıcı değişti: Google Cloud yerine kiralık VPS, Hosting Dünyam TR-VPS4, Ubuntu 24.04 (kullanıcı kararı; makine 2026-11-06'da alındı). 2026-11-03 ekindeki Google Cloud, e2-micro, $10 kredi ve bütçe uyarısı maddeleri geçersiz.
+- Kurulum aynı kalır: tek makine, Docker Compose, Postgres. Erişim yalnız Tailscale (Kat 2 karar 3, 2026-11-07): kapılar `127.0.0.1`'e bağlı, HTTPS `tailscale serve` ile (`*.ts.net` sertifikası); Caddy ve alan adı şimdilik yok. Yeniden açma: uygulamaya tailnet dışından erişim gerekirse.
+- Makine (2026-11-07): 3.8 GB bellek, 39 GB disk, Ubuntu 24.04.5, sağlayıcı imajında 2 GB `/swap.img` hazır.
+- Ölçülen yük (2026-11-06): API ~210 MB, Postgres ~65 MB, `beyin.py` ~30 MB; 2 GB bellekli makine yoğun anda sıkışır.
+- Gece yedeği (Kat 2 karar 5, 2026-11-07): restic ile şifreli olarak Backblaze B2'ye (Cloud Storage yerine). Ses sağlayıcısı Kat 2 karar 8'de ayrıca seçilir.
+
 ## Gerekçe
 Tek kullanıcılı uygulamaya tek sunucu yeter. Compose, geliştirmedeki Postgres ile sunucudaki kurulumu aynı dosya biçiminde tutar. Caddy, sertifikayı kendisi alır ve yeniler.
 
