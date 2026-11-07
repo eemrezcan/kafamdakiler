@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kafamdakiler/data/services/database/app_database.dart';
 
 void main() {
-  test('schema 3 -> 5: the project and reminder cache tables are added; the capture cache and the queue survive', () async {
+  test('schema 3 -> 6: the project, reminder and action cache tables are added; the capture cache and the queue survive', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme3');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski3.sqlite');
@@ -39,10 +39,10 @@ void main() {
     expect((await db.select(db.bekleyenIslemler).get()).single.id, 'y1');
     expect((await db.select(db.yakalamaOnbellek).get()).single.id, 'y2');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 5);
+    expect(surum.data.values.first, 6);
   });
 
-  test('schema 2 -> 5: both new cache tables are added and the queue survives', () async {
+  test('schema 2 -> 6: all the new cache tables are added and the queue survives', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski.sqlite');
@@ -74,10 +74,10 @@ void main() {
     expect(kuyruk.single.id, 'b1');
     expect(kuyruk.single.tur, BekleyenTur.gunYaz);
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 5);
+    expect(surum.data.values.first, 6);
   });
 
-  test('schema 4 -> 5: the reminder cache table is added and can be written; the queue survives', () async {
+  test('schema 4 -> 6: the reminder and action cache tables are added and can be written; the queue survives', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme4');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski4.sqlite');
@@ -110,7 +110,44 @@ void main() {
     expect((await db.select(db.bekleyenIslemler).get()).single.id, 'y1');
     expect((await db.select(db.projeOnbellek).get()).single.id, 'kitap-kulubu');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 5);
+    expect(surum.data.values.first, 6);
+  });
+
+  test('schema 5 -> 6: the action cache table is added with its "announced" flag; the reminder cache and the queue survive', () async {
+    final klasor = Directory.systemTemp.createTempSync('yukseltme5');
+    addTearDown(() => klasor.deleteSync(recursive: true));
+    final dosya = File('${klasor.path}/eski5.sqlite');
+
+    // A database as version 5 left it: a queued reminder write and a cached reminder, user_version 5.
+    final db = AppDatabase(NativeDatabase(dosya, setup: (raw) {
+      if (raw.select('PRAGMA user_version').first.values.first != 0) return;
+      raw.execute('''
+        CREATE TABLE bekleyen_islemler (
+          id TEXT NOT NULL PRIMARY KEY,
+          tur INTEGER NOT NULL,
+          hedef_id TEXT NOT NULL,
+          tarih TEXT NULL,
+          govde TEXT NOT NULL,
+          olusturulma INTEGER NOT NULL,
+          gonderildi INTEGER NOT NULL DEFAULT 0 CHECK (gonderildi IN (0, 1)),
+          hata TEXT NULL
+        )
+      ''');
+      raw.execute('CREATE TABLE hatirlatici_onbellek (id TEXT NOT NULL PRIMARY KEY, sira INTEGER NOT NULL, govde TEXT NOT NULL)');
+      raw.execute("INSERT INTO bekleyen_islemler VALUES ('h1', 9, 'h1', NULL, '{}', 1793000000, 0, NULL)");
+      raw.execute("INSERT INTO hatirlatici_onbellek VALUES ('h2', 0, '{}')");
+      raw.execute('PRAGMA user_version = 5');
+    }));
+    addTearDown(db.close);
+
+    expect(await db.select(db.eylemOnbellek).get(), isEmpty, reason: 'the new table exists');
+    await db.into(db.eylemOnbellek).insert(EylemOnbellekCompanion.insert(id: 'e1', sira: 0, govde: '{}'));
+    final satir = (await db.select(db.eylemOnbellek).get()).single;
+    expect(satir.bildirildi, isFalse, reason: 'not announced until a notification was shown');
+    expect((await db.select(db.bekleyenIslemler).get()).single.tur, BekleyenTur.hatirlaticiYaptim);
+    expect((await db.select(db.hatirlaticiOnbellek).get()).single.id, 'h2');
+    final surum = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(surum.data.values.first, 6);
   });
 
   test('the new queue kinds are appended after the old ones (the column stores the index)', () {
@@ -125,5 +162,8 @@ void main() {
     expect(BekleyenTur.hatirlaticiSil.index, 8);
     expect(BekleyenTur.hatirlaticiYaptim.index, 9);
     expect(BekleyenTur.hatirlaticiErtele.index, 10);
+    expect(BekleyenTur.eylemUygula.index, 11);
+    expect(BekleyenTur.eylemReddet.index, 12);
+    expect(BekleyenTur.eylemGeriAl.index, 13);
   });
 }

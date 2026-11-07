@@ -7,6 +7,7 @@ import '../models/aliskanlik.dart';
 import '../models/ben.dart';
 import '../models/beyin.dart';
 import '../models/enums.dart';
+import '../models/eylem.dart';
 import '../models/giris.dart';
 import '../models/hatirlatici.dart';
 import '../models/gun.dart';
@@ -238,6 +239,33 @@ class ApiService {
     return Hatirlatici.fromJson(yanit.data!);
   }
 
+  // ---- Approval queue (/api/eylemler, K2.6) ----
+
+  /// `GET /api/eylemler?durum=` (newest decision first). 403 without the `eylem.oku` permission.
+  Future<List<Eylem>> eylemleriGetir(EylemDurumu durum) async {
+    final yanit = await _dio.get<List<dynamic>>('/api/eylemler', queryParameters: {'durum': _enumMetni(durum)});
+    return _liste(yanit, Eylem.fromJson);
+  }
+
+  /// Approves an action; with [yuk] the corrected payload is applied (the server checks it again: 400).
+  /// 409 when it is not waiting any more.
+  Future<Eylem> eylemUygula(String id, {Map<String, dynamic>? yuk}) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/eylemler/$id/uygula', data: {'yuk': ?yuk});
+    return Eylem.fromJson(yanit.data!);
+  }
+
+  /// Rejects an action; [birDahaOnerme] also makes its kind `yasak` for good. 409 when it is not waiting any more.
+  Future<Eylem> eylemReddet(String id, {bool birDahaOnerme = false}) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/eylemler/$id/reddet', data: {'birDahaOnerme': birDahaOnerme});
+    return Eylem.fromJson(yanit.data!);
+  }
+
+  /// 409 unless the action was applied.
+  Future<Eylem> eylemGeriAl(String id) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/eylemler/$id/geri-al');
+    return Eylem.fromJson(yanit.data!);
+  }
+
   // ---- Second brain (read only, /api/beyin) ----
   // 503: the brain is not set up on the server; 403: no `beyin.oku` permission.
 
@@ -286,6 +314,17 @@ class ApiService {
   /// the rules. The Asistan's sessions are closed on the server.
   Future<void> asistaninSifresiniYenile(String yeniSifre) =>
       _dio.put<void>('/api/yonetim/asistan/sifre', data: {'yeniSifre': yeniSifre});
+
+  /// The mode of every kind of action the Asistan may suggest.
+  Future<List<EylemKipDurumu>> eylemKipleriniGetir() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/yonetim/eylem-izinleri');
+    return _liste(yanit, EylemKipDurumu.fromJson);
+  }
+
+  Future<EylemKipDurumu> eylemKipiAyarla(String tur, EylemKipi kip) async {
+    final yanit = await _dio.put<Map<String, dynamic>>('/api/yonetim/eylem-izinleri/$tur', data: {'kip': _enumMetni(kip)});
+    return EylemKipDurumu.fromJson(yanit.data!);
+  }
 
   Future<YonetimBeyinDurumu> yonetimBeyinDurumu() async {
     final yanit = await _dio.get<Map<String, dynamic>>('/api/yonetim/beyin');

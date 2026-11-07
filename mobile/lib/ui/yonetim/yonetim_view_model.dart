@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../data/models/eylem.dart';
 import '../../data/models/yonetim.dart';
 import '../../data/services/api_service.dart';
 import '../core/hata_metni.dart';
@@ -15,6 +16,15 @@ class YonetimViewModel extends ChangeNotifier {
 
   List<Izin> _izinler = const [];
   List<Izin> get izinler => _izinler;
+
+  List<EylemKipDurumu> _eylemKipleri = const [];
+
+  /// The mode of every kind of action the Asistan may suggest.
+  List<EylemKipDurumu> get eylemKipleri => _eylemKipleri;
+
+  /// Kinds whose mode is being changed right now (their buttons wait for the answer).
+  final Set<String> _kipMesgul = {};
+  bool kipMesgulMu(String tur) => _kipMesgul.contains(tur);
 
   YonetimBeyinDurumu? _beyin;
   YonetimBeyinDurumu? get beyin => _beyin;
@@ -48,10 +58,12 @@ class YonetimViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final izinler = await _api.izinleriGetir();
+      final kipler = await _api.eylemKipleriniGetir();
       final beyin = await _api.yonetimBeyinDurumu();
       final kuyruk = await _api.gonderimKuyrugu();
       if (tur != _tur || _atildi) return;
       _izinler = izinler;
+      _eylemKipleri = kipler;
       _beyin = beyin;
       _kuyruk = kuyruk;
     } on Object catch (e) {
@@ -78,6 +90,22 @@ class YonetimViewModel extends ChangeNotifier {
       return hataMetni(e, islem: 'İzin değiştirilemedi');
     } finally {
       _mesgul.remove(izin.izin);
+      if (!_atildi) notifyListeners();
+    }
+  }
+
+  /// Sets the mode of a kind of action. Returns a message for the user when it failed, null when it worked.
+  Future<String?> kipDegistir(EylemKipDurumu kayit, EylemKipi kip) async {
+    if (kayit.kip == kip || !_kipMesgul.add(kayit.tur)) return null;
+    notifyListeners();
+    try {
+      final yeni = await _api.eylemKipiAyarla(kayit.tur, kip);
+      _eylemKipleri = [for (final k in _eylemKipleri) k.tur == yeni.tur ? yeni : k];
+      return null;
+    } on Object catch (e) {
+      return hataMetni(e, islem: 'Kip değiştirilemedi');
+    } finally {
+      _kipMesgul.remove(kayit.tur);
       if (!_atildi) notifyListeners();
     }
   }

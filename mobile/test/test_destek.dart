@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -6,6 +7,7 @@ import 'package:kafamdakiler/data/models/aliskanlik.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
+import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
@@ -16,6 +18,7 @@ import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
 import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
 import 'package:kafamdakiler/data/services/api_service.dart';
@@ -166,6 +169,64 @@ class SahteApi extends ApiService {
   Future<Hatirlatici> hatirlaticiErtele(String id, String sure) async {
     _kontrol('hatirlaticiErtele:$sure');
     return ornekHatirlatici(id: id);
+  }
+
+  // ---- Approval queue ----
+
+  /// Server actions for `/api/eylemler?durum=`; a decision changes the stored copy like the server would.
+  List<Eylem> eylemler = [];
+
+  /// Modes for `/api/yonetim/eylem-izinleri`.
+  List<EylemKipDurumu> eylemKipleri = [];
+
+  /// When set, `eylemUygula`, `eylemReddet` and `eylemGeriAl` fail with this HTTP status (409: already decided).
+  int? eylemKararHatasi;
+
+  @override
+  Future<List<Eylem>> eylemleriGetir(EylemDurumu durum) async {
+    _kontrol('eylemleriGetir:${durum.name}');
+    return [for (final e in eylemler) if (e.durum == durum) e];
+  }
+
+  Eylem _eylemKarari(String ad, String id, EylemDurumu yeni, {Map<String, dynamic>? yuk}) {
+    _kontrol(ad);
+    if (eylemKararHatasi != null) {
+      final istek = RequestOptions(path: ad);
+      throw DioException.badResponse(
+        statusCode: eylemKararHatasi!,
+        requestOptions: istek,
+        response: Response(requestOptions: istek, statusCode: eylemKararHatasi),
+      );
+    }
+    final yeniEylem = eylemler.firstWhere((e) => e.id == id).copyWith(durum: yeni, yuk: yuk);
+    eylemler = [for (final e in eylemler) e.id == id ? yeniEylem : e];
+    return yeniEylem;
+  }
+
+  @override
+  Future<Eylem> eylemUygula(String id, {Map<String, dynamic>? yuk}) async =>
+      _eylemKarari('eylemUygula:$id${yuk == null ? '' : ':yuk=${jsonEncode(yuk)}'}', id, EylemDurumu.uygulandi, yuk: yuk);
+
+  @override
+  Future<Eylem> eylemReddet(String id, {bool birDahaOnerme = false}) async =>
+      _eylemKarari('eylemReddet:$id:$birDahaOnerme', id, EylemDurumu.reddedildi);
+
+  @override
+  Future<Eylem> eylemGeriAl(String id) async => _eylemKarari('eylemGeriAl:$id', id, EylemDurumu.geriAlindi);
+
+  @override
+  Future<List<EylemKipDurumu>> eylemKipleriniGetir() async {
+    _kontrol('eylemKipleriniGetir');
+    return eylemKipleri;
+  }
+
+  @override
+  Future<EylemKipDurumu> eylemKipiAyarla(String tur, EylemKipi kip) async {
+    _kontrol('eylemKipiAyarla:$tur:${kip.name}');
+    final eski = eylemKipleri.firstWhere((k) => k.tur == tur);
+    final yeni = EylemKipDurumu(tur: tur, turAdi: eski.turAdi, kip: kip);
+    eylemKipleri = [for (final k in eylemKipleri) k.tur == tur ? yeni : k];
+    return yeni;
   }
 
   // ---- Second brain ----
@@ -388,6 +449,34 @@ Gonderim ornekGonderim({
   );
 }
 
+/// A suggested "create a reminder" action, waiting for a decision.
+Eylem ornekEylem({
+  String id = 'e1',
+  String ozet = 'Ali\'yi ara',
+  EylemDurumu durum = EylemDurumu.bekliyor,
+  bool disKaynak = false,
+  double? guven,
+  String? gerekce = 'Mailde yazıyor',
+  Map<String, dynamic>? yuk,
+  DateTime? createdAt,
+  String? kararVerenId,
+}) {
+  return Eylem(
+    id: id,
+    tur: 'hatirlatici-kur',
+    turAdi: 'Hatırlatıcı kur',
+    yuk: yuk ?? {'baslik': ozet, 'gun': '2030-01-01'},
+    ozet: ozet,
+    kaynak: 'gelen',
+    disKaynak: disKaynak,
+    gerekce: gerekce,
+    guven: guven,
+    durum: durum,
+    createdAt: createdAt ?? DateTime.utc(2026, 11, 1, 8),
+    kararVerenId: kararVerenId,
+  );
+}
+
 /// A reminder on 2026-11-02 09:00 Istanbul time (06:00Z), the day after [sabitAn]'s habit day plus one.
 Hatirlatici ornekHatirlatici({
   String id = 'h1',
@@ -487,6 +576,7 @@ class TestOrtami {
     );
     beyin = BeyinRepository(api: this.api, db: db);
     hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
+    eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
   }
 
   final SahteApi api;
@@ -496,6 +586,7 @@ class TestOrtami {
   late final YakalamaRepository yakalamalar;
   late final BeyinRepository beyin;
   late final HatirlaticiRepository hatirlaticilar;
+  late final EylemRepository eylemler;
 
   /// Where the photo copies of the captures go in tests.
   final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');
@@ -539,4 +630,16 @@ class SahteBildirimServisi implements BildirimServisi {
 
   @override
   Future<void> kur(List<PlanliBildirim> plan) async => planlar.add(plan);
+
+  /// Every approval queue notification shown, oldest first.
+  final List<EylemBildirimi> eylemBildirimleri = [];
+
+  /// Ids of the notifications taken down.
+  final List<int> kapatilanlar = [];
+
+  @override
+  Future<void> eylemBildir(EylemBildirimi bildirim) async => eylemBildirimleri.add(bildirim);
+
+  @override
+  Future<void> bildirimiKapat(int id) async => kapatilanlar.add(id);
 }

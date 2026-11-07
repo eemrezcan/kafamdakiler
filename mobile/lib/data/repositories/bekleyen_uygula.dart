@@ -5,6 +5,7 @@ import '../../utils/gun_degeri.dart';
 import '../models/aliskanlik.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
+import '../models/eylem.dart';
 import '../models/gun.dart';
 import '../models/hatirlatici.dart';
 import '../../utils/hatirlatici_islemleri.dart';
@@ -159,6 +160,36 @@ List<YakalamaSatiri> yakalamalaraBekleyenleriUygula(
       final tarih = b.yakalandiAt.compareTo(a.yakalandiAt);
       return tarih != 0 ? tarih : b.id.compareTo(a.id);
     });
+}
+
+/// Lays the queued approval decisions over the server's (or cached) actions, in queue order, so an action approved,
+/// rejected or undone offline moves at once. A decision only counts when the action is in the state it needs
+/// (a waiting one can be approved or rejected, an applied one undone); the server would answer 409 otherwise.
+/// Each decision is applied at the moment it was queued ([BekleyenIslemlerData.olusturulma]).
+/// [bekleyenler] holds the unsent entries without the refused ones.
+List<Eylem> eylemlereBekleyenleriUygula(List<Eylem> sunucu, List<BekleyenIslemlerData> bekleyenler) {
+  final harita = <String, Eylem>{for (final e in sunucu) e.id: e};
+  for (final b in bekleyenler) {
+    final mevcut = harita[b.hedefId];
+    if (mevcut == null) continue;
+    switch (b.tur) {
+      case BekleyenTur.eylemUygula when mevcut.durum == EylemDurumu.bekliyor:
+        final yuk = (jsonDecode(b.govde) as Map<String, dynamic>)['yuk'] as Map<String, dynamic>?;
+        harita[b.hedefId] = mevcut.copyWith(
+          durum: EylemDurumu.uygulandi,
+          yuk: yuk,
+          kararAni: b.olusturulma,
+          uygulamaAni: b.olusturulma,
+        );
+      case BekleyenTur.eylemReddet when mevcut.durum == EylemDurumu.bekliyor:
+        harita[b.hedefId] = mevcut.copyWith(durum: EylemDurumu.reddedildi, kararAni: b.olusturulma);
+      case BekleyenTur.eylemGeriAl when mevcut.durum == EylemDurumu.uygulandi:
+        harita[b.hedefId] = mevcut.copyWith(durum: EylemDurumu.geriAlindi, geriAlmaAni: b.olusturulma);
+      default:
+        break;
+    }
+  }
+  return harita.values.toList();
 }
 
 /// Lays the queued reminder writes over the server's (or cached) reminders, in queue order, so a reminder made,

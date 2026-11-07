@@ -8,6 +8,7 @@ import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
+import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
 import 'package:kafamdakiler/data/repositories/kronometre_repository.dart';
@@ -102,6 +103,7 @@ void main() {
           ChangeNotifierProvider<AliskanlikRepository>.value(value: ortam.repo),
           ChangeNotifierProvider<YakalamaRepository>.value(value: ortam.yakalamalar),
           ChangeNotifierProvider<HatirlaticiRepository>.value(value: ortam.hatirlaticilar),
+          ChangeNotifierProvider<EylemRepository>.value(value: ortam.eylemler),
           Provider<HatirlaticiBildirimYoneticisi>.value(
             value: HatirlaticiBildirimYoneticisi(
               repo: ortam.hatirlaticilar,
@@ -231,6 +233,35 @@ void main() {
     await tester.tap(find.text('Hatırlatıcılar'));
     await bekle(tester);
     expect(router.state.matchedLocation, '/hatirlaticilar');
+  });
+
+  testWidgets('the "Onay bekleyen" card on Bugün and the row on Profil both open the approval queue; a tap on a card opens its detail', (tester) async {
+    ortam.api.eylemler = [ornekEylem(id: 'e1', ozet: 'Ali\'yi ara'), ornekEylem(id: 'e2', ozet: 'Faturayı öde')];
+    await uygulamayiAc(tester);
+
+    expect(find.text('Onay bekleyen 2'), findsOneWidget);
+    await tester.tap(find.text('Onay bekleyen 2'));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/eylemler');
+    expect(find.text('Faturayı öde'), findsOneWidget);
+
+    await tester.tap(find.text('Faturayı öde'));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/eylem/e2');
+    expect(find.text('Yük'), findsOneWidget);
+
+    router.go('/');
+    await bekle(tester);
+    await sekme(tester, 'Profil');
+    await tester.tap(find.text('Onay kuyruğu'));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/eylemler');
+  });
+
+  testWidgets('with nothing waiting the Today tab has no "Onay bekleyen" card', (tester) async {
+    await uygulamayiAc(tester);
+
+    expect(find.textContaining('Onay bekleyen'), findsNothing);
   });
 
   testWidgets('a note path with slashes and spaces survives the route', (tester) async {

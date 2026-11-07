@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../data/models/eylem.dart';
 import '../data/models/hatirlatici.dart';
 import 'hatirlatici_gorunum.dart';
 
@@ -12,6 +13,65 @@ abstract final class BildirimEylemi {
   static const yaptim = 'yaptim';
   static const birSaatErtele = 'ertele1s';
   static const yarinErtele = 'erteleYarin';
+
+  /// The buttons of an approval queue notification.
+  static const eylemOnayla = 'eylemOnayla';
+  static const eylemReddet = 'eylemReddet';
+}
+
+/// The payload of an approval queue notification starts with this; the rest is the action id (empty for the summary).
+const eylemBildirimOneki = 'eylem:';
+
+/// One approval queue notification, shown at once (not scheduled).
+class EylemBildirimi {
+  const EylemBildirimi({required this.id, required this.eylemId, required this.baslik, required this.govde, required this.eylemler});
+
+  final int id;
+
+  /// The action it announces; null for the summary of many.
+  final String? eylemId;
+  final String baslik;
+  final String govde;
+
+  /// Whether the Onayla / Reddet buttons are offered.
+  final bool eylemler;
+}
+
+/// Up to this many new actions get a notification each; more than that are announced by one summary.
+const enCokTekEylemBildirimi = 3;
+
+/// A stable notification id for an action, so it can be taken down when it is decided.
+int eylemBildirimKimligi(String eylemId) => bildirimKimligi('$eylemBildirimOneki$eylemId');
+
+/// The id of the summary notification (a stable small number, apart from the reminders' ids).
+const eylemOzetBildirimKimligi = 7;
+
+/// The notifications for waiting actions that were not announced yet. A suggestion drawn from outside text, or one
+/// the source is unsure about, never gets the Onayla button: approving it takes a look at the screen first.
+/// [eylemler] is false for users who cannot decide (the buttons are left out).
+List<EylemBildirimi> eylemBildirimleriPlanla(List<Eylem> yeniler, {bool eylemler = true}) {
+  if (yeniler.isEmpty) return const [];
+  if (yeniler.length > enCokTekEylemBildirimi) {
+    return [
+      EylemBildirimi(
+        id: eylemOzetBildirimKimligi,
+        eylemId: null,
+        baslik: '${yeniler.length} eylem onay bekliyor',
+        govde: 'Onay kuyruğunu açıp tek tek bak.',
+        eylemler: false,
+      ),
+    ];
+  }
+  return [
+    for (final e in yeniler)
+      EylemBildirimi(
+        id: eylemBildirimKimligi(e.id),
+        eylemId: e.id,
+        baslik: e.ozet,
+        govde: [e.turAdi, if (e.disKaynak) 'dış kaynak', if (e.eminDegil) 'emin değil', 'onayını bekliyor'].join(' · '),
+        eylemler: eylemler && !e.disKaynak && !e.eminDegil,
+      ),
+  ];
 }
 
 /// One notification to schedule.

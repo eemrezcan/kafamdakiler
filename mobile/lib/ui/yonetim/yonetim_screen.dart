@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../data/models/eylem.dart';
 import '../../data/models/yakalama.dart';
+import '../../utils/eylem_gorunum.dart';
 import '../../data/models/yonetim.dart';
 import '../core/widgets.dart';
 import 'asistan_sifre_dialog.dart';
@@ -104,6 +106,21 @@ class YonetimScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  _Baslik(
+                    'Asistan\'ın eylem kipleri',
+                    ipucu: 'Kendin yap seçilse bile başkasının yazdığı metinden çıkan öneriler onay bekler.',
+                  ),
+                  if (viewModel.eylemKipleri.isEmpty)
+                    const Padding(padding: EdgeInsets.all(8), child: Text('Tanımlı eylem türü yok.')),
+                  for (final k in viewModel.eylemKipleri)
+                    _KipKarti(
+                      kayit: k,
+                      mesgul: viewModel.kipMesgulMu(k.tur),
+                      onSec: (kip) async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        _bildir(messenger, await viewModel.kipDegistir(k, kip));
+                      },
+                    ),
                   const _Baslik('Asistan\'ın şifresi'),
                   Card(
                     child: ListTile(
@@ -167,6 +184,43 @@ class _Baslik extends StatelessWidget {
           Text(metin, style: tema.textTheme.titleMedium),
           if (ipucu != null) Text(ipucu!, style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onSurfaceVariant)),
         ],
+      ),
+    );
+  }
+}
+
+/// One kind of action with its three modes as a segmented choice, and what the chosen mode means.
+class _KipKarti extends StatelessWidget {
+  const _KipKarti({required this.kayit, required this.mesgul, required this.onSec});
+
+  final EylemKipDurumu kayit;
+  final bool mesgul;
+  final Future<void> Function(EylemKipi) onSec;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Card(
+      key: ValueKey('kip-${kayit.tur}'),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(kayit.turAdi, style: tema.textTheme.titleSmall),
+            const SizedBox(height: 8),
+            SegmentedButton<EylemKipi>(
+              showSelectedIcon: false,
+              segments: [
+                for (final kip in EylemKipi.values) ButtonSegment(value: kip, label: Text(eylemKipAdi(kip))),
+              ],
+              selected: {kayit.kip},
+              onSelectionChanged: mesgul ? null : (s) => onSec(s.first),
+            ),
+            const SizedBox(height: 6),
+            Text(eylemKipAciklamasi(kayit.kip), style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onSurfaceVariant)),
+          ],
+        ),
       ),
     );
   }

@@ -2247,6 +2247,316 @@ class HatirlaticiOnbellekCompanion
   }
 }
 
+class $EylemOnbellekTable extends EylemOnbellek
+    with TableInfo<$EylemOnbellekTable, EylemOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EylemOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bildirildiMeta = const VerificationMeta(
+    'bildirildi',
+  );
+  @override
+  late final GeneratedColumn<bool> bildirildi = GeneratedColumn<bool>(
+    'bildirildi',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bildirildi" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde, bildirildi];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'eylem_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EylemOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    if (data.containsKey('bildirildi')) {
+      context.handle(
+        _bildirildiMeta,
+        bildirildi.isAcceptableOrUnknown(data['bildirildi']!, _bildirildiMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  EylemOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EylemOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+      bildirildi: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bildirildi'],
+      )!,
+    );
+  }
+
+  @override
+  $EylemOnbellekTable createAlias(String alias) {
+    return $EylemOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class EylemOnbellekData extends DataClass
+    implements Insertable<EylemOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  final bool bildirildi;
+  const EylemOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+    required this.bildirildi,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    map['bildirildi'] = Variable<bool>(bildirildi);
+    return map;
+  }
+
+  EylemOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return EylemOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+      bildirildi: Value(bildirildi),
+    );
+  }
+
+  factory EylemOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EylemOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+      bildirildi: serializer.fromJson<bool>(json['bildirildi']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+      'bildirildi': serializer.toJson<bool>(bildirildi),
+    };
+  }
+
+  EylemOnbellekData copyWith({
+    String? id,
+    int? sira,
+    String? govde,
+    bool? bildirildi,
+  }) => EylemOnbellekData(
+    id: id ?? this.id,
+    sira: sira ?? this.sira,
+    govde: govde ?? this.govde,
+    bildirildi: bildirildi ?? this.bildirildi,
+  );
+  EylemOnbellekData copyWithCompanion(EylemOnbellekCompanion data) {
+    return EylemOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+      bildirildi: data.bildirildi.present
+          ? data.bildirildi.value
+          : this.bildirildi,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EylemOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('bildirildi: $bildirildi')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde, bildirildi);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EylemOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde &&
+          other.bildirildi == this.bildirildi);
+}
+
+class EylemOnbellekCompanion extends UpdateCompanion<EylemOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<bool> bildirildi;
+  final Value<int> rowid;
+  const EylemOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.bildirildi = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EylemOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.bildirildi = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<EylemOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<bool>? bildirildi,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (bildirildi != null) 'bildirildi': bildirildi,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EylemOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<bool>? bildirildi,
+    Value<int>? rowid,
+  }) {
+    return EylemOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      bildirildi: bildirildi ?? this.bildirildi,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (bildirildi.present) {
+      map['bildirildi'] = Variable<bool>(bildirildi.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EylemOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('bildirildi: $bildirildi, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2266,6 +2576,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProjeOnbellekTable projeOnbellek = $ProjeOnbellekTable(this);
   late final $HatirlaticiOnbellekTable hatirlaticiOnbellek =
       $HatirlaticiOnbellekTable(this);
+  late final $EylemOnbellekTable eylemOnbellek = $EylemOnbellekTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2279,6 +2590,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     yakalamaOnbellek,
     projeOnbellek,
     hatirlaticiOnbellek,
+    eylemOnbellek,
   ];
 }
 
@@ -3790,6 +4102,202 @@ typedef $$HatirlaticiOnbellekTableProcessedTableManager =
       HatirlaticiOnbellekData,
       PrefetchHooks Function()
     >;
+typedef $$EylemOnbellekTableCreateCompanionBuilder =
+    EylemOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<bool> bildirildi,
+      Value<int> rowid,
+    });
+typedef $$EylemOnbellekTableUpdateCompanionBuilder =
+    EylemOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<bool> bildirildi,
+      Value<int> rowid,
+    });
+
+class $$EylemOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $EylemOnbellekTable> {
+  $$EylemOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bildirildi => $composableBuilder(
+    column: $table.bildirildi,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EylemOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $EylemOnbellekTable> {
+  $$EylemOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get bildirildi => $composableBuilder(
+    column: $table.bildirildi,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EylemOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EylemOnbellekTable> {
+  $$EylemOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+
+  GeneratedColumn<bool> get bildirildi => $composableBuilder(
+    column: $table.bildirildi,
+    builder: (column) => column,
+  );
+}
+
+class $$EylemOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EylemOnbellekTable,
+          EylemOnbellekData,
+          $$EylemOnbellekTableFilterComposer,
+          $$EylemOnbellekTableOrderingComposer,
+          $$EylemOnbellekTableAnnotationComposer,
+          $$EylemOnbellekTableCreateCompanionBuilder,
+          $$EylemOnbellekTableUpdateCompanionBuilder,
+          (
+            EylemOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $EylemOnbellekTable,
+              EylemOnbellekData
+            >,
+          ),
+          EylemOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$EylemOnbellekTableTableManager(_$AppDatabase db, $EylemOnbellekTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EylemOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EylemOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EylemOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<bool> bildirildi = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EylemOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                bildirildi: bildirildi,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<bool> bildirildi = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EylemOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                bildirildi: bildirildi,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$EylemOnbellekTable, EylemOnbellekData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $EylemOnbellekTable,
+                    EylemOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EylemOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EylemOnbellekTable,
+      EylemOnbellekData,
+      $$EylemOnbellekTableFilterComposer,
+      $$EylemOnbellekTableOrderingComposer,
+      $$EylemOnbellekTableAnnotationComposer,
+      $$EylemOnbellekTableCreateCompanionBuilder,
+      $$EylemOnbellekTableUpdateCompanionBuilder,
+      (
+        EylemOnbellekData,
+        BaseReferences<_$AppDatabase, $EylemOnbellekTable, EylemOnbellekData>,
+      ),
+      EylemOnbellekData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3810,4 +4318,6 @@ class $AppDatabaseManager {
       $$ProjeOnbellekTableTableManager(_db, _db.projeOnbellek);
   $$HatirlaticiOnbellekTableTableManager get hatirlaticiOnbellek =>
       $$HatirlaticiOnbellekTableTableManager(_db, _db.hatirlaticiOnbellek);
+  $$EylemOnbellekTableTableManager get eylemOnbellek =>
+      $$EylemOnbellekTableTableManager(_db, _db.eylemOnbellek);
 }

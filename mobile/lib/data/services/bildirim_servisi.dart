@@ -6,10 +6,13 @@ import '../../utils/bildirim_plani.dart';
 
 /// What the user did with a notification: [eylem] is a [BildirimEylemi] id, or null for a tap on the notification.
 class BildirimYaniti {
-  const BildirimYaniti({this.eylem, this.hatirlaticiId});
+  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId});
 
   final String? eylem;
   final String? hatirlaticiId;
+
+  /// Set for an approval queue notification: the action it announced ('' for the summary of many).
+  final String? eylemId;
 }
 
 /// The phone's notification scheduler, behind a small interface so the rest of the app (and the tests) never touch
@@ -27,6 +30,12 @@ abstract class BildirimServisi {
 
   /// Cancels every scheduled notification and sets [plan] up again.
   Future<void> kur(List<PlanliBildirim> plan);
+
+  /// Shows an approval queue notification at once.
+  Future<void> eylemBildir(EylemBildirimi bildirim);
+
+  /// Takes the notification with [id] down (the action was decided).
+  Future<void> bildirimiKapat(int id);
 }
 
 /// [BildirimServisi] on `flutter_local_notifications`. Not covered by unit tests (platform channels); tried by hand
@@ -38,6 +47,7 @@ class YerelBildirimServisi implements BildirimServisi {
   bool _kesinIstendi = false;
 
   static const _kanalKimligi = 'hatirlaticilar';
+  static const _eylemKanalKimligi = 'eylemler';
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _eklenti.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -45,7 +55,12 @@ class YerelBildirimServisi implements BildirimServisi {
   static BildirimYaniti? _yanittan(NotificationResponse? y) {
     if (y == null) return null;
     final eylem = y.actionId;
-    return BildirimYaniti(eylem: eylem == null || eylem.isEmpty ? null : eylem, hatirlaticiId: y.payload);
+    final secilen = eylem == null || eylem.isEmpty ? null : eylem;
+    final yuk = y.payload;
+    if (yuk != null && yuk.startsWith(eylemBildirimOneki)) {
+      return BildirimYaniti(eylem: secilen, eylemId: yuk.substring(eylemBildirimOneki.length));
+    }
+    return BildirimYaniti(eylem: secilen, hatirlaticiId: yuk);
   }
 
   @override
@@ -116,6 +131,45 @@ class YerelBildirimServisi implements BildirimServisi {
       }
     } on Object catch (e) {
       debugPrint('Bildirimler kurulamadı: $e');
+    }
+  }
+
+  @override
+  Future<void> eylemBildir(EylemBildirimi b) async {
+    try {
+      await _eklenti.show(
+        id: b.id,
+        title: b.baslik,
+        body: b.govde,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _eylemKanalKimligi,
+            'Onay kuyruğu',
+            channelDescription: 'Onayını bekleyen eylem önerileri',
+            importance: Importance.high,
+            priority: Priority.high,
+            // The buttons open the app: the decision is written to the queue there, with the app's own database.
+            actions: b.eylemler
+                ? const [
+                    AndroidNotificationAction(BildirimEylemi.eylemOnayla, 'Onayla', showsUserInterface: true, cancelNotification: true),
+                    AndroidNotificationAction(BildirimEylemi.eylemReddet, 'Reddet', showsUserInterface: true, cancelNotification: true),
+                  ]
+                : null,
+          ),
+        ),
+        payload: '$eylemBildirimOneki${b.eylemId ?? ''}',
+      );
+    } on Object catch (e) {
+      debugPrint('Eylem bildirimi gösterilemedi (${b.id}): $e');
+    }
+  }
+
+  @override
+  Future<void> bildirimiKapat(int id) async {
+    try {
+      await _eklenti.cancel(id: id);
+    } on Object catch (e) {
+      debugPrint('Bildirim kapatılamadı ($id): $e');
     }
   }
 

@@ -6,6 +6,7 @@ import '../../utils/bildirim_plani.dart';
 import '../models/hatirlatici.dart';
 import '../services/bildirim_servisi.dart';
 import 'esitleyici.dart';
+import 'eylem_bildirim_yoneticisi.dart';
 import 'hatirlatici_repository.dart';
 
 /// Keeps the phone's scheduled notifications in step with the reminders: after every sync, at app start and after
@@ -17,12 +18,16 @@ class HatirlaticiBildirimYoneticisi {
     required this._esitleyici,
     required this._servis,
     required this._yazabilir,
+    this.eylemler,
     DateTime Function()? simdi,
   }) : _simdi = simdi ?? DateTime.now;
 
   final HatirlaticiRepository _repo;
   final Esitleyici _esitleyici;
   final BildirimServisi _servis;
+
+  /// The approval queue's notifications share the plugin and its one response callback; its responses go here.
+  final EylemBildirimYoneticisi? eylemler;
 
   /// Whether the user may change reminders (the Sahip); the buttons are offered only then.
   final bool Function() _yazabilir;
@@ -31,10 +36,14 @@ class HatirlaticiBildirimYoneticisi {
   bool _tekrar = false;
 
   /// Starts the plugin, listens to local changes and answers the notification that opened the app, if any.
-  /// [listeyiAc] is called when a tap (not a button) should show the reminders list.
-  Future<void> baslat({required void Function() listeyiAc}) async {
+  /// [listeyiAc] is called when a tap (not a button) should show the reminders list, [kuyruguAc] for the approval queue.
+  Future<void> baslat({required void Function() listeyiAc, void Function()? kuyruguAc}) async {
     _repo.addListener(_yerelDegisti);
     Future<void> yanitla(BildirimYaniti y) async {
+      if (y.eylemId != null) {
+        if (await (eylemler?.yanitla(y) ?? Future.value(true))) kuyruguAc?.call();
+        return;
+      }
       if (await this.yanitla(y)) listeyiAc();
     }
 

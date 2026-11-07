@@ -7,6 +7,7 @@ import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
 import '../data/repositories/esitleyici.dart';
+import '../data/repositories/eylem_repository.dart';
 import '../data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import '../data/repositories/hatirlatici_repository.dart';
 import '../data/repositories/kronometre_repository.dart';
@@ -25,6 +26,11 @@ import '../ui/ara/not_screen.dart';
 import '../ui/bugun/bugun_screen.dart';
 import '../ui/bugun/bugun_view_model.dart';
 import '../ui/bugun/gun_plani_view_model.dart';
+import '../ui/bugun/onay_bekleyen_view_model.dart';
+import '../ui/eylemler/eylem_detay_screen.dart';
+import '../ui/eylemler/eylem_detay_view_model.dart';
+import '../ui/eylemler/eylem_liste_screen.dart';
+import '../ui/eylemler/eylem_liste_view_model.dart';
 import '../ui/bugun/yaklasanlar_view_model.dart';
 import '../ui/giris/giris_screen.dart';
 import '../ui/hatirlaticilar/hatirlatici_form_screen.dart';
@@ -69,6 +75,9 @@ abstract final class Rotalar {
 
   /// The reminders list: opened from the Today card and from Profil, a full-screen page (not a tab).
   static const hatirlaticilar = '/hatirlaticilar';
+
+  /// The approval queue: opened from the Today card, from Profil and from its notifications, a full-screen page.
+  static const eylemler = '/eylemler';
   static const profil = '/profil';
 
   /// The Sahip's management screen: opened from Profil, a full-screen page.
@@ -151,12 +160,16 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
                   ChangeNotifierProvider(
                     create: (c) => YaklasanlarViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
+                  ChangeNotifierProvider(
+                    create: (c) => OnayBekleyenViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                  ),
                 ],
                 child: Builder(
                   builder: (context) => BugunScreen(
                     viewModel: context.read<BugunViewModel>(),
                     gunPlani: context.read<GunPlaniViewModel>(),
                     yaklasanlar: context.read<YaklasanlarViewModel>(),
+                    onayBekleyen: context.read<OnayBekleyenViewModel>(),
                   ),
                 ),
               ),
@@ -269,6 +282,24 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
         builder: (context, state) => _sayfa(
           (c) => HatirlaticiListeViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
           (vm) => HatirlaticiListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.eylemler,
+        builder: (context, state) => _sayfa(
+          (c) => EylemListeViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+          (vm) => EylemListeScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: '/eylem/:id',
+        builder: (context, state) => _sayfa(
+          (c) => EylemDetayViewModel(
+            repo: c.read<EylemRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            id: state.pathParameters['id']!,
+          )..yukle(),
+          (vm) => EylemDetayScreen(viewModel: vm),
         ),
       ),
       GoRoute(

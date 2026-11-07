@@ -82,6 +82,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - K2.6 onay kuyruğu, Faz A2 (web): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
   - Sayfalar: `backend/Pages/Eylemler/` (Index, Detay), `backend/Eylemler/EylemGorunum.cs` (gösterim metinleri), `EylemServisi.BekleyenSayisiAsync`, `Pages/Yonetim/Index.cshtml(.cs)` içindeki "Asistan'ın eylem kipleri" bölümü, `_Layout.cshtml` menü ve çekmece satırları ile bekleyen sayısı rozeti, `site.css` sonundaki "Approval queue" bölümü.
   - Test: `backend.Tests/EylemSayfalariTests.cs`.
+- K2.6 onay kuyruğu, Faz A3 (mobil): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Veri: `mobile/lib/data/models/eylem.dart`, `repositories/eylem_repository.dart` (önbellek ve çevrimdışı kararlar), `eylem_bildirim_yoneticisi.dart` (yeni bekleyen eylem bildirimi ve Onayla / Reddet düğmeleri), `esitleyici.dart` ve `bekleyen_uygula.dart` eklemeleri (üç yeni kuyruk türü), `app_database.dart` şema 6 (`EylemOnbellek`), `api_service.dart` uçları, `utils/eylem_gorunum.dart`, `bildirim_plani.dart` ve `bildirim_servisi.dart` eklemeleri, `main.dart` bağlantıları.
+  - Ekranlar: `lib/ui/eylemler/` (liste: sağa kaydır uygula, sola reddet, Geri al; ayrıntı ve yük düzeltme), `lib/ui/bugun/onay_bekleyen_*` (Bugün kartı), `router.dart`, `profil_screen.dart` satırı, `lib/ui/yonetim/` içindeki "Asistan'ın eylem kipleri" bölümü.
+  - Testler: `mobile/test/data/eylem_kuyruk_test.dart`, `eylem_bildirim_yoneticisi_test.dart`, `ui/eylem_screen_test.dart`, `veritabani_yukseltme_test.dart` ve `gezinme_test.dart` eklemeleri, `test_destek.dart`.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

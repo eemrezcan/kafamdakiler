@@ -57,6 +57,9 @@ class ProfilViewModel extends ChangeNotifier {
       BekleyenTur.hatirlaticiSil => 'Hatırlatıcı: silme',
       BekleyenTur.hatirlaticiYaptim => 'Hatırlatıcı: yaptım',
       BekleyenTur.hatirlaticiErtele => 'Hatırlatıcı: erteleme',
+      BekleyenTur.eylemUygula => 'Onay kuyruğu: uygulama',
+      BekleyenTur.eylemReddet => 'Onay kuyruğu: reddetme',
+      BekleyenTur.eylemGeriAl => 'Onay kuyruğu: geri alma',
     };
   }
 

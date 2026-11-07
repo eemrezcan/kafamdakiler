@@ -60,6 +60,16 @@ enum BekleyenTur {
 
   /// `POST /api/hatirlaticilar/{hedefId}/ertele` with `{"sure": "1s" | "yarin"}`.
   hatirlaticiErtele,
+
+  /// `POST /api/eylemler/{hedefId}/uygula`; the body is `{}` or `{"yuk": {...}}` (a corrected payload).
+  /// Appended last: the column stores the enum index.
+  eylemUygula,
+
+  /// `POST /api/eylemler/{hedefId}/reddet` with `{"birDahaOnerme": bool}`.
+  eylemReddet,
+
+  /// `POST /api/eylemler/{hedefId}/geri-al`.
+  eylemGeriAl,
 }
 
 /// Cache of `GET /api/yakalamalar` (`YakalamaDto` JSON, newest first), replaced as a whole.
@@ -78,6 +88,19 @@ class HatirlaticiOnbellek extends Table {
   TextColumn get id => text()();
   IntColumn get sira => integer()();
   TextColumn get govde => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cache of the approval queue (`EylemDto` JSON: the waiting, the applied and the failed ones), replaced as a whole.
+/// The queue screen reads it offline, with the queued decisions laid on top. [bildirildi] remembers which waiting
+/// actions already got a notification, so a sync does not announce the same one twice.
+class EylemOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
+  BoolColumn get bildirildi => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -146,13 +169,14 @@ class BekleyenIslemler extends Table {
     YakalamaOnbellek,
     ProjeOnbellek,
     HatirlaticiOnbellek,
+    EylemOnbellek,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -171,6 +195,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             await m.createTable(hatirlaticiOnbellek);
           }
+          if (from < 6) {
+            await m.createTable(eylemOnbellek);
+          }
         },
       );
 
@@ -184,5 +211,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(yakalamaOnbellek).go();
         await delete(projeOnbellek).go();
         await delete(hatirlaticiOnbellek).go();
+        await delete(eylemOnbellek).go();
       });
 }

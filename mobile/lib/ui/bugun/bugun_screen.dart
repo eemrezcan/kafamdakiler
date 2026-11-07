@@ -10,14 +10,19 @@ import 'aliskanlik_karti.dart';
 import 'bugun_view_model.dart';
 import 'gun_plani_karti.dart';
 import 'gun_plani_view_model.dart';
+import 'onay_bekleyen_karti.dart';
+import 'onay_bekleyen_view_model.dart';
 import 'sayi_giris_dialog.dart';
 import 'yaklasanlar_karti.dart';
 import 'yaklasanlar_view_model.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen});
 
   final BugunViewModel viewModel;
+
+  /// The "Onay bekleyen N" card, above the plan card; it hides itself when nothing waits.
+  final OnayBekleyenViewModel? onayBekleyen;
 
   /// The brain's plan for the day, shown above the habit cards. Without it the screen is habits only.
   final GunPlaniViewModel? gunPlani;
@@ -58,7 +63,12 @@ class BugunScreen extends StatelessWidget {
           if (plan != null) {
             // Plan card and habits in one scroll: a failing side never hides the other.
             return RefreshIndicator(
-              onRefresh: () => Future.wait([viewModel.yukle(), plan.yukle(), if (yaklasanlar != null) yaklasanlar!.yukle()]),
+              onRefresh: () => Future.wait([
+                viewModel.yukle(),
+                plan.yukle(),
+                if (yaklasanlar != null) yaklasanlar!.yukle(),
+                if (onayBekleyen != null) onayBekleyen!.yukle(),
+              ]),
               child: OrtaGenislik(child: _liste(context, plan: plan)),
             );
           }
@@ -137,6 +147,7 @@ class BugunScreen extends StatelessWidget {
             ),
           ),
         const _Tarih(),
+        if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
         if (plan != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: GunPlaniKarti(viewModel: plan)),
         // Hidden until it has an answer, so a failing reminders read leaves no gap.
         if (yaklasanlar != null) ...[

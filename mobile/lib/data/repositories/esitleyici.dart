@@ -254,6 +254,20 @@ class Esitleyici extends ChangeNotifier {
   Future<String> hatirlaticiErteleKuyrugaAl(String id, String sure) =>
       _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.hatirlaticiErtele, hedefId: id, govde: {'sure': sure});
 
+  // Approval queue decisions (K2.6). Each is its own entry, sent in order; a decision made twice is harmless
+  // (the server answers 409, which is treated as "nothing left to do").
+
+  /// Queues "approve action [id]"; [yuk] is the corrected payload, or null to apply the suggested one.
+  Future<String> eylemUygulaKuyrugaAl(String id, {Map<String, dynamic>? yuk}) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.eylemUygula, hedefId: id, govde: {'yuk': ?yuk});
+
+  /// Queues "reject action [id]"; [birDahaOnerme] also makes its kind forbidden on the server.
+  Future<String> eylemReddetKuyrugaAl(String id, {bool birDahaOnerme = false}) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.eylemReddet, hedefId: id, govde: {'birDahaOnerme': birDahaOnerme});
+
+  Future<String> eylemGeriAlKuyrugaAl(String id) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.eylemGeriAl, hedefId: id, govde: const {});
+
   Future<BekleyenIslemlerData?> _satir(String id) =>
       (_db.select(_db.bekleyenIslemler)..where((t) => t.id.equals(id))).getSingleOrNull();
 
@@ -301,6 +315,21 @@ class Esitleyici extends ChangeNotifier {
           // Both leave nothing to do, so they are not shown as refused entries.
           final kod = e.response?.statusCode;
           if (kod != 404 && kod != 409) rethrow;
+        }
+      case BekleyenTur.eylemUygula || BekleyenTur.eylemReddet || BekleyenTur.eylemGeriAl:
+        try {
+          switch (islem.tur) {
+            case BekleyenTur.eylemUygula:
+              await _api.eylemUygula(islem.hedefId, yuk: govde['yuk'] as Map<String, dynamic>?);
+            case BekleyenTur.eylemReddet:
+              await _api.eylemReddet(islem.hedefId, birDahaOnerme: govde['birDahaOnerme'] as bool? ?? false);
+            default:
+              await _api.eylemGeriAl(islem.hedefId);
+          }
+        } on DioException catch (e) {
+          // 409: already decided (on the web, or this entry was sent once before). Nothing left to do. A 404 or 400
+          // (the corrected payload broke the rules) or 403 is shown as a refused entry on the profile screen.
+          if (e.response?.statusCode != 409) rethrow;
         }
     }
   }

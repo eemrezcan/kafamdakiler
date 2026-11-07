@@ -13,6 +13,8 @@ import 'data/repositories/aliskanlik_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/beyin_repository.dart';
 import 'data/repositories/esitleyici.dart';
+import 'data/repositories/eylem_bildirim_yoneticisi.dart';
+import 'data/repositories/eylem_repository.dart';
 import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
 import 'data/repositories/kronometre_repository.dart';
@@ -47,12 +49,21 @@ Future<void> main() async {
   final aliskanliklar = AliskanlikRepository(api: api, db: db, esitleyici: esitleyici);
   final yakalamalar = YakalamaRepository(api: api, db: db, esitleyici: esitleyici);
   final hatirlaticilar = HatirlaticiRepository(api: api, db: db, esitleyici: esitleyici);
+  final eylemler = EylemRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
+  final bildirimServisi = YerelBildirimServisi();
+  final eylemBildirimleri = EylemBildirimYoneticisi(
+    repo: eylemler,
+    esitleyici: esitleyici,
+    servis: bildirimServisi,
+    yazabilir: () => kullanici.sahip,
+  );
   final bildirimler = HatirlaticiBildirimYoneticisi(
     repo: hatirlaticilar,
     esitleyici: esitleyici,
-    servis: YerelBildirimServisi(),
+    servis: bildirimServisi,
     yazabilir: () => kullanici.sahip,
+    eylemler: eylemBildirimleri,
   );
   final beyin = BeyinRepository(api: api, db: db);
   auth = AuthRepository(
@@ -92,7 +103,9 @@ Future<void> main() async {
     aliskanliklar: aliskanliklar,
     yakalamalar: yakalamalar,
     hatirlaticilar: hatirlaticilar,
+    eylemler: eylemler,
     bildirimler: bildirimler,
+    eylemBildirimleri: eylemBildirimleri,
     beyin: beyin,
     kronometre: KronometreRepository(db: db),
     surum: surum,
@@ -109,7 +122,9 @@ class KafamdakilerApp extends StatefulWidget {
     required this.aliskanliklar,
     required this.yakalamalar,
     required this.hatirlaticilar,
+    required this.eylemler,
     required this.bildirimler,
+    required this.eylemBildirimleri,
     required this.beyin,
     required this.kronometre,
     required this.surum,
@@ -122,7 +137,9 @@ class KafamdakilerApp extends StatefulWidget {
   final AliskanlikRepository aliskanliklar;
   final YakalamaRepository yakalamalar;
   final HatirlaticiRepository hatirlaticilar;
+  final EylemRepository eylemler;
   final HatirlaticiBildirimYoneticisi bildirimler;
+  final EylemBildirimYoneticisi eylemBildirimleri;
   final BeyinRepository beyin;
   final KronometreRepository kronometre;
   final SurumDenetcisi surum;
@@ -155,6 +172,8 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         await widget.esitleyici.gonder();
         // After the sync: refresh the reminders and set the notifications up again.
         await widget.bildirimler.esitleVeKur();
+        // And announce the actions that came into the approval queue meanwhile.
+        await widget.eylemBildirimleri.esitleVeBildir();
       }
     },
   );
@@ -170,6 +189,8 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
     widget.bildirimler
         .baslat(listeyiAc: () {
           if (widget.auth.girisYapildi) _router.push(Rotalar.hatirlaticilar);
+        }, kuyruguAc: () {
+          if (widget.auth.girisYapildi) _router.push(Rotalar.eylemler);
         })
         .catchError((Object _) {});
   }
@@ -194,6 +215,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.aliskanliklar),
         ChangeNotifierProvider.value(value: widget.yakalamalar),
         ChangeNotifierProvider.value(value: widget.hatirlaticilar),
+        ChangeNotifierProvider.value(value: widget.eylemler),
         Provider.value(value: widget.bildirimler),
         Provider.value(value: widget.beyin),
         Provider.value(value: widget.kronometre),
