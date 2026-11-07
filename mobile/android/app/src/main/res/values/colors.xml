@@ -3,4 +3,5 @@
     <!-- Home screen widget; same values as the app theme (lib/config/app_theme.dart: primary / onPrimary). -->
     <color name="widget_zemin">#FF5A3E9E</color>
     <color name="widget_yazi">#FFF6F3EE</color>
+    <color name="ic_launcher_background">#fbf9f5</color>
 </resources>

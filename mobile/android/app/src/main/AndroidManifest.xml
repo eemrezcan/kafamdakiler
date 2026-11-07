@@ -11,7 +11,7 @@
          it is never stored or sent. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
-        android:label="kafamdakiler"
+        android:label="Kafamdakiler"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
