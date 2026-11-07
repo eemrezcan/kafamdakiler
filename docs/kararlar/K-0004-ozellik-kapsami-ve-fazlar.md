@@ -39,6 +39,26 @@ Kullanıcı kararı. Benzer uygulamalar taramasından (beyinde `projects/kafamda
 Ayrıntı ve sıra `docs/planlar/kat1.md` F7'de. Kalan seçimler (konum, ilgili notlar, kaydırarak ayıklama, cihaz oturumları) havuzda kalır; konum beynin `gelen ekle` komutunda alan olmadığı için Kat 1'e alınmadı.
 Bu ekin yeniden açma koşulu: F7 gösterime (2026-11-18) yetişmeyecek gibi görünürse widget çıkarılır, önce anlatım yapılır (K-0001 eki 2026-11-05).
 
+## Ek (2026-11-07): sekreter çekirdeği ve entegrasyonlar
+Kullanıcı kararı. Ölçü değişti: uygulama yalnız ödev değil, kullanıcının gerçekten kullanacağı ikinci beyin, takip mekanizması ve onun adına iş hazırlayan sekreterdir. Benzer uygulama taramaları ve üç yeni araştırma (beyinde `projects/kafamdakiler/notlar/sekreter-entegrasyon-arastirmasi.md`) sonunda:
+- Kat 1: veri gösteren ana ekran widget'ı (bugünün planı, yaklaşan hatırlatıcılar). 2026-11-06 ekinde "sonraya" kalan kısım bununla öne alındı.
+- Kat 2'ye eklenenler:
+  - Onay kuyruğu ve geri alma: Claude'un önerdiği her eylem (yerleştirme, görev, hatırlatıcı, plan maddesi, takvim) tek listede "taslak hazır, uygula" kartıdır; bildirimden Onayla/Reddet; uygulanan eylem geri alınabilir (beyinde commit'in geri çevrilmesi, veritabanında arşiv); emin olunmayan öneri işaretlidir.
+  - Eylem başına izin kipi: Sor / Kendin yap / Yasak; sıra Yasak > Sor > Kendin yap; yeni eylem türü ilk seferde sorulur; "bunu yapma" kalıcıdır; art arda reddedilen asistan Sor kipine düşer. K-0009 Asistan izinlerinin üstüne kurulur.
+  - Sabah brifingi (Kat 4'ten öne alındı): günde tek bildirim, 5-7 kart, kart başına 👍/👎, brifinge yazarak düzeltme, dünden kalanlara taşı/bırak, N gün üst üste taşınan görev "Bir gün"e düşer.
+  - Sesten iş çıkarma: konuşmadan görev, hatırlatıcı ve plan önerileri çıkar, kaydetmeden önce önizlenir ve onay kuyruğuna düşer.
+  - Israrlı hatırlatma: hatırlatıcı başına isteğe bağlı, aralıklı ve sayısı sınırlı yeniden çalma; sessiz modu yalnız "acil" olan deler.
+  - Tek zaman çizelgesi: Bugün'de takvim etkinlikleri, plan maddeleri ve hatırlatıcılar saat sırasıyla; Google Takvim ile birlikte.
+  - Google Takvim Kat 2'dedir (karar 10 kapandı) ve yalnız okuma değil, onay kuyruğundan geçen yazma da hedeflenir; plana yazma Kat 2'dedir (karar 9 kapandı).
+- Kat 3'e eklenen: Google ve finans. Gmail'e salt okunur bağlantı; sunucu yalnız kullanıcının Gmail filtresiyle etiketlediği mailleri işler. Kredi kartı ekstresinden harcama satırları (uygulamanın veritabanı, K-0005), abonelik ve zam tespiti, taksit takibi, son ödeme hatırlatıcısı önerisi, aylık özetin beynin `finans/aylik/` alanına yazılması, mailden etkinlik ya da hatırlatıcı önerisi. Toplamları sunucu hesaplar; Claude yalnız kişisel bilgisi çıkarılmış özeti yorumlar.
+- Kat 4'e eklenen: Google Drive (belgelerde arama, üretilen dosyayı kaydetme), mail yanıtını taslak olarak hazırlama.
+- Havuzda kalan: Türkçe doğal dille tarih, "Geçmişten bugün" kartı, hızlı ayar kutucuğu.
+
+Güvenlik kuralı: mail ve dış kaynaklı içerik Claude'a veri olarak gider; bu içeriği işleyen çağrıya araç verilmez, yalnız şemalı çıktı alınır; dış kaynaktan doğan her öneri izin kipinden bağımsız olarak Sor kipine düşer. Bu yüzden Gmail, onay kuyruğundan sonra gelir. Kişisel veri (kart numarası, IBAN, ad) Claude'a gitmez.
+
+Banka entegrasyonu reddi yeniden açılmadı: o, bankanın API'sine bağlanmaktı; burada yalnız bankanın zaten mail attığı ekstre okunur.
+Yeniden açma koşulu: Kat 2'nin gösterime girecek kısmı 2026-12-16'ya yetişmeyecek gibi görünürse önce sabah brifingi ve tek zaman çizelgesi Kat 2 sonrasına itilir; onay kuyruğu ve izin kipi kalır, çünkü dış içerik ve yazma işleri onlara dayanır.
+
 ## Gerekçe
 Kapsam bir dönemlik ödevden büyük; teslime çalışan bir çekirdek yetişmeli. Yapılı veri uygulamada durur, Claude ona Faz 2'deki MCP kapısından özetle bağlanır (benzer uygulamaların taraması, 2026-10-15).
 
