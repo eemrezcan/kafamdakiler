@@ -51,6 +51,13 @@ services:
       # Empty: the brain screens say "not connected" and the rest of the app works (K-0023).
       Beyin__Komut: ${BEYIN_KOMUT:-}
       Beyin__Vault: ${BEYIN_VAULT:-}
+      # Kat 2. Each is off while empty: Claude Code (sign in first: docker compose exec api claude), Google Calendar
+      # (OAuth client; the return address must be registered in Google Cloud), GitHub (read-only token).
+      Claude__Komut: ${CLAUDE_KOMUT:-}
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      Google__DonusAdresi: ${GOOGLE_DONUS_ADRESI:-}
+      GitHub__Token: ${GITHUB_TOKEN:-}
     # Host folders outside the git clone (/srv/<project>/veri, /srv/<project>/beyin), so a fresh clone never
     # touches the data and the backup takes plain paths. veri/ must belong to the container user (uid 1654).
     volumes:
