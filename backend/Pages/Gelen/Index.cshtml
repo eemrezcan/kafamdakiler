@@ -1,0 +1,153 @@
+@page
+@using Kafamdakiler.Eylemler
+@using Kafamdakiler.Gelen
+@model Kafamdakiler.Pages.Gelen.IndexModel
+@{
+    ViewData["Title"] = "Gelen kutusu";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Yakaladıkların beyne yerleşmeyi bekliyor</p>
+        <h1 class="kd-page-title">Gelen kutusu</h1>
+    </div>
+    <a class="btn btn-outline-primary" asp-page="/Eylemler/Index">Onay kuyruğu</a>
+</div>
+
+@if (Model.YazmaHatasi is not null)
+{
+    <div class="kd-alert" role="alert">@Model.YazmaHatasi</div>
+}
+<partial name="~/Pages/Beyin/_BeyinHata.cshtml" model="Model" />
+
+@if (!Model.Hatali)
+{
+    <section aria-labelledby="kart-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="kart-baslik">Kartlar <span>@Model.Kartlar.Count</span></h2>
+
+        @if (Model.Kartlar.Count == 0)
+        {
+            <div class="kd-empty kd-empty--small">
+                <p class="kd-empty-title">Gelen kutusu boş.</p>
+            </div>
+        }
+
+        @foreach (var k in Model.Kartlar)
+        {
+            <article class="kd-eylem kd-c-violet" id="k-@k.Kimlik">
+                <div class="kd-eylem-body">
+                    <p class="kd-eylem-ozet">@k.Ozet</p>
+                    <p class="kd-eylem-meta">
+                        @if (k.Yakalandi is not null)
+                        {
+                            <span>@k.Yakalandi.Replace('T', ' ')</span>
+                        }
+                        @if (k.Hedef is not null)
+                        {
+                            <span>Hedef: @k.Hedef</span>
+                        }
+                        @if (k.GorselVar)
+                        {
+                            <span class="kd-status">Görselli</span>
+                        }
+                        @if (k.LaptoptaIslenecek)
+                        {
+                            <span class="kd-status is-birakildi" title="Karta uyan bir etiket sözlükte yok; yeni etiket önce laptopta eklenir.">Laptopta işlenecek</span>
+                        }
+                    </p>
+                    @if (k.LaptoptaIslenecek && k.LaptopNotu is not null)
+                    {
+                        <p class="kd-eylem-gerekce">@k.LaptopNotu</p>
+                    }
+
+                    @if (k.Oneri is { } o)
+                    {
+                        <div class="kd-gelen-oneri">
+                            <p class="kd-eylem-meta">
+                                <span class="kd-status">Öneri</span>
+                                @if (o.DisKaynak)
+                                {
+                                    <span class="kd-status is-hata" title="Metinde adres var; kendiliğinden uygulanmaz.">Dış kaynak</span>
+                                }
+                                @if (o.Guven is { } guven)
+                                {
+                                    <span>Güven: @EylemGorunum.GuvenMetni(guven)</span>
+                                    @if (guven < EylemGorunum.GuvenEsigi)
+                                    {
+                                        <span class="kd-status is-birakildi">Emin değil</span>
+                                    }
+                                }
+                            </p>
+                            <p class="kd-gelen-oneri-satir"><strong>Yol:</strong> @o.Yol</p>
+                            <p class="kd-gelen-oneri-satir"><strong>Başlık:</strong> @o.Baslik</p>
+                            <p class="kd-gelen-oneri-satir"><strong>Etiketler:</strong> @string.Join(", ", o.Etiketler)</p>
+                            @if (o.Gerekce is not null)
+                            {
+                                <p class="kd-eylem-gerekce">@o.Gerekce</p>
+                            }
+                            <div class="kd-eylem-actions mt-2">
+                                <form method="post" asp-page-handler="Uygula" asp-route-id="@o.EylemId">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>Uygula
+                                    </button>
+                                </form>
+                                <a class="btn btn-outline-primary btn-sm" asp-page="/Eylemler/Detay" asp-route-id="@o.EylemId">Düzelt</a>
+                                <form method="post" asp-page-handler="Reddet" asp-route-id="@o.EylemId" class="kd-eylem-reddet">
+                                    <label class="kd-eylem-bir-daha">
+                                        <input type="checkbox" name="birDahaOnerme" value="true" />
+                                        Bir daha önerme
+                                    </label>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-x"></use></svg>Reddet
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+
+                    <details class="kd-gelen-elle">
+                        <summary>Elle yerleştir</summary>
+                        <form method="post" asp-page-handler="Isle" class="kd-gelen-form">
+                            <input type="hidden" name="kart" value="@k.Kimlik" />
+                            <label for="klasor-@k.Kimlik">Klasör</label>
+                            <select class="form-select" id="klasor-@k.Kimlik" name="klasor">
+                                @foreach (var p in Model.Projeler)
+                                {
+                                    <option value="projects/@p.Kimlik/notlar/">@p.Baslik (notlar)</option>
+                                }
+                                <option value="ogrenme/">ogrenme/</option>
+                                <option value="spor/">spor/</option>
+                                <option value="aliskanliklar/">aliskanliklar/</option>
+                            </select>
+                            <label for="dosya-@k.Kimlik">Dosya adı</label>
+                            <input class="form-control" id="dosya-@k.Kimlik" name="dosya" maxlength="100" placeholder="ornek-not" required />
+                            <label for="baslik-@k.Kimlik">Başlık</label>
+                            <input class="form-control" id="baslik-@k.Kimlik" name="baslik" maxlength="@YerlestirTuru.EnUzunBaslik" value="@k.Ozet" required />
+                            <fieldset>
+                                <legend>Etiketler</legend>
+                                <div class="kd-gelen-etiketler">
+                                    @foreach (var e in Model.Etiketler)
+                                    {
+                                        <label class="kd-gelen-etiket"><input type="checkbox" name="etiketler" value="@e" /> @e</label>
+                                    }
+                                </div>
+                            </fieldset>
+                            <button type="submit" class="btn btn-primary btn-sm">Yerleştir</button>
+                        </form>
+                    </details>
+                </div>
+
+                <div class="kd-eylem-actions">
+                    <form method="post" asp-page-handler="Oneri">
+                        <input type="hidden" name="kart" value="@k.Kimlik" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Yeniden öner</button>
+                    </form>
+                    <form method="post" asp-page-handler="Sil" onsubmit="return confirm('Bu kart ve görseli kalıcı olarak silinecek. Emin misin?');">
+                        <input type="hidden" name="kart" value="@k.Kimlik" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Sil</button>
+                    </form>
+                </div>
+            </article>
+        }
+    </section>
+}

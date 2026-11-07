@@ -5,11 +5,14 @@
     var showChrome = User.Identity?.IsAuthenticated == true;
     // The badge of the approval queue. A failing count must not break the page it sits on (the error page uses this layout too).
     var bekleyenEylem = 0;
+    // The inbox badge: placement suggestions waiting in that queue (counting the cards would start the brain on every page).
+    var bekleyenGelen = 0;
     if (showChrome)
     {
         try
         {
             bekleyenEylem = await EylemServisi.BekleyenSayisiAsync(Context.RequestAborted);
+            bekleyenGelen = await EylemServisi.BekleyenSayisiAsync(Kafamdakiler.Eylemler.YerlestirTuru.Anahtar, Context.RequestAborted);
         }
         catch (Exception)
         {
@@ -46,6 +49,13 @@
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Yakalamalar") == true ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">Yakalamalar</a>
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Hatirlaticilar") == true ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">Hatırlatıcılar</a>
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Beyin") == true ? "active" : "")" asp-area="" asp-page="/Beyin/Index">Beyin</a>
+                <a class="kd-nav-link @(currentPage?.StartsWith("/Gelen") == true ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
+                    Gelen kutusu
+                    @if (bekleyenGelen > 0)
+                    {
+                        <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
+                    }
+                </a>
                 <a class="kd-nav-link @(currentPage?.StartsWith("/Eylemler") == true ? "active" : "")" asp-area="" asp-page="/Eylemler/Index">
                     Onay kuyruğu
                     @if (bekleyenEylem > 0)
@@ -109,6 +119,14 @@
                 <a class="kd-drawer-link @(currentPage?.StartsWith("/Beyin") == true ? "active" : "")" asp-area="" asp-page="/Beyin/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
                     Beyin
+                </a>
+                <a class="kd-drawer-link @(currentPage?.StartsWith("/Gelen") == true ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
+                    Gelen kutusu
+                    @if (bekleyenGelen > 0)
+                    {
+                        <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
+                    }
                 </a>
                 <a class="kd-drawer-link @(currentPage?.StartsWith("/Eylemler") == true ? "active" : "")" asp-area="" asp-page="/Eylemler/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>

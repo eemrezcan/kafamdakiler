@@ -181,6 +181,10 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
     public async Task<int> BekleyenSayisiAsync(CancellationToken ct) =>
         await db.Eylemler.CountAsync(e => e.Durum == EylemDurumu.Bekliyor, ct);
 
+    // The same for one kind (the inbox badge).
+    public async Task<int> BekleyenSayisiAsync(string tur, CancellationToken ct) =>
+        await db.Eylemler.CountAsync(e => e.Durum == EylemDurumu.Bekliyor && e.Tur == tur, ct);
+
     public async Task<Eylem?> GetirAsync(Guid id, CancellationToken ct) =>
         await db.Eylemler.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, ct);
 

@@ -124,11 +124,14 @@
                         }
                     </p>
                 </div>
-                <div class="kd-eylem-actions">
-                    <form method="post" asp-page-handler="GeriAl" asp-route-id="@e.Id">
-                        <button type="submit" class="btn btn-outline-primary btn-sm">Geri al</button>
-                    </form>
-                </div>
+                @if (Turler.Bul(e.Tur)?.GeriAlinabilir ?? true)
+                {
+                    <div class="kd-eylem-actions">
+                        <form method="post" asp-page-handler="GeriAl" asp-route-id="@e.Id">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Geri al</button>
+                        </form>
+                    </div>
+                }
             </article>
         }
     }

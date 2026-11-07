@@ -300,8 +300,9 @@ public class GelenOnerici(
         if (o.Etiketler.Any(e => !sozluk.AnaAdMi(e)))
             return "etiket sözlükte yok";
         etiketler = o.Etiketler.Select(e => sozluk.Coz(e)!).Distinct(StringComparer.Ordinal).ToList();
-        if (etiketler.Count is < 3 or > 6)
-            return "etiket sayısı 3 ile 6 arasında olmalı";
+        // The instruction asks for 3 to 6, but one is enough for the brain (it wants at least one); a short answer is not thrown away.
+        if (etiketler.Count is < 1 or > 6)
+            return "etiket sayısı 1 ile 6 arasında olmalı";
 
         return null;
     }

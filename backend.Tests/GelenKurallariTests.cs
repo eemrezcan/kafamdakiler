@@ -222,15 +222,32 @@ public class GelenKurallariTests
         Assert.NotNull(Denetle(Oneri(etiketler: ["kaynak", "okul", etiket])));
 
     [Theory]
-    [InlineData(0)]
+    [InlineData(1)]
     [InlineData(2)]
+    public void Answer_WithOneOrTwoTags_IsAccepted(int adet)
+    {
+        var etiketler = new[] { "yazılım", "test" }.Take(adet).ToArray();
+
+        Assert.Null(GelenOnerici.Denetle(Oneri(etiketler: etiketler), Sozluk, Projeler, out var kabul));
+        Assert.Equal(etiketler, kabul);
+    }
+
+    [Theory]
+    [InlineData(0)]
     [InlineData(7)]
     public void Answer_WithTheWrongNumberOfTags_IsRefused(int adet) =>
         Assert.NotNull(Denetle(Oneri(etiketler: new[] { "yazılım", "test", "okul", "kaynak", "özet", "ders", "api" }.Take(adet).ToArray())));
 
     [Fact]
-    public void Answer_RepeatingATag_IsNotCountedTwice() =>
-        Assert.NotNull(Denetle(Oneri(etiketler: ["kaynak", "kaynak", "okul"])));
+    public void Answer_RepeatingATag_IsNotCountedTwice()
+    {
+        // Three tags with one repeated are two tags; two are enough now.
+        Assert.Null(GelenOnerici.Denetle(Oneri(etiketler: ["kaynak", "kaynak", "okul"]), Sozluk, Projeler, out var etiketler));
+        Assert.Equal(["kaynak", "okul"], etiketler);
+        // Seven names of which only six differ are six, not seven.
+        Assert.Null(GelenOnerici.Denetle(Oneri(etiketler: ["yazılım", "test", "okul", "kaynak", "özet", "ders", "ders"]), Sozluk, Projeler, out etiketler));
+        Assert.Equal(6, etiketler.Count);
+    }
 
     [Theory]
     [InlineData("finans/abonelik.md")]

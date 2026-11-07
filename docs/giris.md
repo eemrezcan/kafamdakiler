@@ -100,6 +100,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - K2.2 gelen kutusu ve yerleştirme, Faz C1 (backend): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
   - Gelen kutusu: `backend/Gelen/` (`GelenPolicies` `gelen.oku` / `gelen.yaz`, `GelenAyari`, `GelenKartDurumu` ve `GelenKartlari` tablosu, `GelenBeyin` beyin okumaları, `GelenYolu` yol kuralı, `EtiketSozlugu`, `GelenKurallari` gizlilik / dış kaynak / metin, `GelenOnerici` Claude çağrısı ve öneri denetimi, `GelenOneriServisi` arka plan turu, `GelenIslemleri`, `GelenEndpoints`, `GelenDtos`), `backend/Eylemler/YerlestirTuru.cs` (`yerlestir` türü, geri alınamaz), `EylemTurleri.cs` (`DogrulaAsync` ve `GeriAlinabilir`), `EylemServisi.cs` ve `Dtos.cs` (`GeriAlinabilir` alanı, geri alınamaz türün kendiliğinden uygulanmaması, eşzamanlı onayda `Hatali` ezmesine karşı koruma), `Izinler.cs`, `AppDbContext` ayarı, `Program.cs` kayıtları, migration `AddGelenKartlari` (elle yazıldı, `dotnet ef` bu makinede çalışmadı).
   - Testler: `backend.Tests/GelenKurallariTests.cs`, `GelenOnericiTests.cs`, `GelenApiTests.cs`, `GelenGocTests.cs`, `GercekBeyinGelenTests.cs`, `SahteBeyin.cs` eklemesi (`CiktiKonumsal`).
+- K2.2 gelen kutusu ve yerleştirme, Faz C2 (web): Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 7); ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Düzeltme: `GelenOnerici.Denetle` artık 1-6 etiketi kabul ediyor (talimat 3-6 istemeye devam ediyor).
+  - Sayfa: `backend/Pages/Gelen/Index.cshtml(.cs)` (kartlar, öneri, Uygula / Düzelt / Reddet, elle yerleştir, sil, yeniden öner, "laptopta işlenecek" işareti), `_Layout.cshtml` "Gelen kutusu" menü satırları ve rozeti, `site.css` sonundaki "Gelen kutusu" bölümü, `EylemServisi.BekleyenSayisiAsync(tur)`, `Pages/Eylemler/Index.cshtml` (geri alınamayan türde "Geri al" gizli).
+  - Testler: `backend.Tests/GelenSayfalariTests.cs`, `GelenKurallariTests.cs` güncellemesi.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
