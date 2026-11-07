@@ -22,6 +22,10 @@ Hatirlatici _$HatirlaticiFromJson(Map<String, dynamic> json) => Hatirlatici(
       ? null
       : DateTime.parse(json['erteleAn'] as String),
   createdAt: DateTime.parse(json['createdAt'] as String),
+  israrli: json['israrli'] as bool? ?? false,
+  israrAraligiDakika: (json['israrAraligiDakika'] as num?)?.toInt() ?? 15,
+  israrEnCok: (json['israrEnCok'] as num?)?.toInt() ?? 3,
+  acil: json['acil'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$HatirlaticiToJson(Hatirlatici instance) =>
@@ -39,6 +43,10 @@ Map<String, dynamic> _$HatirlaticiToJson(Hatirlatici instance) =>
       'sonrakiAn': instance.sonrakiAn.toIso8601String(),
       'erteleAn': instance.erteleAn?.toIso8601String(),
       'createdAt': instance.createdAt.toIso8601String(),
+      'israrli': instance.israrli,
+      'israrAraligiDakika': instance.israrAraligiDakika,
+      'israrEnCok': instance.israrEnCok,
+      'acil': instance.acil,
     };
 
 const _$HatirlaticiTuruEnumMap = {
@@ -78,6 +86,10 @@ HatirlaticiYaz _$HatirlaticiYazFromJson(Map<String, dynamic> json) =>
       durum:
           $enumDecodeNullable(_$HatirlaticiDurumuEnumMap, json['durum']) ??
           HatirlaticiDurumu.acik,
+      israrli: json['israrli'] as bool? ?? false,
+      israrAraligiDakika: (json['israrAraligiDakika'] as num?)?.toInt() ?? 15,
+      israrEnCok: (json['israrEnCok'] as num?)?.toInt() ?? 3,
+      acil: json['acil'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$HatirlaticiYazToJson(HatirlaticiYaz instance) =>
@@ -92,4 +104,8 @@ Map<String, dynamic> _$HatirlaticiYazToJson(HatirlaticiYaz instance) =>
       'tekrar': _$TekrarEnumMap[instance.tekrar]!,
       'onceGun': instance.onceGun,
       'durum': _$HatirlaticiDurumuEnumMap[instance.durum]!,
+      'israrli': instance.israrli,
+      'israrAraligiDakika': instance.israrAraligiDakika,
+      'israrEnCok': instance.israrEnCok,
+      'acil': instance.acil,
     };

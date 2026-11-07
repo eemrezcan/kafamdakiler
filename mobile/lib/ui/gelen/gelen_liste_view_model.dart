@@ -154,6 +154,9 @@ class GelenListeViewModel extends ChangeNotifier {
   /// The projects offered for a hand-made placement (the cached list works offline).
   Future<List<ProjeOzet>> projeler() async => (await _beyin?.yerelProjeler()) ?? const [];
 
+  /// The tag and folder pick lists from the server; null when it cannot be asked (the dialog then falls back).
+  Future<GelenSecenekleri?> secenekler() => _repo.secenekler();
+
   static String? _problemDetayi(DioException e) {
     final veri = e.response?.data;
     return veri is Map && veri['detail'] is String ? veri['detail'] as String : null;

@@ -125,6 +125,10 @@ class HatirlaticiBildirimYoneticisi {
       default:
         return true;
     }
+    // The pending nags go with the plan made again after the write; the ones already in the tray are taken down here.
+    for (var n = 1; n <= enCokIsrarSayisi; n++) {
+      await _servis.bildirimiKapat(bildirimKimligi(id, israrNo: n));
+    }
     unawaited(_esitleyici.gonder());
     return false;
   }

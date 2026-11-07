@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/models/beyin.dart';
+import '../../data/models/proje_repo.dart';
 import '../core/beyin_gorunum.dart';
 import '../core/beyin_hata.dart';
 import '../core/widgets.dart';
@@ -26,7 +28,7 @@ class ProjeDetayScreen extends StatelessWidget {
                   : const YuklemeIskeleti(adet: 3, yukseklik: 96))
               : RefreshIndicator(
                   onRefresh: viewModel.yukle,
-                  child: OrtaGenislik(child: _Icerik(proje: proje)),
+                  child: OrtaGenislik(child: _Icerik(proje: proje, viewModel: viewModel)),
                 ),
         );
       },
@@ -35,9 +37,10 @@ class ProjeDetayScreen extends StatelessWidget {
 }
 
 class _Icerik extends StatelessWidget {
-  const _Icerik({required this.proje});
+  const _Icerik({required this.proje, required this.viewModel});
 
   final ProjeDetay proje;
+  final ProjeDetayViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +82,12 @@ class _Icerik extends StatelessWidget {
         else
           for (final g in proje.acikGorevler)
             Padding(padding: const EdgeInsets.only(bottom: 8), child: _Gorev(g)),
+        // No card at all while loading, when nothing is linked, or when the card could not be read: the page is about the
+        // project, and the repository is an extra.
+        if (viewModel.repoOzeti != null) ...[
+          const BolumBasligi('Depo'),
+          _RepoKarti(ozet: viewModel.repoOzeti!),
+        ],
         const BolumBasligi('Son günlük'),
         if (proje.sonGunluk.isEmpty)
           Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text('Günlük satırı yok.', style: TextStyle(color: soluk)))
@@ -96,6 +105,76 @@ class _Icerik extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The repository of the project: its link (selectable, with a copy button; there is no browser plugin in the app), the open
+/// pull request count and the last commits. Without the server's GitHub token only the link is shown, with the reason.
+class _RepoKarti extends StatelessWidget {
+  const _RepoKarti({required this.ozet});
+
+  final ProjeRepoOzeti ozet;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final soluk = tema.colorScheme.onSurfaceVariant;
+    final commitler = ozet.commitler ?? const <RepoCommit>[];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(LucideIcons.gitBranch, size: 18, color: tema.colorScheme.primary),
+                const SizedBox(width: 10),
+                Expanded(child: Text(ozet.depo, style: tema.textTheme.bodyLarge)),
+                IconButton(
+                  tooltip: 'Bağlantıyı kopyala',
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  icon: const Icon(LucideIcons.copy, size: 18),
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: ozet.baglanti));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(const SnackBar(content: Text('Bağlantı kopyalandı')));
+                  },
+                ),
+              ],
+            ),
+            SelectableText(ozet.baglanti, style: TextStyle(fontSize: 12, color: soluk)),
+            if (!ozet.tamam) ...[
+              const SizedBox(height: 8),
+              Text(ozet.mesaj ?? 'Depo bilgisi alınamadı.', style: TextStyle(fontSize: 13, color: soluk)),
+            ] else ...[
+              const SizedBox(height: 8),
+              Text('${ozet.acikPrSayisi ?? 0} açık PR', style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              if (commitler.isEmpty)
+                Text('Commit yok.', style: TextStyle(color: soluk))
+              else
+                for (final c in commitler)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(c.mesaj),
+                        Text(
+                          [c.hash, if (c.yazar != null) c.yazar!, if (c.tarih != null) kisaTarih(c.tarih!.toLocal())].join(' · '),
+                          style: TextStyle(fontSize: 12, color: soluk),
+                        ),
+                      ],
+                    ),
+                  ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

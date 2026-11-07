@@ -58,6 +58,17 @@ class GelenRepository extends ChangeNotifier {
     });
   }
 
+  /// The tag and folder pick lists of the hand-made placement. Null when the server cannot be asked (offline, 403, 503):
+  /// the placement still works, with typed tags, and the server checks them when the queue is sent.
+  Future<GelenSecenekleri?> secenekler() async {
+    try {
+      final etiketler = await _api.gelenEtiketleri();
+      return (etiketler: etiketler, klasorler: await _api.gelenKlasorleri());
+    } on DioException {
+      return null;
+    }
+  }
+
   /// Places card [kart] by hand. Needs no network.
   Future<void> isle(String kart, GelenIsleGirdi girdi) async {
     await _esitleyici.gelenIsleKuyrugaAl(kart, girdi);

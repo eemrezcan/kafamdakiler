@@ -111,6 +111,41 @@ void main() {
       expect(govdeler, ['{"sure":"1s"}', '{"sure":"yarin"}']);
     });
 
+    test('Yaptım and the snoozes take the nags already in the tray down; a tap does not', () async {
+      final nagler = [for (var n = 1; n <= enCokIsrarSayisi; n++) bildirimKimligi('a', israrNo: n)];
+
+      await yonetici.yanitla(const BildirimYaniti(hatirlaticiId: 'a'));
+      expect(servis.kapatilanlar, isEmpty);
+
+      await yonetici.yanitla(const BildirimYaniti(eylem: BildirimEylemi.yaptim, hatirlaticiId: 'a'));
+      expect(servis.kapatilanlar, nagler);
+
+      servis.kapatilanlar.clear();
+      await yonetici.yanitla(const BildirimYaniti(eylem: BildirimEylemi.birSaatErtele, hatirlaticiId: 'a'));
+      expect(servis.kapatilanlar, nagler);
+    });
+
+    test('Yaptım drops the pending nags from the plan, a snooze moves them', () async {
+      // "Now" is 2026-10-31 09:00Z; the moment is 10 minutes ahead.
+      final an = DateTime.utc(2026, 10, 31, 9, 10);
+      ortam.api.cevrimdisi = false;
+      ortam.api.hatirlaticilar = [ornekHatirlatici(id: 'n', israrli: true, israrEnCok: 2, sonrakiAn: an)];
+      await ortam.hatirlaticilar.listele();
+      ortam.api.cevrimdisi = true;
+      await yonetici.kur();
+      expect(servis.son.map((b) => b.israrNo), [0, 1, 2]);
+      expect(servis.son.first.an, an);
+
+      await yonetici.yanitla(const BildirimYaniti(eylem: BildirimEylemi.birSaatErtele, hatirlaticiId: 'n'));
+      await yonetici.kur();
+      expect(servis.son.map((b) => b.israrNo), [0, 1, 2]);
+      expect(servis.son.every((b) => b.an.isAfter(an)), isTrue, reason: 'the whole series moved after the snooze');
+
+      await yonetici.yanitla(const BildirimYaniti(eylem: BildirimEylemi.yaptim, hatirlaticiId: 'n'));
+      await yonetici.kur();
+      expect(servis.son, isEmpty);
+    });
+
     test('a user who cannot write only opens the list', () async {
       sahip = false;
       expect(await yonetici.yanitla(const BildirimYaniti(eylem: BildirimEylemi.yaptim, hatirlaticiId: 'a')), isTrue);

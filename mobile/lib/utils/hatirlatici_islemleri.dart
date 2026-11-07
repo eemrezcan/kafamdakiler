@@ -26,6 +26,10 @@ Hatirlatici hatirlaticiYazdan(HatirlaticiYaz yaz, DateTime simdi, {Hatirlatici? 
     durum: yaz.durum,
     sonrakiAn: sonrakiHatirlaticiAni(yaz.tekrar, yaz.gun, saat, simdi),
     createdAt: mevcut?.createdAt ?? simdi,
+    israrli: yaz.israrli,
+    israrAraligiDakika: yaz.israrAraligiDakika,
+    israrEnCok: yaz.israrEnCok,
+    acil: yaz.acil,
   );
 }
 

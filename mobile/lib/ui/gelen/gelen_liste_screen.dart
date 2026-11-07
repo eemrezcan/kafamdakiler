@@ -25,8 +25,9 @@ class GelenListeScreen extends StatelessWidget {
 
   Future<void> _elleYerlestir(BuildContext context, GelenKarti kart) async {
     final projeler = await viewModel.projeler();
+    final secenekler = await viewModel.secenekler();
     if (!context.mounted) return;
-    final girdi = await gelenIsleDialogGoster(context, kart: kart, projeler: projeler);
+    final girdi = await gelenIsleDialogGoster(context, kart: kart, projeler: projeler, secenekler: secenekler);
     if (girdi != null) await viewModel.isle(kart.kimlik, girdi);
   }
 

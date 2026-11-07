@@ -127,6 +127,41 @@ class GelenIsleGirdi {
   Map<String, dynamic> toJson() => {'yol': yol, 'baslik': baslik, 'etiketler': etiketler};
 }
 
+/// `GelenEtiketDto` (`GET /api/gelen/etiketler`): a tag of the dictionary by its main name, with its synonyms.
+class GelenEtiket {
+  const GelenEtiket({required this.ad, this.esler = const []});
+
+  final String ad;
+  final List<String> esler;
+
+  factory GelenEtiket.fromJson(Map<String, dynamic> json) => GelenEtiket(
+        ad: json['ad'] as String,
+        esler: [for (final e in (json['esler'] as List<dynamic>? ?? const [])) e as String],
+      );
+}
+
+/// `GelenKlasorDto` (`GET /api/gelen/klasorler`): a folder a card may be placed in. [yol] ends with a slash; [tur] is
+/// `proje` (the notes folder of project [proje]) or `kok` (a top-level folder).
+class GelenKlasoru {
+  const GelenKlasoru({required this.yol, required this.ad, required this.tur, this.proje});
+
+  final String yol;
+  final String ad;
+  final String tur;
+  final String? proje;
+
+  factory GelenKlasoru.fromJson(Map<String, dynamic> json) => GelenKlasoru(
+        yol: json['yol'] as String,
+        ad: json['ad'] as String,
+        tur: json['tur'] as String,
+        proje: json['proje'] as String?,
+      );
+}
+
+/// The pick lists of the hand-made placement: null means the server could not be asked (the dialog falls back to a
+/// typed tag list and the cached projects).
+typedef GelenSecenekleri = ({List<GelenEtiket> etiketler, List<GelenKlasoru> klasorler});
+
 /// The answer of "suggest again" (`GelenOneriYaniti`): `olustu` (a suggestion is waiting now), `laptoptaIslenecek` or `atlandi`.
 class GelenOneriYaniti {
   const GelenOneriYaniti({required this.durum, this.mesaj});

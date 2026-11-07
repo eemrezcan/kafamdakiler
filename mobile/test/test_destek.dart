@@ -18,6 +18,7 @@ import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
+import 'package:kafamdakiler/data/models/proje_repo.dart';
 import 'package:kafamdakiler/data/models/ses.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/models/yonetim.dart';
@@ -273,6 +274,34 @@ class SahteApi extends ApiService {
     );
   }
 
+  /// Dictionary tags and folders for the placement pick lists; with [gelenSecenekHatasi] set they fail instead.
+  List<GelenEtiket> gelenEtiketleri_ = [];
+  List<GelenKlasoru> gelenKlasorleri_ = [];
+  int? gelenSecenekHatasi;
+
+  @override
+  Future<List<GelenEtiket>> gelenEtiketleri() async {
+    _gelenSecenekKontrol('gelenEtiketleri');
+    return gelenEtiketleri_;
+  }
+
+  @override
+  Future<List<GelenKlasoru>> gelenKlasorleri() async {
+    _gelenSecenekKontrol('gelenKlasorleri');
+    return gelenKlasorleri_;
+  }
+
+  void _gelenSecenekKontrol(String ad) {
+    _kontrol(ad);
+    if (gelenSecenekHatasi == null) return;
+    final istek = RequestOptions(path: ad);
+    throw DioException.badResponse(
+      statusCode: gelenSecenekHatasi!,
+      requestOptions: istek,
+      response: Response(requestOptions: istek, statusCode: gelenSecenekHatasi),
+    );
+  }
+
   @override
   Future<void> gelenIsle(String kart, GelenIsleGirdi girdi) async {
     _gelenYazmaKontrol('gelenIsle:$kart:${girdi.yol}:${girdi.baslik}:${girdi.etiketler.join(',')}');
@@ -498,6 +527,22 @@ class SahteApi extends ApiService {
   Future<ProjeDetay> beyinProje(String kimlik) async {
     _beyinKontrol('beyinProje');
     return projeDetaylari[kimlik] ?? (throw _yok('beyinProje'));
+  }
+
+  /// Repository cards by project id; a project without one answers null (the server's 404).
+  Map<String, ProjeRepoOzeti> projeRepolari = {};
+
+  /// When set, only the repository card's call fails with this HTTP status.
+  int? projeRepoHatasi;
+
+  @override
+  Future<ProjeRepoOzeti?> beyinProjeRepo(String kimlik) async {
+    _beyinKontrol('beyinProjeRepo:$kimlik');
+    if (projeRepoHatasi != null) {
+      final istek = RequestOptions(path: 'beyinProjeRepo');
+      throw DioException.badResponse(statusCode: projeRepoHatasi!, requestOptions: istek, response: Response(requestOptions: istek, statusCode: projeRepoHatasi));
+    }
+    return projeRepolari[kimlik];
   }
 
   @override
@@ -751,6 +796,10 @@ Hatirlatici ornekHatirlatici({
   HatirlaticiDurumu durum = HatirlaticiDurumu.acik,
   DateTime? sonrakiAn,
   DateTime? erteleAn,
+  bool israrli = false,
+  int israrAraligiDakika = varsayilanIsrarAraligi,
+  int israrEnCok = varsayilanIsrarEnCok,
+  bool acil = false,
 }) {
   return Hatirlatici(
     id: id,
@@ -765,6 +814,10 @@ Hatirlatici ornekHatirlatici({
     sonrakiAn: sonrakiAn ?? DateTime.utc(2026, 11, 2, 6),
     erteleAn: erteleAn,
     createdAt: DateTime.utc(2026, 10, 1),
+    israrli: israrli,
+    israrAraligiDakika: israrAraligiDakika,
+    israrEnCok: israrEnCok,
+    acil: acil,
   );
 }
 

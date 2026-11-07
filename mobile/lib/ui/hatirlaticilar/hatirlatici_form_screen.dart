@@ -35,6 +35,10 @@ class _HatirlaticiFormScreenState extends State<HatirlaticiFormScreen> {
   HatirlaticiDurumu _durum = HatirlaticiDurumu.acik;
   DateTime? _gun;
   Saat? _saat;
+  bool _israrli = false;
+  bool _acil = false;
+  int _israrAraligi = varsayilanIsrarAraligi;
+  int _israrEnCok = varsayilanIsrarEnCok;
   bool _gunHatasi = false;
   bool _dolduruldu = false;
 
@@ -66,6 +70,10 @@ class _HatirlaticiFormScreenState extends State<HatirlaticiFormScreen> {
     _durum = h.durum;
     _gun = h.gun;
     _saat = h.saat;
+    _israrli = h.israrli;
+    _acil = h.acil;
+    _israrAraligi = israrAraliklari.contains(h.israrAraligiDakika) ? h.israrAraligiDakika : varsayilanIsrarAraligi;
+    _israrEnCok = h.israrEnCok;
   }
 
   Future<void> _gunSec() async {
@@ -114,6 +122,10 @@ class _HatirlaticiFormScreenState extends State<HatirlaticiFormScreen> {
       tekrar: _tekrar,
       onceGun: int.tryParse(_onceGun.text.trim()) ?? 0,
       durum: _durum,
+      israrli: _israrli,
+      israrAraligiDakika: _israrAraligi,
+      israrEnCok: _israrEnCok,
+      acil: _acil,
     ));
     if (!kaydedildi || !mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kaydedildi')));
@@ -264,6 +276,28 @@ class _HatirlaticiFormScreenState extends State<HatirlaticiFormScreen> {
               helperText: '0 ise yalnız asıl günde haber verilir (en çok 60).',
             ),
             validator: onceGunDogrula,
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Israrlı'),
+            subtitle: Text('Yapılmazsa $_israrEnCok kez daha hatırlatır; Yaptım ya da Ertele deyince durur.'),
+            value: _israrli,
+            onChanged: (v) => setState(() => _israrli = v),
+          ),
+          if (_israrli)
+            DropdownButtonFormField<int>(
+              initialValue: _israrAraligi,
+              decoration: const InputDecoration(labelText: 'Israr aralığı'),
+              items: [for (final d in israrAraliklari) DropdownMenuItem(value: d, child: Text(d == 60 ? '1 saatte bir' : '$d dakikada bir'))],
+              onChanged: (d) => setState(() => _israrAraligi = d!),
+            ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Acil'),
+            subtitle: const Text('Sessiz modu deler; kilit ekranında tam ekran açılır.'),
+            value: _acil,
+            onChanged: (v) => setState(() => _acil = v),
           ),
           if (_vm.duzenleme) ...[
             const SizedBox(height: 16),

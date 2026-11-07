@@ -38,6 +38,13 @@ enum HatirlaticiDurumu {
   arsiv,
 }
 
+/// The nag intervals the server accepts (minutes), and the defaults it stores (`Hatirlatici.VarsayilanIsrar*`; the
+/// constructors and `@JsonKey` below repeat the two numbers as literals because the generator wants it).
+const israrAraliklari = [5, 15, 60];
+const varsayilanIsrarAraligi = 15;
+const varsayilanIsrarEnCok = 3;
+const enCokIsrarSayisi = 4;
+
 /// An hour of the day ("09:00"); `TimeOnly` on the wire ("09:00:00").
 class Saat {
   const Saat(this.saat, this.dakika);
@@ -91,6 +98,10 @@ class Hatirlatici {
     required this.sonrakiAn,
     this.erteleAn,
     required this.createdAt,
+    this.israrli = false,
+    this.israrAraligiDakika = 15,
+    this.israrEnCok = 3,
+    this.acil = false,
   });
 
   final String id;
@@ -108,6 +119,18 @@ class Hatirlatici {
   final DateTime sonrakiAn;
   final DateTime? erteleAn;
   final DateTime createdAt;
+
+  /// Nags: after the first notification up to [israrEnCok] more come, [israrAraligiDakika] minutes apart, until the
+  /// reminder is done or snoozed. [acil] also breaks through silent mode. Rows cached before these fields existed read
+  /// as a plain reminder.
+  @JsonKey(defaultValue: false)
+  final bool israrli;
+  @JsonKey(defaultValue: 15)
+  final int israrAraligiDakika;
+  @JsonKey(defaultValue: 3)
+  final int israrEnCok;
+  @JsonKey(defaultValue: false)
+  final bool acil;
 
   /// The hour the rule fires at: its own, or the default morning hour.
   Saat get kuralSaati => saat ?? varsayilanHatirlaticiSaati;
@@ -137,6 +160,10 @@ class Hatirlatici {
     DateTime? sonrakiAn,
     DateTime? erteleAn,
     bool erteleAnTemizle = false,
+    bool? israrli,
+    int? israrAraligiDakika,
+    int? israrEnCok,
+    bool? acil,
   }) =>
       Hatirlatici(
         id: id,
@@ -152,6 +179,10 @@ class Hatirlatici {
         sonrakiAn: sonrakiAn ?? this.sonrakiAn,
         erteleAn: erteleAnTemizle ? null : (erteleAn ?? this.erteleAn),
         createdAt: createdAt,
+        israrli: israrli ?? this.israrli,
+        israrAraligiDakika: israrAraligiDakika ?? this.israrAraligiDakika,
+        israrEnCok: israrEnCok ?? this.israrEnCok,
+        acil: acil ?? this.acil,
       );
 
   factory Hatirlatici.fromJson(Map<String, dynamic> json) => _$HatirlaticiFromJson(json);
@@ -173,6 +204,10 @@ class HatirlaticiYaz {
     this.tekrar = Tekrar.yok,
     this.onceGun = 0,
     this.durum = HatirlaticiDurumu.acik,
+    this.israrli = false,
+    this.israrAraligiDakika = 15,
+    this.israrEnCok = 3,
+    this.acil = false,
   });
 
   final String? id;
@@ -187,6 +222,16 @@ class HatirlaticiYaz {
   final Tekrar tekrar;
   final int onceGun;
   final HatirlaticiDurumu durum;
+
+  /// See [Hatirlatici.israrli]; a queued write from before these fields existed reads as a plain reminder.
+  @JsonKey(defaultValue: false)
+  final bool israrli;
+  @JsonKey(defaultValue: 15)
+  final int israrAraligiDakika;
+  @JsonKey(defaultValue: 3)
+  final int israrEnCok;
+  @JsonKey(defaultValue: false)
+  final bool acil;
 
   factory HatirlaticiYaz.fromJson(Map<String, dynamic> json) => _$HatirlaticiYazFromJson(json);
   Map<String, dynamic> toJson() => _$HatirlaticiYazToJson(this);

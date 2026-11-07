@@ -257,6 +257,65 @@ void main() {
       expect(govde, contains('"onceGun":2'));
     });
 
+    testWidgets('Israrlı and Acil start off; the interval shows only while Israrlı is on', (tester) async {
+      await formGoster(tester);
+
+      expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Israrlı')).value, isFalse);
+      expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Acil')).value, isFalse);
+      expect(find.text('Israr aralığı'), findsNothing);
+
+      await tester.tap(find.widgetWithText(SwitchListTile, 'Israrlı'));
+      await tester.pumpAndSettle();
+      expect(find.text('Israr aralığı'), findsOneWidget);
+      expect(find.text('15 dakikada bir'), findsOneWidget, reason: 'the server default');
+    });
+
+    testWidgets('the nag switches and the interval go into the queued write', (tester) async {
+      await formGoster(tester);
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Başlık'), 'İlacı al');
+      await tester.tap(find.widgetWithText(SwitchListTile, 'Israrlı'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('15 dakikada bir'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('5 dakikada bir').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(SwitchListTile, 'Acil'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Kaydet'));
+      await gercekZaman(tester);
+      await tester.pumpAndSettle();
+
+      final govde = (await kuyruk(tester)).single.govde;
+      expect(govde, contains('"israrli":true'));
+      expect(govde, contains('"israrAraligiDakika":5'));
+      expect(govde, contains('"israrEnCok":3'));
+      expect(govde, contains('"acil":true'));
+    });
+
+    testWidgets('a plain save sends the switches off', (tester) async {
+      await formGoster(tester);
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Başlık'), 'Düz');
+      await tester.tap(find.text('Kaydet'));
+      await gercekZaman(tester);
+      await tester.pumpAndSettle();
+
+      final govde = (await kuyruk(tester)).single.govde;
+      expect(govde, contains('"israrli":false'));
+      expect(govde, contains('"acil":false'));
+    });
+
+    testWidgets('an edit opens with the saved nag settings', (tester) async {
+      ortam.api.hatirlaticilar = [ornekHatirlatici(id: 'h', israrli: true, israrAraligiDakika: 60, acil: true)];
+      await tester.runAsync(ortam.hatirlaticilar.listele);
+      await formGoster(tester, id: 'h');
+
+      expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Israrlı')).value, isTrue);
+      expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Acil')).value, isTrue);
+      expect(find.text('1 saatte bir'), findsOneWidget);
+    });
+
     testWidgets('an edit opens with the saved values and queues an update', (tester) async {
       ortam.api.hatirlaticilar = [
         ornekHatirlatici(id: 'h', baslik: 'Eski başlık', tur: HatirlaticiTuru.soz, kime: 'Ali', onceGun: 3, saat: const Saat(18, 30)),

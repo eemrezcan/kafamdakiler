@@ -8,6 +8,7 @@ import 'package:kafamdakiler/ui/ara/not_screen.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_screen.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_view_model.dart';
 import 'package:kafamdakiler/ui/bugun/gun_plani_view_model.dart';
+import 'package:kafamdakiler/data/models/proje_repo.dart';
 import 'package:kafamdakiler/ui/projeler/proje_detay_screen.dart';
 import 'package:kafamdakiler/ui/projeler/proje_liste_screen.dart';
 import 'package:kafamdakiler/ui/projeler/proje_view_model.dart';
@@ -27,8 +28,8 @@ void main() {
     await tester.pump();
   }
 
-  void telefonBoyu(WidgetTester tester) {
-    tester.view.physicalSize = const Size(375, 900);
+  void telefonBoyu(WidgetTester tester, {double boy = 900}) {
+    tester.view.physicalSize = Size(375, boy);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
@@ -111,8 +112,9 @@ void main() {
       sonGunluk: [GunlukSatiri(zaman: '2026-11-03 18:42', baslik: 'Okuma listesi', metin: 'Liste sayfası bitti.')],
     );
 
-    Future<ProjeDetayViewModel> goster(WidgetTester tester) async {
-      telefonBoyu(tester);
+    // [boy] taller than a phone when the test looks at the lower cards (a list only builds what is on screen).
+    Future<ProjeDetayViewModel> goster(WidgetTester tester, {double boy = 900}) async {
+      telefonBoyu(tester, boy: boy);
       final vm = ProjeDetayViewModel(repo: ortam.beyin, kimlik: 'kitap-kulubu');
       await vm.yukle();
       await tester.pumpWidget(MaterialApp(home: ProjeDetayScreen(viewModel: vm)));
@@ -152,6 +154,71 @@ void main() {
         tester.getTopLeft(find.text('2026-11-03 18:43')).dx,
         tester.getTopLeft(find.text('2026-11-03 18:42')).dx,
       );
+    });
+
+    testWidgets('repo card: link, open PR count and the last commits', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      ortam.api.projeRepolari = {
+        'kitap-kulubu': ProjeRepoOzeti(
+          proje: 'kitap-kulubu',
+          depo: 'emre/kitap-kulubu',
+          baglanti: 'https://github.com/emre/kitap-kulubu',
+          durum: 'tamam',
+          acikPrSayisi: 2,
+          commitler: [
+            RepoCommit(hash: 'a1b2c3d', mesaj: 'feat: add the calendar', yazar: 'Emre', tarih: DateTime.utc(2026, 11, 3, 18)),
+            const RepoCommit(hash: 'e4f5a6b', mesaj: 'fix: typo'),
+          ],
+        ),
+      };
+      await goster(tester, boy: 2400);
+
+      expect(find.text('DEPO'), findsOneWidget, reason: 'section titles are drawn in capitals');
+      expect(find.text('emre/kitap-kulubu'), findsOneWidget);
+      expect(find.text('https://github.com/emre/kitap-kulubu'), findsOneWidget);
+      expect(find.text('2 açık PR'), findsOneWidget);
+      expect(find.text('feat: add the calendar'), findsOneWidget);
+      expect(find.textContaining('a1b2c3d · Emre'), findsOneWidget);
+      expect(find.text('e4f5a6b'), findsOneWidget, reason: 'a commit without author and date shows just its hash');
+    });
+
+    testWidgets('repo card without a GitHub token: the link and the reason, no counts', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      ortam.api.projeRepolari = {
+        'kitap-kulubu': const ProjeRepoOzeti(
+          proje: 'kitap-kulubu',
+          depo: 'emre/kitap-kulubu',
+          baglanti: 'https://github.com/emre/kitap-kulubu',
+          durum: 'tokenYok',
+          mesaj: 'GitHub token yok; yalnız bağlantı gösteriliyor.',
+        ),
+      };
+      await goster(tester, boy: 2400);
+
+      expect(find.text('https://github.com/emre/kitap-kulubu'), findsOneWidget);
+      expect(find.text('GitHub token yok; yalnız bağlantı gösteriliyor.'), findsOneWidget);
+      expect(find.textContaining('açık PR'), findsNothing);
+    });
+
+    testWidgets('a project with no repository linked has no card', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      await goster(tester, boy: 2400);
+
+      expect(find.text('DEPO'), findsNothing);
+      expect(find.text('Kitap Kulübü Sitesi'), findsOneWidget);
+      expect(find.text('SON GÜNLÜK'), findsOneWidget);
+    });
+
+    testWidgets('a repo card that cannot be read leaves the project page as it is', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      ortam.api.projeRepoHatasi = 500;
+      final vm = await goster(tester, boy: 2400);
+
+      expect(vm.repoHatasi, isTrue);
+      expect(vm.repoOzeti, isNull);
+      expect(find.text('DEPO'), findsNothing);
+      expect(find.text('Okuma listesi sayfası bitti.'), findsOneWidget, reason: 'the project itself is still shown');
+      expect(find.text('Tekrar dene'), findsNothing);
     });
 
     testWidgets('a project that is not there (or is hidden): a 404 message', (tester) async {

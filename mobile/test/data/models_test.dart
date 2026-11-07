@@ -5,6 +5,7 @@ import 'package:kafamdakiler/data/models/aliskanlik.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
+import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
 
@@ -140,6 +141,38 @@ void main() {
     expect(json['baslangicAni'], '2026-10-31T18:10:00.000Z');
     expect(OturumEkle.fromJson(json).toJson(), json);
     expect(const OturumEkle(bitisKonum: 35).toJson(), {'bitisKonum': 35.0});
+  });
+
+  test('HatirlaticiDto without the nag fields (a cached row from before H4) reads as a plain reminder', () {
+    final h = Hatirlatici.fromJson(_json('''
+      { "id": "h", "baslik": "Eski", "tur": "gorev", "gun": "2026-11-10", "tekrar": "yok", "onceGun": 0, "durum": "acik",
+        "sonrakiAn": "2026-11-10T06:00:00Z", "createdAt": "2026-11-01T10:00:00Z" }'''));
+    expect(h.israrli, isFalse);
+    expect(h.acil, isFalse);
+    expect(h.israrAraligiDakika, 15);
+    expect(h.israrEnCok, 3);
+  });
+
+  test('HatirlaticiDto nag fields are read, kept by copyWith and written back', () {
+    final h = Hatirlatici.fromJson(_json('''
+      { "id": "h", "baslik": "Yeni", "tur": "gorev", "gun": "2026-11-10", "tekrar": "yok", "onceGun": 0, "durum": "acik",
+        "sonrakiAn": "2026-11-10T06:00:00Z", "createdAt": "2026-11-01T10:00:00Z",
+        "israrli": true, "israrAraligiDakika": 5, "israrEnCok": 4, "acil": true }'''));
+    expect((h.israrli, h.israrAraligiDakika, h.israrEnCok, h.acil), (true, 5, 4, true));
+    final kopya = h.copyWith(baslik: 'Başka');
+    expect((kopya.israrli, kopya.israrAraligiDakika, kopya.israrEnCok, kopya.acil), (true, 5, 4, true));
+    expect(Hatirlatici.fromJson(h.toJson()).israrAraligiDakika, 5);
+  });
+
+  test('HatirlaticiYazDto always carries the nag fields; an old queued body reads with the defaults', () {
+    final json = HatirlaticiYaz(baslik: 'X', gun: DateTime.utc(2026, 11, 10), israrli: true, israrAraligiDakika: 60, acil: true).toJson();
+    expect(json['israrli'], true);
+    expect(json['israrAraligiDakika'], 60);
+    expect(json['israrEnCok'], 3);
+    expect(json['acil'], true);
+
+    final eski = HatirlaticiYaz.fromJson({'baslik': 'Eski', 'gun': '2026-11-10', 'tur': 'gorev', 'tekrar': 'yok', 'onceGun': 0, 'durum': 'acik'});
+    expect((eski.israrli, eski.acil, eski.israrAraligiDakika, eski.israrEnCok), (false, false, 15, 3));
   });
 
   test('login response', () {

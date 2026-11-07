@@ -48,8 +48,10 @@ class YerelBildirimServisi implements BildirimServisi {
 
   final FlutterLocalNotificationsPlugin _eklenti;
   bool _kesinIstendi = false;
+  bool _tamEkranIstendi = false;
 
   static const _kanalKimligi = 'hatirlaticilar';
+  static const _acilKanalKimligi = 'acil';
   static const _eylemKanalKimligi = 'eylemler';
   static const _brifingKanalKimligi = 'brifing';
 
@@ -105,6 +107,11 @@ class YerelBildirimServisi implements BildirimServisi {
       if (izin && !_kesinIstendi && !(await android.canScheduleExactNotifications() ?? false)) {
         _kesinIstendi = true;
         await android.requestExactAlarmsPermission();
+      }
+      // Android 14+ can switch the full-screen intent off for an app; the urgent reminders need it.
+      if (izin && !_tamEkranIstendi) {
+        _tamEkranIstendi = true;
+        await android.requestFullScreenIntentPermission();
       }
       return izin;
     } on Object {
@@ -191,11 +198,17 @@ class YerelBildirimServisi implements BildirimServisi {
       : _hatirlaticiAyrintisi(b);
 
   AndroidNotificationDetails _hatirlaticiAyrintisi(PlanliBildirim b) => AndroidNotificationDetails(
-        _kanalKimligi,
-        'Hatırlatıcılar',
-        channelDescription: 'Hatırlatıcıların zamanı ve "kaç gün önce" uyarıları',
-        importance: Importance.high,
-        priority: Priority.high,
+        b.acil ? _acilKanalKimligi : _kanalKimligi,
+        b.acil ? 'Acil hatırlatıcılar' : 'Hatırlatıcılar',
+        channelDescription: b.acil
+            ? 'Acil işaretli hatırlatıcılar: sessiz modda da çalar, kilit ekranında tam ekran açılır'
+            : 'Hatırlatıcıların zamanı ve "kaç gün önce" uyarıları',
+        importance: b.acil ? Importance.max : Importance.high,
+        priority: b.acil ? Priority.max : Priority.high,
+        // The alarm usage and category are what let it past silent mode; the full-screen intent wakes the screen.
+        audioAttributesUsage: b.acil ? AudioAttributesUsage.alarm : AudioAttributesUsage.notification,
+        category: b.acil ? AndroidNotificationCategory.alarm : null,
+        fullScreenIntent: b.acil,
         // The buttons open the app: the action is written to the queue there, with the app's own database.
         actions: b.eylemler
             ? const [

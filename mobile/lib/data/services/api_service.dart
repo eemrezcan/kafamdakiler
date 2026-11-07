@@ -7,6 +7,7 @@ import '../models/aliskanlik.dart';
 import '../models/ben.dart';
 import '../models/beyin.dart';
 import '../models/beyin_yazma.dart';
+import '../models/proje_repo.dart';
 import '../models/brifing.dart';
 import '../models/zaman_cizelgesi.dart';
 import '../models/enums.dart';
@@ -280,6 +281,18 @@ class ApiService {
     return _liste(yanit, GelenKarti.fromJson);
   }
 
+  /// `GET /api/gelen/etiketler`: the dictionary's main tags with their synonyms (`gelen.oku`).
+  Future<List<GelenEtiket>> gelenEtiketleri() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/gelen/etiketler');
+    return _liste(yanit, GelenEtiket.fromJson);
+  }
+
+  /// `GET /api/gelen/klasorler`: the folders a card may be placed in (`gelen.oku`).
+  Future<List<GelenKlasoru>> gelenKlasorleri() async {
+    final yanit = await _dio.get<List<dynamic>>('/api/gelen/klasorler');
+    return _liste(yanit, GelenKlasoru.fromJson);
+  }
+
   /// `POST /api/gelen/{kart}/isle`: places the card by hand. 400 when the path or a tag breaks the rules, 404 when the
   /// card is gone.
   Future<void> gelenIsle(String kart, GelenIsleGirdi girdi) async {
@@ -387,6 +400,17 @@ class ApiService {
   Future<ProjeDetay> beyinProje(String kimlik) async {
     final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/projeler/${Uri.encodeComponent(kimlik)}');
     return ProjeDetay.fromJson(yanit.data!);
+  }
+
+  /// `GET /api/beyin/projeler/{kimlik}/repo`: the repository card; null when no repository is linked to the project (404).
+  Future<ProjeRepoOzeti?> beyinProjeRepo(String kimlik) async {
+    try {
+      final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/projeler/${Uri.encodeComponent(kimlik)}/repo');
+      return ProjeRepoOzeti.fromJson(yanit.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<BeyinGun> beyinGun(DateTime tarih) async {

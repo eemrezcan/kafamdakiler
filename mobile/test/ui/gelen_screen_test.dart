@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
+import 'package:kafamdakiler/data/models/gelen.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
 import 'package:kafamdakiler/ui/gelen/gelen_liste_screen.dart';
 import 'package:kafamdakiler/ui/gelen/gelen_liste_view_model.dart';
@@ -169,6 +170,63 @@ void main() {
     expect(bekleyen.single.govde, contains('"yol":"ogrenme/simyaci.md"'));
     expect(bekleyen.single.govde, contains('"baslik":"Önerisiz kart"'));
     expect(bekleyen.single.govde, contains('"etiketler":["kaynak","okul"]'));
+  });
+
+  Future<void> elleYerlestirAc(WidgetTester tester) async {
+    await tester.tap(find.text('Önerisiz kart'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Elle yerleştir'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('placing by hand with the server lists: the folder and the tags are picked, not typed', (tester) async {
+    ortam.api.gelenEtiketleri_ = const [GelenEtiket(ad: 'kaynak', esler: ['source']), GelenEtiket(ad: 'okul'), GelenEtiket(ad: 'fikir')];
+    ortam.api.gelenKlasorleri_ = const [
+      GelenKlasoru(yol: 'projects/kitap/notlar/', ad: 'Kitap Kulübü', tur: 'proje', proje: 'kitap'),
+      GelenKlasoru(yol: 'ogrenme/', ad: 'ogrenme', tur: 'kok'),
+    ];
+    await goster(tester, cevrimdisiOl: false);
+    await elleYerlestirAc(tester);
+
+    expect(find.widgetWithText(TextField, 'Etiketler'), findsNothing, reason: 'tags are chips now');
+    expect(find.widgetWithText(FilterChip, 'kaynak'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'okul'), findsOneWidget);
+    expect(find.text('Kitap Kulübü (notlar)'), findsOneWidget, reason: 'the first folder is preselected');
+
+    // A file name but no tag picked: refused on the spot.
+    await tester.enterText(find.widgetWithText(TextField, 'Dosya adı'), 'simyaci');
+    await tester.tap(find.text('Yerleştir'));
+    await tester.pump();
+    expect(find.text('Dosya adı, başlık ve en az bir etiket gerekli.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilterChip, 'kaynak'));
+    await tester.tap(find.widgetWithText(FilterChip, 'okul'));
+    // Picked and picked again: unselected.
+    await tester.tap(find.widgetWithText(FilterChip, 'fikir'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilterChip, 'fikir'));
+    await tester.pump();
+    await tester.tap(find.text('Kitap Kulübü (notlar)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ogrenme').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yerleştir'));
+    await tester.pumpAndSettle();
+    await gercekZaman(tester);
+
+    expect(ortam.api.cagrilar, contains('gelenEtiketleri'));
+    expect(ortam.api.cagrilar, contains('gelenKlasorleri'));
+    expect(ortam.api.cagrilar, contains('gelenIsle:b:ogrenme/simyaci.md:Önerisiz kart:kaynak,okul'));
+  });
+
+  testWidgets('when the server lists cannot be read, the typed tag field and the cached projects stand in', (tester) async {
+    ortam.api.gelenSecenekHatasi = 403;
+    await goster(tester, cevrimdisiOl: false);
+    await elleYerlestirAc(tester);
+
+    expect(find.widgetWithText(TextField, 'Etiketler'), findsOneWidget);
+    expect(find.byType(FilterChip), findsNothing);
+    expect(find.text('ogrenme/'), findsOneWidget, reason: 'the fixed folder list');
   });
 
   testWidgets('deleting asks first, then queues the deletion', (tester) async {

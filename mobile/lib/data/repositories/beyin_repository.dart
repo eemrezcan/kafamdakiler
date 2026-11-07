@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 
 import '../models/beyin.dart';
+import '../models/proje_repo.dart';
 import '../services/api_service.dart';
 import '../services/database/app_database.dart';
 
@@ -62,6 +63,9 @@ class BeyinRepository {
   }
 
   Future<ProjeDetay> proje(String kimlik) => _api.beyinProje(kimlik);
+
+  /// The project's repository card; null when none is linked. Needs the network, errors are thrown.
+  Future<ProjeRepoOzeti?> projeRepo(String kimlik) => _api.beyinProjeRepo(kimlik);
 
   Future<BeyinGun> gun(DateTime tarih) => _api.beyinGun(tarih);
 
