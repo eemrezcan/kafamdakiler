@@ -1,0 +1,61 @@
+@page
+@using Kafamdakiler.Beyin
+@model Kafamdakiler.Pages.Beyin.AraModel
+@{
+    ViewData["Title"] = "Beyinde ara";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Notlarda, görevlerde ve günlükte</p>
+        <h1 class="kd-page-title">Ara</h1>
+    </div>
+</div>
+
+<partial name="_BeyinMenu" />
+
+<form method="get" asp-page="/Beyin/Ara" class="kd-beyin-ara-form" role="search">
+    <label class="visually-hidden" for="beyin-sorgu">Beyinde ara</label>
+    <input class="form-control" type="search" id="beyin-sorgu" name="q" value="@Model.Sorgu"
+           maxlength="@BeyinOkuma.EnUzunSorgu" placeholder="Beyinde ara" autofocus />
+    <button type="submit" class="btn btn-primary">Ara</button>
+</form>
+
+<partial name="_BeyinHata" model="Model" />
+
+@if (Model.Sonuclar is { } sonuclar)
+{
+    @if (sonuclar.Count == 0)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Sonuç yok.</p>
+            <p class="mb-0">"@Model.Sorgu" için bir şey bulunamadı.</p>
+        </div>
+    }
+    else
+    {
+        <section class="kd-beyin-liste" aria-label="Arama sonuçları">
+            @foreach (var s in sonuclar)
+            {
+                var konum = BeyinGorunum.Konum(s.Proje, s.Alan);
+                <a class="kd-capture kd-beyin-satir kd-c-violet" asp-page="/Beyin/Not" asp-route-yol="@s.Yol">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-1"><strong>@s.Baslik</strong></p>
+                        @if (!string.IsNullOrEmpty(s.Alinti))
+                        {
+                            <p class="kd-capture-text kd-muted mb-1">@s.Alinti</p>
+                        }
+                        @if (konum.Length > 0)
+                        {
+                            <p class="kd-capture-meta"><span>@konum</span></p>
+                        }
+                    </div>
+                </a>
+            }
+        </section>
+    }
+}
+else if (!Model.Hatali)
+{
+    <p class="kd-muted">Aramak istediğin sözcüğü yaz.</p>
+}

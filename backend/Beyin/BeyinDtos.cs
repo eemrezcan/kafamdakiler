@@ -31,3 +31,19 @@ public record BeyinGunToplamiDto(int Madde, int Yapildi, int Acik);
 public record AramaSonucuDto(string Yol, string Baslik, string? Proje, string? Alan, string? Alinti);
 
 public record NotDto(string Yol, string Baslik, List<string> Etiketler, string Govde);
+
+// The outcome of a read before it becomes an HTTP answer. `Durum` is the HTTP status (200 = `Veri` is set).
+// A failure carries fixed Turkish texts (`Baslik`, `Ayrinti`) or, for a bad input, the field messages (`Alanlar`).
+// The API turns it into a response (Sonuc); the web pages read it directly.
+public record BeyinYaniti<T>(int Durum, T? Veri = default, string? Baslik = null, string? Ayrinti = null, Dictionary<string, string[]>? Alanlar = null)
+{
+    public bool Basarili => Durum == StatusCodes.Status200OK;
+
+    // The brain is not set up on this machine: the pages say so instead of failing.
+    public bool BagliDegil => Durum == StatusCodes.Status503ServiceUnavailable;
+
+    public IResult Sonuc() =>
+        Basarili ? Results.Ok(Veri)
+        : Alanlar is not null ? Results.ValidationProblem(Alanlar)
+        : Results.Problem(title: Baslik, detail: Ayrinti, statusCode: Durum);
+}

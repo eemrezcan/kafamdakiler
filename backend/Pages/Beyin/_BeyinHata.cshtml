@@ -1,0 +1,17 @@
+@model Kafamdakiler.Pages.Beyin.BeyinSayfasi
+
+@* A read that failed, in words. With the brain off this is the whole page; the rest of the app is not affected. *@
+@if (Model.Hatali)
+{
+    <div class="kd-empty kd-empty--small" role="status">
+        <p class="kd-empty-title">@Model.HataBasligi</p>
+        @foreach (var mesaj in Model.HataMesajlari)
+        {
+            <p class="mb-0">@mesaj</p>
+        }
+        @if (Model.BeyinKapali)
+        {
+            <p class="kd-muted mt-2 mb-0">Uygulamanın geri kalanı çalışır; beyin ayarlanınca bu sayfalar dolar.</p>
+        }
+    </div>
+}

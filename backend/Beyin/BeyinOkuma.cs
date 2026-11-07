@@ -35,7 +35,7 @@ public static partial class BeyinOkuma
     };
 
     // Fixed texts: the brain's own message can contain paths, so it goes to the log, not to the client.
-    private static IResult Hata(BeyinSonucu sonuc, ILogger log)
+    private static BeyinYaniti<T> Hata<T>(BeyinSonucu sonuc, ILogger log)
     {
         var durum = DurumKodu(sonuc);
         if (durum >= 500 && sonuc.Durum != BeyinDurumu.BagliDegil)
@@ -49,29 +49,29 @@ public static partial class BeyinOkuma
             StatusCodes.Status504GatewayTimeout => ("Beyin zamanında cevap vermedi", "Biraz sonra tekrar dene."),
             _ => ("Beyin cevabı anlaşılamadı", "Beyin hata verdi ya da beklenmeyen bir cevap döndü."),
         };
-        return Results.Problem(title: baslik, detail: ayrinti, statusCode: durum);
+        return new BeyinYaniti<T>(durum, Baslik: baslik, Ayrinti: ayrinti);
     }
 
-    private static async Task<IResult> CalistirAsync(
+    private static async Task<BeyinYaniti<T>> CalistirAsync<T>(
         BeyinIstemcisi beyin, ILogger log, IEnumerable<string> komut, IEnumerable<string>? konumsal,
-        Func<JsonElement, object> donustur, CancellationToken ct)
+        Func<JsonElement, T> donustur, CancellationToken ct)
     {
         var sonuc = await beyin.CalistirAsync(komut, ct, konumsal);
         if (!sonuc.Basarili)
-            return Hata(sonuc, log);
+            return Hata<T>(sonuc, log);
 
         try
         {
-            return Results.Ok(donustur(sonuc.Veri!.Value));
+            return new BeyinYaniti<T>(StatusCodes.Status200OK, donustur(sonuc.Veri!.Value));
         }
         catch (GizliKayit)
         {
             // A record marked hidden that the brain should have left out: it looks like one that does not exist.
-            return Hata(new BeyinSonucu(BeyinDurumu.BeyinHatasi, HataKodu: "gizli"), log);
+            return Hata<T>(new BeyinSonucu(BeyinDurumu.BeyinHatasi, HataKodu: "gizli"), log);
         }
         catch (Exception e) when (e is InvalidDataException or InvalidOperationException or FormatException or KeyNotFoundException)
         {
-            return Hata(new BeyinSonucu(BeyinDurumu.BozukCikti, Mesaj: "Beklenmeyen biçim: " + e.Message), log);
+            return Hata<T>(new BeyinSonucu(BeyinDurumu.BozukCikti, Mesaj: "Beklenmeyen biçim: " + e.Message), log);
         }
     }
 
@@ -91,38 +91,58 @@ public static partial class BeyinOkuma
     internal static string? VaultAdi(BeyinIstemcisi beyin, BeyinAyari ayar) =>
         beyin.Bagli ? Path.GetFileName(Path.TrimEndingDirectorySeparator(ayar.Vault)) : null;
 
-    public static Task<IResult> Projeler(BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+    // The /api handlers: the typed reads below, turned into an HTTP answer.
+
+    public static async Task<IResult> Projeler(BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+        (await ProjelerAl(beyin, log, ct)).Sonuc();
+
+    public static async Task<IResult> Proje(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+        (await ProjeAl(kimlik, beyin, log, ct)).Sonuc();
+
+    public static async Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+        (await GunAl(tarih, beyin, log, ct)).Sonuc();
+
+    public static async Task<IResult> Ara(string? q, string? proje, int? limit, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+        (await AraAl(q, proje, limit, beyin, log, ct)).Sonuc();
+
+    public static async Task<IResult> Not(string? yol, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
+        (await NotAl(yol, beyin, log, ct)).Sonuc();
+
+    // The typed reads: the API handlers above and the web pages (Pages/Beyin) both go through these, so the input
+    // checks, the error table and the hidden-record locks are the same for both and the web cannot go around them.
+
+    public static Task<BeyinYaniti<List<ProjeOzetDto>>> ProjelerAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         CalistirAsync(beyin, log, ["proje", "liste"], null, ProjeListesi, ct);
 
-    public static Task<IResult> Proje(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    public static Task<BeyinYaniti<ProjeDto>> ProjeAl(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {
         if (!KimlikKalibi().IsMatch(kimlik) || kimlik.Length > 100)
-            return Task.FromResult(Sorun("kimlik", "Proje kimliği küçük harf, rakam ve tire olmalı."));
+            return Task.FromResult(Sorun<ProjeDto>("kimlik", "Proje kimliği küçük harf, rakam ve tire olmalı."));
 
         return CalistirAsync(beyin, log, ["proje", "goster"], [kimlik], ProjeAyrintisi, ct);
     }
 
-    public static Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {
         if (!DateOnly.TryParseExact(tarih, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var gun))
-            return Task.FromResult(Sorun("tarih", "Tarih yyyy-MM-dd biçiminde olmalı."));
+            return Task.FromResult(Sorun<BeyinGunDto>("tarih", "Tarih yyyy-MM-dd biçiminde olmalı."));
 
         return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, GunAyrintisi, ct);
     }
 
-    public static Task<IResult> Ara(string? q, string? proje, int? limit, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    public static Task<BeyinYaniti<List<AramaSonucuDto>>> AraAl(string? q, string? proje, int? limit, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {
         var sorgu = q?.Trim();
         if (string.IsNullOrEmpty(sorgu))
-            return Task.FromResult(Sorun("q", "Arama sorgusu boş olamaz."));
+            return Task.FromResult(Sorun<List<AramaSonucuDto>>("q", "Arama sorgusu boş olamaz."));
         if (sorgu.Length > EnUzunSorgu)
-            return Task.FromResult(Sorun("q", $"Arama sorgusu en çok {EnUzunSorgu} karakter olabilir."));
+            return Task.FromResult(Sorun<List<AramaSonucuDto>>("q", $"Arama sorgusu en çok {EnUzunSorgu} karakter olabilir."));
         if (sorgu.Any(char.IsControl))
-            return Task.FromResult(Sorun("q", "Arama sorgusunda denetim karakteri olamaz."));
+            return Task.FromResult(Sorun<List<AramaSonucuDto>>("q", "Arama sorgusunda denetim karakteri olamaz."));
         if (proje is not null && (!KimlikKalibi().IsMatch(proje) || proje.Length > 100))
-            return Task.FromResult(Sorun("proje", "Proje kimliği küçük harf, rakam ve tire olmalı."));
+            return Task.FromResult(Sorun<List<AramaSonucuDto>>("proje", "Proje kimliği küçük harf, rakam ve tire olmalı."));
         if (limit is < 1 or > EnCokSonuc)
-            return Task.FromResult(Sorun("limit", $"Sonuç sayısı 1 ile {EnCokSonuc} arasında olmalı."));
+            return Task.FromResult(Sorun<List<AramaSonucuDto>>("limit", $"Sonuç sayısı 1 ile {EnCokSonuc} arasında olmalı."));
 
         var komut = new List<string> { "ara", $"--limit={limit ?? VarsayilanSonuc}" };
         if (proje is not null)
@@ -131,23 +151,23 @@ public static partial class BeyinOkuma
         return CalistirAsync(beyin, log, komut, [sorgu], AramaSonuclari, ct);
     }
 
-    public static Task<IResult> Not(string? yol, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    public static Task<BeyinYaniti<NotDto>> NotAl(string? yol, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {
         if (!NotYolu.Gecerli(yol))
-            return Task.FromResult(Sorun("yol", "Yol vault'a göreli, .md ile biten ve izinli bir not yolu olmalı."));
+            return Task.FromResult(Sorun<NotDto>("yol", "Yol vault'a göreli, .md ile biten ve izinli bir not yolu olmalı."));
 
         return CalistirAsync(beyin, log, ["not", "oku"], [yol!], NotAyrintisi, ct);
     }
 
-    private static IResult Sorun(string alan, string mesaj) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [alan] = [mesaj] });
+    private static BeyinYaniti<T> Sorun<T>(string alan, string mesaj) =>
+        new(StatusCodes.Status400BadRequest, Alanlar: new Dictionary<string, string[]> { [alan] = [mesaj] });
 
     // Conversions: beyin.py's JSON -> our DTOs. A missing required field is an InvalidDataException (a 502).
 
-    private static object ProjeListesi(JsonElement veri) =>
+    private static List<ProjeOzetDto> ProjeListesi(JsonElement veri) =>
         Dizi(veri).Where(Gorunur).Where(AcikYol).Select(p => new ProjeOzetDto(Gerekli(p, "kimlik"), Gerekli(p, "baslik"))).ToList();
 
-    private static object ProjeAyrintisi(JsonElement p)
+    private static ProjeDto ProjeAyrintisi(JsonElement p)
     {
         if (!Gorunur(p) || !AcikYol(p))
             throw new GizliKayit();
@@ -159,7 +179,7 @@ public static partial class BeyinOkuma
             DiziAlani(p, "son_gunluk").Select(s => new GunlukSatiriDto(Metin(s, "zaman"), Metin(s, "baslik"), Metin(s, "metin"))).ToList());
     }
 
-    private static object GunAyrintisi(JsonElement g) => new BeyinGunDto(
+    private static BeyinGunDto GunAyrintisi(JsonElement g) => new(
         Tarih(g, "tarih") ?? throw new InvalidDataException("tarih yok"), Metin(g, "gun_adi"), Metin(g, "hafta_gunu"),
         Bool(g, "bugun"), Bool(g, "plan_var"), Bool(g, "kapandi"),
         DiziAlani(g, "bolumler").Select(b => new BeyinGunBolumuDto(
@@ -173,11 +193,11 @@ public static partial class BeyinOkuma
             ? new BeyinGunToplamiDto(Sayi(t, "madde") ?? 0, Sayi(t, "yapildi") ?? 0, Sayi(t, "acik") ?? 0)
             : null);
 
-    private static object AramaSonuclari(JsonElement veri) =>
+    private static List<AramaSonucuDto> AramaSonuclari(JsonElement veri) =>
         Dizi(veri).Where(Gorunur).Where(AcikYol).Select(s => new AramaSonucuDto(
             Gerekli(s, "yol"), Metin(s, "baslik") ?? Gerekli(s, "yol"), Metin(s, "proje"), Metin(s, "alan"), DuzMetin.Temizle(Metin(s, "alinti")))).ToList();
 
-    private static object NotAyrintisi(JsonElement n)
+    private static NotDto NotAyrintisi(JsonElement n)
     {
         var ust = n.TryGetProperty("ustbilgi", out var u) && u.ValueKind == JsonValueKind.Object ? u : default;
         if (ust.ValueKind == JsonValueKind.Object && !Gorunur(ust))

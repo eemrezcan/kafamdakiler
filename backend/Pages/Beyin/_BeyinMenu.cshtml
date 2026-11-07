@@ -1,0 +1,11 @@
+@{
+    var sayfa = ViewContext.RouteData.Values["page"] as string ?? "";
+}
+<nav class="kd-filter" aria-label="Beyin bölümleri">
+    <a class="kd-filter-chip @(sayfa is "/Beyin/Index" or "/Beyin/Proje" ? "is-active" : "")" asp-page="/Beyin/Index"
+       aria-current="@(sayfa is "/Beyin/Index" or "/Beyin/Proje" ? "page" : null)">Projeler</a>
+    <a class="kd-filter-chip @(sayfa == "/Beyin/Gun" ? "is-active" : "")" asp-page="/Beyin/Gun"
+       aria-current="@(sayfa == "/Beyin/Gun" ? "page" : null)">Gün planı</a>
+    <a class="kd-filter-chip @(sayfa is "/Beyin/Ara" or "/Beyin/Not" ? "is-active" : "")" asp-page="/Beyin/Ara"
+       aria-current="@(sayfa is "/Beyin/Ara" or "/Beyin/Not" ? "page" : null)">Ara</a>
+</nav>

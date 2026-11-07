@@ -1,0 +1,103 @@
+@page "{tarih?}"
+@using Kafamdakiler.Beyin
+@model Kafamdakiler.Pages.Beyin.GunModel
+@{
+    ViewData["Title"] = "Gün planı";
+    var tarih = Model.Tarih;
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Gün planı</p>
+        <h1 class="kd-page-title">@(tarih is { } t ? BeyinGorunum.GunBasligi(t) : "Gün planı")</h1>
+    </div>
+</div>
+
+<partial name="_BeyinMenu" />
+
+@* Day by day, or straight to a date. The page works from the address (/Beyin/Gun/2026-11-03) as well. *@
+<div class="kd-beyin-gun-gezinme">
+    @if (tarih is { } secili)
+    {
+        <a class="kd-filter-chip" asp-page="/Beyin/Gun" asp-route-tarih="@secili.AddDays(-1).ToString("yyyy-MM-dd")">‹ Önceki gün</a>
+        <a class="kd-filter-chip" asp-page="/Beyin/Gun" asp-route-tarih="@secili.AddDays(1).ToString("yyyy-MM-dd")">Sonraki gün ›</a>
+    }
+    @if (tarih != Model.Bugun)
+    {
+        <a class="kd-filter-chip" asp-page="/Beyin/Gun">Bugüne dön</a>
+    }
+    <form method="get" asp-page="/Beyin/Gun" class="kd-beyin-tarih-form">
+        <label class="visually-hidden" for="beyin-tarih">Tarih</label>
+        <input class="form-control" type="date" id="beyin-tarih" name="tarih" value="@(tarih?.ToString("yyyy-MM-dd"))" />
+        <button type="submit" class="btn btn-outline-primary">Git</button>
+    </form>
+</div>
+
+<partial name="_BeyinHata" model="Model" />
+
+@if (Model.Gun is { } gun)
+{
+    var bos = gun.Bolumler.All(b => b.Maddeler.Count == 0) && gun.Geciken.Count == 0;
+    @if (bos)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Bu gün için plan yok.</p>
+        </div>
+    }
+
+    @foreach (var bolum in gun.Bolumler.Where(b => b.Maddeler.Count > 0))
+    {
+        <section class="kd-yonetim-blok" aria-label="@bolum.Ad">
+            @if (gun.Bolumler.Count > 1 || bolum.Ad != "Yapılacaklar")
+            {
+                <h2 class="kd-eyebrow kd-section-title">@bolum.Ad</h2>
+            }
+            @foreach (var madde in bolum.Maddeler)
+            {
+                var yapildi = BeyinGorunum.Yapildi(madde.Durum);
+                <article class="kd-capture kd-c-violet">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0 @(yapildi ? "kd-beyin-yapildi" : "")">@madde.Baslik</p>
+                        <p class="kd-capture-meta">
+                            <span class="kd-status @(yapildi ? "is-bitti" : "is-birakildi")">@(yapildi ? "Yapıldı" : "Açık")</span>
+                            @if (madde.TahminDk is { } dk)
+                            {
+                                <span>@BeyinGorunum.Dakika(dk)</span>
+                            }
+                        </p>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+
+    @if (gun.Geciken.Count > 0)
+    {
+        <section class="kd-yonetim-blok" aria-labelledby="geciken-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="geciken-baslik">Geciken görevler</h2>
+            @foreach (var g in gun.Geciken)
+            {
+                <article class="kd-capture kd-c-violet">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0">@g.Baslik</p>
+                        <p class="kd-capture-meta">
+                            @if (g.Proje is not null)
+                            {
+                                <span>@g.Proje</span>
+                            }
+                            @if (g.Gun is { } kac)
+                            {
+                                <span class="kd-status is-hata">@kac gün</span>
+                            }
+                        </p>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+
+    @if (gun.Toplam is { Madde: > 0 } toplam)
+    {
+        <p class="kd-muted">@toplam.Yapildi / @toplam.Madde tamam</p>
+    }
+}

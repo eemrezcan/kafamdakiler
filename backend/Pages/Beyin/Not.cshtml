@@ -1,0 +1,39 @@
+@page
+@model Kafamdakiler.Pages.Beyin.NotModel
+@{
+    ViewData["Title"] = Model.Not?.Baslik ?? "Not";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">@(Model.Not?.Yol ?? "Not")</p>
+        <h1 class="kd-page-title">@(Model.Not?.Baslik ?? "Not")</h1>
+    </div>
+</div>
+
+<partial name="_BeyinMenu" />
+<partial name="_BeyinHata" model="Model" />
+
+@if (Model.Not is { } not)
+{
+    @if (not.Etiketler.Count > 0)
+    {
+        <p class="kd-beyin-etiketler">
+            @foreach (var e in not.Etiketler)
+            {
+                <span class="kd-status">@e</span>
+            }
+        </p>
+    }
+
+    @if (string.IsNullOrWhiteSpace(not.Govde))
+    {
+        <p class="kd-muted">Bu notun gövdesi boş.</p>
+    }
+    else
+    {
+        @* The body is Markdown from the vault: NotGovdesi has already turned it into closed HTML (no raw HTML, no
+           pictures, only http/https/mailto links). Nothing else on this page prints markup from the vault. *@
+        <div class="kd-md">@Model.Govde</div>
+    }
+}

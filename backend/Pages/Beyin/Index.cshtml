@@ -1,0 +1,40 @@
+@page
+@model Kafamdakiler.Pages.Beyin.IndexModel
+@{
+    ViewData["Title"] = "Beyin";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">İkinci beyin, yalnız okuma</p>
+        <h1 class="kd-page-title">Beyin</h1>
+    </div>
+</div>
+
+<partial name="_BeyinMenu" />
+<partial name="_BeyinHata" model="Model" />
+
+@if (!Model.Hatali)
+{
+    @if (Model.Projeler.Count == 0)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Henüz proje yok.</p>
+        </div>
+    }
+    else
+    {
+        <section class="kd-beyin-liste" aria-label="Projeler">
+            @foreach (var p in Model.Projeler)
+            {
+                <a class="kd-capture kd-beyin-satir kd-c-violet" asp-page="/Beyin/Proje" asp-route-kimlik="@p.Kimlik">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0">@p.Baslik</p>
+                        <p class="kd-capture-meta"><span>@p.Kimlik</span></p>
+                    </div>
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#arrow-right"></use></svg>
+                </a>
+            }
+        </section>
+    }
+}
