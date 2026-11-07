@@ -9,13 +9,17 @@ public sealed partial class EtiketSozlugu
 {
     private readonly HashSet<string> _gecerli;
 
-    private EtiketSozlugu(List<string> anaAdlar, HashSet<string> gecerli)
+    private EtiketSozlugu(List<string> anaAdlar, Dictionary<string, List<string>> esler, HashSet<string> gecerli)
     {
         AnaAdlar = anaAdlar;
+        Esler = esler;
         _gecerli = gecerli;
     }
 
     public IReadOnlyList<string> AnaAdlar { get; }
+
+    // The synonyms of each main name, in the order written. A synonym that is a main name itself is not listed.
+    public IReadOnlyDictionary<string, List<string>> Esler { get; }
 
     public bool Bos => AnaAdlar.Count == 0;
 
@@ -31,6 +35,7 @@ public sealed partial class EtiketSozlugu
     public static EtiketSozlugu Oku(string govde)
     {
         var ana = new List<string>();
+        var esler = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var gecerli = new HashSet<string>(StringComparer.Ordinal);
         foreach (var satir in govde.Split('\n'))
         {
@@ -42,14 +47,22 @@ public sealed partial class EtiketSozlugu
                 continue;
 
             ana.Add(ad);
+            var bunlar = esler[ad] = [];
             foreach (var es in m.Groups[2].Value.Split(','))
             {
-                if (Temizle(es) is { Length: > 0 } temiz)
+                if (Temizle(es) is { Length: > 0 } temiz && temiz != ad && !bunlar.Contains(temiz))
+                {
                     gecerli.Add(temiz);
+                    bunlar.Add(temiz);
+                }
             }
         }
 
-        return new EtiketSozlugu(ana, gecerli);
+        // A synonym that is also a main name (written further down) is not a synonym.
+        foreach (var liste in esler.Values)
+            liste.RemoveAll(e => ana.Contains(e));
+
+        return new EtiketSozlugu(ana, esler, gecerli);
     }
 
     private static string Temizle(string? etiket) => (etiket ?? "").Normalize(NormalizationForm.FormC).Trim().TrimStart('#').ToLowerInvariant();

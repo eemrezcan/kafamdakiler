@@ -112,6 +112,21 @@ Content-Type: application/json
 
 { "sure": "2s" }
 
+### 10a. A persistent, urgent reminder (H4): the phone re-notifies every israrAraligiDakika (5, 15 or 60) minutes,
+### at most israrEnCok (1-4) times, until done or snoozed. The server only stores the fields.
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "İlacı al", "gun": "2026-11-10", "saat": "08:00:00", "israrli": true, "israrAraligiDakika": 5, "israrEnCok": 4, "acil": true }
+
+### 10b. Refused: an interval other than 5, 15, 60 and a count above 4 -> 400 { errors: { israrAraligiDakika, israrEnCok } }
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "Olmaz", "gun": "2026-11-10", "israrli": true, "israrAraligiDakika": 10, "israrEnCok": 5 }
+
 ### 11. Delete -> 204
 DELETE {{host}}/api/hatirlaticilar/{{gorevId}}
 Authorization: Bearer {{token}}

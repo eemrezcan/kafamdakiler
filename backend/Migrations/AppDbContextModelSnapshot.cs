@@ -503,6 +503,9 @@ namespace Kafamdakiler.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Acil")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Baslik")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -521,6 +524,19 @@ namespace Kafamdakiler.Migrations
 
                     b.Property<DateOnly>("Gun")
                         .HasColumnType("date");
+
+                    b.Property<int>("IsrarAraligiDakika")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(15);
+
+                    b.Property<int>("IsrarEnCok")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
+                    b.Property<bool>("Israrli")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Kime")
                         .HasMaxLength(100)
@@ -554,6 +570,25 @@ namespace Kafamdakiler.Migrations
                     b.HasIndex("Durum", "SonrakiAn");
 
                     b.ToTable("Hatirlaticilar");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.ProjeRepolari.ProjeRepo", b =>
+                {
+                    b.Property<string>("ProjeKimligi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Depo")
+                        .IsRequired()
+                        .HasMaxLength(140)
+                        .HasColumnType("character varying(140)");
+
+                    b.Property<DateTimeOffset>("GuncellendiAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ProjeKimligi");
+
+                    b.ToTable("ProjeRepolari");
                 });
 
             modelBuilder.Entity("Kafamdakiler.Takvim.GoogleBaglantisi", b =>

@@ -59,6 +59,34 @@ Authorization: Bearer {{token}}
 GET {{host}}/api/beyin/ara?q=
 Authorization: Bearer {{token}}
 
+### 9a. Repository bridge (K2.5). The Sahip links a project to owner/repo (the project must exist in the brain) -> 200
+PUT {{host}}/api/yonetim/proje-repolari/kitap-kulubu
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "depo": "emre/kitap-kulubu" }
+
+### 9b. All links (Sahip only), then the repository card of a project (beyin.oku): link, last 5 commits, open PR count.
+### With no GitHub:Token on the server only the link comes back (durum: tokenYok). 404 when the project has no link.
+GET {{host}}/api/yonetim/proje-repolari
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/beyin/projeler/kitap-kulubu/repo
+Authorization: Bearer {{token}}
+
+### 9c. Remove the link -> 204
+DELETE {{host}}/api/yonetim/proje-repolari/kitap-kulubu
+Authorization: Bearer {{token}}
+
+### 9d. Pick lists for the hand placement of an inbox card (gelen.oku): tag dictionary and folders
+GET {{host}}/api/gelen/etiketler
+Authorization: Bearer {{token}}
+
+###
+GET {{host}}/api/gelen/klasorler
+Authorization: Bearer {{token}}
+
 ### 10. Assistant without the beyin.oku permission -> 403
 # @name asistanLogin
 POST {{host}}/api/hesap/login

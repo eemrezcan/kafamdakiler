@@ -19,6 +19,14 @@ public static class GelenEndpoints
         oku.MapGet("/", async (BeyinIstemcisi beyin, AppDbContext db, ILogger<GelenOnerici> log, CancellationToken ct) =>
             (await GelenIslemleri.ListeAl(beyin, db, log, ct)).Sonuc());
 
+        // The tag dictionary of the brain: main names and their synonyms, for the picker of the hand placement.
+        oku.MapGet("/etiketler", async (BeyinIstemcisi beyin, ILogger<GelenOnerici> log, CancellationToken ct) =>
+            (await GelenIslemleri.EtiketleriAl(beyin, log, ct)).Sonuc());
+
+        // The folders a card may be put in: the visible projects' notes folders and the open top folders (GelenYolu).
+        oku.MapGet("/klasorler", async (BeyinIstemcisi beyin, ILogger<GelenOnerici> log, CancellationToken ct) =>
+            (await GelenIslemleri.KlasorleriAl(beyin, log, ct)).Sonuc());
+
         // "Suggest again": asks Claude now and answers when it is done (up to the Claude timeout).
         yaz.MapPost("/{kart}/oneri", async (string kart, GelenOnerici onerici, EylemServisi eylemler, CancellationToken ct) =>
         {

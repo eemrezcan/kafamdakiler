@@ -1,3 +1,5 @@
+using Kafamdakiler.ProjeRepolari;
+
 namespace Kafamdakiler.Beyin;
 
 // /api/beyin: views of the second brain for the phone (K-0023), which need the `beyin.oku` permission, and the writes of
@@ -29,6 +31,8 @@ public static class BeyinEndpoints
 
         beyin.MapGet("/not", (string? yol, BeyinIstemcisi b, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
             BeyinOkuma.Not(yol, b, log, ct));
+
+        beyin.MapProjeRepoOkumaEndpoints();
 
         app.MapBeyinYazmaEndpoints();
     }

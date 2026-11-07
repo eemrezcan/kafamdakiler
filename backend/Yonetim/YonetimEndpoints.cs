@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
+using Kafamdakiler.ProjeRepolari;
 using Microsoft.AspNetCore.Identity;
 using static Kafamdakiler.Aliskanliklar.AliskanlikEndpoints;
 
@@ -14,6 +15,8 @@ public static class YonetimEndpoints
     {
         var yonetim = app.MapGroup("/api/yonetim").WithTags("Yönetim")
             .RequireAuthorization(YonetimPolicies.Sahip);
+
+        yonetim.MapProjeRepoYonetimEndpoints();
 
         yonetim.MapGet("/izinler", async (UserManager<IdentityUser<Guid>> kullanicilar) =>
             Results.Ok(await YonetimIslemleri.IzinleriGetirAsync(kullanicilar)));

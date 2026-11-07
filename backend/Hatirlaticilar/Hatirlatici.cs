@@ -2,6 +2,9 @@ namespace Kafamdakiler.Hatirlaticilar;
 
 public class Hatirlatici
 {
+    public const int VarsayilanIsrarAraligi = 15;
+    public const int VarsayilanIsrarEnCok = 3;
+
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public string Baslik { get; set; } = "";
     public string? Not { get; set; }
@@ -19,6 +22,13 @@ public class Hatirlatici
     public DateTimeOffset SonrakiAn { get; set; }
     // A snooze: when set, it comes before SonrakiAn. The rule itself is unchanged.
     public DateTimeOffset? ErteleAn { get; set; }
+    // Persistent reminder (H4): the phone re-notifies every IsrarAraligiDakika minutes, at most IsrarEnCok times, until done or snoozed.
+    // The server only stores these; the behaviour lives on the phone.
+    public bool Israrli { get; set; }
+    public int IsrarAraligiDakika { get; set; } = VarsayilanIsrarAraligi;
+    public int IsrarEnCok { get; set; } = VarsayilanIsrarEnCok;
+    // Urgent: the phone lets it through silent mode.
+    public bool Acil { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset EtkinAn => ErteleAn ?? SonrakiAn;

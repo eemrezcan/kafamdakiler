@@ -29,6 +29,16 @@ public class HatirlaticiYazDto
     public int OnceGun { get; set; }
 
     public HatirlaticiDurumu Durum { get; set; } = HatirlaticiDurumu.Acik;
+
+    public bool Israrli { get; set; }
+
+    [AllowedValues(5, 15, 60, ErrorMessage = "Israr aralığı 5, 15 ya da 60 dakika olmalı.")]
+    public int IsrarAraligiDakika { get; set; } = Hatirlatici.VarsayilanIsrarAraligi;
+
+    [Range(1, 4, ErrorMessage = "Israr sayısı 1 ile 4 arasında olmalı.")]
+    public int IsrarEnCok { get; set; } = Hatirlatici.VarsayilanIsrarEnCok;
+
+    public bool Acil { get; set; }
 }
 
 public class ErteleDto
@@ -41,4 +51,5 @@ public class ErteleDto
 public record HatirlaticiDto(
     Guid Id, string Baslik, string? Not, HatirlaticiTuru Tur, string? Kime, DateOnly Gun, TimeOnly? Saat, Tekrar Tekrar,
     int OnceGun, HatirlaticiDurumu Durum, DateTimeOffset SonrakiAn, DateTimeOffset? ErteleAn, DateTimeOffset EtkinAn,
-    DateTimeOffset? OnceAn, int KalanGun, DateTimeOffset CreatedAt);
+    DateTimeOffset? OnceAn, int KalanGun, DateTimeOffset CreatedAt,
+    bool Israrli, int IsrarAraligiDakika, int IsrarEnCok, bool Acil);

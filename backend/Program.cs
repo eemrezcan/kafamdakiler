@@ -10,6 +10,7 @@ using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
 using Kafamdakiler.Ses;
@@ -107,6 +108,7 @@ builder.Services.AddSes();
 builder.Services.AddBrifing(builder.Configuration);
 // Google Calendar (K2.3c): off until the Google settings are given. Events are synced into the database; writes go through the approval queue.
 builder.Services.AddTakvim(builder.Configuration);
+builder.Services.AddProjeRepolari(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);

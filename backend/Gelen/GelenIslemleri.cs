@@ -59,6 +59,27 @@ public static class GelenIslemleri
             e.Gerekce, e.Guven, e.DisKaynak);
     }
 
+    public static async Task<BeyinYaniti<List<GelenEtiketDto>>> EtiketleriAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    {
+        var sozluk = await GelenBeyin.SozluguAlAsync(beyin, log, ct);
+        return sozluk.Basarili
+            ? new BeyinYaniti<List<GelenEtiketDto>>(StatusCodes.Status200OK,
+                sozluk.Veri!.AnaAdlar.Select(a => new GelenEtiketDto(a, [.. sozluk.Veri.Esler[a]])).ToList())
+            : new BeyinYaniti<List<GelenEtiketDto>>(sozluk.Durum, Baslik: sozluk.Baslik, Ayrinti: sozluk.Ayrinti, Alanlar: sozluk.Alanlar);
+    }
+
+    public static async Task<BeyinYaniti<List<GelenKlasorDto>>> KlasorleriAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    {
+        var projeler = await BeyinOkuma.ProjelerAl(beyin, log, ct);
+        if (!projeler.Basarili)
+            return new BeyinYaniti<List<GelenKlasorDto>>(projeler.Durum, Baslik: projeler.Baslik, Ayrinti: projeler.Ayrinti, Alanlar: projeler.Alanlar);
+
+        var liste = projeler.Veri!.OrderBy(p => p.Kimlik, StringComparer.Ordinal)
+            .Select(p => new GelenKlasorDto($"projects/{p.Kimlik}/notlar/", p.Baslik, "proje", p.Kimlik)).ToList();
+        liste.AddRange(GelenYolu.AcikKokler.Select(k => new GelenKlasorDto($"{k}/", k, "kok", null)));
+        return new BeyinYaniti<List<GelenKlasorDto>>(StatusCodes.Status200OK, liste);
+    }
+
     // A placement the user types: same shape checks as a suggestion, then the project and the tags against the brain.
     public static async Task<YazmaYaniti> Isle(string kimlik, GelenIsleGirdi girdi, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
     {

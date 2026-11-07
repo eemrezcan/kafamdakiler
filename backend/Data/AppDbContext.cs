@@ -5,6 +5,7 @@ using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
@@ -23,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Dosya> Dosyalar => Set<Dosya>();
     public DbSet<Yakalama> Yakalamalar => Set<Yakalama>();
     public DbSet<Hatirlatici> Hatirlaticilar => Set<Hatirlatici>();
+    public DbSet<ProjeRepo> ProjeRepolari => Set<ProjeRepo>();
     public DbSet<Eylem> Eylemler => Set<Eylem>();
     public DbSet<EylemIzni> EylemIzinleri => Set<EylemIzni>();
     public DbSet<EylemGunlugu> EylemGunlukleri => Set<EylemGunlugu>();
@@ -105,8 +107,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Tur).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Tekrar).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.IsrarAraligiDakika).HasDefaultValue(Hatirlatici.VarsayilanIsrarAraligi);
+            e.Property(x => x.IsrarEnCok).HasDefaultValue(Hatirlatici.VarsayilanIsrarEnCok);
             e.Ignore(x => x.EtkinAn);
             e.HasIndex(x => new { x.Durum, x.SonrakiAn });
+        });
+
+        builder.Entity<ProjeRepo>(e =>
+        {
+            e.HasKey(x => x.ProjeKimligi);
+            e.Property(x => x.ProjeKimligi).HasMaxLength(100);
+            e.Property(x => x.Depo).HasMaxLength(140);
         });
 
         builder.Entity<Eylem>(e =>

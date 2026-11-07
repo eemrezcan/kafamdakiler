@@ -19,6 +19,10 @@ public static class HatirlaticiIslemleri
         h.Tekrar = dto.Tekrar;
         h.OnceGun = dto.OnceGun;
         h.Durum = dto.Durum;
+        h.Israrli = dto.Israrli;
+        h.IsrarAraligiDakika = dto.IsrarAraligiDakika;
+        h.IsrarEnCok = dto.IsrarEnCok;
+        h.Acil = dto.Acil;
         h.ErteleAn = null;
         h.SonrakiAn = HatirlaticiHesap.Sonraki(h.Tekrar, h.Gun, KuralSaati(h, varsayilan), simdi);
     }
@@ -54,5 +58,6 @@ public static class HatirlaticiIslemleri
 
     public static HatirlaticiDto DtoYap(Hatirlatici h, DateTimeOffset simdi) => new(
         h.Id, h.Baslik, h.Not, h.Tur, h.Kime, h.Gun, h.Saat, h.Tekrar, h.OnceGun, h.Durum, h.SonrakiAn, h.ErteleAn, h.EtkinAn,
-        HatirlaticiHesap.OnceAni(h.SonrakiAn, h.OnceGun), HatirlaticiHesap.KalanGun(h.EtkinAn, simdi), h.CreatedAt);
+        HatirlaticiHesap.OnceAni(h.SonrakiAn, h.OnceGun), HatirlaticiHesap.KalanGun(h.EtkinAn, simdi), h.CreatedAt,
+        h.Israrli, h.IsrarAraligiDakika, h.IsrarEnCok, h.Acil);
 }

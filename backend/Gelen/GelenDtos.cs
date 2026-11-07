@@ -14,6 +14,13 @@ public record GelenOneriDto(Guid EylemId, string Yol, string Baslik, List<string
 // A placement a person makes by hand. The same checks as for a suggestion.
 public record GelenIsleGirdi(string? Yol, string? Baslik, List<string>? Etiketler, string? Tur = null);
 
+// A main tag of the dictionary and its synonyms (the brain accepts either).
+public record GelenEtiketDto(string Ad, List<string> Esler);
+
+// A place a card may be put by hand: `Tur` is "proje" (projects/<proje>/notlar/) or "kok" (ogrenme/, spor/, aliskanliklar/).
+// `Yol` is the folder; the person adds a file name to it.
+public record GelenKlasorDto(string Yol, string Ad, string Tur, string? Proje);
+
 public record GelenIslendiDto(string Yol, string Kart);
 
 public record GelenSilindiDto(string Kart);
