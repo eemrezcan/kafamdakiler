@@ -125,6 +125,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - D: hatırlatıcı türü adı ve ay sonu notu (`HatirlaticiGorunum.cs`, `Pages/Hatirlaticilar/`, `hatirlaticilar.js`, `utils/hatirlatici_gorunum.dart`, `ui/hatirlaticilar/`), web Gün planında tek görev listesi (`Pages/Beyin/Gun`).
   - E: mobil proje detayında görev ekle, bitir, günlere böl (`ui/projeler/`).
   - Hepsinin testleri `backend.Tests/` ve `mobile/test/` altında.
+- Arayüz sadeleştirme Dalga 2 (2026-11-08, aynı düzen): Claude'un açtığı Sonnet işçileri yazdı, ana oturum telefonda ve tarayıcıda denedi, kullanıcı birleştirmeyi onayladı.
+  - F: mobil sekmeler ve Daha fazla (`ui/shell/`, `routing/router.dart`, `ui/profil/daha_fazla_*`), Bugün'de brifing şeridi (`ui/brifing/brifing_seridi.dart`, `brifing_ayar_karti.dart`), üst barda Ara (`ui/ara/ara_dugmesi.dart`).
+  - G: web menüsü (`Pages/Shared/_Layout.cshtml`), Bugün ana sayfası (`Pages/Index`, `Shared/_OnayKarti.cshtml`, `Shared/_Brifing.cshtml`), `Pages/Beyin/Gun` yönlendirmesi, sade Alışkanlıklar sayfası, `site.css` bölümü.
+  - Testler `mobile/test/` ve `backend.Tests/BugunSayfasiTests.cs` ile güncellenen sayfa testleri.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
