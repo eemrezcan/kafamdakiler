@@ -5,7 +5,7 @@ import '../data/models/hatirlatici.dart';
 // Display texts of reminders, the same words as backend/Hatirlaticilar/HatirlaticiGorunum.cs (the web list).
 
 String hatirlaticiTurAdi(HatirlaticiTuru tur) => switch (tur) {
-      HatirlaticiTuru.gorev => 'Görev',
+      HatirlaticiTuru.gorev => 'Yapılacak',
       HatirlaticiTuru.soz => 'Söz',
       HatirlaticiTuru.ozelTarih => 'Özel tarih',
     };

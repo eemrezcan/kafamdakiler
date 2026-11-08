@@ -219,12 +219,30 @@ void main() {
       await formGoster(tester);
       expect(find.text('Kime söz verdin?'), findsNothing);
 
-      await tester.tap(find.text('Görev'));
+      await tester.tap(find.text('Yapılacak'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Söz').last);
       await tester.pumpAndSettle();
 
       expect(find.text('Kime söz verdin?'), findsOneWidget);
+    });
+
+    testWidgets('the month-end note shows only while the repeat is "Her ay"', (tester) async {
+      await formGoster(tester);
+      const not = "Ayın 31'inde başlayan aylık hatırlatıcı, kısa aylarda ayın son günü çalar.";
+      expect(find.text(not), findsNothing);
+
+      await tester.tap(find.text('Tekrarlanmaz'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Her ay').last);
+      await tester.pumpAndSettle();
+      expect(find.text(not), findsOneWidget);
+
+      await tester.tap(find.text('Her ay'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Her gün').last);
+      await tester.pumpAndSettle();
+      expect(find.text(not), findsNothing);
     });
 
     testWidgets('the number of days before must be between 0 and 60', (tester) async {

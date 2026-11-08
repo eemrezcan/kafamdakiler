@@ -85,6 +85,18 @@ public sealed partial class HatirlaticiSayfalariTests(UygulamaFabrikasi uygulama
     }
 
     [Fact]
+    public async Task TheMonthEndNote_IsHiddenUnlessTheRepeatIsMonthly()
+    {
+        var tarayici = await WebOturumu.GirisliAsync(uygulama, UygulamaFabrikasi.SahipEposta, Ct);
+
+        var ham = WebUtility.HtmlDecode(await tarayici.GetStringAsync("/Hatirlaticilar/Duzenle", Ct));
+
+        // The note is in the page for the script to reveal, but a new reminder (no repeat) starts with it hidden.
+        Assert.Matches("data-kd-reminder-ay-notu[^>]*hidden", ham);
+        Assert.Contains("Yapılacak</option>", ham);
+    }
+
+    [Fact]
     public async Task ABadInterval_IsRefused_AndNothingIsStored()
     {
         var tarayici = await WebOturumu.GirisliAsync(uygulama, UygulamaFabrikasi.SahipEposta, Ct);

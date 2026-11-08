@@ -105,6 +105,27 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
     }
 
     [Fact]
+    public async Task Tasks_AreOneList_LateFirstWithABadge_AndEachRowOpensItsOwnSplit()
+    {
+        _beyin.Cikti("[]");
+        _beyin.Cikti("gun goster", """{"tarih": "2026-11-03", "plan_var": true, "kapandi": false, "geciken": [{"kimlik": "uye-girisi", "baslik": "Üye girişi", "bitis": "2026-10-31", "gun": 3, "proje": "kitap-kulubu"}], "bolumler": []}""");
+        _beyin.Cikti("proje liste", Projeler);
+        _beyin.Cikti("gorev liste", """[{"kimlik": "a-yeni", "baslik": "Afiş bas", "durum": "aktif", "proje": "kitap-kulubu", "bitis": "2026-11-20"}, {"kimlik": "uye-girisi", "baslik": "Üye girişi", "durum": "aktif", "proje": "kitap-kulubu", "bitis": "2026-10-31"}, {"kimlik": "z-son", "baslik": "Zil sesi", "durum": "aktif"}]""");
+        var tarayici = await SahipAsync();
+
+        var ham = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct));
+
+        Assert.DoesNotContain("Geciken görevler", ham);
+        Assert.DoesNotContain("Açık görevler", ham);
+        Assert.Contains("3 gün gecikti", ham);
+        Assert.True(ham.IndexOf("Üye girişi", StringComparison.Ordinal) < ham.IndexOf("Afiş bas", StringComparison.Ordinal));
+        Assert.True(ham.IndexOf("Afiş bas", StringComparison.Ordinal) < ham.IndexOf("Zil sesi", StringComparison.Ordinal));
+        Assert.Equal(3, Regex.Matches(ham, "<summary>Günlere böl</summary>").Count);
+        Assert.Equal(3, Regex.Matches(ham, "handler=Bol").Count);
+        Assert.DoesNotContain("id=\"bol-gorev\"", ham);
+    }
+
+    [Fact]
     public async Task AClosedDay_HasNoWriteForms_AndSaysSo()
     {
         GunHazirla(Plan(Gun, true, ("a3f09c", "Takvim", "acik", 90)));

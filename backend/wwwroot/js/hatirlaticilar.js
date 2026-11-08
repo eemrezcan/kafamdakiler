@@ -14,6 +14,19 @@
 })();
 
 (function () {
+  var tekrar = document.querySelector('[data-kd-reminder-tekrar]');
+  var not = document.querySelector('[data-kd-reminder-ay-notu]');
+  if (!tekrar || !not) return;
+
+  function guncelle() {
+    not.hidden = tekrar.value !== 'Aylik';
+  }
+
+  tekrar.addEventListener('change', guncelle);
+  guncelle();
+})();
+
+(function () {
   var israrli = document.querySelector('[data-kd-reminder-israrli]');
   var ayar = document.querySelector('[data-kd-reminder-israr-ayar]');
   if (!israrli || !ayar) return;

@@ -58,13 +58,13 @@
 
         <div class="kd-field">
             <label class="kd-field-label" asp-for="Input.Tekrar">Tekrar</label>
-            <select class="form-select kd-narrow" asp-for="Input.Tekrar">
+            <select class="form-select kd-narrow" asp-for="Input.Tekrar" data-kd-reminder-tekrar>
                 @foreach (var tekrar in Enum.GetValues<Tekrar>())
                 {
                     <option value="@tekrar" selected="@(Model.Input.Tekrar == tekrar)">@HatirlaticiGorunum.TekrarAdi(tekrar)</option>
                 }
             </select>
-            <small class="kd-muted">Ayın 31'inde başlayan aylık hatırlatıcı, kısa aylarda ayın son günü çalar.</small>
+            <small class="kd-muted" data-kd-reminder-ay-notu hidden="@(Model.Input.Tekrar != Tekrar.Aylik)">Ayın 31'inde başlayan aylık hatırlatıcı, kısa aylarda ayın son günü çalar.</small>
             <span class="kd-field-error" asp-validation-for="Input.Tekrar"></span>
         </div>
 

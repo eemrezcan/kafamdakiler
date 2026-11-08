@@ -17,7 +17,7 @@ public static class HatirlaticiGorunum
 
     public static string TurAdi(HatirlaticiTuru tur) => tur switch
     {
-        HatirlaticiTuru.Gorev => "Görev",
+        HatirlaticiTuru.Gorev => "Yapılacak",
         HatirlaticiTuru.Soz => "Söz",
         HatirlaticiTuru.OzelTarih => "Özel tarih",
         _ => "",

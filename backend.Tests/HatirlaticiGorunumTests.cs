@@ -37,7 +37,8 @@ public class HatirlaticiGorunumTests
     [Fact]
     public void Names_AreTurkish()
     {
-        Assert.Equal("Özel tarih", HatirlaticiGorunum.TurAdi(HatirlaticiTuru.OzelTarih));
+        Assert.Equal("Yapılacak", HatirlaticiGorunum.TurAdi(HatirlaticiTuru.Gorev));
+        Assert.Equal("Özel tarih",HatirlaticiGorunum.TurAdi(HatirlaticiTuru.OzelTarih));
         Assert.Equal("Arşiv", HatirlaticiGorunum.DurumAdi(HatirlaticiDurumu.Arsiv));
         Assert.Equal("Her yıl", HatirlaticiGorunum.TekrarAdi(Tekrar.Yillik));
     }

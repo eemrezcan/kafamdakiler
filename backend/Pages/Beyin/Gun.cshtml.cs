@@ -32,6 +32,26 @@ public class GunModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunA
 
     public List<AcikGorevDto> Gorevler { get; private set; } = [];
 
+    // The open tasks as one list: late ones first (most days late first), then by due date with undated last.
+    public IReadOnlyList<GorevSatiri> GorevListesi
+    {
+        get
+        {
+            var geciken = Gun?.Geciken.ToDictionary(g => g.Kimlik, StringComparer.Ordinal) ?? [];
+            var acik = Gorevler.Select(g => new GorevSatiri(
+                g.Kimlik, g.Baslik, g.Proje, g.Bitis, geciken.TryGetValue(g.Kimlik, out var late) ? late.Gun ?? 0 : null));
+            // A late task the open-task list did not carry is still shown.
+            var eksik = geciken.Values.Where(g => Gorevler.All(a => a.Kimlik != g.Kimlik))
+                .Select(g => new GorevSatiri(g.Kimlik, g.Baslik, g.Proje, g.Bitis, g.Gun ?? 0));
+            return acik.Concat(eksik)
+                .OrderBy(g => g.GecikenGun is null)
+                .ThenByDescending(g => g.GecikenGun ?? 0)
+                .ThenBy(g => g.Bitis ?? DateOnly.MaxValue)
+                .ThenBy(g => g.Baslik, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+    }
+
     // The one timeline of the day (K2.3c); null when it could not be had.
     public ZamanCizelgesiDto? Cizelge { get; private set; }
 
@@ -135,3 +155,6 @@ public class GunModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunA
         return parca[1].Split(',', StringSplitOptions.RemoveEmptyEntries).Where(BeyinYazma.MaddeKimligiGecerli).ToHashSet();
     }
 }
+
+// A task row of the day page; GecikenGun is null when the task is not late (0 when it is late but the days are unknown).
+public record GorevSatiri(string Kimlik, string Baslik, string? Proje, DateOnly? Bitis, int? GecikenGun);

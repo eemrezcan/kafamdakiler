@@ -184,51 +184,17 @@
         </section>
     }
 
-    @if (gun.Geciken.Count > 0)
-    {
-        <section class="kd-yonetim-blok" aria-labelledby="geciken-baslik">
-            <h2 class="kd-eyebrow kd-section-title" id="geciken-baslik">Geciken görevler</h2>
-            @foreach (var g in gun.Geciken)
-            {
-                <article class="kd-capture kd-c-violet">
-                    <div class="kd-capture-body">
-                        <p class="kd-capture-text mb-0">@g.Baslik</p>
-                        <p class="kd-capture-meta">
-                            @if (g.Proje is not null)
-                            {
-                                <span>@g.Proje</span>
-                            }
-                            @if (g.Gun is { } kac)
-                            {
-                                <span class="kd-status is-hata">@kac gün</span>
-                            }
-                        </p>
-                    </div>
-                    @if (Model.Tarih is not null)
-                    {
-                        <div class="kd-gun-actions">
-                            <form method="post" asp-page-handler="GorevBitir" asp-route-tarih="@t">
-                                <input type="hidden" name="kimlik" value="@g.Kimlik" />
-                                <button type="submit" class="btn btn-outline-primary btn-sm">Görevi bitir</button>
-                            </form>
-                        </div>
-                    }
-                </article>
-            }
-        </section>
-    }
-
     @if (gun.Toplam is { Madde: > 0 } toplam)
     {
         <p class="kd-muted">@toplam.Yapildi / @toplam.Madde tamam</p>
     }
 
-    @if (Model.Tarih is not null && (Model.Projeler.Count > 0 || Model.Gorevler.Count > 0))
+    @if ((Model.Tarih is not null && Model.Projeler.Count > 0) || Model.GorevListesi.Count > 0)
     {
         <section class="kd-yonetim-blok" aria-labelledby="gorev-baslik">
             <h2 class="kd-eyebrow kd-section-title" id="gorev-baslik">Görevler</h2>
 
-            @if (Model.Projeler.Count > 0)
+            @if (Model.Tarih is not null && Model.Projeler.Count > 0)
             {
                 <form method="post" asp-page-handler="GorevEkle" asp-route-tarih="@t" class="kd-gun-form">
                     <label class="visually-hidden" for="gorev-baslik-girdi">Görev başlığı</label>
@@ -246,49 +212,52 @@
                 </form>
             }
 
-            @if (Model.Gorevler.Count > 0)
+            @* One list: late tasks come first, marked with a badge. "Günlere böl" opens from the task's own row. *@
+            @foreach (var g in Model.GorevListesi)
             {
-                <form method="post" asp-page-handler="Bol" asp-route-tarih="@t" class="kd-gun-form">
-                    <label class="visually-hidden" for="bol-gorev">Görev</label>
-                    <select class="form-select" id="bol-gorev" name="kimlik" required>
-                        @foreach (var g in Model.Gorevler)
+                <article class="kd-capture kd-c-violet">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0">@g.Baslik</p>
+                        <p class="kd-capture-meta">
+                            @if (g.GecikenGun is { } kac)
+                            {
+                                <span class="kd-status is-hata">@(kac > 0 ? $"{kac} gün gecikti" : "Gecikti")</span>
+                            }
+                            @if (g.Proje is not null)
+                            {
+                                <span>@g.Proje</span>
+                            }
+                            @if (g.Bitis is { } bitis)
+                            {
+                                <span>Bitiş @BeyinGorunum.KisaTarih(bitis)</span>
+                            }
+                        </p>
+                        @if (Model.Tarih is not null)
                         {
-                            <option value="@g.Kimlik">@g.Baslik@(g.Proje is null ? "" : $" · {g.Proje}")</option>
+                            <details class="kd-gun-not">
+                                <summary>Günlere böl</summary>
+                                <form method="post" asp-page-handler="Bol" asp-route-tarih="@t" class="kd-gun-form">
+                                    <input type="hidden" name="kimlik" value="@g.Kimlik" />
+                                    <label class="visually-hidden" for="bol-gun-@g.Kimlik">Kaç güne</label>
+                                    <input class="form-control" type="number" id="bol-gun-@g.Kimlik" name="gunSayisi" min="1" max="@BeyinYazma.EnCokBolmeGunu" value="2" required />
+                                    <label class="visually-hidden" for="bol-baslangic-@g.Kimlik">Başlangıç günü</label>
+                                    <input class="form-control" type="date" id="bol-baslangic-@g.Kimlik" name="baslangic" value="@t" />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Böl</button>
+                                </form>
+                                <small class="kd-muted">Her güne bir madde yazılır; görev yalnız son günün maddesine bağlanır, o madde yapılınca görev biter.</small>
+                            </details>
                         }
-                    </select>
-                    <label class="visually-hidden" for="bol-gun">Kaç güne</label>
-                    <input class="form-control" type="number" id="bol-gun" name="gunSayisi" min="1" max="@BeyinYazma.EnCokBolmeGunu" value="2" required />
-                    <label class="visually-hidden" for="bol-baslangic">Başlangıç günü</label>
-                    <input class="form-control" type="date" id="bol-baslangic" name="baslangic" value="@t" />
-                    <button type="submit" class="btn btn-outline-primary">Günlere böl</button>
-                </form>
-                <p class="kd-muted">Her güne bir madde yazılır; görev yalnız son günün maddesine bağlanır, o madde yapılınca görev biter.</p>
-
-                <h3 class="kd-eyebrow kd-section-title">Açık görevler</h3>
-                @foreach (var g in Model.Gorevler)
-                {
-                    <article class="kd-capture kd-c-violet">
-                        <div class="kd-capture-body">
-                            <p class="kd-capture-text mb-0">@g.Baslik</p>
-                            <p class="kd-capture-meta">
-                                @if (g.Proje is not null)
-                                {
-                                    <span>@g.Proje</span>
-                                }
-                                @if (g.Bitis is { } bitis)
-                                {
-                                    <span>Bitiş @BeyinGorunum.KisaTarih(bitis)</span>
-                                }
-                            </p>
-                        </div>
+                    </div>
+                    @if (Model.Tarih is not null)
+                    {
                         <div class="kd-gun-actions">
                             <form method="post" asp-page-handler="GorevBitir" asp-route-tarih="@t">
                                 <input type="hidden" name="kimlik" value="@g.Kimlik" />
                                 <button type="submit" class="btn btn-outline-primary btn-sm">Bitir</button>
                             </form>
                         </div>
-                    </article>
-                }
+                    }
+                </article>
             }
         </section>
     }

@@ -259,9 +259,12 @@ class _HatirlaticiFormScreenState extends State<HatirlaticiFormScreen> {
           const SizedBox(height: 16),
           DropdownButtonFormField<Tekrar>(
             initialValue: _tekrar,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Tekrar',
-              helperText: "Ayın 31'inde başlayan aylık hatırlatıcı, kısa aylarda ayın son günü çalar.",
+              // Only "Her ay" has the short-month rule to explain.
+              helperText: _tekrar == Tekrar.aylik
+                  ? "Ayın 31'inde başlayan aylık hatırlatıcı, kısa aylarda ayın son günü çalar."
+                  : null,
               helperMaxLines: 2,
             ),
             items: [for (final t in Tekrar.values) DropdownMenuItem(value: t, child: Text(tekrarAdi(t)))],
