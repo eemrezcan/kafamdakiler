@@ -129,6 +129,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - F: mobil sekmeler ve Daha fazla (`ui/shell/`, `routing/router.dart`, `ui/profil/daha_fazla_*`), Bugün'de brifing şeridi (`ui/brifing/brifing_seridi.dart`, `brifing_ayar_karti.dart`), üst barda Ara (`ui/ara/ara_dugmesi.dart`).
   - G: web menüsü (`Pages/Shared/_Layout.cshtml`), Bugün ana sayfası (`Pages/Index`, `Shared/_OnayKarti.cshtml`, `Shared/_Brifing.cshtml`), `Pages/Beyin/Gun` yönlendirmesi, sade Alışkanlıklar sayfası, `site.css` bölümü.
   - Testler `mobile/test/` ve `backend.Tests/BugunSayfasiTests.cs` ile güncellenen sayfa testleri.
+- Arayüz sadeleştirme Dalga 3, H (2026-11-08, aynı düzen): mobil Gelen'de "Gönderiliyor" bölümü (`ui/gelen/gonderiliyor_satiri.dart`, `gelen_liste_*`), Yakalamalar ekranının kalkması (`routing/router.dart`, `daha_fazla_screen.dart`), web Gelen'de yakalama formu, "Gönderiliyor" ve "İşe çevir" akışı (`Pages/Gelen/`), `/Yakalamalar` yönlendirmesi (`Pages/Yakalamalar/`), menü (`_Layout.cshtml`); testler `mobile/test/ui/gelen_screen_test.dart`, `backend.Tests/GelenSayfalariTests.cs`.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
