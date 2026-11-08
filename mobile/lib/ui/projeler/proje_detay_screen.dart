@@ -6,6 +6,7 @@ import '../../data/models/beyin.dart';
 import '../../data/models/proje_repo.dart';
 import '../core/beyin_gorunum.dart';
 import '../core/beyin_hata.dart';
+import '../bugun/gun_plani_dialoglari.dart';
 import '../core/widgets.dart';
 import 'proje_view_model.dart';
 
@@ -42,10 +43,24 @@ class _Icerik extends StatelessWidget {
   final ProjeDetay proje;
   final ProjeDetayViewModel viewModel;
 
+  /// The new-task form starts on this project; a task added here is sent in the background and shows after the next read.
+  Future<void> _gorevEkle(BuildContext context) async {
+    final projeler = await viewModel.projeler();
+    if (!context.mounted) return;
+    final gorev = await gorevEkleDialogu(context, projeler);
+    if (gorev == null) return;
+    await viewModel.gorevEkle(baslik: gorev.baslik, proje: gorev.proje, bitis: gorev.bitis);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Görev eklendi; gönderilince listede görünür.')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final soluk = tema.colorScheme.onSurfaceVariant;
+    final acik = [for (final g in proje.acikGorevler) if (!viewModel.bitirilen.contains(g.kimlik)) g];
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
@@ -77,11 +92,29 @@ class _Icerik extends StatelessWidget {
           ),
         ),
         const BolumBasligi('Açık görevler'),
-        if (proje.acikGorevler.isEmpty)
+        if (acik.isEmpty)
           Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text('Açık görev yok.', style: TextStyle(color: soluk)))
         else
-          for (final g in proje.acikGorevler)
-            Padding(padding: const EdgeInsets.only(bottom: 8), child: _Gorev(g)),
+          for (final g in acik)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _Gorev(
+                g,
+                onBitir: () => viewModel.gorevBitir(g.kimlik),
+                onBol: () async {
+                  final gunSayisi = await gunlereBolDialogu(context, g.baslik);
+                  if (gunSayisi != null) await viewModel.bol(g.kimlik, gunSayisi);
+                },
+              ),
+            ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => _gorevEkle(context),
+            icon: const Icon(Icons.add_task),
+            label: const Text('Görev ekle'),
+          ),
+        ),
         // No card at all while loading, when nothing is linked, or when the card could not be read: the page is about the
         // project, and the repository is an extra.
         if (viewModel.repoOzeti != null) ...[
@@ -180,9 +213,11 @@ class _RepoKarti extends StatelessWidget {
 }
 
 class _Gorev extends StatelessWidget {
-  const _Gorev(this.gorev);
+  const _Gorev(this.gorev, {required this.onBitir, required this.onBol});
 
   final ProjeGorev gorev;
+  final VoidCallback onBitir;
+  final VoidCallback onBol;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +234,21 @@ class _Gorev extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(gorev.baslik, style: tema.textTheme.bodyLarge),
+            Row(
+              children: [
+                Expanded(child: Text(gorev.baslik, style: tema.textTheme.bodyLarge)),
+                PopupMenuButton<String>(
+                  tooltip: 'Görev işlemleri: ${gorev.baslik}',
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  padding: EdgeInsets.zero,
+                  onSelected: (v) => v == 'bitir' ? onBitir() : onBol(),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'bitir', child: Text('Görevi bitir')),
+                    PopupMenuItem(value: 'bol', child: Text('Günlere böl')),
+                  ],
+                ),
+              ],
+            ),
             if (bilgi.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(bilgi, style: TextStyle(fontSize: 12, color: soluk)),

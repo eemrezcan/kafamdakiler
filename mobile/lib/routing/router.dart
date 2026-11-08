@@ -263,7 +263,12 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
       GoRoute(
         path: '/projeler/:kimlik',
         builder: (context, state) => _sayfa(
-          (c) => ProjeDetayViewModel(repo: c.read<BeyinRepository>(), kimlik: state.pathParameters['kimlik']!)..yukle(),
+          (c) => ProjeDetayViewModel(
+            repo: c.read<BeyinRepository>(),
+            gunPlani: c.read<GunPlaniRepository>(),
+            esitleyici: c.read<Esitleyici>(),
+            kimlik: state.pathParameters['kimlik']!,
+          )..yukle(),
           (vm) => ProjeDetayScreen(viewModel: vm),
         ),
       ),

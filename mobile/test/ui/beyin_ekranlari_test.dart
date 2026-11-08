@@ -115,7 +115,13 @@ void main() {
     // [boy] taller than a phone when the test looks at the lower cards (a list only builds what is on screen).
     Future<ProjeDetayViewModel> goster(WidgetTester tester, {double boy = 900}) async {
       telefonBoyu(tester, boy: boy);
-      final vm = ProjeDetayViewModel(repo: ortam.beyin, kimlik: 'kitap-kulubu');
+      final vm = ProjeDetayViewModel(
+        repo: ortam.beyin,
+        gunPlani: ortam.gunPlani,
+        esitleyici: ortam.esitleyici,
+        kimlik: 'kitap-kulubu',
+      );
+      addTearDown(vm.dispose);
       await vm.yukle();
       await tester.pumpWidget(MaterialApp(home: ProjeDetayScreen(viewModel: vm)));
       await tester.pump();
@@ -135,6 +141,83 @@ void main() {
       expect(find.text('Bekliyor'), findsOneWidget);
       expect(find.text('2026-11-03 18:42'), findsOneWidget);
       expect(find.text('Liste sayfası bitti.'), findsOneWidget);
+    });
+
+    testWidgets('"Görev ekle" starts on this project and queues the task for it', (tester) async {
+      ortam.api.projeler = const [
+        ProjeOzet(kimlik: 'balkon-bahcesi', baslik: 'Balkon Bahçesi Sulama'),
+        ProjeOzet(kimlik: 'kitap-kulubu', baslik: 'Kitap Kulübü Sitesi'),
+      ];
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      await tester.runAsync(ortam.beyin.projeleriGetir);
+      await goster(tester);
+
+      await tester.tap(find.text('Görev ekle'));
+      await gercekZaman(tester);
+      expect(find.text('Kitap Kulübü Sitesi'), findsWidgets, reason: 'the project field starts on this project');
+      await tester.enterText(find.byType(TextField), 'Yeni sayfa');
+      await tester.pump();
+      await tester.tap(find.text('Ekle'));
+      await gercekZaman(tester);
+
+      expect(ortam.api.beyinYazimlari.single.yol, '/api/beyin/gorevler');
+      expect(ortam.api.beyinYazimlari.single.govde['proje'], 'kitap-kulubu');
+      expect(ortam.api.beyinYazimlari.single.govde['baslik'], 'Yeni sayfa');
+    });
+
+    testWidgets('"Görevi bitir" takes the task off the list and sends the finish', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      await goster(tester);
+      // What the server will answer once the finish has reached it (the page reads the project again after a send).
+      ortam.api.projeDetaylari = {
+        'kitap-kulubu': ProjeDetay(kimlik: 'kitap-kulubu', baslik: proje.baslik, acikGorevler: [proje.acikGorevler.last]),
+      };
+
+      await tester.tap(find.byTooltip('Görev işlemleri: Buluşma takvimi sayfası'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Görevi bitir'));
+      await gercekZaman(tester);
+
+      expect(find.text('Buluşma takvimi sayfası'), findsNothing);
+      expect(find.text('Mobil görünüm düzeltmeleri'), findsOneWidget);
+      expect(ortam.api.beyinYazimlari.single.yol, '/api/beyin/gorevler/takvim/bitir');
+    });
+
+    testWidgets('offline, "Görevi bitir" stays queued and goes out when the connection is back', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      await goster(tester);
+      ortam.api.beyinCevrimdisi = true;
+
+      await tester.tap(find.byTooltip('Görev işlemleri: Mobil görünüm düzeltmeleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Görevi bitir'));
+      await gercekZaman(tester);
+
+      expect(find.text('Mobil görünüm düzeltmeleri'), findsNothing);
+      expect(await ortam.esitleyici.bekleyenler(), hasLength(1));
+
+      ortam.api.beyinCevrimdisi = false;
+      await tester.runAsync(() => ortam.esitleyici.gonder());
+      expect(ortam.api.beyinYazimlari.single.yol, '/api/beyin/gorevler/mobil/bitir');
+    });
+
+    testWidgets('"Günlere böl" asks the day count and queues the split from today', (tester) async {
+      ortam.api.projeDetaylari = {'kitap-kulubu': proje};
+      await goster(tester);
+
+      await tester.tap(find.byTooltip('Görev işlemleri: Buluşma takvimi sayfası'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Günlere böl'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Artır'));
+      await tester.pump();
+      await tester.tap(find.text('Böl'));
+      await gercekZaman(tester);
+
+      expect(ortam.api.beyinYazimlari.single.yol, '/api/beyin/gorevler/takvim/gunlere-bol');
+      expect(ortam.api.beyinYazimlari.single.govde['gunSayisi'], 3);
+      await tester.pumpAndSettle();
+      expect(find.text('Buluşma takvimi sayfası'), findsOneWidget, reason: 'a split task stays open');
     });
 
     testWidgets('journal rows line up on the left, a short one too (seen drifting to the middle on a phone)', (tester) async {
