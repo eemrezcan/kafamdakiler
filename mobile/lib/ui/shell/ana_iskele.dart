@@ -22,6 +22,18 @@ class AnaIskele extends StatelessWidget {
     final sahip = context.watch<KullaniciRepository>().sahip;
     // The button would float above the keyboard (the search field), covering the results.
     final klavyeAcik = MediaQuery.viewInsetsOf(context).bottom > 0;
+    // Back on any tab but Bugün goes to Bugün first; only from Bugün does it leave the app.
+    return PopScope(
+      canPop: navigationShell.currentIndex == 0,
+      onPopInvokedWithResult: (popOldu, _) {
+        if (!popOldu) navigationShell.goBranch(0);
+      },
+      child: _iskele(context, sahip: sahip, klavyeAcik: klavyeAcik),
+    );
+  }
+
+  Widget _iskele(BuildContext context, {required bool sahip, required bool klavyeAcik}) {
+    final tema = Theme.of(context);
     return Scaffold(
       body: navigationShell,
       floatingActionButton: sahip && !klavyeAcik
@@ -32,6 +44,14 @@ class AnaIskele extends StatelessWidget {
             )
           : null,
       bottomNavigationBar: NavigationBar(
+        // A little smaller than the default, so "Yakalamalar" stays on one line with five tabs.
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (durumlar) => tema.textTheme.labelMedium?.copyWith(
+            fontSize: 11,
+            color: durumlar.contains(WidgetState.selected) ? tema.colorScheme.onSurface : tema.colorScheme.onSurfaceVariant,
+            fontWeight: durumlar.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
         selectedIndex: navigationShell.currentIndex,
         // Tapping the current tab goes back to its first screen.
         onDestinationSelected: (i) => navigationShell.goBranch(i, initialLocation: i == navigationShell.currentIndex),

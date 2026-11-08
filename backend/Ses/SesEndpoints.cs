@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Kafamdakiler.Claude;
 
 namespace Kafamdakiler.Ses;
 
@@ -9,6 +10,9 @@ public static class SesEndpoints
     public static void MapSesEndpoints(this IEndpointRouteBuilder app)
     {
         var asistan = app.MapGroup("/api").WithTags("Ses").RequireAuthorization(SesPolicies.AsistanKullan);
+
+        // Whether the assistant is connected (Claude:Komut set), so a client can hide the buttons that would only fail.
+        asistan.MapGet("/asistan/durum", (ClaudeAyari ayar) => Results.Ok(new AsistanDurumu(ayar.Acik)));
 
         // The preview: Claude suggests, nothing is saved.
         asistan.MapPost("/is-cikar", async (IsCikarGirdi girdi, IsCikarServisi servis, CancellationToken ct) =>

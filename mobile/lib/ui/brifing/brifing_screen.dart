@@ -138,7 +138,9 @@ class _BrifingScreenState extends State<BrifingScreen> {
             ),
           ),
         ),
-        _YazmaKutusu(metin: _metin, ses: widget.sesViewModel, onGonder: _duzeltmeyiGonder),
+        // The box is the "İşe çevir" entry: it needs Claude, so it is hidden while the assistant is not connected.
+        if (widget.sesViewModel.asistanBagli)
+          _YazmaKutusu(metin: _metin, ses: widget.sesViewModel, onGonder: _duzeltmeyiGonder),
       ],
     );
   }

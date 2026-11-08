@@ -59,6 +59,12 @@ class SahteApi extends ApiService {
 
   final List<String> cagrilar = [];
 
+  /// What `GET /api/asistan/durum` answers; on by default so the Claude buttons show.
+  bool asistanBagli = true;
+
+  @override
+  Future<bool> asistanBagliMi() async => asistanBagli;
+
   void _kontrol(String ad) {
     cagrilar.add(ad);
     if (sunucuHatasi != null) {
@@ -761,10 +767,12 @@ GelenKarti ornekGelenKarti({
   double? guven = 0.9,
   bool laptoptaIslenecek = false,
   bool gorselVar = false,
+  String? hedef,
 }) {
   return GelenKarti(
     kimlik: kimlik,
     ozet: ozet,
+    hedef: hedef,
     gorselVar: gorselVar,
     yakalandi: '2026-11-03T18:40',
     laptoptaIslenecek: laptoptaIslenecek,

@@ -303,6 +303,17 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
     }
 
     [Fact]
+    public async Task SuggestAgainButton_ShowsOnlyWhileClaudeIsConnected()
+    {
+        BeyniKur();
+        var kapali = await WebOturumu.GirisliAsync(Fabrika(), UygulamaFabrikasi.SahipEposta, Ct);
+        var acik = await WebOturumu.GirisliAsync(Fabrika(claude: true), UygulamaFabrikasi.SahipEposta, Ct);
+
+        Assert.DoesNotContain("Yeniden öner", await WebOturumu.MetinAsync(await kapali.GetAsync("/Gelen", Ct), Ct));
+        Assert.Contains("Yeniden öner", await WebOturumu.MetinAsync(await acik.GetAsync("/Gelen", Ct), Ct));
+    }
+
+    [Fact]
     public async Task SuggestAgain_WithClaudeOff_SaysSo()
     {
         BeyniKur();

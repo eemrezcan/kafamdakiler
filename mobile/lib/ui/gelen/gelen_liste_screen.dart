@@ -80,6 +80,7 @@ class GelenListeScreen extends StatelessWidget {
           Navigator.pop(sheet);
           await _sil(context, kart);
         },
+        yenidenOnerebilir: viewModel.asistanBagli,
         onYenidenOner: () async {
           Navigator.pop(sheet);
           await _yenidenOner(context, kart);
@@ -288,6 +289,7 @@ class _Onizleme extends StatelessWidget {
     required this.onReddet,
     required this.onElle,
     required this.onSil,
+    required this.yenidenOnerebilir,
     required this.onYenidenOner,
   });
 
@@ -298,6 +300,7 @@ class _Onizleme extends StatelessWidget {
   final Future<void> Function() onReddet;
   final Future<void> Function() onElle;
   final Future<void> Function() onSil;
+  final bool yenidenOnerebilir;
   final Future<void> Function() onYenidenOner;
 
   @override
@@ -352,7 +355,7 @@ class _Onizleme extends StatelessWidget {
                     icon: const Icon(LucideIcons.folderInput),
                     label: const Text('Elle yerleştir'),
                   ),
-                  if (o == null)
+                  if (o == null && yenidenOnerebilir)
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
                       onPressed: onYenidenOner,

@@ -1,4 +1,5 @@
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Claude;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Data;
@@ -11,9 +12,12 @@ namespace Kafamdakiler.Pages.Gelen;
 // Reads and writes go through GelenIslemleri (the same checks as /api/gelen); approving or rejecting a suggestion goes through
 // EylemServisi (the same rules as the approval queue). A hidden card never shows up: the brain's list leaves it out.
 public class IndexModel(
-    BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, AppDbContext db, EylemServisi eylemler, GelenOnerici onerici)
+    BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, AppDbContext db, EylemServisi eylemler, GelenOnerici onerici, ClaudeAyari claude)
     : BeyinSayfasi(beyin, gunluk)
 {
+    // The "suggest again" button is shown only while Claude is connected.
+    public bool ClaudeBagli => claude.Acik;
+
     public List<GelenKartDto> Kartlar { get; private set; } = [];
 
     // For the hand-made form: where a card can go and which tags exist. Empty when the brain did not answer.

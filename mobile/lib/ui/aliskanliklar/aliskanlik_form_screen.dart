@@ -128,7 +128,9 @@ class _AliskanlikFormScreenState extends State<AliskanlikFormScreen> {
               ? const Center(child: CircularProgressIndicator())
               : (_vm.duzenleme && _vm.mevcut == null)
                   ? BosDurum(metin: _vm.hata ?? 'Alışkanlık bulunamadı.', dugme: 'Tekrar dene', onPressed: _vm.yukle)
-                  : OrtaGenislik(child: _formu(context)),
+                  // The list's explicit padding replaces its automatic one, so SafeArea keeps Kaydet above the system bar.
+                  // The list's explicit padding replaces its automatic one, so SafeArea keeps Kaydet above the system bar.
+                  : SafeArea(top: false, child: OrtaGenislik(child: _formu(context))),
         );
       },
     );

@@ -81,6 +81,8 @@ class GelenRepository extends ChangeNotifier {
   }
 
   /// Asks Claude for a new suggestion now (the server waits for the answer). Needs the network; the errors are thrown.
+  Future<bool> asistanBagliMi() => _api.asistanBagliMi();
+
   Future<GelenOneriYaniti> oneriIste(String kart) async {
     final yanit = await _api.gelenOner(kart);
     notifyListeners();

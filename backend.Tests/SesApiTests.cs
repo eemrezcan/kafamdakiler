@@ -418,6 +418,28 @@ public sealed class SesApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygu
     }
 
     [Fact]
+    public async Task AssistantStatus_ReportsWhetherClaudeIsConnected_AndNeedsTheUsePermission()
+    {
+        var acik = Acik;
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, acik);
+        var asistan = await GirisAsync(UygulamaFabrikasi.AsistanEposta, acik);
+        await IzinAsync(sahip, "asistan.kullan", false, acik);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await GonderAsync(HttpMethod.Get, "/api/asistan/durum", null, acik)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await GonderAsync(HttpMethod.Get, "/api/asistan/durum", asistan, acik)).StatusCode);
+        var yanit = await GonderAsync(HttpMethod.Get, "/api/asistan/durum", sahip, acik);
+        Assert.True((await OkuAsync(yanit)).GetProperty("bagli").GetBoolean());
+
+        await IzinAsync(sahip, "asistan.kullan", true, acik);
+        Assert.Equal(HttpStatusCode.OK, (await GonderAsync(HttpMethod.Get, "/api/asistan/durum", asistan, acik)).StatusCode);
+        await IzinAsync(sahip, "asistan.kullan", false, acik);
+
+        var kapali = Fabrika(claude: false);
+        var kapaliSahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, kapali);
+        Assert.False((await OkuAsync(await GonderAsync(HttpMethod.Get, "/api/asistan/durum", kapaliSahip, kapali))).GetProperty("bagli").GetBoolean());
+    }
+
+    [Fact]
     public async Task WithoutClaude_Is503()
     {
         BeyniKur();

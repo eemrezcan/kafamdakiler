@@ -70,6 +70,32 @@ class _YakalaScreenState extends State<YakalaScreen> {
       _yeniFotograf != null ||
       (!_fotografKaldirildi && (_vm.mevcut?.fotografId != null || _vm.mevcut?.fotografYolu != null));
 
+  /// Something would be lost if the screen closed now: typed text or a picked photo (a new capture), or a changed text
+  /// or photo (an edit).
+  bool get _kaybolacakVar {
+    final mevcut = _vm.mevcut;
+    if (_vm.duzenleme) {
+      return mevcut != null && (_metin.text != (mevcut.metin ?? '') || _yeniFotograf != null || _fotografKaldirildi);
+    }
+    return _metin.text.trim().isNotEmpty || _yeniFotograf != null;
+  }
+
+  Future<void> _geriTusu(bool popOldu) async {
+    if (popOldu) return;
+    final vazgec = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Vazgeçilsin mi?'),
+        content: const Text('Yazdıkların kaydedilmeden silinecek.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Yazmaya devam et')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Vazgeç')),
+        ],
+      ),
+    );
+    if (vazgec == true && mounted) Navigator.of(context).pop();
+  }
+
   bool get _kaydedilebilir => _metin.text.trim().isNotEmpty || _fotografVar;
 
   @override
@@ -175,13 +201,17 @@ class _YakalaScreenState extends State<YakalaScreen> {
           _dolduruldu = true;
           _metin.text = mevcut.metin ?? '';
         }
-        return Scaffold(
-          appBar: AppBar(title: Text(_vm.duzenleme ? 'Yakalamayı düzenle' : 'Yakala')),
-          body: _vm.yukleniyor
-              ? const Center(child: CircularProgressIndicator())
-              : (_vm.duzenleme && mevcut == null)
-                  ? BosDurum(metin: _vm.hata ?? 'Kayıt bulunamadı.')
-                  : OrtaGenislik(child: _formu(context)),
+        return PopScope(
+          canPop: !_kaybolacakVar,
+          onPopInvokedWithResult: (popOldu, _) => _geriTusu(popOldu),
+          child: Scaffold(
+            appBar: AppBar(title: Text(_vm.duzenleme ? 'Yakalamayı düzenle' : 'Yakala')),
+            body: _vm.yukleniyor
+                ? const Center(child: CircularProgressIndicator())
+                : (_vm.duzenleme && mevcut == null)
+                    ? BosDurum(metin: _vm.hata ?? 'Kayıt bulunamadı.')
+                    : OrtaGenislik(child: _formu(context)),
+          ),
         );
       },
     );
@@ -255,33 +285,36 @@ class _YakalaScreenState extends State<YakalaScreen> {
                 icon: const Icon(LucideIcons.mic),
                 label: const Text('Dikte'),
               ),
-            FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(minimumSize: dar),
-              onPressed: sunucuIsi ? _iseCevir : null,
-              icon: ses.akis == IsAkisi.yukleniyor
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(LucideIcons.sparkles),
-              label: const Text('İşe çevir'),
-            ),
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(minimumSize: dar),
-              onPressed: sunucuIsi ? () => _yenidenYaz(YenidenYazKipi.ozet) : null,
-              icon: const Icon(LucideIcons.textAlignStart),
-              label: const Text('Özetle'),
-            ),
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(minimumSize: dar),
-              onPressed: sunucuIsi ? () => _yenidenYaz(YenidenYazKipi.madde) : null,
-              icon: const Icon(LucideIcons.list),
-              label: const Text('Maddele'),
-            ),
+            // These three call Claude: hidden while the assistant is not connected on the server.
+            if (ses.asistanBagli) ...[
+              FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(minimumSize: dar),
+                onPressed: sunucuIsi ? _iseCevir : null,
+                icon: ses.akis == IsAkisi.yukleniyor
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(LucideIcons.sparkles),
+                label: const Text('İşe çevir'),
+              ),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: dar),
+                onPressed: sunucuIsi ? () => _yenidenYaz(YenidenYazKipi.ozet) : null,
+                icon: const Icon(LucideIcons.textAlignStart),
+                label: const Text('Özetle'),
+              ),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: dar),
+                onPressed: sunucuIsi ? () => _yenidenYaz(YenidenYazKipi.madde) : null,
+                icon: const Icon(LucideIcons.list),
+                label: const Text('Maddele'),
+              ),
+            ],
           ],
         ),
         if (ses.dinliyor)
           Padding(padding: const EdgeInsets.only(top: 8), child: Text('Dinliyorum… konuşmayı bitirince durur.', style: soluk)),
         if (calisiyor)
           Padding(padding: const EdgeInsets.only(top: 8), child: Text('Asistan çalışıyor…', style: soluk)),
-        if (!ses.cevrimici)
+        if (!ses.cevrimici && ses.asistanBagli)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(

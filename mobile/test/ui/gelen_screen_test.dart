@@ -155,8 +155,13 @@ void main() {
     // Nothing typed yet: refused on the spot.
     await tester.tap(find.text('Yerleştir'));
     await tester.pump();
-    expect(find.text('Dosya adı, başlık ve en az bir etiket gerekli.'), findsOneWidget);
+    expect(find.text('Başlık ve en az bir etiket gerekli.'), findsOneWidget);
 
+    // The file name is not asked up front; "Gelişmiş" holds it for the rare case it is typed.
+    expect(find.widgetWithText(TextField, 'Dosya adı'), findsNothing);
+    await tester.ensureVisible(find.text('Gelişmiş'));
+    await tester.tap(find.text('Gelişmiş'));
+    await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Dosya adı'), 'simyaci');
     await tester.enterText(find.widgetWithText(TextField, 'Etiketler'), 'kaynak, #okul');
     await tester.tap(find.text('Yerleştir'));
@@ -193,11 +198,10 @@ void main() {
     expect(find.widgetWithText(FilterChip, 'okul'), findsOneWidget);
     expect(find.text('Kitap Kulübü (notlar)'), findsOneWidget, reason: 'the first folder is preselected');
 
-    // A file name but no tag picked: refused on the spot.
-    await tester.enterText(find.widgetWithText(TextField, 'Dosya adı'), 'simyaci');
+    // No tag picked: refused on the spot.
     await tester.tap(find.text('Yerleştir'));
     await tester.pump();
-    expect(find.text('Dosya adı, başlık ve en az bir etiket gerekli.'), findsOneWidget);
+    expect(find.text('Başlık ve en az bir etiket gerekli.'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilterChip, 'kaynak'));
     await tester.tap(find.widgetWithText(FilterChip, 'okul'));
@@ -216,7 +220,43 @@ void main() {
 
     expect(ortam.api.cagrilar, contains('gelenEtiketleri'));
     expect(ortam.api.cagrilar, contains('gelenKlasorleri'));
-    expect(ortam.api.cagrilar, contains('gelenIsle:b:ogrenme/simyaci.md:Önerisiz kart:kaynak,okul'));
+    expect(ortam.api.cagrilar, contains('gelenIsle:b:ogrenme/onerisiz-kart.md:Önerisiz kart:kaynak,okul'),
+        reason: 'the file name is made from the title');
+  });
+
+  testWidgets('placing by hand: the card\'s target project is the folder that comes selected', (tester) async {
+    ortam.api.gelenKartlari = [ornekGelenKarti(kimlik: 'h', ozet: 'Takvim fikri', hedef: 'projects/balkon')];
+    ortam.api.gelenEtiketleri_ = const [GelenEtiket(ad: 'fikir')];
+    ortam.api.gelenKlasorleri_ = const [
+      GelenKlasoru(yol: 'projects/kitap/notlar/', ad: 'Kitap Kulübü', tur: 'proje', proje: 'kitap'),
+      GelenKlasoru(yol: 'projects/balkon/notlar/', ad: 'Balkon Bahçesi', tur: 'proje', proje: 'balkon'),
+    ];
+    await goster(tester, cevrimdisiOl: false);
+    await tester.tap(find.text('Takvim fikri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Elle yerleştir'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Balkon Bahçesi (notlar)'), findsOneWidget, reason: 'not the first folder of the list');
+    expect(find.text('Kitap Kulübü (notlar)'), findsNothing);
+  });
+
+  testWidgets('"Yeniden öner" is hidden while the assistant is not connected', (tester) async {
+    ortam.api.asistanBagli = false;
+    await goster(tester);
+    await tester.tap(find.text('Önerisiz kart'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Elle yerleştir'), findsOneWidget);
+    expect(find.text('Yeniden öner'), findsNothing);
+  });
+
+  testWidgets('"Yeniden öner" shows while the assistant is connected', (tester) async {
+    await goster(tester);
+    await tester.tap(find.text('Önerisiz kart'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Yeniden öner'), findsOneWidget);
   });
 
   testWidgets('when the server lists cannot be read, the typed tag field and the cached projects stand in', (tester) async {

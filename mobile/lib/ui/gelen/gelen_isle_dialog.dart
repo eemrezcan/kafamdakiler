@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/beyin.dart';
 import '../../data/models/gelen.dart';
+import '../../utils/metin.dart';
 
-/// The hand-made placement of a card: a folder from the pick list, a file name, a title and the tags. The server checks
+/// The hand-made placement of a card: a folder from the pick list (the card's target project when it has one), a title and
+/// the tags. The file name is made from the title; "Gelişmiş" lets it be typed. The server checks
 /// the path and the tags again; a refusal shows up as a refused entry in the sending queue.
 /// With [secenekler] (from the server) the folder and the tags are picked from lists; without them (offline, no
 /// permission) the cached projects and a typed tag field stand in.
@@ -47,7 +49,14 @@ class _GelenIsleDialogState extends State<_GelenIsleDialog> {
           for (final p in widget.projeler) ('projects/${p.kimlik}/notlar/', '${p.baslik} (notlar)'),
           for (final k in _kokler) (k, k),
         ];
-  late String _klasor = _klasorler.first.$1;
+  // The card's target hint ("projects/kitap-kulubu") picks that project's folder; otherwise the first one.
+  late String _klasor = _hedefKlasoru() ?? _klasorler.first.$1;
+
+  String? _hedefKlasoru() {
+    final hedef = widget.kart.hedef?.replaceAll(RegExp(r'/+$'), '');
+    if (hedef == null || hedef.isEmpty) return null;
+    return _klasorler.map((k) => k.$1).where((yol) => yol.startsWith('$hedef/')).firstOrNull;
+  }
 
   bool get _etiketSecici => widget.secenekler != null && widget.secenekler!.etiketler.isNotEmpty;
 
@@ -60,8 +69,8 @@ class _GelenIsleDialogState extends State<_GelenIsleDialog> {
   }
 
   void _yerlestir() {
-    final ad = _dosya.text.trim();
     final baslik = _baslik.text.trim();
+    final ad = _dosya.text.trim().isNotEmpty ? _dosya.text.trim() : dosyaAdiUret(baslik);
     final etiketler = _etiketSecici
         ? _secilenEtiketler.toList()
         : [
@@ -69,7 +78,7 @@ class _GelenIsleDialogState extends State<_GelenIsleDialog> {
               if (e.trim().isNotEmpty) e.trim().replaceFirst(RegExp(r'^#'), ''),
           ];
     if (ad.isEmpty || baslik.isEmpty || etiketler.isEmpty) {
-      setState(() => _hata = 'Dosya adı, başlık ve en az bir etiket gerekli.');
+      setState(() => _hata = 'Başlık ve en az bir etiket gerekli.');
       return;
     }
     Navigator.pop(context, GelenIsleGirdi(yol: '$_klasor${ad.endsWith('.md') ? ad : '$ad.md'}', baslik: baslik, etiketler: etiketler));
@@ -90,13 +99,6 @@ class _GelenIsleDialogState extends State<_GelenIsleDialog> {
               decoration: const InputDecoration(labelText: 'Klasör'),
               items: [for (final (deger, ad) in _klasorler) DropdownMenuItem(value: deger, child: Text(ad, overflow: TextOverflow.ellipsis))],
               onChanged: (v) => setState(() => _klasor = v ?? _klasor),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _dosya,
-              decoration: const InputDecoration(labelText: 'Dosya adı', hintText: 'ornek-not'),
-              autocorrect: false,
-              maxLength: 100,
             ),
             TextField(
               controller: _baslik,
@@ -125,6 +127,22 @@ class _GelenIsleDialogState extends State<_GelenIsleDialog> {
                 decoration: const InputDecoration(labelText: 'Etiketler', hintText: 'kaynak, okul', helperText: 'Virgülle ayır; etiket sözlükte olmalı.'),
                 autocorrect: false,
               ),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('Gelişmiş'),
+              children: [
+                TextField(
+                  controller: _dosya,
+                  decoration: const InputDecoration(
+                    labelText: 'Dosya adı',
+                    hintText: 'ornek-not',
+                    helperText: 'Boş bırakırsan başlıktan üretilir.',
+                  ),
+                  autocorrect: false,
+                  maxLength: 100,
+                ),
+              ],
+            ),
             if (_hata != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),

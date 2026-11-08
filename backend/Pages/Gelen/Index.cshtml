@@ -138,10 +138,13 @@
                 </div>
 
                 <div class="kd-eylem-actions">
-                    <form method="post" asp-page-handler="Oneri">
-                        <input type="hidden" name="kart" value="@k.Kimlik" />
-                        <button type="submit" class="btn btn-outline-primary btn-sm">Yeniden öner</button>
-                    </form>
+                    @if (Model.ClaudeBagli)
+                    {
+                        <form method="post" asp-page-handler="Oneri">
+                            <input type="hidden" name="kart" value="@k.Kimlik" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Yeniden öner</button>
+                        </form>
+                    }
                     <form method="post" asp-page-handler="Sil" onsubmit="return confirm('Bu kart ve görseli kalıcı olarak silinecek. Emin misin?');">
                         <input type="hidden" name="kart" value="@k.Kimlik" />
                         <button type="submit" class="btn btn-outline-primary btn-sm">Sil</button>

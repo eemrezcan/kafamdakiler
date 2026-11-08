@@ -509,6 +509,17 @@ class ApiService {
     return Uint8List.fromList(yanit.data!);
   }
 
+  /// `GET /api/asistan/durum`: whether Claude is set up on the server. False when it is not, and also when the
+  /// answer cannot be had (offline, no `asistan.kullan` permission): the buttons that need Claude then stay hidden.
+  Future<bool> asistanBagliMi() async {
+    try {
+      final yanit = await _dio.get<Map<String, dynamic>>('/api/asistan/durum');
+      return yanit.data?['bagli'] == true;
+    } on DioException {
+      return false;
+    }
+  }
+
   // ---- Helpers ----
 
   List<T> _liste<T>(Response<List<dynamic>> yanit, T Function(Map<String, dynamic>) coz) =>

@@ -96,6 +96,40 @@ void main() {
     return tester.widget<ButtonStyleButton>(dugme.first).onPressed != null;
   }
 
+  group('assistant status', () {
+    testWidgets('with Claude off on the server, İşe çevir, Özetle and Maddele are not offered; dictation still is', (tester) async {
+      ortam.api.asistanBagli = false;
+      await goster(tester, metin: 'yarın Ali\'yi ara');
+
+      expect(find.text('İşe çevir'), findsNothing);
+      expect(find.text('Özetle'), findsNothing);
+      expect(find.text('Maddele'), findsNothing);
+      expect(find.text('Dikte'), findsOneWidget);
+    });
+
+    testWidgets('with Claude connected they are offered', (tester) async {
+      await goster(tester, metin: 'yarın Ali\'yi ara');
+
+      expect(find.text('İşe çevir'), findsOneWidget);
+      expect(find.text('Özetle'), findsOneWidget);
+      expect(find.text('Maddele'), findsOneWidget);
+    });
+
+    testWidgets('a connection that comes back asks the server again', (tester) async {
+      baglanti.var_ = false;
+      ortam.api.asistanBagli = false;
+      await goster(tester, metin: 'x');
+      expect(find.text('İşe çevir'), findsNothing);
+
+      ortam.api.asistanBagli = true;
+      baglanti.ayarla(true);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('İşe çevir'), findsOneWidget);
+    });
+  });
+
   group('dictation', () {
     testWidgets('the words stream into the field, a pause stops it, the button starts it again after the text', (tester) async {
       await goster(tester);

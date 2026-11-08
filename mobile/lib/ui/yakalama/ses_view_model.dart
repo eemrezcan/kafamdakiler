@@ -36,6 +36,7 @@ class SesViewModel extends ChangeNotifier {
   SesViewModel({required this._api, required this._dikte, required this._baglanti, this.kaynak}) {
     _baglanti.varMi().then(_baglantiDegisti, onError: (Object _) {});
     _abonelik = _baglanti.degisim.listen(_baglantiDegisti, onError: (Object _) {});
+    _asistanDurumunuAl();
   }
 
   /// The server's limit for the text of "İşe çevir" (the field itself takes more).
@@ -59,6 +60,22 @@ class SesViewModel extends ChangeNotifier {
   void _baglantiDegisti(bool baglanti) {
     if (_atildi || baglanti == _cevrimici) return;
     _cevrimici = baglanti;
+    notifyListeners();
+    if (baglanti) _asistanDurumunuAl();
+  }
+
+  // ---- The assistant ----
+
+  /// Claude is set up on the server. False until the server says so: the buttons that call Claude stay hidden while it is
+  /// off, instead of failing when pressed.
+  bool _asistanBagli = false;
+  bool get asistanBagli => _asistanBagli;
+
+  Future<void> _asistanDurumunuAl() async {
+    if (_asistanBagli) return;
+    final bagli = await _api.asistanBagliMi();
+    if (_atildi || bagli == _asistanBagli) return;
+    _asistanBagli = bagli;
     notifyListeners();
   }
 

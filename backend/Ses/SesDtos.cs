@@ -53,3 +53,6 @@ public record YenidenYazYaniti(string Metin);
 public record ClaudeIsCikarCevabi(List<IsOnerisi> Oneriler);
 
 public record ClaudeYenidenYazCevabi(string Metin);
+
+// The answer of GET /api/asistan/durum.
+public record AsistanDurumu(bool Bagli);

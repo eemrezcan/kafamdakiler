@@ -60,12 +60,24 @@ class GelenListeViewModel extends ChangeNotifier {
   bool _cevrimdisi = false;
   bool get cevrimdisi => _cevrimdisi;
 
+  /// Claude is set up on the server; "Yeniden öner" is hidden while it is not. False until the server says so.
+  bool _asistanBagli = false;
+  bool get asistanBagli => _asistanBagli;
+
+  Future<void> _asistanDurumunuAl() async {
+    final bagli = await _repo.asistanBagliMi();
+    if (_atildi || bagli == _asistanBagli) return;
+    _asistanBagli = bagli;
+    notifyListeners();
+  }
+
   /// Fetches the server's list; offline, the cached list is shown.
   Future<void> yukle() async {
     if (_yukleniyor) return;
     _yukleniyor = true;
     _hata = null;
     notifyListeners();
+    if (!_asistanBagli) unawaited(_asistanDurumunuAl());
     try {
       final sonuc = await _repo.listele();
       _liste = sonuc.liste;

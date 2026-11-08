@@ -78,6 +78,16 @@ void main() {
     expect(find.byKey(const ValueKey('brifing-eski')), findsNothing);
   });
 
+  testWidgets('the box that turns a note into work is hidden while Claude is not connected', (tester) async {
+    ortam.api.brifingYaniti = ornek();
+    ortam.api.asistanBagli = false;
+    await goster(tester);
+
+    expect(find.text('Bugün 3 iş var'), findsOneWidget, reason: 'the briefing itself is still there');
+    expect(find.byKey(const ValueKey('brifing-metin')), findsNothing);
+    expect(find.byKey(const ValueKey('brifing-gonder')), findsNothing);
+  });
+
   testWidgets('a briefing made by fixed rules says so', (tester) async {
     ortam.api.brifingYaniti = Brifing(gun: '2026-11-08', uretimAni: DateTime.utc(2026, 11, 8), yontem: Brifing.hesapYontemi, kartlar: ornek().kartlar);
     await goster(tester);

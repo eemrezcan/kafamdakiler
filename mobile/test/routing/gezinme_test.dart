@@ -139,6 +139,29 @@ void main() {
     expect(etiketler, ['Bugün', 'Projeler', 'Yakalamalar', 'Ara', 'Profil']);
   });
 
+  testWidgets('the label "Yakalamalar" fits on one line', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await uygulamayiAc(tester);
+
+    final yakalamalar = tester.getSize(find.descendant(of: find.byType(NavigationBar), matching: find.text('Yakalamalar')));
+    final projeler = tester.getSize(find.descendant(of: find.byType(NavigationBar), matching: find.text('Projeler')));
+    expect(yakalamalar.height, projeler.height, reason: 'a wrapped label would be two lines high');
+  });
+
+  testWidgets('back on another tab goes to Bugün first', (tester) async {
+    await uygulamayiAc(tester);
+    await sekme(tester, 'Ara');
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 3);
+
+    await tester.binding.handlePopRoute();
+    await bekle(tester);
+
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 0);
+    expect(find.text('Gün planı'), findsOneWidget);
+  });
+
   testWidgets('Bugün shows the brain plan and today\'s habit cards together', (tester) async {
     await uygulamayiAc(tester);
 

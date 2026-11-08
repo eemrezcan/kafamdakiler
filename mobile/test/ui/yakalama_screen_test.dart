@@ -43,6 +43,61 @@ void main() {
     await tester.pump();
   }
 
+  group('leaving the Yakala screen', () {
+    /// A screen under Yakala, so a back press has somewhere to go.
+    Future<void> altindaGoster(WidgetTester tester) async {
+      ortam.api.cevrimdisi = true;
+      tester.view.physicalSize = const Size(375, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final vm = YakalaViewModel(repo: ortam.yakalamalar, esitleyici: ortam.esitleyici);
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => YakalaScreen(viewModel: vm))),
+              child: const Text('aç'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('aç'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('typed text: back asks "Vazgeçilsin mi?"; staying keeps the text, leaving closes the screen', (tester) async {
+      await altindaGoster(tester);
+      await tester.enterText(find.byType(TextFormField), 'unutmamam gereken şey');
+      await tester.pump();
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Vazgeçilsin mi?'), findsOneWidget);
+
+      await tester.tap(find.text('Yazmaya devam et'));
+      await tester.pumpAndSettle();
+      expect(find.text('Vazgeçilsin mi?'), findsNothing);
+      expect(tester.widget<EditableText>(find.byType(EditableText)).controller.text, 'unutmamam gereken şey');
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Vazgeç'));
+      await tester.pumpAndSettle();
+      expect(find.text('Aklında ne var?'), findsNothing, reason: 'the screen closed');
+      expect(find.text('aç'), findsOneWidget);
+    });
+
+    testWidgets('nothing typed: back closes at once, without asking', (tester) async {
+      await altindaGoster(tester);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vazgeçilsin mi?'), findsNothing);
+      expect(find.text('aç'), findsOneWidget);
+    });
+  });
+
   group('Yakala screen', () {
     testWidgets('opens with the keyboard ready and makes no API call', (tester) async {
       await yakalaGoster(tester);
