@@ -58,20 +58,22 @@ class DahaFazlaScreen extends StatelessWidget {
             // Room for the floating "Yakala" button under the last card.
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             children: [
+              // The account and its password together; the role is told only when it is not the owner's (one user app).
               Card(
                 child: Column(
                   children: [
                     ListTile(
                       minTileHeight: 56,
-                      leading: const Icon(LucideIcons.mail),
-                      title: Text(kullanici.ben?.email ?? 'Bilinmiyor'),
-                      subtitle: const Text('E-posta'),
+                      leading: const Icon(LucideIcons.circleUser),
+                      title: Text(kullanici.ben?.email ?? 'Bilinmiyor', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(kullanici.sahip || kullanici.ben == null ? 'Hesap' : 'Asistan hesabı'),
                     ),
                     ListTile(
                       minTileHeight: 56,
-                      leading: const Icon(LucideIcons.shield),
-                      title: Text(kullanici.ben == null ? 'Bilinmiyor' : kullanici.ben!.roller.join(', ')),
-                      subtitle: const Text('Rol'),
+                      leading: const Icon(LucideIcons.keyRound),
+                      title: const Text('Şifremi değiştir'),
+                      trailing: const Icon(LucideIcons.chevronRight),
+                      onTap: () => context.push(Rotalar.sifre),
                     ),
                   ],
                 ),
@@ -106,6 +108,8 @@ class DahaFazlaScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 const BrifingAyarKarti(),
               ],
+              // The offline queue shows only when something waits or was refused; an empty queue is nothing to look at.
+              if (viewModel.bekleyen > 0 || viewModel.gonderilemeyenler.isNotEmpty) ...[
               const SizedBox(height: 16),
               Card(
                 child: Column(
@@ -146,16 +150,7 @@ class DahaFazlaScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  minTileHeight: 56,
-                  leading: const Icon(LucideIcons.keyRound),
-                  title: const Text('Şifremi değiştir'),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () => context.push(Rotalar.sifre),
-                ),
-              ),
+              ],
               const SizedBox(height: 24),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),

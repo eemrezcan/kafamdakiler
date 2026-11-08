@@ -55,7 +55,8 @@ class _BrifingAyarKartiState extends State<BrifingAyarKarti> {
             key: const ValueKey('brifing-bildirim'),
             secondary: const Icon(LucideIcons.bellRing),
             title: const Text('Sabah bildirimi'),
-            subtitle: Text(_ayar.acik ? 'Her gün ${_ayar.saatMetni}' : 'Kapalı'),
+            // The hour is on the row below; saying it here too only repeated it.
+            subtitle: Text(_ayar.acik ? 'Brifing hazır olunca haber verir' : 'Kapalı'),
             value: _ayar.acik,
             onChanged: (acik) => _yaz(BrifingAyari(acik: acik, saat: _ayar.saat, dakika: _ayar.dakika)),
           ),

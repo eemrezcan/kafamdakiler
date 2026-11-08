@@ -13,9 +13,12 @@ import '../core/widgets.dart';
 /// normal state, so only the odd ones get a mark: not sent yet (stuck on the phone) and refused by the server. Tap to
 /// edit; swipe left to delete (the caller asks first).
 class GonderiliyorSatiri extends StatelessWidget {
-  const GonderiliyorSatiri({super.key, required this.satir, required this.onSil});
+  const GonderiliyorSatiri({super.key, required this.satir, this.hedef, required this.onSil});
 
   final YakalamaSatiri satir;
+
+  /// The target in words (project title), null without one.
+  final String? hedef;
   final Future<void> Function() onSil;
 
   @override
@@ -25,7 +28,6 @@ class GonderiliyorSatiri extends StatelessWidget {
     final kucuk = KdYazi.of(context).sayi.copyWith(fontSize: 12, color: soluk);
     final metin = satir.metin;
     final hata = satir.hata;
-    final hedef = satir.hedef;
     final fotografVar = satir.fotografId != null || satir.fotografYolu != null;
 
     final kart = Card(
@@ -61,7 +63,7 @@ class GonderiliyorSatiri extends StatelessWidget {
                         if (hedef != null)
                           _Isaret(
                             ikon: LucideIcons.folder,
-                            metin: hedef.startsWith('projects/') ? hedef.substring('projects/'.length) : hedef,
+                            metin: hedef!,
                             renk: tema.colorScheme.primary,
                           ),
                         if (hata != null)

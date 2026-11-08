@@ -58,7 +58,6 @@ class ProjeListeScreen extends StatelessWidget {
                                 minTileHeight: 64,
                                 leading: const Icon(LucideIcons.folder),
                                 title: Text(p.baslik),
-                                subtitle: Text(p.kimlik),
                                 trailing: const Icon(LucideIcons.chevronRight),
                                 onTap: () => context.push('/projeler/${Uri.encodeComponent(p.kimlik)}'),
                               ),

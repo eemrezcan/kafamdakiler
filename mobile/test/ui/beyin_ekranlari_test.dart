@@ -51,11 +51,11 @@ void main() {
       return vm;
     }
 
-    testWidgets('lists the projects with their ids', (tester) async {
+    testWidgets('lists the projects by title, without the technical id', (tester) async {
       await goster(tester);
 
       expect(find.text('Balkon Bahçesi Sulama'), findsOneWidget);
-      expect(find.text('kitap-kulubu'), findsOneWidget);
+      expect(find.text('kitap-kulubu'), findsNothing);
     });
 
     testWidgets('503: says the brain is not connected, and Tekrar dene loads the list once it is', (tester) async {
@@ -139,7 +139,8 @@ void main() {
       expect(find.text('Aktif · Yüksek öncelik'), findsOneWidget);
       expect(find.text('Ay görünümünü çiz'), findsOneWidget);
       expect(find.text('Bekliyor'), findsOneWidget);
-      expect(find.text('2026-11-03 18:42'), findsOneWidget);
+      expect(find.textContaining('3 Kas'), findsOneWidget, reason: 'the journal time reads as words, not 2026-11-03');
+      expect(find.text('2026-11-03 18:42'), findsNothing);
       expect(find.text('Liste sayfası bitti.'), findsOneWidget);
     });
 
@@ -234,8 +235,8 @@ void main() {
       await goster(tester);
 
       expect(
-        tester.getTopLeft(find.text('2026-11-03 18:43')).dx,
-        tester.getTopLeft(find.text('2026-11-03 18:42')).dx,
+        tester.getTopLeft(find.textContaining('18:43')).dx,
+        tester.getTopLeft(find.textContaining('18:42')).dx,
       );
     });
 
@@ -503,15 +504,15 @@ void main() {
       expect(find.text('1 sa 30 dk'), findsOneWidget);
       expect(find.text('20 sayfa kitap'), findsOneWidget);
       expect(find.text('Diş randevusu al'), findsOneWidget);
-      expect(find.text('3 gün'), findsOneWidget);
+      expect(find.text('3 gün gecikti'), findsOneWidget);
       expect(find.text('1 / 2 tamam'), findsOneWidget);
       expect(find.text('Su iç'), findsOneWidget, reason: 'the habit card is on the same screen');
     });
 
-    testWidgets('day forward and back; "Bugüne dön" comes back', (tester) async {
+    testWidgets('day forward and back; tapping the day name comes back to today', (tester) async {
       ortam.api.gunPlanlari = {'2026-10-31': plan31, '2026-11-01': plan1};
       await goster(tester);
-      expect(find.text('Bugüne dön'), findsNothing);
+      expect(find.byTooltip('Bugüne dön'), findsNothing, reason: 'on today the card is not told which day it is: the screen says so');
 
       await tester.tap(find.byTooltip('Sonraki gün'));
       await tester.pump();
@@ -529,7 +530,7 @@ void main() {
       expect(find.text('Dün'), findsOneWidget);
       expect(find.text('Bu gün için plan yok.'), findsOneWidget);
 
-      await tester.tap(find.text('Bugüne dön'));
+      await tester.tap(find.text('Dün'));
       await tester.pump();
       await tester.pump();
       expect(find.text('Takvim ay görünümü'), findsOneWidget);
@@ -542,6 +543,25 @@ void main() {
       await goster(tester);
 
       expect(find.text('Bu gün için plan yok.'), findsOneWidget);
+    });
+
+    testWidgets("an overdue task that is also yesterday's leftover shows once, under the leftover", (tester) async {
+      final dun = BeyinGun(
+        tarih: DateTime.utc(2026, 10, 30),
+        planVar: true,
+        bolumler: const [
+          BeyinGunBolumu(ad: 'Görevler', maddeler: [BeyinGunMaddesi(id: 'g:dis', baslik: 'Diş randevusu al', durum: 'acik', gorev: 'dis')]),
+        ],
+      );
+      ortam.api.gunPlanlari = {'2026-10-31': plan31, '2026-10-30': dun};
+      await goster(tester);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+
+      expect(find.text('Dünden kalanlar'), findsOneWidget);
+      expect(find.text('Diş randevusu al'), findsOneWidget, reason: 'one job, one place');
+      expect(find.textContaining('3 gün gecikti'), findsOneWidget, reason: 'the lateness moves under the leftover');
+      expect(find.text('GECİKEN GÖREVLER'), findsNothing, reason: 'nothing else is late');
     });
 
     testWidgets('503: the card explains, the habits are untouched; Tekrar dene works', (tester) async {

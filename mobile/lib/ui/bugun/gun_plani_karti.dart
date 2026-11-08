@@ -29,20 +29,26 @@ class GunPlaniKarti extends StatelessWidget {
     };
   }
 
-  Future<void> _maddeEkle(BuildContext context) async {
-    final metin = await gunPlaniMetinDialogu(
-      context,
-      baslik: 'Plana madde ekle',
-      ipucu: 'Yeni iş (süre için ~45dk ya da ~1s)',
-    );
-    if (metin != null) await viewModel.maddeEkle(metin);
-  }
+  /// "bugün", "yarın", "9 Kasım": the day the plan line goes to, for the add dialog.
+  String _gunAdi() => switch (viewModel.tarih.difference(viewModel.bugun).inDays) {
+        0 => 'bugün',
+        -1 => 'dün',
+        1 => 'yarın',
+        _ => DateFormat('d MMMM', 'tr').format(viewModel.tarih),
+      };
 
-  Future<void> _gorevEkle(BuildContext context) async {
+  Future<void> _ekle(BuildContext context) async {
     final projeler = await viewModel.projeler();
     if (!context.mounted) return;
-    final gorev = await gorevEkleDialogu(context, projeler);
-    if (gorev != null) await viewModel.gorevEkle(baslik: gorev.baslik, proje: gorev.proje, bitis: gorev.bitis);
+    final ekleme = await planaEkleDialogu(context, projeler: projeler, gunAdi: _gunAdi());
+    switch (ekleme) {
+      case MaddeEklemesi(:final metin):
+        await viewModel.maddeEkle(metin);
+      case GorevEklemesi(:final gorev):
+        await viewModel.gorevEkle(baslik: gorev.baslik, proje: gorev.proje, bitis: gorev.bitis);
+      case null:
+        break;
+    }
   }
 
   @override
@@ -58,21 +64,26 @@ class GunPlaniKarti extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // The same heading as the other cards of Bugün; the screen already says it is today, so the day is only
+                // named when another one is on show (tapping it comes back to today).
                 Row(
                   children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Text('Gün planı', style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    if (!viewModel.bugunMu)
+                      Tooltip(
+                        message: 'Bugüne dön',
+                        child: TextButton(onPressed: viewModel.bugune, child: Text(_baslik())),
+                      ),
                     IconButton(
                       tooltip: 'Önceki gün',
                       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                       icon: const Icon(LucideIcons.chevronLeft),
                       onPressed: () => viewModel.gunDegistir(-1),
-                    ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text('Gün planı', style: TextStyle(fontSize: 12, color: tema.colorScheme.onSurfaceVariant)),
-                          Text(_baslik(), style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                        ],
-                      ),
                     ),
                     IconButton(
                       tooltip: 'Sonraki gün',
@@ -82,8 +93,6 @@ class GunPlaniKarti extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (!viewModel.bugunMu)
-                  Center(child: TextButton(onPressed: viewModel.bugune, child: const Text('Bugüne dön'))),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: _govde(context, gun),
@@ -186,11 +195,12 @@ class GunPlaniKarti extends StatelessWidget {
                   },
                 ),
             ],
-          if (gun.geciken.isNotEmpty) ...[
+          if (viewModel.geciken(gun) case final geciken when geciken.isNotEmpty) ...[
             BolumBasligi('Geciken görevler', ustBosluk: 12),
-            for (final g in gun.geciken)
+            for (final g in geciken)
               _Geciken(
                 g,
+                proje: g.proje == null ? null : viewModel.projeAdi(g.proje!),
                 yazilabilir: yazilabilir,
                 onBitir: () => viewModel.gorevBitir(g.kimlik),
                 onBol: () async {
@@ -211,20 +221,11 @@ class GunPlaniKarti extends StatelessWidget {
         if (yazilabilir)
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _maddeEkle(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Madde ekle'),
-                ),
-                TextButton.icon(
-                  onPressed: () => _gorevEkle(context),
-                  icon: const Icon(Icons.add_task),
-                  label: const Text('Görev ekle'),
-                ),
-              ],
+            child: TextButton.icon(
+              key: const Key('plan-ekle'),
+              onPressed: () => _ekle(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Ekle'),
             ),
           ),
       ],
@@ -259,7 +260,7 @@ class _SabahKarti extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
-                  Expanded(child: Text(s.madde.baslik)),
+                  Expanded(child: _SabahSatiri(s, gorev: viewModel.sabahGorevi(s), viewModel: viewModel)),
                   TextButton(onPressed: () => viewModel.sabahTasi(s), child: const Text('Taşı')),
                   TextButton(onPressed: () => viewModel.sabahBirak(s), child: const Text('Bırak')),
                 ],
@@ -267,6 +268,38 @@ class _SabahKarti extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// A leftover line; when it stands for an overdue task, the task's project and lateness are told under it (the task is then
+/// left out of "Geciken görevler", so it shows once).
+class _SabahSatiri extends StatelessWidget {
+  const _SabahSatiri(this.sabah, {required this.gorev, required this.viewModel});
+
+  final SabahMaddesi sabah;
+  final GecikenGorev? gorev;
+  final GunPlaniViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final g = gorev;
+    if (g == null) return Text(sabah.madde.baslik);
+    final parcalar = [
+      if (g.proje != null) viewModel.projeAdi(g.proje!),
+      if (g.gun != null) '${g.gun} gün gecikti',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(sabah.madde.baslik),
+        if (parcalar.isNotEmpty)
+          Text(
+            parcalar.join(' · '),
+            style: TextStyle(fontSize: 12, color: g.gun != null ? tema.colorScheme.error : tema.colorScheme.onSurfaceVariant),
+          ),
+      ],
     );
   }
 }
@@ -390,9 +423,12 @@ class _Madde extends StatelessWidget {
 }
 
 class _Geciken extends StatelessWidget {
-  const _Geciken(this.gorev, {required this.yazilabilir, required this.onBitir, required this.onBol});
+  const _Geciken(this.gorev, {required this.proje, required this.yazilabilir, required this.onBitir, required this.onBol});
 
   final GecikenGorev gorev;
+
+  /// The project's title (or id when unknown).
+  final String? proje;
   final bool yazilabilir;
   final VoidCallback onBitir;
   final VoidCallback onBol;
@@ -413,13 +449,13 @@ class _Geciken extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(gorev.baslik),
-                if (gorev.proje != null) Text(gorev.proje!, style: TextStyle(fontSize: 12, color: soluk)),
+                if (proje != null) Text(proje!, style: TextStyle(fontSize: 12, color: soluk)),
               ],
             ),
           ),
           if (gorev.gun != null) ...[
             const SizedBox(width: 8),
-            Text('${gorev.gun} gün', style: TextStyle(fontSize: 12, color: tema.colorScheme.error)),
+            Text('${gorev.gun} gün gecikti', style: TextStyle(fontSize: 12, color: tema.colorScheme.error)),
           ],
           if (yazilabilir)
             PopupMenuButton<String>(

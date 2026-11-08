@@ -11,6 +11,8 @@ import 'ses_view_model.dart';
 Future<void> isOnizlemesiniGoster(BuildContext context, SesViewModel viewModel) async {
   await showModalBottomSheet<void>(
     context: context,
+    // Opened from Bugün too: above the shell's "Yakala" button.
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => _OnizlemeSheet(viewModel: viewModel),

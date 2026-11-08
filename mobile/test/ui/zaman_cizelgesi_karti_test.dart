@@ -79,11 +79,11 @@ void main() {
     expect(find.text('İlaç'), findsOneWidget);
   });
 
-  testWidgets('an empty day says so; with the module off there is no Google note', (tester) async {
-    ortam.api.zamanCizelgesiYaniti = const ZamanCizelgesi(gun: '2026-10-31', google: GoogleDurumu.kapali, plan: 'yok', saatli: [], saatsiz: []);
+  testWidgets('an empty day takes no room: the plan card below already tells what the day holds', (tester) async {
+    ortam.api.zamanCizelgesiYaniti = const ZamanCizelgesi(gun: '2026-10-31', google: GoogleDurumu.bagliDegil, plan: 'yok', saatli: [], saatsiz: []);
     await goster(tester);
 
-    expect(find.text('Bugün için zamanlı ya da zamansız bir şey yok.'), findsOneWidget);
+    expect(find.byKey(const Key('zaman-cizelgesi')), findsNothing);
     expect(find.byKey(const Key('zaman-google')), findsNothing);
   });
 

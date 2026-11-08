@@ -99,7 +99,7 @@ class YonetimScreen extends StatelessWidget {
                 // Room for the floating "Yakala" button under the last row.
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
-                  _Baslik('Asistan\'ın izinleri', ipucu: 'Kapatılan izin, Asistan\'ın bir sonraki isteğinde etkili olur.'),
+                  _Baslik('Asistan\'ın izinleri', ipucu: 'Yazar, okumayı da kapsar. Değişiklik Asistan\'ın bir sonraki isteğinde geçerli olur.'),
                   for (final grup in izinGruplari)
                     _IzinKarti(
                       grup: grup,
@@ -283,7 +283,7 @@ class _IzinKarti extends StatelessWidget {
               emptySelectionAllowed: true,
               segments: [
                 for (final s in [IzinSeviyesi.kapali, IzinSeviyesi.okur, IzinSeviyesi.okurYazar])
-                  ButtonSegment(value: s, label: FittedBox(fit: BoxFit.scaleDown, child: Text(s.ad))),
+                  ButtonSegment(value: s, label: Text(s.ad)),
               ],
               selected: seviye == IzinSeviyesi.ozel ? const {} : {seviye},
               onSelectionChanged: mesgul

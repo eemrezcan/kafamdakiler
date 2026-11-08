@@ -207,10 +207,10 @@ void main() {
       expect(find.text('Özel'), findsOneWidget);
     });
 
-    testWidgets('"Okur ve yazar" opens every permission of the card, one call each', (tester) async {
+    testWidgets('"Yazar" opens every permission of the card, one call each', (tester) async {
       await goster(tester);
 
-      await tester.tap(dugme('gelen', 'Okur ve yazar'));
+      await tester.tap(dugme('gelen', 'Yazar'));
       await tester.pump();
       await tester.pump();
 
@@ -257,7 +257,7 @@ void main() {
       await goster(tester);
       ortam.api.sunucuHatasi = 500;
 
-      await tester.tap(dugme('beyin', 'Okur ve yazar'));
+      await tester.tap(dugme('beyin', 'Yazar'));
       await tester.pump();
       await tester.pump();
 

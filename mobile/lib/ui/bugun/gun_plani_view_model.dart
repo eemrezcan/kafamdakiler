@@ -41,6 +41,34 @@ class GunPlaniViewModel extends BeyinYukleyici<BeyinGun> {
   List<SabahMaddesi> _sabah = const [];
   List<SabahMaddesi> get sabah => bugunMu ? _sabah : const [];
 
+  /// Project titles by id, so a task line can say "Staj Hazırlığı" instead of "staj-hazirligi".
+  Map<String, String> _projeAdlari = const {};
+
+  /// The project's title, or its id when the phone does not know it (yet).
+  String projeAdi(String kimlik) => _projeAdlari[kimlik] ?? kimlik;
+
+  /// Overdue tasks, minus the ones "Dünden kalanlar" already offers (yesterday's line for the same task): one job, one place.
+  List<GecikenGorev> geciken(BeyinGun gun) => [
+        for (final g in gun.geciken)
+          if (!sabah.any((s) => _ayniIs(s, g))) g,
+      ];
+
+  /// The overdue task a leftover line stands for, if any (shown under the line instead of in the task list).
+  GecikenGorev? sabahGorevi(SabahMaddesi s) {
+    for (final g in veri?.geciken ?? const <GecikenGorev>[]) {
+      if (_ayniIs(s, g)) return g;
+    }
+    return null;
+  }
+
+  // The line is linked to the task (`gorev`, or the brain's `g:<task>` id), or it simply carries the task's title.
+  static bool _ayniIs(SabahMaddesi s, GecikenGorev g) {
+    final gorev = s.madde.gorev;
+    if (gorev != null && (gorev == g.kimlik || gorev.endsWith('/${g.kimlik}') || g.kimlik.endsWith('/$gorev'))) return true;
+    if (s.madde.id == 'g:${g.kimlik}') return true;
+    return s.madde.baslik.trim().toLowerCase() == g.baslik.trim().toLowerCase();
+  }
+
   /// Refused writes and accepted ones that need a look.
   List<YazmaBildirimi> _bildirimler = const [];
   List<YazmaBildirimi> get bildirimler => _bildirimler;
@@ -73,9 +101,11 @@ class GunPlaniViewModel extends BeyinYukleyici<BeyinGun> {
     try {
       final sabah = bugunMu ? await _repo.sabah(oku: oku) : const <SabahMaddesi>[];
       final bildirimler = await _repo.bildirimler();
+      final projeler = await _repo.projeler();
       if (_kapandi) return;
       _sabah = sabah;
       _bildirimler = bildirimler;
+      _projeAdlari = {for (final p in projeler) p.kimlik: p.baslik};
       notifyListeners();
     } on Object {
       // The extras are best effort: the plan itself stays as it is.

@@ -10,6 +10,7 @@ import '../../utils/eylem_gorunum.dart';
 import '../ara/ara_dugmesi.dart';
 import '../bugun/onay_bekleyen_karti.dart';
 import '../bugun/onay_bekleyen_view_model.dart';
+import '../core/beyin_gorunum.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
 import 'gelen_isle_dialog.dart';
@@ -83,8 +84,11 @@ class GelenListeScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      // Above the shell's "Yakala" button, which otherwise covers the sheet's buttons.
+      useRootNavigator: true,
       builder: (sheet) => _Onizleme(
         kart: kart,
+        hedef: kart.hedef == null ? null : viewModel.hedefMetni(kart.hedef!),
         karar: karar,
         onUygula: () async {
           Navigator.pop(sheet);
@@ -154,7 +158,7 @@ class GelenListeScreen extends StatelessWidget {
                     for (final s in gonderiliyor)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
-                        child: GonderiliyorSatiri(satir: s, onSil: () => _yakalamaSil(context, s)),
+                        child: GonderiliyorSatiri(satir: s, hedef: s.hedef == null ? null : viewModel.hedefMetni(s.hedef!), onSil: () => _yakalamaSil(context, s)),
                       ),
                     const SizedBox(height: 8),
                   ],
@@ -184,6 +188,7 @@ class GelenListeScreen extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: _KartSatiri(
                           kart: k,
+                          hedef: k.hedef == null ? null : viewModel.hedefMetni(k.hedef!),
                           karar: sahip,
                           sonra: viewModel.sonraMi(k.kimlik),
                           onAc: () => _onizle(context, k, karar: sahip),
@@ -242,9 +247,20 @@ class _KartlarAlinamadi extends StatelessWidget {
 /// A card with its suggestion. For the Sahip, a card that has a suggestion can be swiped: right approves it, left puts it
 /// aside; the swipe never removes the card by itself (the list reloads and does that).
 class _KartSatiri extends StatelessWidget {
-  const _KartSatiri({required this.kart, required this.karar, required this.sonra, required this.onAc, required this.onUygula, required this.onSonra});
+  const _KartSatiri({
+    required this.kart,
+    required this.hedef,
+    required this.karar,
+    required this.sonra,
+    required this.onAc,
+    required this.onUygula,
+    required this.onSonra,
+  });
 
   final GelenKarti kart;
+
+  /// The target in words (project title), null without one.
+  final String? hedef;
   final bool karar;
   final bool sonra;
   final VoidCallback onAc;
@@ -274,8 +290,8 @@ class _KartSatiri extends StatelessWidget {
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  if (kart.yakalandi != null) _Isaret(ikon: LucideIcons.clock, metin: kart.yakalandi!.replaceFirst('T', ' '), renk: soluk),
-                  if (kart.hedef != null) _Isaret(ikon: LucideIcons.target, metin: kart.hedef!, renk: soluk),
+                  if (kart.yakalandi != null) _Isaret(ikon: LucideIcons.clock, metin: zamanMetni(kart.yakalandi!), renk: soluk),
+                  if (hedef != null) _Isaret(ikon: LucideIcons.folder, metin: hedef!, renk: soluk),
                   if (kart.gorselVar) _Isaret(ikon: LucideIcons.image, metin: 'Görselli', renk: soluk),
                   if (kart.laptoptaIslenecek) _Isaret(ikon: LucideIcons.laptop, metin: 'Laptopta işlenecek', renk: tema.colorScheme.tertiary),
                   if (sonra) _Isaret(ikon: LucideIcons.clock3, metin: 'Sonra', renk: soluk),
@@ -360,6 +376,7 @@ class _OneriOzeti extends StatelessWidget {
 class _Onizleme extends StatelessWidget {
   const _Onizleme({
     required this.kart,
+    required this.hedef,
     required this.karar,
     required this.onUygula,
     required this.onDuzelt,
@@ -371,6 +388,7 @@ class _Onizleme extends StatelessWidget {
   });
 
   final GelenKarti kart;
+  final String? hedef;
   final bool karar;
   final Future<void> Function() onUygula;
   final VoidCallback onDuzelt;
@@ -392,8 +410,8 @@ class _Onizleme extends StatelessWidget {
           children: [
             Text(kart.ozet, style: tema.textTheme.titleLarge),
             const SizedBox(height: 8),
-            if (kart.yakalandi != null) Text('Yakalandı: ${kart.yakalandi!.replaceFirst('T', ' ')}'),
-            if (kart.hedef != null) Text('Hedef ipucu: ${kart.hedef}'),
+            if (kart.yakalandi != null) Text('Yakalandı: ${zamanMetni(kart.yakalandi!)}'),
+            if (hedef != null) Text('Önerilen yer: $hedef'),
             if (kart.gorselVar) const Text('Görselli kart; görsel Claude\'a gönderilmez.'),
             if (kart.laptoptaIslenecek) Text('Laptopta işlenecek: ${kart.laptopNotu ?? 'karta uyan etiket sözlükte yok.'}'),
             if (o != null) ...[

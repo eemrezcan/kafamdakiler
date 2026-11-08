@@ -77,10 +77,14 @@ void main() {
       await goster(tester);
       ortam.api.cevrimdisi = true;
 
-      await tester.tap(find.text('Madde ekle'));
+      await tester.tap(find.byKey(const Key('plan-ekle')));
       await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget, reason: 'one "Ekle" asks where it goes; the plan is the default');
       await tester.enterText(find.byType(TextField), 'Fatura kontrol ~45dk');
-      await tester.tap(find.text('Ekle'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Ekle'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
       await tester.pumpAndSettle();
       await gercekZaman(tester);
 
@@ -186,12 +190,15 @@ void main() {
       await goster(tester);
       ortam.api.cevrimdisi = true;
 
-      await tester.tap(find.text('Görev ekle'));
+      await tester.tap(find.byKey(const Key('plan-ekle')));
+      await tester.pumpAndSettle();
+      expect(find.text('Kitap Kulübü Sitesi'), findsNothing, reason: 'the project only matters for a task');
+      await tester.tap(find.text('Görev').last);
       await tester.pumpAndSettle();
       expect(find.text('Kitap Kulübü Sitesi'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'Üye girişi testleri');
       await tester.pump();
-      await tester.tap(find.text('Ekle'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Ekle'));
       await tester.pumpAndSettle();
       await gercekZaman(tester);
 

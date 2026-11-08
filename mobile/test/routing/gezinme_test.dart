@@ -424,7 +424,8 @@ void main() {
     tester.view.physicalSize = const Size(400, 1600);
     await sekme(tester, 'Daha fazla');
 
-    expect(find.text('Her gün 06:30'), findsOneWidget);
+    expect(find.text('Brifing hazır olunca haber verir'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const ValueKey('brifing-saat')), matching: find.text('06:30')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('brifing-bildirim')));
     await bekle(tester);

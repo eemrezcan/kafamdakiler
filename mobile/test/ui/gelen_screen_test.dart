@@ -126,7 +126,7 @@ void main() {
     expect(find.text('Uygula'), findsNothing);
     expect(find.text('Elle yerleştir'), findsNothing);
     expect(find.text('Sil'), findsNothing);
-    expect(find.text('Yakalandı: 2026-11-03 18:40'), findsOneWidget);
+    expect(find.textContaining('Yakalandı: 3 Kas'), findsOneWidget);
   });
 
   testWidgets('the preview of a card with a suggestion: Uygula and Reddet queue the decision', (tester) async {

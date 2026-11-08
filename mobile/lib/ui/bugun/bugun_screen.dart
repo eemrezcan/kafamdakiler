@@ -166,10 +166,7 @@ class BugunScreen extends StatelessWidget {
         const _Tarih(),
         if (brifing != null && brifingSes != null) BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!),
         if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
-        if (zamanCizelgesi != null) ...[
-          ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
-          if (zamanCizelgesi!.cizelge != null) const SizedBox(height: 16),
-        ],
+        if (zamanCizelgesi != null) ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
         if (plan != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: GunPlaniKarti(viewModel: plan)),
         // Hidden until it has an answer, so a failing reminders read leaves no gap.
         if (yaklasanlar != null) ...[

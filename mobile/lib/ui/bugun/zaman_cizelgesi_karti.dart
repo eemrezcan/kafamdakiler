@@ -9,7 +9,8 @@ import 'zaman_cizelgesi_view_model.dart';
 
 /// Today's one timeline (K2.3c): what has an hour (calendar events, timed reminders) on a time strip in the order of the
 /// clock, and what has none (plan items, all-day events, reminders without an hour) under it. Tapping an item shows its detail.
-/// Hidden until the first answer and when the read failed; offline it shows the phone's last copy and says so.
+/// Hidden until the first answer, when the read failed, and when the day has nothing on it (the plan card below already says
+/// what the day holds); offline it shows the phone's last copy and says so.
 class ZamanCizelgesiKarti extends StatelessWidget {
   const ZamanCizelgesiKarti({super.key, required this.viewModel});
 
@@ -21,77 +22,79 @@ class ZamanCizelgesiKarti extends StatelessWidget {
       listenable: viewModel,
       builder: (context, _) {
         final cizelge = viewModel.cizelge;
-        if (cizelge == null) return const SizedBox.shrink();
+        if (cizelge == null || _gizli(cizelge)) return const SizedBox.shrink();
         final tema = Theme.of(context);
         final soluk = tema.colorScheme.onSurfaceVariant;
-        return Card(
-          key: const Key('zaman-cizelgesi'),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Zaman çizelgesi', style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                if (viewModel.cevrimdisi)
-                  _Not(
-                    ikon: LucideIcons.cloudOff,
-                    metin: 'Çevrimdışısın; son eşitlenen çizelge gösteriliyor.',
-                    anahtar: const Key('zaman-cevrimdisi'),
-                  ),
-                if (_googleNotu(cizelge) case final not?) _Not(ikon: LucideIcons.calendarX, metin: not, anahtar: const Key('zaman-google')),
-                if (cizelge.plan == 'okunamadi')
-                  const _Not(ikon: LucideIcons.brain, metin: 'Plan okunamadı; plan maddeleri bu çizelgede yok.'),
-                if (cizelge.kapasite case final k?)
-                  Container(
-                    key: const Key('zaman-kapasite'),
-                    margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: tema.colorScheme.error),
-                      borderRadius: BorderRadius.circular(8),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Card(
+            key: const Key('zaman-cizelgesi'),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Zaman çizelgesi', style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  if (viewModel.cevrimdisi)
+                    _Not(
+                      ikon: LucideIcons.cloudOff,
+                      metin: 'Çevrimdışısın; son eşitlenen çizelge gösteriliyor.',
+                      anahtar: const Key('zaman-cevrimdisi'),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(LucideIcons.triangleAlert, size: 18, color: tema.colorScheme.error),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Bugün sığmıyor: açık işler ${dakikaMetni(k.planDk)} ve etkinlikler ${dakikaMetni(k.etkinlikDk)}, '
-                            'günlük kapasite ${dakikaMetni(k.kapasiteDk)}; ${dakikaMetni(k.asimDk)} fazla.',
-                            style: const TextStyle(fontSize: 13),
+                  if (_googleNotu(cizelge) case final not?)
+                    _Not(ikon: LucideIcons.calendarX, metin: not, anahtar: const Key('zaman-google')),
+                  if (cizelge.plan == 'okunamadi')
+                    const _Not(ikon: LucideIcons.brain, metin: 'Plan okunamadı; plan maddeleri bu çizelgede yok.'),
+                  if (cizelge.kapasite case final k?)
+                    Container(
+                      key: const Key('zaman-kapasite'),
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: tema.colorScheme.error),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.triangleAlert, size: 18, color: tema.colorScheme.error),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Bugün sığmıyor: açık işler ${dakikaMetni(k.planDk)} ve etkinlikler ${dakikaMetni(k.etkinlikDk)}, '
+                              'günlük kapasite ${dakikaMetni(k.kapasiteDk)}; ${dakikaMetni(k.asimDk)} fazla.',
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                if (cizelge.bos)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text('Bugün için zamanlı ya da zamansız bir şey yok.', style: TextStyle(color: soluk)),
-                  ),
-                if (cizelge.saatli.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  for (var i = 0; i < cizelge.saatli.length; i++)
-                    _SaatliSatir(
-                      oge: cizelge.saatli[i],
-                      ilk: i == 0,
-                      son: i == cizelge.saatli.length - 1,
-                      onTap: () => _ayrinti(context, cizelge.saatli[i]),
+                  if (cizelge.saatli.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    for (var i = 0; i < cizelge.saatli.length; i++)
+                      _SaatliSatir(
+                        oge: cizelge.saatli[i],
+                        ilk: i == 0,
+                        son: i == cizelge.saatli.length - 1,
+                        onTap: () => _ayrinti(context, cizelge.saatli[i]),
+                      ),
+                  ],
+                  if (cizelge.saatsiz.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 2),
+                      child: Text('Saatsiz', style: tema.textTheme.labelLarge?.copyWith(color: soluk)),
+                    ),
+                    for (final o in cizelge.saatsiz) _SaatsizSatir(oge: o, onTap: () => _ayrinti(context, o)),
+                  ],
+                  if (cizelge.sonEsitleme case final an?)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Takvim son eşitleme: ${_saatMetni(an)}',
+                        style: TextStyle(fontSize: 11, color: soluk),
+                      ),
                     ),
                 ],
-                if (cizelge.saatsiz.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 2),
-                    child: Text('Saatsiz', style: tema.textTheme.labelLarge?.copyWith(color: soluk)),
-                  ),
-                  for (final o in cizelge.saatsiz) _SaatsizSatir(oge: o, onTap: () => _ayrinti(context, o)),
-                ],
-                if (cizelge.sonEsitleme case final an?)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text('Takvim son eşitleme: ${_saatMetni(an)}', style: TextStyle(fontSize: 11, color: soluk)),
-                  ),
-              ],
+              ),
             ),
           ),
         );
@@ -99,21 +102,26 @@ class ZamanCizelgesiKarti extends StatelessWidget {
     );
   }
 
+  /// An empty day with nothing worth saying about it takes no room on Bugün.
+  static bool _gizli(ZamanCizelgesi c) => c.bos && c.kapasite == null && c.plan != 'okunamadi';
+
   /// What to tell about the Google link; null when it is fine or the module is simply off (nothing to say).
   static String? _googleNotu(ZamanCizelgesi c) => switch (c.google) {
-        GoogleDurumu.bagliDegil => 'Google Takvim bağlı değil; yalnız hatırlatıcılar ve plan görünüyor.',
-        GoogleDurumu.yenidenBaglan => 'Google Takvim bağlantısı koptu; yönetimden yeniden bağlanmalı.',
-        _ => null,
-      };
+    GoogleDurumu.bagliDegil => 'Google Takvim bağlı değil; yalnız hatırlatıcılar ve plan görünüyor.',
+    GoogleDurumu.yenidenBaglan => 'Google Takvim bağlantısı koptu; yönetimden yeniden bağlanmalı.',
+    _ => null,
+  };
 
   /// "14:05" in Istanbul time (a fixed UTC+3).
   static String _saatMetni(DateTime an) => DateFormat('d MMM HH:mm', 'tr').format(an.toUtc().add(istanbulFarki));
 
   static Future<void> _ayrinti(BuildContext context, ZamanCizelgesiOgesi oge) => showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (_) => _Ayrinti(oge: oge),
-      );
+    context: context,
+    // Above the shell's "Yakala" button, which would otherwise cover the sheet's lower part.
+    useRootNavigator: true,
+    showDragHandle: true,
+    builder: (_) => _Ayrinti(oge: oge),
+  );
 }
 
 class _Not extends StatelessWidget {
@@ -133,7 +141,9 @@ class _Not extends StatelessWidget {
         children: [
           Icon(ikon, size: 16, color: soluk),
           const SizedBox(width: 6),
-          Expanded(child: Text(metin, style: TextStyle(fontSize: 12, color: soluk))),
+          Expanded(
+            child: Text(metin, style: TextStyle(fontSize: 12, color: soluk)),
+          ),
         ],
       ),
     );
@@ -141,10 +151,10 @@ class _Not extends StatelessWidget {
 }
 
 IconData _ikon(ZamanCizelgesiOgesi o) => switch (o.tur) {
-      ZamanCizelgesiTuru.etkinlik => LucideIcons.calendar,
-      ZamanCizelgesiTuru.hatirlatici => LucideIcons.bell,
-      _ => o.durum == 'yapildi' ? LucideIcons.circleCheck : LucideIcons.circle,
-    };
+  ZamanCizelgesiTuru.etkinlik => LucideIcons.calendar,
+  ZamanCizelgesiTuru.hatirlatici => LucideIcons.bell,
+  _ => o.durum == 'yapildi' ? LucideIcons.circleCheck : LucideIcons.circle,
+};
 
 /// One row of the time strip: the hour on the left, a line with a dot, the item on the right.
 class _SaatliSatir extends StatelessWidget {
@@ -173,7 +183,10 @@ class _SaatliSatir extends StatelessWidget {
                 width: 48,
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(oge.saat ?? '', style: tema.textTheme.labelLarge?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                  child: Text(
+                    oge.saat ?? '',
+                    style: tema.textTheme.labelLarge?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                  ),
                 ),
               ),
               SizedBox(
@@ -181,7 +194,11 @@ class _SaatliSatir extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Positioned(top: ilk ? 20 : 0, bottom: son ? 20 : 0, child: Container(width: 2, color: cizgi)),
+                    Positioned(
+                      top: ilk ? 20 : 0,
+                      bottom: son ? 20 : 0,
+                      child: Container(width: 2, color: cizgi),
+                    ),
                     Container(
                       width: 10,
                       height: 10,
@@ -273,12 +290,16 @@ class _Ayrinti extends StatelessWidget {
     final tema = Theme.of(context);
     final soluk = tema.colorScheme.onSurfaceVariant;
     Widget satir(IconData ikon, String metin) => Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [Icon(ikon, size: 18, color: soluk), const SizedBox(width: 10), Expanded(child: Text(metin))],
-          ),
-        );
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(ikon, size: 18, color: soluk),
+          const SizedBox(width: 10),
+          Expanded(child: Text(metin)),
+        ],
+      ),
+    );
     final tur = switch (oge.tur) {
       ZamanCizelgesiTuru.etkinlik => 'Takvim etkinliği',
       ZamanCizelgesiTuru.hatirlatici => 'Hatırlatıcı',

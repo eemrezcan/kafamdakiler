@@ -63,7 +63,8 @@ class _Icerik extends StatelessWidget {
     final acik = [for (final g in proje.acikGorevler) if (!viewModel.bitirilen.contains(g.kimlik)) g];
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+      // The bottom inset keeps the last card above the system bar (the app draws edge to edge).
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 32 + MediaQuery.paddingOf(context).bottom),
       children: [
         const BolumBasligi('Durum', ustBosluk: 8),
         Card(
@@ -285,7 +286,7 @@ class _GunlukSatiri extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (satir.zaman != null)
-            Text(satir.zaman!, style: TextStyle(fontSize: 12, color: tema.colorScheme.onSurfaceVariant)),
+            Text(zamanMetni(satir.zaman!), style: TextStyle(fontSize: 12, color: tema.colorScheme.onSurfaceVariant)),
           if (satir.baslik != null) Text(satir.baslik!, style: tema.textTheme.bodyLarge),
           if (satir.metin != null && satir.metin!.isNotEmpty) ...[
             const SizedBox(height: 2),

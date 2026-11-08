@@ -11,6 +11,7 @@ import '../../data/repositories/esitleyici.dart';
 import '../../data/repositories/eylem_repository.dart';
 import '../../data/repositories/gelen_repository.dart';
 import '../../data/repositories/yakalama_repository.dart';
+import '../core/beyin_gorunum.dart';
 import '../core/hata_metni.dart';
 
 /// The inbox, in two parts: the captures still on their way to the brain ("Gönderiliyor": waiting on the phone or on the server)
@@ -41,6 +42,12 @@ class GelenListeViewModel extends ChangeNotifier {
 
   List<GelenKarti>? _liste;
   List<GelenKarti>? get liste => _liste;
+
+  /// Project titles by id, so a target like "projects/kitap-kulubu" reads "Kitap Kulübü Sitesi".
+  Map<String, String> _projeAdlari = const {};
+
+  /// A capture's or card's target in words (the project's title when known).
+  String hedefMetni(String hedef) => projeMetni(hedef, _projeAdlari);
 
   /// Cards put aside with "Sonra" (a swipe to the left). They go to the end of the list until the screen is left.
   final Set<String> _sonra = {};
@@ -90,10 +97,19 @@ class GelenListeViewModel extends ChangeNotifier {
     notifyListeners();
     if (!_asistanBagli) unawaited(_asistanDurumunuAl());
     try {
-      await Future.wait([_kartlariYukle(), _gonderilenleriYukle()]);
+      await Future.wait([_kartlariYukle(), _gonderilenleriYukle(), _projeAdlariniYukle()]);
     } finally {
       _yukleniyor = false;
       if (!_atildi) notifyListeners();
+    }
+  }
+
+  Future<void> _projeAdlariniYukle() async {
+    try {
+      final projeler = await _beyin?.yerelProjeler() ?? const <ProjeOzet>[];
+      _projeAdlari = {for (final p in projeler) p.kimlik: p.baslik};
+    } on Object {
+      // Names are a nicety: without them the target is shown as readable words.
     }
   }
 

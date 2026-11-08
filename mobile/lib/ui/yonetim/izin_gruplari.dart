@@ -2,7 +2,8 @@
 enum IzinSeviyesi {
   kapali('Kapalı'),
   okur('Okur'),
-  okurYazar('Okur ve yazar'),
+  // "Yazar" includes reading (the screen says so); the short word keeps the three choices the same size on a phone.
+  okurYazar('Yazar'),
 
   /// Set by hand to a mix of the above: never chosen from the screen, only shown.
   ozel('Özel');
@@ -12,7 +13,7 @@ enum IzinSeviyesi {
   final String ad;
 }
 
-/// One card of the management screen: the permissions behind "Okur" and the ones added by "Okur ve yazar".
+/// One card of the management screen: the permissions behind "Okur" and the ones added by "Yazar".
 /// The same table is defined in the web panel (backend/Yonetim/IzinGruplari.cs): change both together.
 class IzinGrubu {
   const IzinGrubu({required this.id, required this.ad, required this.aciklama, required this.okur, required this.yazar});
