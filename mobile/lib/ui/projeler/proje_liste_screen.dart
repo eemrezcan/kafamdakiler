@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../ara/ara_dugmesi.dart';
 import '../core/beyin_hata.dart';
 import '../core/widgets.dart';
 import 'proje_view_model.dart';
@@ -15,7 +16,7 @@ class ProjeListeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Projeler')),
+      appBar: AppBar(title: const Text('Projeler'), actions: const [AraDugmesi()]),
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {

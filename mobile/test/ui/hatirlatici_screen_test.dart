@@ -156,20 +156,23 @@ void main() {
       await listeGoster(tester, rol: 'Asistan');
 
       expect(find.text('Gecikmiş fatura'), findsOneWidget);
-      expect(find.text('Yeni'), findsNothing);
+      expect(find.byTooltip('Yeni hatırlatıcı'), findsNothing);
       expect(find.text('Yaptım'), findsNothing);
       expect(find.text('1 saat ertele'), findsNothing);
     });
 
-    testWidgets('the Sahip sees the add button', (tester) async {
+    testWidgets('the Sahip sees the add button, in the top bar (the floating button is Yakala\'s)', (tester) async {
       await listeGoster(tester);
-      expect(find.text('Yeni'), findsOneWidget);
+      expect(find.byTooltip('Yeni hatırlatıcı'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsNothing);
     });
 
     testWidgets('an empty list guides the user', (tester) async {
       ortam.api.hatirlaticilar = [];
       await listeGoster(tester);
       expect(find.textContaining('Henüz hatırlatıcı yok'), findsOneWidget);
+      expect(find.textContaining('Yapılacak bir iş, verdiğin bir söz'), findsOneWidget);
+      expect(find.textContaining('görev'), findsNothing);
     });
   });
 

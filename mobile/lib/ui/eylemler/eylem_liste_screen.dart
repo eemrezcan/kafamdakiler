@@ -11,7 +11,7 @@ import '../core/renkler.dart';
 import '../core/widgets.dart';
 import 'eylem_liste_view_model.dart';
 
-/// The approval queue, a full-screen page opened from the Today card and from Profil. Swipe right to approve, left to
+/// The approval queue, a full-screen page opened from the Today and Gelen cards. Swipe right to approve, left to
 /// reject, tap for the details (and to correct the payload). Deciding is for the Sahip (K-0009); other users only read.
 class EylemListeScreen extends StatelessWidget {
   const EylemListeScreen({super.key, required this.viewModel});

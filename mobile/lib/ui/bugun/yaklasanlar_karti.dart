@@ -27,7 +27,7 @@ class YaklasanlarKarti extends StatelessWidget {
         return Card(
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => context.push(Rotalar.hatirlaticilar),
+            onTap: () => context.go(Rotalar.hatirlaticilar),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
               child: Column(

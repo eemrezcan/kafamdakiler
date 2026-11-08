@@ -30,7 +30,6 @@ import '../ui/aliskanliklar/aliskanlik_liste_view_model.dart';
 import '../ui/ara/ara_screen.dart';
 import '../ui/ara/ara_view_model.dart';
 import '../ui/ara/not_screen.dart';
-import '../ui/brifing/brifing_screen.dart';
 import '../ui/brifing/brifing_view_model.dart';
 import '../ui/bugun/bugun_screen.dart';
 import '../ui/bugun/bugun_view_model.dart';
@@ -54,8 +53,8 @@ import '../ui/oturum/kronometre_view_model.dart';
 import '../ui/oturum/oturum_screen.dart';
 import '../ui/oturum/oturum_view_model.dart';
 import '../ui/oturum/sayac_kronometre_screen.dart';
-import '../ui/profil/profil_screen.dart';
-import '../ui/profil/profil_view_model.dart';
+import '../ui/profil/daha_fazla_screen.dart';
+import '../ui/profil/daha_fazla_view_model.dart';
 import '../ui/profil/sifre_screen.dart';
 import '../ui/profil/sifre_view_model.dart';
 import '../ui/projeler/proje_detay_screen.dart';
@@ -77,34 +76,44 @@ import '../ui/yonetim/yonetim_screen.dart';
 import '../ui/yonetim/yonetim_view_model.dart';
 
 abstract final class Rotalar {
+  // The five bottom tabs, in the order they are shown (K-0004 menu: Bugün · Gelen · Projeler · Hatırlatıcılar · Daha fazla).
   static const bugun = '/';
-
-  /// The habit list: opened from Profil, a full-screen page (not a tab).
-  static const aliskanliklar = '/aliskanliklar';
+  static const gelen = '/gelen';
   static const projeler = '/projeler';
+  static const hatirlaticilar = '/hatirlaticilar';
+  static const dahaFazla = '/daha-fazla';
+
+  /// The tabs' routes, in tab order.
+  static const sekmeler = [bugun, gelen, projeler, hatirlaticilar, dahaFazla];
+
+  /// The search page: opened by the magnifier in the top bar of every tab, a full-screen page (not a tab).
   static const ara = '/ara';
+
+  /// The habit list: opened from Daha fazla, a full-screen page (not a tab).
+  static const aliskanliklar = '/aliskanliklar';
+
+  /// The capture list: opened from Daha fazla until it merges into Gelen, a full-screen page.
   static const yakalamalar = '/yakalamalar';
   static const yakala = '/yakala';
 
-  /// The reminders list: opened from the Today card and from Profil, a full-screen page (not a tab).
-  static const hatirlaticilar = '/hatirlaticilar';
-
-  /// The approval queue: opened from the Today card, from Profil and from its notifications, a full-screen page.
+  /// The approval queue: opened from the Today and Gelen cards and from its notifications, a full-screen page.
   static const eylemler = '/eylemler';
 
-  /// The inbox: opened from Profil, a full-screen page.
-  static const gelen = '/gelen';
-
-  /// The morning briefing: opened from Profil and from its notification, a full-screen page.
-  static const brifing = '/brifing';
-  static const profil = '/profil';
-
-  /// The Sahip's management screen: opened from Profil, a full-screen page.
+  /// The Sahip's management screen: opened from Daha fazla, a full-screen page.
   static const yonetim = '/yonetim';
 
-  /// "Şifremi değiştir": opened from Profil, a full-screen page for every signed-in user.
+  /// "Şifremi değiştir": opened from Daha fazla, a full-screen page for every signed-in user.
   static const sifre = '/sifre';
   static const giris = '/giris';
+}
+
+/// Opens [rota]: a tab is switched to (`go`), any other page is put on top (`push`), so back from it returns.
+void rotayaGit(BuildContext context, String rota) {
+  if (Rotalar.sekmeler.contains(rota)) {
+    context.go(rota);
+  } else {
+    context.push(rota);
+  }
 }
 
 final _yonetimRotalari = [
@@ -147,7 +156,12 @@ Widget _sayfa<T extends ChangeNotifier>(T Function(BuildContext) olustur, Widget
 bool yakalaUstte(GoRouter router) =>
     router.routerDelegate.currentConfiguration.last.matchedLocation == Rotalar.yakala;
 
-GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
+/// [baglantiServisi] makes the connection check behind the voice/briefing view models; tests hand in a fake one.
+GoRouter routerOlustur(
+  AuthRepository auth,
+  KullaniciRepository kullanici, {
+  BaglantiServisi Function() baglantiServisi = ConnectivityBaglantiServisi.new,
+}) {
   return GoRouter(
     initialLocation: Rotalar.bugun,
     refreshListenable: Listenable.merge([auth, kullanici]),
@@ -183,14 +197,55 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
                   ChangeNotifierProvider(
                     create: (c) => OnayBekleyenViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
+                  // Lazy: made (and the briefing fetched) only when the strip is built, i.e. for someone who may read it.
+                  ChangeNotifierProvider(
+                    create: (c) => BrifingViewModel(repo: c.read<BrifingRepository>(), yenileyebilir: () => kullanici.sahip)..yukle(),
+                  ),
+                  ChangeNotifierProvider(
+                    create: (c) => SesViewModel(
+                      api: c.read<ApiService>(),
+                      dikte: SpeechDikteServisi(),
+                      baglanti: baglantiServisi(),
+                      kaynak: IsCikarKaynagi.brifing,
+                    ),
+                  ),
                 ],
-                child: Builder(
-                  builder: (context) => BugunScreen(
+                child: Builder(builder: (context) {
+                  final brifingOkuyabilir = context.watch<KullaniciRepository>().brifingOkuyabilir;
+                  return BugunScreen(
                     viewModel: context.read<BugunViewModel>(),
                     gunPlani: context.read<GunPlaniViewModel>(),
                     yaklasanlar: context.read<YaklasanlarViewModel>(),
                     onayBekleyen: context.read<OnayBekleyenViewModel>(),
                     zamanCizelgesi: context.read<ZamanCizelgesiViewModel>(),
+                    brifing: brifingOkuyabilir ? context.read<BrifingViewModel>() : null,
+                    brifingSes: brifingOkuyabilir ? context.read<SesViewModel>() : null,
+                  );
+                }),
+              ),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: Rotalar.gelen,
+              builder: (context, state) => MultiProvider(
+                providers: [
+                  ChangeNotifierProvider(
+                    create: (c) => GelenListeViewModel(
+                      repo: c.read<GelenRepository>(),
+                      eylemler: c.read<EylemRepository>(),
+                      esitleyici: c.read<Esitleyici>(),
+                      beyin: c.read<BeyinRepository>(),
+                    )..yukle(),
+                  ),
+                  ChangeNotifierProvider(
+                    create: (c) => OnayBekleyenViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                  ),
+                ],
+                child: Builder(
+                  builder: (context) => GelenListeScreen(
+                    viewModel: context.read<GelenListeViewModel>(),
+                    onayBekleyen: context.read<OnayBekleyenViewModel>(),
                   ),
                 ),
               ),
@@ -207,32 +262,37 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: Rotalar.yakalamalar,
+              path: Rotalar.hatirlaticilar,
               builder: (context, state) => _sayfa(
-                (c) => YakalamaListeViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
-                (vm) => YakalamaListeScreen(viewModel: vm),
+                (c) => HatirlaticiListeViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                (vm) => HatirlaticiListeScreen(viewModel: vm),
               ),
             ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: Rotalar.ara,
+              path: Rotalar.dahaFazla,
               builder: (context, state) => _sayfa(
-                (c) => AraViewModel(repo: c.read<BeyinRepository>()),
-                (vm) => AraScreen(viewModel: vm),
-              ),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Rotalar.profil,
-              builder: (context, state) => _sayfa(
-                (c) => ProfilViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
-                (vm) => ProfilScreen(viewModel: vm),
+                (c) => DahaFazlaViewModel(repo: c.read<AliskanlikRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                (vm) => DahaFazlaScreen(viewModel: vm),
               ),
             ),
           ]),
         ],
+      ),
+      GoRoute(
+        path: Rotalar.ara,
+        builder: (context, state) => _sayfa(
+          (c) => AraViewModel(repo: c.read<BeyinRepository>()),
+          (vm) => AraScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.yakalamalar,
+        builder: (context, state) => _sayfa(
+          (c) => YakalamaListeViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+          (vm) => YakalamaListeScreen(viewModel: vm),
+        ),
       ),
       // Full-screen pages above the tabs. `yeni` must come before `:id`.
       GoRoute(
@@ -290,7 +350,7 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
           ),
           // Dictation and the voice tools only for a new capture, not for the edit of one that waits.
           (vm) => _sayfa(
-            (c) => SesViewModel(api: c.read<ApiService>(), dikte: SpeechDikteServisi(), baglanti: ConnectivityBaglantiServisi()),
+            (c) => SesViewModel(api: c.read<ApiService>(), dikte: SpeechDikteServisi(), baglanti: baglantiServisi()),
             (ses) => YakalaScreen(viewModel: vm, sesViewModel: ses, baslangic: state.extra as YakalaGirdisi?),
           ),
         ),
@@ -308,44 +368,10 @@ GoRouter routerOlustur(AuthRepository auth, KullaniciRepository kullanici) {
         ),
       ),
       GoRoute(
-        path: Rotalar.hatirlaticilar,
-        builder: (context, state) => _sayfa(
-          (c) => HatirlaticiListeViewModel(repo: c.read<HatirlaticiRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
-          (vm) => HatirlaticiListeScreen(viewModel: vm),
-        ),
-      ),
-      GoRoute(
         path: Rotalar.eylemler,
         builder: (context, state) => _sayfa(
           (c) => EylemListeViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
           (vm) => EylemListeScreen(viewModel: vm),
-        ),
-      ),
-      GoRoute(
-        path: Rotalar.gelen,
-        builder: (context, state) => _sayfa(
-          (c) => GelenListeViewModel(
-            repo: c.read<GelenRepository>(),
-            eylemler: c.read<EylemRepository>(),
-            esitleyici: c.read<Esitleyici>(),
-            beyin: c.read<BeyinRepository>(),
-          )..yukle(),
-          (vm) => GelenListeScreen(viewModel: vm),
-        ),
-      ),
-      GoRoute(
-        path: Rotalar.brifing,
-        builder: (context, state) => _sayfa(
-          (c) => BrifingViewModel(repo: c.read<BrifingRepository>(), yenileyebilir: () => kullanici.sahip)..yukle(),
-          (vm) => _sayfa(
-            (c) => SesViewModel(
-              api: c.read<ApiService>(),
-              dikte: SpeechDikteServisi(),
-              baglanti: ConnectivityBaglantiServisi(),
-              kaynak: IsCikarKaynagi.brifing,
-            ),
-            (ses) => BrifingScreen(viewModel: vm, sesViewModel: ses),
-          ),
         ),
       ),
       GoRoute(

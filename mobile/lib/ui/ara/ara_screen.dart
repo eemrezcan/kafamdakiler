@@ -27,7 +27,6 @@ class _AraScreenState extends State<AraScreen> {
   @override
   void initState() {
     super.initState();
-    // The tab keeps its state, so a query typed before is still there.
     _alan.text = _vm.sorgu;
   }
 

@@ -6,14 +6,16 @@ import 'package:provider/provider.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../routing/router.dart';
-import '../brifing/brifing_profil_karti.dart';
+import '../brifing/brifing_ayar_karti.dart';
 import '../core/widgets.dart';
-import 'profil_view_model.dart';
+import 'daha_fazla_view_model.dart';
 
-class ProfilScreen extends StatelessWidget {
-  const ProfilScreen({super.key, required this.viewModel});
+/// "Daha fazla", the last tab: the account, the pages that are not tabs (habits, captures, management), the morning
+/// notification, the offline queue, the password and sign-out.
+class DahaFazlaScreen extends StatelessWidget {
+  const DahaFazlaScreen({super.key, required this.viewModel});
 
-  final ProfilViewModel viewModel;
+  final DahaFazlaViewModel viewModel;
 
   Future<void> _cikis(BuildContext context) async {
     final auth = context.read<AuthRepository>();
@@ -48,7 +50,7 @@ class ProfilScreen extends StatelessWidget {
     final kullanici = context.watch<KullaniciRepository>();
     final tema = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(title: const Text('Daha fazla')),
       body: OrtaGenislik(
         child: ListenableBuilder(
           listenable: viewModel,
@@ -75,77 +77,43 @@ class ProfilScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              // Pages that are not tabs open from here.
               Card(
-                child: ListTile(
-                  minTileHeight: 56,
-                  leading: const Icon(LucideIcons.keyRound),
-                  title: const Text('Şifremi değiştir'),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () => context.push(Rotalar.sifre),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // The habit list is not a tab any more; it opens from here.
-              Card(
-                child: ListTile(
-                  minTileHeight: 56,
-                  leading: const Icon(LucideIcons.target),
-                  title: const Text('Alışkanlıklar'),
-                  subtitle: const Text('Liste, detay ve raf'),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () => context.push(Rotalar.aliskanliklar),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  minTileHeight: 56,
-                  leading: const Icon(LucideIcons.bell),
-                  title: const Text('Hatırlatıcılar'),
-                  subtitle: const Text('Görev, söz ve özel tarihler'),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () => context.push(Rotalar.hatirlaticilar),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  minTileHeight: 56,
-                  leading: const Icon(LucideIcons.listChecks),
-                  title: const Text('Onay kuyruğu'),
-                  subtitle: const Text('Asistan\'ın önerdiği eylemler'),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () => context.push(Rotalar.eylemler),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  minTileHeight: 56,
-                  leading: const Icon(LucideIcons.inbox),
-                  title: const Text('Gelen kutusu'),
-                  subtitle: const Text('Yakaladıkların ve Asistan\'ın yerleştirme önerileri'),
-                  trailing: const Icon(LucideIcons.chevronRight),
-                  onTap: () => context.push(Rotalar.gelen),
+                child: Column(
+                  children: [
+                    ListTile(
+                      minTileHeight: 56,
+                      leading: const Icon(LucideIcons.target),
+                      title: const Text('Alışkanlıklar'),
+                      subtitle: const Text('Liste, detay ve raf'),
+                      trailing: const Icon(LucideIcons.chevronRight),
+                      onTap: () => context.push(Rotalar.aliskanliklar),
+                    ),
+                    // Temporary: Gelen will take the captures over (wave 3).
+                    ListTile(
+                      minTileHeight: 56,
+                      leading: const Icon(LucideIcons.inbox),
+                      title: const Text('Yakalamalar'),
+                      subtitle: const Text('Henüz gönderilmemiş ve gönderilmiş yakalamalar'),
+                      trailing: const Icon(LucideIcons.chevronRight),
+                      onTap: () => context.push(Rotalar.yakalamalar),
+                    ),
+                    // Permissions, brain status and the sending queue: the Sahip's only.
+                    if (kullanici.sahip)
+                      ListTile(
+                        minTileHeight: 56,
+                        leading: const Icon(LucideIcons.settings),
+                        title: const Text('Yönetim'),
+                        subtitle: const Text('Asistan izinleri, beyin, gönderim kuyruğu'),
+                        trailing: const Icon(LucideIcons.chevronRight),
+                        onTap: () => context.push(Rotalar.yonetim),
+                      ),
+                  ],
                 ),
               ),
               if (kullanici.brifingOkuyabilir) ...[
                 const SizedBox(height: 16),
-                const BrifingProfilKarti(),
-              ],
-              // Permissions, brain status and the sending queue: the Sahip's only.
-              if (kullanici.sahip) ...[
-                const SizedBox(height: 16),
-                Card(
-                  child: ListTile(
-                    minTileHeight: 56,
-                    leading: const Icon(LucideIcons.settings),
-                    title: const Text('Yönetim'),
-                    subtitle: const Text('Asistan izinleri, beyin, gönderim kuyruğu'),
-                    trailing: const Icon(LucideIcons.chevronRight),
-                    onTap: () => context.push(Rotalar.yonetim),
-                  ),
-                ),
+                const BrifingAyarKarti(),
               ],
               const SizedBox(height: 16),
               Card(
@@ -185,6 +153,16 @@ class ProfilScreen extends StatelessWidget {
                         ),
                     ],
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  minTileHeight: 56,
+                  leading: const Icon(LucideIcons.keyRound),
+                  title: const Text('Şifremi değiştir'),
+                  trailing: const Icon(LucideIcons.chevronRight),
+                  onTap: () => context.push(Rotalar.sifre),
                 ),
               ),
               const SizedBox(height: 24),

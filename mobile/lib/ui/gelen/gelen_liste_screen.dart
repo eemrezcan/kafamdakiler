@@ -6,18 +6,24 @@ import 'package:provider/provider.dart';
 import '../../data/models/gelen.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../utils/eylem_gorunum.dart';
+import '../ara/ara_dugmesi.dart';
+import '../bugun/onay_bekleyen_karti.dart';
+import '../bugun/onay_bekleyen_view_model.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
 import 'gelen_isle_dialog.dart';
 import 'gelen_liste_view_model.dart';
 
-/// The inbox, a full-screen page opened from Profil. Each card shows Claude's suggestion under it: swipe right to
+/// The inbox, a tab. When actions wait in the approval queue a card at the top opens it. Each card shows Claude's suggestion under it: swipe right to
 /// approve it, swipe left to look at it later, tap for the preview (correct, place by hand, delete, ask again).
 /// Deciding is for the Sahip (K-0009); other users only read.
 class GelenListeScreen extends StatelessWidget {
-  const GelenListeScreen({super.key, required this.viewModel});
+  const GelenListeScreen({super.key, required this.viewModel, this.onayBekleyen});
 
   final GelenListeViewModel viewModel;
+
+  /// The "Onay bekleyen N" card at the top; it hides itself when nothing waits. Without it the card is not there.
+  final OnayBekleyenViewModel? onayBekleyen;
 
   void _ileti(BuildContext context, String metin) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -93,7 +99,7 @@ class GelenListeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final sahip = context.watch<KullaniciRepository>().sahip;
     return Scaffold(
-      appBar: AppBar(title: const Text('Gelen kutusu')),
+      appBar: AppBar(title: const Text('Gelen'), actions: const [AraDugmesi()]),
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
@@ -105,12 +111,13 @@ class GelenListeScreen extends StatelessWidget {
           final tema = Theme.of(context);
           final kartlar = viewModel.kartlar;
           return RefreshIndicator(
-            onRefresh: viewModel.yukle,
+            onRefresh: () => Future.wait([viewModel.yukle(), if (onayBekleyen != null) onayBekleyen!.yukle()]),
             child: OrtaGenislik(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                 children: [
+                  if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
                   if (viewModel.cevrimdisi)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),

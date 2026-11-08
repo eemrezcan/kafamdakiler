@@ -210,11 +210,11 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
     // Notification taps and buttons; a platform failure must not stop the app.
     widget.bildirimler
         .baslat(listeyiAc: () {
-          if (widget.auth.girisYapildi) _router.push(Rotalar.hatirlaticilar);
+          if (widget.auth.girisYapildi) _router.go(Rotalar.hatirlaticilar);
         }, kuyruguAc: () {
           if (widget.auth.girisYapildi) _router.push(Rotalar.eylemler);
         }, brifingiAc: () {
-          if (widget.auth.girisYapildi) _router.push(Rotalar.brifing);
+          if (widget.auth.girisYapildi) _router.go(Rotalar.bugun);
         })
         .catchError((Object _) {});
   }

@@ -9,8 +9,8 @@ import 'package:kafamdakiler/data/models/zaman_cizelgesi.dart';
 import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
-import 'package:kafamdakiler/ui/profil/profil_screen.dart';
-import 'package:kafamdakiler/ui/profil/profil_view_model.dart';
+import 'package:kafamdakiler/ui/profil/daha_fazla_screen.dart';
+import 'package:kafamdakiler/ui/profil/daha_fazla_view_model.dart';
 import 'package:kafamdakiler/ui/yonetim/izin_gruplari.dart';
 import 'package:kafamdakiler/ui/yonetim/yonetim_screen.dart';
 import 'package:kafamdakiler/ui/yonetim/yonetim_view_model.dart';
@@ -410,22 +410,22 @@ void main() {
     });
   });
 
-  group('entry from Profil', () {
-    Future<void> profil(WidgetTester tester, {required String rol}) async {
-      // Tall: the list builds only what is on screen, and Profil has grown with the briefing rows.
+  group('entry from Daha fazla', () {
+    Future<void> dahaFazla(WidgetTester tester, {required String rol}) async {
+      // Tall: the list builds only what is on screen.
       tester.view.physicalSize = const Size(375, 1400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final kullanici = KullaniciRepository(api: ortam.api, db: ortam.db);
       ortam.api.ben_ = Ben(id: 'u', email: 'x@y.z', roller: [rol]);
       await tester.runAsync(kullanici.yukle);
-      final vm = ProfilViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
+      final vm = DahaFazlaViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
       await tester.runAsync(vm.yukle);
       await tester.pumpWidget(
         MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: kullanici),
-            // The briefing rows of Profil (K2.7).
+            // The briefing notification rows (K2.7).
             Provider<BrifingRepository>.value(value: ortam.brifing),
             Provider<HatirlaticiBildirimYoneticisi>.value(
               value: HatirlaticiBildirimYoneticisi(
@@ -436,26 +436,26 @@ void main() {
               ),
             ),
           ],
-          child: MaterialApp(home: ProfilScreen(viewModel: vm)),
+          child: MaterialApp(home: DahaFazlaScreen(viewModel: vm)),
         ),
       );
       await tester.pump();
     }
 
     testWidgets('the Sahip sees "Yönetim"', (tester) async {
-      await profil(tester, rol: 'Sahip');
+      await dahaFazla(tester, rol: 'Sahip');
       expect(find.text('Yönetim'), findsOneWidget);
     });
 
     testWidgets('the Asistan does not', (tester) async {
-      await profil(tester, rol: 'Asistan');
+      await dahaFazla(tester, rol: 'Asistan');
       expect(find.text('Yönetim'), findsNothing);
     });
 
     testWidgets('both roles can change their own password from here', (tester) async {
-      await profil(tester, rol: 'Sahip');
+      await dahaFazla(tester, rol: 'Sahip');
       expect(find.text('Şifremi değiştir'), findsOneWidget);
-      await profil(tester, rol: 'Asistan');
+      await dahaFazla(tester, rol: 'Asistan');
       expect(find.text('Şifremi değiştir'), findsOneWidget);
     });
   });

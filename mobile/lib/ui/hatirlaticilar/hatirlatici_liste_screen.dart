@@ -6,12 +6,12 @@ import 'package:provider/provider.dart';
 import '../../data/models/hatirlatici.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../utils/hatirlatici_gorunum.dart';
+import '../ara/ara_dugmesi.dart';
 import '../core/widgets.dart';
 import 'hatirlatici_karti.dart';
 import 'hatirlatici_liste_view_model.dart';
 
-/// The reminders list, a full-screen page opened from the Today card and from Profil. Adding, editing, Yaptım and
-/// Ertele are for the Sahip (K-0009); other users only read.
+/// The reminders list, a tab. Adding, editing, Yaptım and Ertele are for the Sahip (K-0009); other users only read.
 class HatirlaticiListeScreen extends StatelessWidget {
   const HatirlaticiListeScreen({super.key, required this.viewModel});
 
@@ -21,14 +21,20 @@ class HatirlaticiListeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final sahip = context.watch<KullaniciRepository>().sahip;
     return Scaffold(
-      appBar: AppBar(title: const Text('Hatırlatıcılar')),
-      floatingActionButton: sahip
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/hatirlatici/yeni'),
+      appBar: AppBar(
+        title: const Text('Hatırlatıcılar'),
+        actions: [
+          // The floating button belongs to "Yakala" (the shell), so adding is in the bar, as on the habit list.
+          if (sahip)
+            IconButton(
+              tooltip: 'Yeni hatırlatıcı',
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               icon: const Icon(LucideIcons.plus),
-              label: const Text('Yeni'),
-            )
-          : null,
+              onPressed: () => context.push('/hatirlatici/yeni'),
+            ),
+          const AraDugmesi(),
+        ],
+      ),
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
@@ -47,7 +53,7 @@ class HatirlaticiListeScreen extends StatelessWidget {
             child: OrtaGenislik(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                // Room for the floating button under the last row.
+                // Room for the floating "Yakala" button under the last row.
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                 children: [
                   SegmentedButton<HatirlaticiDurumu>(
@@ -70,7 +76,7 @@ class HatirlaticiListeScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 32),
                       child: Text(
                         liste.isEmpty
-                            ? 'Henüz hatırlatıcı yok. Bir görev, verdiğin bir söz ya da özel bir tarih ekle.'
+                            ? 'Henüz hatırlatıcı yok. Yapılacak bir iş, verdiğin bir söz ya da özel bir tarih ekle.'
                             : 'Bu sekmede hatırlatıcı yok.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),

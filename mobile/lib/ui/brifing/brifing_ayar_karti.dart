@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/brifing.dart';
 import '../../data/repositories/brifing_repository.dart';
 import '../../data/repositories/hatirlatici_bildirim_yoneticisi.dart';
-import '../../routing/router.dart';
 
-/// Profil's briefing rows (K2.7): open today's briefing, and the notification: on or off, and at what hour. A change is
-/// kept on the phone and the notification plan is set up again at once.
-class BrifingProfilKarti extends StatefulWidget {
-  const BrifingProfilKarti({super.key});
+/// Daha fazla's briefing rows (K2.7): the morning notification, on or off, and at what hour. A change is kept on the
+/// phone and the notification plan is set up again at once. The briefing itself is the strip on Bugün.
+class BrifingAyarKarti extends StatefulWidget {
+  const BrifingAyarKarti({super.key});
 
   @override
-  State<BrifingProfilKarti> createState() => _BrifingProfilKartiState();
+  State<BrifingAyarKarti> createState() => _BrifingAyarKartiState();
 }
 
-class _BrifingProfilKartiState extends State<BrifingProfilKarti> {
+class _BrifingAyarKartiState extends State<BrifingAyarKarti> {
   BrifingAyari _ayar = BrifingAyari.varsayilan;
 
   @override
@@ -53,14 +51,6 @@ class _BrifingProfilKartiState extends State<BrifingProfilKarti> {
     return Card(
       child: Column(
         children: [
-          ListTile(
-            minTileHeight: 56,
-            leading: const Icon(LucideIcons.sun),
-            title: const Text('Sabah brifingi'),
-            subtitle: const Text('Bugünün özeti ve önerilen kartlar'),
-            trailing: const Icon(LucideIcons.chevronRight),
-            onTap: () => context.push(Rotalar.brifing),
-          ),
           SwitchListTile(
             key: const ValueKey('brifing-bildirim'),
             secondary: const Icon(LucideIcons.bellRing),

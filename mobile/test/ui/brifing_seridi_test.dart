@@ -5,15 +5,15 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/brifing.dart';
 import 'package:kafamdakiler/data/models/ses.dart';
 import 'package:kafamdakiler/routing/router.dart';
-import 'package:kafamdakiler/ui/brifing/brifing_screen.dart';
+import 'package:kafamdakiler/ui/brifing/brifing_seridi.dart';
 import 'package:kafamdakiler/ui/brifing/brifing_view_model.dart';
 import 'package:kafamdakiler/ui/yakalama/ses_view_model.dart';
 
 import '../test_destek.dart';
 import 'ses_test.dart' show SahteBaglanti, SahteDikte;
 
-// The briefing screen (K2.7): the cards, a thumb on each, the way into the screen a card is about, the last briefing shown
-// offline, and the box that writes a correction through the "İşe çevir" preview with the briefing as its source.
+// The briefing strip on Bugün (K2.7): the cards, a thumb on each, the way into the screen a card is about, the last briefing
+// shown offline, and the box that writes a correction through the "İşe çevir" preview with the briefing as its source.
 
 Brifing ornek() => Brifing(
       gun: '2026-11-08',
@@ -43,7 +43,7 @@ void main() {
   tearDown(() async => ortam.kapat());
 
   Future<List<String>> goster(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(400, 900);
+    tester.view.physicalSize = const Size(400, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     vm = BrifingViewModel(repo: ortam.brifing, yenileyebilir: () => sahip);
@@ -52,13 +52,15 @@ void main() {
     addTearDown(vm.dispose);
     final gidilen = <String>[];
     final router = GoRouter(routes: [
-      GoRoute(path: '/', builder: (_, _) => BrifingScreen(viewModel: vm, sesViewModel: ses)),
-      for (final yol in [Rotalar.hatirlaticilar, Rotalar.eylemler, Rotalar.bugun])
-        if (yol != '/')
-          GoRoute(path: yol, builder: (_, _) {
-            gidilen.add(yol);
-            return Scaffold(body: Text('sayfa $yol'));
-          }),
+      GoRoute(
+        path: '/',
+        builder: (_, _) => Scaffold(body: ListView(children: [BrifingSeridi(viewModel: vm, sesViewModel: ses)])),
+      ),
+      for (final yol in [Rotalar.hatirlaticilar, Rotalar.eylemler])
+        GoRoute(path: yol, builder: (_, _) {
+          gidilen.add(yol);
+          return Scaffold(body: Text('sayfa $yol'));
+        }),
     ]);
     addTearDown(router.dispose);
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
@@ -73,8 +75,8 @@ void main() {
     expect(find.text('Bugün 3 iş var'), findsOneWidget);
     expect(find.text('Cuma: diş randevusu'), findsOneWidget);
     expect(find.text('Üç gün sonra saat 10:00.'), findsOneWidget);
-    expect(find.text('Asistan hazırladı'), findsOneWidget);
-    expect(find.text('8 Kasım Pazar'), findsOneWidget);
+    expect(find.text('Sabah brifingi'), findsOneWidget);
+    expect(find.text('8 Kasım Pazar · Asistan hazırladı'), findsOneWidget);
     expect(find.byKey(const ValueKey('brifing-eski')), findsNothing);
   });
 
@@ -91,7 +93,7 @@ void main() {
   testWidgets('a briefing made by fixed rules says so', (tester) async {
     ortam.api.brifingYaniti = Brifing(gun: '2026-11-08', uretimAni: DateTime.utc(2026, 11, 8), yontem: Brifing.hesapYontemi, kartlar: ornek().kartlar);
     await goster(tester);
-    expect(find.text('Sabit kurallarla hazırlandı'), findsOneWidget);
+    expect(find.textContaining('Sabit kurallarla hazırlandı'), findsOneWidget);
   });
 
   testWidgets('a thumb sends the vote and shows it; the same thumb again takes it back', (tester) async {
@@ -122,8 +124,8 @@ void main() {
     expect(find.text('sayfa ${Rotalar.hatirlaticilar}'), findsOneWidget);
 
     expect(brifingKartRotasi(BrifingTuru.onay), Rotalar.eylemler);
-    expect(brifingKartRotasi(BrifingTuru.plan), Rotalar.bugun);
-    expect(brifingKartRotasi(BrifingTuru.kalan), Rotalar.bugun);
+    expect(brifingKartRotasi(BrifingTuru.hatirlatici), Rotalar.hatirlaticilar);
+    expect(brifingKartRotasi(BrifingTuru.plan), isNull, reason: 'the plan is on Bugün already');
     expect(brifingKartRotasi(BrifingTuru.kapasite), isNull);
     expect(brifingKartRotasi(BrifingTuru.takvim), isNull);
     expect(brifingKartRotasi(BrifingTuru.bos), isNull);
@@ -153,14 +155,15 @@ void main() {
       expect(find.textContaining('oy gönderilmedi'), findsOneWidget);
     });
 
-    testWidgets('with nothing kept, a message and a retry that works once the connection is back', (tester) async {
+    testWidgets('with nothing kept the strip is not there, and a retry shows it once the connection is back', (tester) async {
       ortam.api.cevrimdisi = true;
       await goster(tester);
-      expect(find.textContaining('Sunucuya ulaşılamadı'), findsOneWidget);
+      expect(find.byKey(const ValueKey('brifing-seridi')), findsNothing);
+      expect(find.text('Sabah brifingi'), findsNothing);
 
       ortam.api.cevrimdisi = false;
       ortam.api.brifingYaniti = ornek();
-      await tester.runAsync(() async => tester.tap(find.text('Tekrar dene')));
+      await tester.runAsync(vm.yukle);
       await tester.pumpAndSettle();
       expect(find.text('Bugün 3 iş var'), findsOneWidget);
     });
@@ -176,9 +179,40 @@ void main() {
     });
   });
 
-  testWidgets('not ready yet (404) and nothing kept: the person is told to try after the hour', (tester) async {
+  testWidgets('not ready yet (404) and nothing kept: the strip is not there, so Bugün has no gap', (tester) async {
     await goster(tester);
-    expect(find.textContaining('henüz hazır değil'), findsOneWidget);
+    expect(find.byKey(const ValueKey('brifing-seridi')), findsNothing);
+    expect(vm.hata, contains('henüz hazır değil'));
+  });
+
+  testWidgets('a briefing with only the leftovers card draws no strip at all', (tester) async {
+    ortam.api.brifingYaniti = Brifing(
+      gun: '2026-11-08',
+      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
+      yontem: Brifing.claudeYontemi,
+      kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.kalan, baslik: 'Dünden 2 iş kaldı', metin: 'Rapor ve fatura.')],
+    );
+    await goster(tester);
+
+    expect(vm.brifing, isNotNull);
+    expect(find.byKey(const ValueKey('brifing-seridi')), findsNothing);
+    expect(find.text('Sabah brifingi'), findsNothing);
+  });
+
+  testWidgets('the leftovers card is not repeated: Bugün lists what is left from yesterday itself', (tester) async {
+    ortam.api.brifingYaniti = Brifing(
+      gun: '2026-11-08',
+      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
+      yontem: Brifing.claudeYontemi,
+      kartlar: const [
+        BrifingKarti(sira: 0, tur: BrifingTuru.kalan, baslik: 'Dünden 2 iş kaldı', metin: 'Rapor ve fatura.'),
+        BrifingKarti(sira: 1, tur: BrifingTuru.hatirlatici, baslik: 'Cuma: diş randevusu', metin: 'Üç gün sonra.'),
+      ],
+    );
+    await goster(tester);
+
+    expect(find.text('Dünden 2 iş kaldı'), findsNothing);
+    expect(find.text('Cuma: diş randevusu'), findsOneWidget);
   });
 
   group('new briefing', () {

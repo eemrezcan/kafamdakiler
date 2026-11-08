@@ -17,9 +17,9 @@ class GonderilemeyenKayit {
   final String hata;
 }
 
-/// Offline queue state for the profile screen.
-class ProfilViewModel extends ChangeNotifier {
-  ProfilViewModel({required this._repo, required this._esitleyici}) {
+/// Offline queue state for the Daha fazla screen.
+class DahaFazlaViewModel extends ChangeNotifier {
+  DahaFazlaViewModel({required this._repo, required this._esitleyici}) {
     _esitleyici.addListener(yukle);
   }
 

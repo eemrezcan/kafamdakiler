@@ -3,9 +3,13 @@ import 'package:intl/intl.dart';
 
 import '../../data/models/aliskanlik.dart';
 import '../../utils/aliskanlik_gunu.dart';
+import '../ara/ara_dugmesi.dart';
+import '../brifing/brifing_seridi.dart';
+import '../brifing/brifing_view_model.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
 import '../../utils/metin.dart';
+import '../yakalama/ses_view_model.dart';
 import 'aliskanlik_karti.dart';
 import 'bugun_view_model.dart';
 import 'gun_plani_karti.dart';
@@ -19,9 +23,15 @@ import 'zaman_cizelgesi_karti.dart';
 import 'zaman_cizelgesi_view_model.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.zamanCizelgesi});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.zamanCizelgesi, this.brifing, this.brifingSes});
 
   final BugunViewModel viewModel;
+
+  /// The morning briefing strip at the very top (K2.7); null for someone who may not read it. Needs [brifingSes] too.
+  final BrifingViewModel? brifing;
+
+  /// Behind the strip's "Brifinge yaz" box (shown only while the assistant is connected).
+  final SesViewModel? brifingSes;
 
   /// The "Onay bekleyen N" card, above the plan card; it hides itself when nothing waits.
   final OnayBekleyenViewModel? onayBekleyen;
@@ -59,7 +69,7 @@ class BugunScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bugün')),
+      appBar: AppBar(title: const Text('Bugün'), actions: const [AraDugmesi()]),
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
@@ -74,6 +84,7 @@ class BugunScreen extends StatelessWidget {
                 if (yaklasanlar != null) yaklasanlar!.yukle(),
                 if (onayBekleyen != null) onayBekleyen!.yukle(),
                 if (zamanCizelgesi != null) zamanCizelgesi!.yukle(),
+                if (brifing != null) brifing!.yukle(),
               ]),
               child: OrtaGenislik(child: _liste(context, plan: plan)),
             );
@@ -89,7 +100,7 @@ class BugunScreen extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: viewModel.yukle,
             child: liste.isEmpty
-                ? const BosDurum(metin: 'Henüz alışkanlık yok. Profil > Alışkanlıklar ekranından + ile ekleyebilirsin.')
+                ? const BosDurum(metin: 'Henüz alışkanlık yok. Daha fazla > Alışkanlıklar ekranından + ile ekleyebilirsin.')
                 : OrtaGenislik(child: _liste(context)),
           );
         },
@@ -120,7 +131,7 @@ class BugunScreen extends StatelessWidget {
         ),
       ];
     }
-    return [Text('Henüz alışkanlık yok. Profil > Alışkanlıklar ekranından + ile ekleyebilirsin.', style: soluk)];
+    return [Text('Henüz alışkanlık yok. Daha fazla > Alışkanlıklar ekranından + ile ekleyebilirsin.', style: soluk)];
   }
 
   Widget _liste(BuildContext context, {GunPlaniViewModel? plan}) {
@@ -153,6 +164,7 @@ class BugunScreen extends StatelessWidget {
             ),
           ),
         const _Tarih(),
+        if (brifing != null && brifingSes != null) BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!),
         if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
         if (zamanCizelgesi != null) ...[
           ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
