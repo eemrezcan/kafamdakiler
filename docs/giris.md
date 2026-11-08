@@ -118,6 +118,13 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - Kat 2 web paketi: hatırlatıcı formunda ısrar ve acil alanları (`Pages/Hatirlaticilar/Duzenle`, `hatirlaticilar.js`), proje sayfasında repo kartı ve Yönetim'de proje ↔ repo eşleme (`Pages/Beyin/Proje`, `Pages/Yonetim/Index`, `ProjeRepolari/ProjeRepoIslemleri.cs`), ana sayfada brifing (`Pages/BrifingPaneli.cs`, `Shared/_Brifing.cshtml`, `Pages/Aliskanliklar/Index`), Yönetim'de Google Takvim bağlantısı ve zaman çizelgesi (`Shared/_ZamanCizelgesi.cshtml`, `Pages/Beyin/Gun`, `Takvim/ZamanCizelgesi.cs`), `site.css` bölümleri, testler `backend.Tests/HatirlaticiSayfalariTests.cs` ve `KatIkiWebSayfalariTests.cs`: Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 1).
 - K2.3b H4 ve K2.5 G2 (mobil): ısrarlı ve acil bildirim planı (`utils/bildirim_plani.dart`, `bildirim_servisi.dart`, `hatirlatici_bildirim_yoneticisi.dart`, `AndroidManifest.xml` tam ekran izni), hatırlatıcı formu anahtarları, gelen kutusu etiket ve klasör seçicileri (`ui/gelen/`), proje ekranında repo kartı (`data/models/proje_repo.dart`, `ui/projeler/`), testler `mobile/test/` altında: Claude'un açtığı Sonnet işçisi yazdı (2026-11-07, Kat 2 karar 1).
 - Mobil uygulama simgesi: `mobile/assets/icon/` (logo `backend/wwwroot/img/logo.svg`'den çevrildi), `pubspec.yaml` içindeki `flutter_launcher_icons` ayarı ve ürettiği `android/app/src/main/res/` simgeleri, `AndroidManifest.xml` uygulama adı: Claude yaptı (2026-11-07, kullanıcının isteğiyle).
+- Arayüz sadeleştirme Dalga 1 (2026-11-08, kullanıcının "onayla, işçiye" isteğiyle): Claude'un açtığı Sonnet işçileri yazdı, ana oturum denetledi, kullanıcı birleştirmeyi onayladı.
+  - A: `GET /api/asistan/durum` (`backend/Ses/`), asistan kapalıyken düğmelerin gizlenmesi (`ui/yakalama/`, `ui/brifing/`, `ui/gelen/`, `Pages/Gelen/`), Elle yerleştirde klasör ve dosya adı (`gelen_isle_dialog.dart`, `utils/metin.dart`), alt menü etiketi ve geri tuşu (`ui/shell/ana_iskele.dart`), alışkanlık formunun Kaydet düğmesi.
+  - B: web Yönetim'de izin kartları, Google satırı ve "Şimdi eşitle" (`backend/Yonetim/IzinGruplari.cs`, `YonetimIslemleri.GrupAyarlaAsync`, `Pages/Yonetim/`).
+  - C: mobil Yönetim'de izin kartları ve Google bölümü (`ui/yonetim/`, `data/models/yonetim.dart`).
+  - D: hatırlatıcı türü adı ve ay sonu notu (`HatirlaticiGorunum.cs`, `Pages/Hatirlaticilar/`, `hatirlaticilar.js`, `utils/hatirlatici_gorunum.dart`, `ui/hatirlaticilar/`), web Gün planında tek görev listesi (`Pages/Beyin/Gun`).
+  - E: mobil proje detayında görev ekle, bitir, günlere böl (`ui/projeler/`).
+  - Hepsinin testleri `backend.Tests/` ve `mobile/test/` altında.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
