@@ -215,6 +215,43 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         Assert.Contains("Google Takvim bağlantısı kesildi", sonra);
     }
 
+    [Fact]
+    public async Task Yonetim_GoogleConnected_ShowsTheLastSyncAndSyncsNow_NotConnected_ShowsOnlyTheConnectRow()
+    {
+        await TemizleAsync();
+        var tarayici = await SahipAsync(WebFabrika());
+
+        var bagliDegil = await MetinAsync(tarayici, "/Yonetim");
+        Assert.Contains("Google Takvim'i bağla", bagliDegil);
+        Assert.DoesNotContain("Şimdi eşitle", bagliDegil);
+        Assert.DoesNotContain("Son eşitleme", bagliDegil);
+
+        var baslat = await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=GoogleBagla");
+        var state = QueryDegeri(baslat.Headers.Location!.OriginalString, "state");
+        await tarayici.GetAsync($"/google/donus?state={Uri.EscapeDataString(state)}&code=kod-1", Ct);
+
+        var bagli = await MetinAsync(tarayici, "/Yonetim");
+        Assert.Contains("Son eşitleme", bagli);
+        Assert.Contains("Şimdi eşitle", bagli);
+        Assert.DoesNotContain("Google Takvim'i bağla", bagli);
+
+        var esitle = await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=GoogleEsitle");
+        Assert.Equal(HttpStatusCode.Redirect, esitle.StatusCode);
+        Assert.Contains("Takvim eşitlendi", await MetinAsync(tarayici, "/Yonetim"));
+    }
+
+    [Fact]
+    public async Task Yonetim_SyncNowWithoutAConnection_SaysSoAndChangesNothing()
+    {
+        await TemizleAsync();
+        var tarayici = await SahipAsync(WebFabrika());
+
+        var esitle = await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=GoogleEsitle");
+
+        Assert.Equal(HttpStatusCode.Redirect, esitle.StatusCode);
+        Assert.Contains("Google bağlı değil.", await MetinAsync(tarayici, "/Yonetim"));
+    }
+
     [Theory]
     [InlineData("reddedildi", "Google'da izin verilmedi.")]
     [InlineData("sureDoldu", "süresi doldu")]

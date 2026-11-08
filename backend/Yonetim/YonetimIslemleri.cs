@@ -85,6 +85,18 @@ public static class YonetimIslemleri
             Basarili(await kullanicilar.RemoveClaimAsync(asistan, claim));
     }
 
+    // One choice of a card (Kapalı / Okur / Okur ve yazar) sets every permission of the group: those it needs open, the rest closed.
+    // `Ozel` is only a reading of the current state and cannot be chosen.
+    public static async Task GrupAyarlaAsync(UserManager<IdentityUser<Guid>> kullanicilar, IzinGruplari.Grup grup, GrupKipi kip)
+    {
+        if (kip == GrupKipi.Ozel)
+            throw new ArgumentException("Ozel cannot be set.", nameof(kip));
+
+        var acilacak = IzinGruplari.AcilacakIzinler(grup, kip);
+        foreach (var izin in grup.Hepsi)
+            await IzinAyarlaAsync(kullanicilar, izin, acilacak.Contains(izin));
+    }
+
     // The new stamp makes /api/hesap/refresh refuse the Asistan's refresh token. The access token already issued
     // keeps working until it expires (at most 1 hour); permissions are cut at once by IzinAyarlaAsync instead.
     public static async Task AsistaninOturumlariniKapatAsync(UserManager<IdentityUser<Guid>> kullanicilar) =>

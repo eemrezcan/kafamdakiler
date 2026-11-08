@@ -20,55 +20,99 @@
 
 <section class="kd-yonetim-blok" aria-labelledby="izinler-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="izinler-baslik">Asistan'ın izinleri</h2>
-    <p class="kd-muted">Kapatılan izin, Asistan'ın bir sonraki isteğinde etkili olur; elindeki token aynı kalsa da 403 alır.</p>
+    <p class="kd-muted">Asistan'ın neleri görüp değiştirebileceğini alana göre seç. Değişiklik Asistan'ın bir sonraki isteğinde geçerli olur.</p>
 
-    @foreach (var izin in Model.IzinListesi)
+    @foreach (var kart in Model.GrupKartlari)
     {
         <div class="kd-izin">
             <div class="kd-izin-metin">
-                <code>@izin.Izin</code>
-                <span class="kd-muted">@izin.Aciklama</span>
-            </div>
-            <span class="kd-status @(izin.Acik ? "is-bitti" : "is-birakildi")">@(izin.Acik ? "Açık" : "Kapalı")</span>
-            <form method="post" asp-page-handler="Izin">
-                <input type="hidden" name="izin" value="@izin.Izin" />
-                <input type="hidden" name="acik" value="@((!izin.Acik).ToString().ToLowerInvariant())" />
-                <button type="submit" class="btn @(izin.Acik ? "btn-outline-primary" : "btn-primary")">@(izin.Acik ? "Kapat" : "Aç")</button>
-            </form>
-        </div>
-    }
-</section>
-
-<section class="kd-yonetim-blok" aria-labelledby="kip-baslik">
-    <h2 class="kd-eyebrow kd-section-title" id="kip-baslik">Asistan'ın eylem kipleri</h2>
-    <p class="kd-muted">
-        Her eylem türü için Asistan'ın ne yapabileceğini seç. Kendin yap seçilse bile başkasının yazdığı metinden çıkan öneriler onay bekler.
-    </p>
-
-    @foreach (var k in Model.EylemKipleri)
-    {
-        <div class="kd-izin">
-            <div class="kd-izin-metin">
-                <strong>@k.TurAdi</strong>
-                <span class="kd-muted">@EylemGorunum.KipAciklamasi(k.Kip)</span>
-            </div>
-            <form method="post" asp-page-handler="EylemKipi" class="kd-kip-secenek" role="group" aria-label="@k.TurAdi kipi">
-                <input type="hidden" name="tur" value="@k.Tur" />
-                @foreach (var kip in Enum.GetValues<EylemKipi>())
+                <strong>@kart.Grup.Ad</strong>
+                <span class="kd-muted">@kart.Grup.Aciklama</span>
+                @if (kart.Kip == GrupKipi.Ozel)
                 {
-                    <button type="submit" name="kip" value="@kip" class="btn btn-sm @(k.Kip == kip ? "btn-primary" : "btn-outline-primary")"
-                            aria-pressed="@(k.Kip == kip ? "true" : "false")">@EylemGorunum.KipAdi(kip)</button>
+                    <span class="kd-muted">Özel: izinler tek tek ayarlanmış (Gelişmiş'te görünür). Aşağıdan birini seçersen düzelir.</span>
+                }
+            </div>
+            <form method="post" asp-page-handler="Grup" class="kd-kip-secenek" role="group" aria-label="@kart.Grup.Ad izni">
+                <input type="hidden" name="grup" value="@kart.Grup.Anahtar" />
+                @foreach (var (kip, ad) in new[] { (GrupKipi.Kapali, "Kapalı"), (GrupKipi.Okur, "Okur"), (GrupKipi.OkurVeYazar, "Okur ve yazar") })
+                {
+                    <button type="submit" name="kip" value="@kip" class="btn btn-sm @(kart.Kip == kip ? "btn-primary" : "btn-outline-primary")"
+                            aria-pressed="@(kart.Kip == kip ? "true" : "false")">@ad</button>
                 }
             </form>
         </div>
     }
+
+    <div class="kd-izin">
+        <div class="kd-izin-metin">
+            <strong>Asistan Claude'u çağırabilsin</strong>
+            <span class="kd-muted">Metinden iş çıkarır, metni özetler ya da maddeler. Hiçbir şey kaydetmez.</span>
+        </div>
+        <span class="kd-status @(Model.AsistanAcik ? "is-bitti" : "is-birakildi")">@(Model.AsistanAcik ? "Açık" : "Kapalı")</span>
+        <form method="post" asp-page-handler="Izin">
+            <input type="hidden" name="izin" value="@IzinGruplari.AsistanAnahtari" />
+            <input type="hidden" name="acik" value="@((!Model.AsistanAcik).ToString().ToLowerInvariant())" />
+            <button type="submit" class="btn @(Model.AsistanAcik ? "btn-outline-primary" : "btn-primary")">@(Model.AsistanAcik ? "Kapat" : "Aç")</button>
+        </form>
+    </div>
+</section>
+
+<section class="kd-yonetim-blok" aria-labelledby="kip-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="kip-baslik">Asistan'ın önerileri</h2>
+    <p class="kd-muted">@(Model.EylemKipleri.Count == 0 ? "Eylem türü yok." : Model.EylemOzeti)</p>
+
+    <details>
+        <summary>Gelişmiş</summary>
+
+        <h3 class="kd-eyebrow kd-section-title">Tek tek izinler</h3>
+        <p class="kd-muted">Yukarıdaki kartların arkasındaki ayrıntılı izinler.</p>
+        @foreach (var izin in Model.IzinListesi)
+        {
+            <div class="kd-izin">
+                <div class="kd-izin-metin">
+                    <code>@izin.Izin</code>
+                    <span class="kd-muted">@izin.Aciklama</span>
+                </div>
+                <span class="kd-status @(izin.Acik ? "is-bitti" : "is-birakildi")">@(izin.Acik ? "Açık" : "Kapalı")</span>
+                <form method="post" asp-page-handler="Izin">
+                    <input type="hidden" name="izin" value="@izin.Izin" />
+                    <input type="hidden" name="acik" value="@((!izin.Acik).ToString().ToLowerInvariant())" />
+                    <button type="submit" class="btn @(izin.Acik ? "btn-outline-primary" : "btn-primary")">@(izin.Acik ? "Kapat" : "Aç")</button>
+                </form>
+            </div>
+        }
+
+        <h3 class="kd-eyebrow kd-section-title">Eylem kipleri</h3>
+        <p class="kd-muted">
+            Her eylem türü için Asistan'ın ne yapabileceğini seç. Kendin yap seçilse bile başkasının yazdığı metinden çıkan öneriler onay bekler.
+        </p>
+
+        @foreach (var k in Model.EylemKipleri)
+        {
+            <div class="kd-izin">
+                <div class="kd-izin-metin">
+                    <strong>@k.TurAdi</strong>
+                    <span class="kd-muted">@EylemGorunum.KipAciklamasi(k.Kip)</span>
+                </div>
+                <form method="post" asp-page-handler="EylemKipi" class="kd-kip-secenek" role="group" aria-label="@k.TurAdi kipi">
+                    <input type="hidden" name="tur" value="@k.Tur" />
+                    @foreach (var kip in Enum.GetValues<EylemKipi>())
+                    {
+                        <button type="submit" name="kip" value="@kip" class="btn btn-sm @(k.Kip == kip ? "btn-primary" : "btn-outline-primary")"
+                                aria-pressed="@(k.Kip == kip ? "true" : "false")">@EylemGorunum.KipAdi(kip)</button>
+                    }
+                </form>
+            </div>
+        }
+    </details>
 </section>
 
 <section class="kd-yonetim-blok" aria-labelledby="oturum-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="oturum-baslik">Asistan'ın oturumları</h2>
     <p class="kd-muted">
-        Bu, Asistan'ın yenileme (refresh) token'ını geçersiz kılar; süresi dolunca yeniden giriş yapması gerekir.
-        Elindeki erişim token'ı en çok 1 saat çalışmaya devam eder; hemen kesmek için izinleri kapat.
+        Asistan'ın oturumları kapanır ve yeniden giriş yapması gerekir. Açık kalan oturum en çok 1 saat daha çalışabilir;
+        hemen kesmek için izinleri kapat.
     </p>
     <form method="post" asp-page-handler="OturumlariKapat"
           onsubmit="return confirm('Asistan yeniden giriş yapmak zorunda kalacak. Emin misin?');">
@@ -138,49 +182,38 @@
     }
     @if (g.Durum == "kapali")
     {
-        <p class="kd-muted">Google ayarları (ClientId, ClientSecret, DonusAdresi) yapılmamış; takvim kapalı.</p>
+        <p class="kd-muted">Google Takvim ayarlanmamış; takvim kapalı.</p>
+    }
+    else if (g.Durum != "bagli")
+    {
+        @if (g.Durum == "yenidenBaglan")
+        {
+            <p class="kd-muted">Google bağlantısı koptu.</p>
+        }
+        <form method="post" asp-page-handler="GoogleBagla">
+            <button type="submit" class="btn btn-primary">@(g.Durum == "yenidenBaglan" ? "Yeniden bağla" : "Google Takvim'i bağla")</button>
+        </form>
     }
     else
     {
         <dl class="kd-facts">
             <div>
-                <dt>Durum</dt>
-                <dd>@(g.Durum switch { "bagli" => "Bağlı", "yenidenBaglan" => "Bağlantı koptu, yeniden bağla", _ => "Bağlı değil" })</dd>
+                <dt>Son eşitleme</dt>
+                <dd>@(g.SonEsitleme is { } son ? son.ToLocalTime().ToString("dd.MM HH:mm") : "Henüz eşitlenmedi")</dd>
             </div>
-            @if (g.Durum != "bagliDegil")
-            {
-                <div>
-                    <dt>Bağlandığı an</dt>
-                    <dd>@(g.BaglananAni is { } an ? an.ToLocalTime().ToString("dd.MM.yyyy HH:mm") : "-")</dd>
-                </div>
-                <div>
-                    <dt>Son eşitleme</dt>
-                    <dd>@(g.SonEsitleme is { } son ? son.ToLocalTime().ToString("dd.MM HH:mm") : "-")</dd>
-                </div>
-                <div>
-                    <dt>Etkinlik</dt>
-                    <dd>@g.EtkinlikSayisi</dd>
-                </div>
-                <div>
-                    <dt>Takvimler</dt>
-                    <dd>@(g.Takvimler.Count == 0 ? "-" : string.Join(", ", g.Takvimler))</dd>
-                </div>
-            }
+            <div>
+                <dt>Etkinlik</dt>
+                <dd>@g.EtkinlikSayisi</dd>
+            </div>
         </dl>
         <div class="kd-gun-actions">
-            @if (g.Durum != "bagli")
-            {
-                <form method="post" asp-page-handler="GoogleBagla">
-                    <button type="submit" class="btn btn-primary">@(g.Durum == "yenidenBaglan" ? "Yeniden bağla" : "Google Takvim'i bağla")</button>
-                </form>
-            }
-            @if (g.Durum != "bagliDegil")
-            {
-                <form method="post" asp-page-handler="GoogleKes"
-                      onsubmit="return confirm('Bağlantı kesilecek ve eşitlenen etkinlikler silinecek. Emin misin?');">
-                    <button type="submit" class="btn btn-outline-primary">Bağlantıyı kes</button>
-                </form>
-            }
+            <form method="post" asp-page-handler="GoogleEsitle">
+                <button type="submit" class="btn btn-primary">Şimdi eşitle</button>
+            </form>
+            <form method="post" asp-page-handler="GoogleKes"
+                  onsubmit="return confirm('Bağlantı kesilecek ve eşitlenen etkinlikler silinecek. Emin misin?');">
+                <button type="submit" class="btn btn-outline-primary">Bağlantıyı kes</button>
+            </form>
         </div>
     }
 </section>

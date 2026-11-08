@@ -17,12 +17,23 @@ namespace Kafamdakiler.Pages.Yonetim;
 // shared with /api/yonetim and /api/google.
 public class IndexModel(
     AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler,
-    GoogleBaglanti googleBaglanti, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
+    GoogleBaglanti googleBaglanti, TakvimEsitleyici esitleyici, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
 {
+    public record GrupKarti(IzinGruplari.Grup Grup, GrupKipi Kip);
+
+    // The six cards (Kapalı / Okur / Okur ve yazar) and the assistant switch; the raw list below stays for "Gelişmiş".
+    public List<GrupKarti> GrupKartlari { get; private set; } = [];
+
+    public bool AsistanAcik { get; private set; }
+
     public List<IzinDto> IzinListesi { get; private set; } = [];
 
     // The mode of every kind of action the Asistan may suggest (K2.6).
     public List<EylemKipiDto> EylemKipleri { get; private set; } = [];
+
+    // One line for outside the "Gelişmiş" fold, like "Sor: 4 tür · Kendin yap: 1 tür".
+    public string EylemOzeti => string.Join(" · ", EylemKipleri.GroupBy(k => k.Kip).OrderBy(g => g.Key)
+        .Select(g => $"{EylemGorunum.KipAdi(g.Key)}: {g.Count()} tür"));
 
     public BeyinDurumDto BeyinDurumu { get; private set; } = new(false, null, 0, 0);
 
@@ -94,6 +105,9 @@ public class IndexModel(
     {
         var simdi = DateTimeOffset.UtcNow;
         IzinListesi = await YonetimIslemleri.IzinleriGetirAsync(kullanicilar);
+        var acik = IzinListesi.Where(i => i.Acik).Select(i => i.Izin).ToHashSet();
+        GrupKartlari = IzinGruplari.Tumu.Select(g => new GrupKarti(g, IzinGruplari.KipBul(g, acik))).ToList();
+        AsistanAcik = acik.Contains(IzinGruplari.AsistanAnahtari);
         EylemKipleri = await eylemler.KipleriGetirAsync(ct);
         BeyinDurumu = await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, simdi, ct);
         Kuyruk = await YonetimIslemleri.KuyrukAsync(db, simdi, yalnizIlgilenilecek: true, ct);
@@ -115,6 +129,18 @@ public class IndexModel(
 
         await YonetimIslemleri.IzinAyarlaAsync(kullanicilar, izin, acik);
         Bildirim = acik ? "İzin açıldı" : "İzin kapatıldı";
+        return RedirectToPage();
+    }
+
+    // One card's choice. `kip` is read as text like the action modes below; `Ozel` is a reading, not a choice.
+    public async Task<IActionResult> OnPostGrupAsync(string grup, string kip)
+    {
+        if (IzinGruplari.Bul(grup) is not { } bulunan || string.IsNullOrEmpty(kip) || !char.IsLetter(kip[0])
+            || !Enum.TryParse<GrupKipi>(kip, ignoreCase: true, out var yeniKip) || yeniKip == GrupKipi.Ozel || !Enum.IsDefined(yeniKip))
+            return BadRequest();
+
+        await YonetimIslemleri.GrupAyarlaAsync(kullanicilar, bulunan, yeniKip);
+        Bildirim = "İzinler kaydedildi";
         return RedirectToPage();
     }
 
@@ -213,7 +239,7 @@ public class IndexModel(
 
         if (await googleBaglanti.BaslatAsync(id, ct) is not { } adres)
         {
-            Hata = "Google ayarları (ClientId, ClientSecret, DonusAdresi) yapılmamış.";
+            Hata = "Google ayarları yapılmamış.";
             return RedirectToPage();
         }
 
@@ -229,6 +255,18 @@ public class IndexModel(
             Bildirim = "Google Takvim bağlantısı kesildi";
         else
             Hata = "Bağlantı bu uygulamada kesildi ama Google'da izin iptal edilemedi. Google hesabının güvenlik sayfasından da kaldır.";
+
+        return RedirectToPage();
+    }
+
+    // The same sync as POST /api/google/esitle, run now instead of waiting for the next round.
+    public async Task<IActionResult> OnPostGoogleEsitleAsync(CancellationToken ct)
+    {
+        var ozet = await esitleyici.TurAsync(ct);
+        if (ozet.ErisimSorunu is { } sorun)
+            Hata = sorun == ErisimDurumu.Kapali ? "Google ayarları yapılmamış." : new ErisimSonucu(sorun).Mesaj;
+        else
+            Bildirim = $"Takvim eşitlendi: {ozet.Eklenen} yeni, {ozet.Guncellenen} güncellenen, {ozet.Silinen} silinen";
 
         return RedirectToPage();
     }

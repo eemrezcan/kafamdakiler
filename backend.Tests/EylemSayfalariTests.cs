@@ -233,7 +233,9 @@ public sealed partial class EylemSayfalariTests(UygulamaFabrikasi uygulama) : IC
         var tarayici = await SahipAsync();
 
         var sayfa = await WebOturumu.MetinAsync(await tarayici.GetAsync("/Yonetim", Ct), Ct);
-        Assert.Contains("Asistan'ın eylem kipleri", sayfa);
+        Assert.Contains("Eylem kipleri", sayfa);
+        Assert.Contains("Gelişmiş", sayfa);
+        Assert.Contains("Sor: ", sayfa);
         Assert.Contains("Hatırlatıcı kur", sayfa);
         Assert.Contains("Önce onayını bekler.", sayfa);
 
@@ -241,7 +243,9 @@ public sealed partial class EylemSayfalariTests(UygulamaFabrikasi uygulama) : IC
         Assert.Equal(HttpStatusCode.Redirect, yanit.StatusCode);
         using (var db = uygulama.YeniDb())
             Assert.Equal(EylemKipi.KendinYap, (await db.EylemIzinleri.SingleAsync(i => i.Tur == Tur, Ct)).Kip);
-        Assert.Contains("Hemen uygular", await WebOturumu.MetinAsync(await tarayici.GetAsync("/Yonetim", Ct), Ct));
+        var sonra = await WebOturumu.MetinAsync(await tarayici.GetAsync("/Yonetim", Ct), Ct);
+        Assert.Contains("Hemen uygular", sonra);
+        Assert.Contains("Kendin yap: 1 tür", sonra);
 
         // Wrong values change nothing.
         Assert.Equal(HttpStatusCode.NotFound, (await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=EylemKipi", new() { ["tur"] = "olmayan", ["kip"] = "Sor" })).StatusCode);
