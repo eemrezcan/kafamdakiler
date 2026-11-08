@@ -520,6 +520,19 @@ class ApiService {
     }
   }
 
+  // ---- Google Calendar (Sahip only, /api/google) ----
+
+  Future<GoogleDurum> googleDurumu() async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/google/durum');
+    return GoogleDurum.fromJson(yanit.data!);
+  }
+
+  /// A sync round now. 503 when the Google settings are missing, 409 when Google refuses the access.
+  Future<GoogleEsitlemeOzeti> googleEsitle() async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/google/esitle');
+    return GoogleEsitlemeOzeti.fromJson(yanit.data!);
+  }
+
   // ---- Helpers ----
 
   List<T> _liste<T>(Response<List<dynamic>> yanit, T Function(Map<String, dynamic>) coz) =>

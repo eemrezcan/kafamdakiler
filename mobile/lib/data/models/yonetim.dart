@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'yakalama.dart';
+import 'zaman_cizelgesi.dart';
 
 part 'yonetim.g.dart';
 
@@ -100,4 +101,39 @@ class Gonderim {
 
   factory Gonderim.fromJson(Map<String, dynamic> json) => _$GonderimFromJson(json);
   Map<String, dynamic> toJson() => _$GonderimToJson(this);
+}
+
+/// `GoogleDurumDto` (`GET /api/google/durum`): is Google Calendar set up and connected, and when it was last synced.
+/// Hand-written JSON (camelCase, like the API); [durum] is one of [GoogleDurumu].
+class GoogleDurum {
+  const GoogleDurum({required this.durum, this.sonEsitleme, this.etkinlikSayisi = 0});
+
+  final String durum;
+  final DateTime? sonEsitleme;
+  final int etkinlikSayisi;
+
+  bool get bagli => durum == GoogleDurumu.bagli;
+
+  factory GoogleDurum.fromJson(Map<String, dynamic> json) => GoogleDurum(
+        durum: json['durum'] as String? ?? GoogleDurumu.kapali,
+        sonEsitleme: json['sonEsitleme'] == null ? null : DateTime.parse(json['sonEsitleme'] as String),
+        etkinlikSayisi: json['etkinlikSayisi'] as int? ?? 0,
+      );
+}
+
+/// `EsitlemeOzeti` (`POST /api/google/esitle`): what one sync round did.
+class GoogleEsitlemeOzeti {
+  const GoogleEsitlemeOzeti({this.eklenen = 0, this.guncellenen = 0, this.silinen = 0, this.basarisiz = 0});
+
+  final int eklenen;
+  final int guncellenen;
+  final int silinen;
+  final int basarisiz;
+
+  factory GoogleEsitlemeOzeti.fromJson(Map<String, dynamic> json) => GoogleEsitlemeOzeti(
+        eklenen: json['eklenen'] as int? ?? 0,
+        guncellenen: json['guncellenen'] as int? ?? 0,
+        silinen: json['silinen'] as int? ?? 0,
+        basarisiz: json['basarisiz'] as int? ?? 0,
+      );
 }

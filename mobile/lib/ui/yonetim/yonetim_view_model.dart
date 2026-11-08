@@ -5,6 +5,7 @@ import '../../data/models/eylem.dart';
 import '../../data/models/yonetim.dart';
 import '../../data/services/api_service.dart';
 import '../core/hata_metni.dart';
+import 'izin_gruplari.dart';
 
 /// The Sahip's management screen: the Asistan's permissions, the brain status
 /// and the queue of captures going to the brain. Everything is read from the
@@ -43,6 +44,24 @@ class YonetimViewModel extends ChangeNotifier {
   final Set<String> _mesgul = {};
   bool izinMesgulMu(String izin) => _mesgul.contains(izin);
 
+  /// Open permissions, by key.
+  Set<String> get acikIzinler => {for (final i in _izinler) if (i.acik) i.izin};
+
+  IzinSeviyesi seviye(IzinGrubu grup) => grup.seviye(acikIzinler);
+
+  /// A group waits while any of its permissions is being changed.
+  bool grupMesgulMu(IzinGrubu grup) => grup.tumu.any(_mesgul.contains);
+
+  /// Null when the server could not be asked (the card then says so).
+  GoogleDurum? _google;
+  GoogleDurum? get google => _google;
+
+  bool _googleOkunamadi = false;
+  bool get googleOkunamadi => _googleOkunamadi;
+
+  bool _esitleniyor = false;
+  bool get esitleniyor => _esitleniyor;
+
   /// Captures being sent again right now.
   final Set<String> _yenidenGonderiliyor = {};
   bool yenidenGonderiliyorMu(String id) => _yenidenGonderiliyor.contains(id);
@@ -66,6 +85,7 @@ class YonetimViewModel extends ChangeNotifier {
       _eylemKipleri = kipler;
       _beyin = beyin;
       _kuyruk = kuyruk;
+      await _googleOku(tur);
     } on Object catch (e) {
       if (tur != _tur || _atildi) return;
       _hata = hataMetni(e, islem: 'Yönetim bilgileri okunamadı');
@@ -74,6 +94,75 @@ class YonetimViewModel extends ChangeNotifier {
         _yukleniyor = false;
         notifyListeners();
       }
+    }
+  }
+
+  // The Google card must not take the rest of the screen down with it.
+  Future<void> _googleOku(int tur) async {
+    try {
+      final google = await _api.googleDurumu();
+      if (tur != _tur || _atildi) return;
+      _google = google;
+      _googleOkunamadi = false;
+    } on Object {
+      if (tur != _tur || _atildi) return;
+      _googleOkunamadi = true;
+    }
+  }
+
+  /// Syncs the calendar now. Returns the message to show (success or failure).
+  Future<String> simdiEsitle() async {
+    if (_esitleniyor) return 'Zaten eşitleniyor.';
+    _esitleniyor = true;
+    notifyListeners();
+    try {
+      final ozet = await _api.googleEsitle();
+      await _googleOku(_tur);
+      final parcalar = [
+        if (ozet.eklenen > 0) '${ozet.eklenen} yeni',
+        if (ozet.guncellenen > 0) '${ozet.guncellenen} güncellenen',
+        if (ozet.silinen > 0) '${ozet.silinen} silinen',
+      ];
+      final sonuc = parcalar.isEmpty ? 'Takvim eşitlendi, yeni bir şey yok.' : 'Takvim eşitlendi: ${parcalar.join(', ')}.';
+      return ozet.basarisiz > 0 ? '$sonuc ${ozet.basarisiz} etkinlik eşitlenemedi.' : sonuc;
+    } on DioException catch (e) {
+      return switch (e.response?.statusCode) {
+        503 => 'Google Takvim bu sunucuda ayarlanmamış.',
+        409 => 'Google erişimi çalışmıyor. Web\'deki Yönetim sayfasından takvimi yeniden bağlamayı dene.',
+        _ => hataMetni(e, islem: 'Takvim eşitlenemedi'),
+      };
+    } on Object catch (e) {
+      return hataMetni(e, islem: 'Takvim eşitlenemedi');
+    } finally {
+      _esitleniyor = false;
+      if (!_atildi) notifyListeners();
+    }
+  }
+
+  /// Sets a whole group to [seviye] with one permission call each, the closing ones first. If a call fails the rest
+  /// are not sent and the group shows what the server really holds (possibly "Özel"). Returns a message when it failed.
+  Future<String?> grupAyarla(IzinGrubu grup, IzinSeviyesi seviye) async {
+    if (seviye == IzinSeviyesi.ozel || grupMesgulMu(grup)) return null;
+    final hedef = grup.hedef(seviye);
+    final acik = acikIzinler;
+    final kapanacak = [for (final i in grup.yazar.reversed.followedBy(grup.okur.reversed)) if (hedef[i] == false && acik.contains(i)) i];
+    final acilacak = [for (final i in grup.tumu) if (hedef[i] == true && !acik.contains(i)) i];
+    final sirali = [...kapanacak.map((i) => (i, false)), ...acilacak.map((i) => (i, true))];
+    if (sirali.isEmpty) return null;
+    _mesgul.addAll(grup.tumu);
+    notifyListeners();
+    try {
+      for (final (izin, yeniDurum) in sirali) {
+        final yeni = await _api.izinAyarla(izin, acik: yeniDurum);
+        _izinler = [for (final i in _izinler) i.izin == yeni.izin ? yeni : i];
+        if (!_atildi) notifyListeners();
+      }
+      return null;
+    } on Object catch (e) {
+      return hataMetni(e, islem: 'İzinler değiştirilemedi');
+    } finally {
+      _mesgul.removeAll(grup.tumu);
+      if (!_atildi) notifyListeners();
     }
   }
 

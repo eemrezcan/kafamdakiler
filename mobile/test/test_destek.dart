@@ -634,6 +634,36 @@ class SahteApi extends ApiService {
     return yeni;
   }
 
+  GoogleDurum googleDurum = const GoogleDurum(durum: GoogleDurumu.bagliDegil);
+
+  /// When set, `googleEsitle` fails with this HTTP status (503: not set up, 409: Google refuses the access).
+  int? esitleHatasi;
+
+  /// When true, only the Google status call fails (the rest of the screen must still load).
+  bool googleDurumuHatali = false;
+
+  @override
+  Future<GoogleDurum> googleDurumu() async {
+    cagrilar.add('googleDurumu');
+    if (googleDurumuHatali) throw DioException.connectionError(requestOptions: RequestOptions(path: 'google'), reason: 'offline');
+    return googleDurum;
+  }
+
+  @override
+  Future<GoogleEsitlemeOzeti> googleEsitle() async {
+    _kontrol('googleEsitle');
+    if (esitleHatasi != null) {
+      final istek = RequestOptions(path: 'esitle');
+      throw DioException.badResponse(
+        statusCode: esitleHatasi!,
+        requestOptions: istek,
+        response: Response(requestOptions: istek, statusCode: esitleHatasi),
+      );
+    }
+    googleDurum = GoogleDurum(durum: GoogleDurumu.bagli, sonEsitleme: DateTime.utc(2026, 11, 8, 12, 30));
+    return const GoogleEsitlemeOzeti(eklenen: 2, silinen: 1);
+  }
+
   /// When set, the password calls fail with this HTTP status (400: the server refused the password).
   int? sifreHatasi;
 

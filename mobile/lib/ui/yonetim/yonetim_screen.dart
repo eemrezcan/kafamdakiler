@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/models/eylem.dart';
 import '../../data/models/yakalama.dart';
 import '../../utils/eylem_gorunum.dart';
 import '../../data/models/yonetim.dart';
+import '../../data/models/zaman_cizelgesi.dart';
 import '../core/widgets.dart';
 import 'asistan_sifre_dialog.dart';
+import 'izin_gruplari.dart';
 import 'yonetim_view_model.dart';
 
 /// The Sahip's management screen (M07): the Asistan's permissions (with their
@@ -60,6 +63,16 @@ class YonetimScreen extends StatelessWidget {
     _bildir(messenger, await viewModel.yenidenDene(g));
   }
 
+  /// One line for the modes of all kinds of action, e.g. "5 eylem türü: 4 Sor, 1 Yasak".
+  static String _kipOzeti(List<EylemKipDurumu> kipler) {
+    if (kipler.isEmpty) return 'Tanımlı eylem türü yok';
+    final parcalar = [
+      for (final kip in EylemKipi.values)
+        if (kipler.any((k) => k.kip == kip)) '${kipler.where((k) => k.kip == kip).length} ${eylemKipAdi(kip)}',
+    ];
+    return '${kipler.length} eylem türü: ${parcalar.join(', ')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,8 +100,55 @@ class YonetimScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
                   _Baslik('Asistan\'ın izinleri', ipucu: 'Kapatılan izin, Asistan\'ın bir sonraki isteğinde etkili olur.'),
+                  for (final grup in izinGruplari)
+                    _IzinKarti(
+                      grup: grup,
+                      seviye: viewModel.seviye(grup),
+                      mesgul: viewModel.grupMesgulMu(grup),
+                      onSec: (seviye) async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        _bildir(messenger, await viewModel.grupAyarla(grup, seviye));
+                      },
+                    ),
                   Card(
-                    child: Column(
+                    child: SwitchListTile(
+                      key: const ValueKey('anahtar-$asistanKullanIzni'),
+                      title: const Text('Asistan Claude\'u çağırabilsin'),
+                      subtitle: const Text('Metinden iş çıkarma, özetleme ve maddeleme için. Kendi başına bir şey kaydetmez.'),
+                      value: viewModel.acikIzinler.contains(asistanKullanIzni),
+                      onChanged: viewModel.izinMesgulMu(asistanKullanIzni)
+                          ? null
+                          : (acik) async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final izin = viewModel.izinler.where((i) => i.izin == asistanKullanIzni).firstOrNull;
+                              if (izin != null) _bildir(messenger, await viewModel.izinDegistir(izin, acik));
+                            },
+                    ),
+                  ),
+                  const _Baslik('Google Takvim'),
+                  _GoogleKarti(
+                    viewModel: viewModel,
+                    onEsitle: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      _bildir(messenger, await viewModel.simdiEsitle());
+                    },
+                  ),
+                  const _Baslik('Eylem kipleri'),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(LucideIcons.listChecks),
+                      title: Text(_kipOzeti(viewModel.eylemKipleri)),
+                      subtitle: const Text('Ayrıntılar aşağıdaki "Gelişmiş" bölümünde.'),
+                    ),
+                  ),
+                  Card(
+                    child: ExpansionTile(
+                      key: const ValueKey('gelismis'),
+                      title: const Text('Gelişmiş'),
+                      subtitle: const Text('Tek tek izinler ve eylem kipleri'),
+                      shape: const Border(),
+                      collapsedShape: const Border(),
+                      childrenPadding: const EdgeInsets.only(bottom: 8),
                       children: [
                         for (final izin in viewModel.izinler)
                           SwitchListTile(
@@ -103,24 +163,24 @@ class YonetimScreen extends StatelessWidget {
                                     _bildir(messenger, await viewModel.izinDegistir(izin, acik));
                                   },
                           ),
+                        const _Baslik(
+                          'Asistan\'ın eylem kipleri',
+                          ipucu: 'Kendin yap seçilse bile başkasının yazdığı metinden çıkan öneriler onay bekler.',
+                        ),
+                        if (viewModel.eylemKipleri.isEmpty)
+                          const Padding(padding: EdgeInsets.all(8), child: Text('Tanımlı eylem türü yok.')),
+                        for (final k in viewModel.eylemKipleri)
+                          _KipKarti(
+                            kayit: k,
+                            mesgul: viewModel.kipMesgulMu(k.tur),
+                            onSec: (kip) async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              _bildir(messenger, await viewModel.kipDegistir(k, kip));
+                            },
+                          ),
                       ],
                     ),
                   ),
-                  _Baslik(
-                    'Asistan\'ın eylem kipleri',
-                    ipucu: 'Kendin yap seçilse bile başkasının yazdığı metinden çıkan öneriler onay bekler.',
-                  ),
-                  if (viewModel.eylemKipleri.isEmpty)
-                    const Padding(padding: EdgeInsets.all(8), child: Text('Tanımlı eylem türü yok.')),
-                  for (final k in viewModel.eylemKipleri)
-                    _KipKarti(
-                      kayit: k,
-                      mesgul: viewModel.kipMesgulMu(k.tur),
-                      onSec: (kip) async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        _bildir(messenger, await viewModel.kipDegistir(k, kip));
-                      },
-                    ),
                   const _Baslik('Asistan\'ın şifresi'),
                   Card(
                     child: ListTile(
@@ -186,6 +246,106 @@ class _Baslik extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// "8 Kasım 14:30" in the phone's time.
+String tarihSaatMetni(DateTime an) => DateFormat('d MMMM HH:mm', 'tr').format(an.toLocal());
+
+/// One area of the Asistan's permissions as a single choice: closed, reads, or reads and writes.
+class _IzinKarti extends StatelessWidget {
+  const _IzinKarti({required this.grup, required this.seviye, required this.mesgul, required this.onSec});
+
+  final IzinGrubu grup;
+  final IzinSeviyesi seviye;
+  final bool mesgul;
+  final Future<void> Function(IzinSeviyesi) onSec;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Card(
+      key: ValueKey('grup-${grup.id}'),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(grup.ad, style: tema.textTheme.titleSmall)),
+                if (seviye == IzinSeviyesi.ozel) Chip(label: Text(IzinSeviyesi.ozel.ad), visualDensity: VisualDensity.compact),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<IzinSeviyesi>(
+              showSelectedIcon: false,
+              emptySelectionAllowed: true,
+              segments: [
+                for (final s in [IzinSeviyesi.kapali, IzinSeviyesi.okur, IzinSeviyesi.okurYazar])
+                  ButtonSegment(value: s, label: FittedBox(fit: BoxFit.scaleDown, child: Text(s.ad))),
+              ],
+              selected: seviye == IzinSeviyesi.ozel ? const {} : {seviye},
+              onSelectionChanged: mesgul
+                  ? null
+                  : (s) {
+                      if (s.isNotEmpty) onSec(s.first);
+                    },
+            ),
+            const SizedBox(height: 6),
+            Text(grup.aciklama, style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onSurfaceVariant)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The Google Calendar link. Connecting happens on the web; here the state and a "sync now" button.
+class _GoogleKarti extends StatelessWidget {
+  const _GoogleKarti({required this.viewModel, required this.onEsitle});
+
+  final YonetimViewModel viewModel;
+  final VoidCallback onEsitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final google = viewModel.google;
+    final Widget satir;
+    if (google == null) {
+      satir = ListTile(
+        leading: const Icon(LucideIcons.calendarX),
+        title: Text(viewModel.googleOkunamadi ? 'Google Takvim durumu okunamadı' : 'Google Takvim durumu okunuyor'),
+        subtitle: const Text('Ekranı aşağı çekip yenile.'),
+      );
+    } else if (google.bagli) {
+      final son = google.sonEsitleme;
+      satir = ListTile(
+        leading: const Icon(LucideIcons.calendarCheck),
+        title: const Text('Google Takvim bağlı'),
+        subtitle: Text(son == null ? 'Henüz eşitlenmedi' : 'Son eşitleme: ${tarihSaatMetni(son)}'),
+        trailing: TextButton.icon(
+          onPressed: viewModel.esitleniyor ? null : onEsitle,
+          icon: viewModel.esitleniyor
+              ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(LucideIcons.refreshCw),
+          label: const Text('Şimdi eşitle'),
+        ),
+      );
+    } else if (google.durum == GoogleDurumu.kapali) {
+      satir = const ListTile(
+        leading: Icon(LucideIcons.calendarX),
+        title: Text('Google Takvim ayarlanmamış'),
+        subtitle: Text('Sunucuda Google ayarları yapılınca burada görünür.'),
+      );
+    } else {
+      satir = ListTile(
+        leading: const Icon(LucideIcons.calendarX),
+        title: Text(google.durum == GoogleDurumu.yenidenBaglan ? 'Google Takvim yeniden bağlanmalı' : 'Google Takvim bağlı değil'),
+        subtitle: const Text('Bağlamak için web\'deki Yönetim sayfasını aç.'),
+      );
+    }
+    return Card(child: satir);
   }
 }
 

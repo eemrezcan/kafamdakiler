@@ -359,11 +359,14 @@ void main() {
     });
 
     Future<YonetimViewModel> goster(WidgetTester tester) async {
-      ekran(tester, const Size(375, 2000));
+      ekran(tester, const Size(375, 4000));
       final vm = YonetimViewModel(api: ortam.api);
       await tester.runAsync(vm.yukle);
       await tester.pumpWidget(MaterialApp(home: YonetimScreen(viewModel: vm)));
       await tester.pump();
+      // The modes are in the "Gelişmiş" section.
+      await tester.tap(find.text('Gelişmiş'));
+      await tester.pumpAndSettle();
       return vm;
     }
 
