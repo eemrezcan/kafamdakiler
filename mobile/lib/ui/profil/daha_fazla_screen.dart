@@ -89,15 +89,6 @@ class DahaFazlaScreen extends StatelessWidget {
                       trailing: const Icon(LucideIcons.chevronRight),
                       onTap: () => context.push(Rotalar.aliskanliklar),
                     ),
-                    // Temporary: Gelen will take the captures over (wave 3).
-                    ListTile(
-                      minTileHeight: 56,
-                      leading: const Icon(LucideIcons.inbox),
-                      title: const Text('Yakalamalar'),
-                      subtitle: const Text('Henüz gönderilmemiş ve gönderilmiş yakalamalar'),
-                      trailing: const Icon(LucideIcons.chevronRight),
-                      onTap: () => context.push(Rotalar.yakalamalar),
-                    ),
                     // Permissions, brain status and the sending queue: the Sahip's only.
                     if (kullanici.sahip)
                       ListTile(

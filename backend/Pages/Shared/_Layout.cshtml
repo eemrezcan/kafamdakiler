@@ -3,10 +3,10 @@
     var currentPage = ViewContext.RouteData.Values["page"] as string ?? "";
     // Which menu entry a page belongs to. The approval queue is reached from the inbox and the day page, so it lights the inbox.
     var bugunAktif = currentPage is "/Index" or "/Beyin/Gun";
-    var gelenAktif = currentPage.StartsWith("/Gelen") || currentPage.StartsWith("/Eylemler");
+    var gelenAktif = currentPage.StartsWith("/Gelen") || currentPage.StartsWith("/Eylemler") || currentPage.StartsWith("/Yakalamalar");
     var projelerAktif = currentPage is "/Beyin/Index" or "/Beyin/Proje";
     var hatirlaticiAktif = currentPage.StartsWith("/Hatirlaticilar");
-    var dahaFazlaAktif = currentPage.StartsWith("/Aliskanliklar") || currentPage.StartsWith("/Yakalamalar") || currentPage.StartsWith("/Yonetim");
+    var dahaFazlaAktif = currentPage.StartsWith("/Aliskanliklar") || currentPage.StartsWith("/Yonetim");
     var araAktif = currentPage is "/Beyin/Ara" or "/Beyin/Not";
     // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
     var showChrome = User.Identity?.IsAuthenticated == true;
@@ -66,8 +66,6 @@
                     </button>
                     <ul class="dropdown-menu kd-menu kd-menu--simple">
                         <li><a class="dropdown-item @(currentPage.StartsWith("/Aliskanliklar") ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a></li>
-                        @* Temporary until the inbox and the captures are merged. *@
-                        <li><a class="dropdown-item @(currentPage.StartsWith("/Yakalamalar") ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">Yakalamalar</a></li>
                         <li><a class="dropdown-item @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">Yönetim</a></li>
                     </ul>
                 </div>
@@ -130,10 +128,6 @@
                 <a class="kd-drawer-link @(currentPage.StartsWith("/Aliskanliklar") ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
                     Alışkanlıklar
-                </a>
-                <a class="kd-drawer-link @(currentPage.StartsWith("/Yakalamalar") ? "active" : "")" asp-area="" asp-page="/Yakalamalar/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
-                    Yakalamalar
                 </a>
                 <a class="kd-drawer-link @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>

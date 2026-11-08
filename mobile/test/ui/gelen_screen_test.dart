@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/gelen.dart';
+import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
 import 'package:kafamdakiler/ui/gelen/gelen_liste_screen.dart';
 import 'package:kafamdakiler/ui/gelen/gelen_liste_view_model.dart';
@@ -37,7 +38,7 @@ void main() {
     final kullanici = KullaniciRepository(api: ortam.api, db: ortam.db);
     ortam.api.ben_ = Ben(id: 'u', email: 'x@y.z', roller: [rol]);
     await tester.runAsync(kullanici.yukle);
-    final vm = GelenListeViewModel(repo: ortam.gelen, eylemler: ortam.eylemler, esitleyici: ortam.esitleyici, beyin: ortam.beyin);
+    final vm = GelenListeViewModel(repo: ortam.gelen, eylemler: ortam.eylemler, yakalamalar: ortam.yakalamalar, esitleyici: ortam.esitleyici, beyin: ortam.beyin);
     addTearDown(vm.dispose);
     await tester.runAsync(vm.yukle);
     if (cevrimdisiOl) ortam.api.cevrimdisi = true;
@@ -64,7 +65,7 @@ void main() {
   testWidgets('shows the suggestion under its card with the warnings, the cards with a suggestion first', (tester) async {
     await goster(tester);
 
-    expect(find.text('KARTLAR  4'), findsOneWidget);
+    expect(find.text('YERLEŞMEYİ BEKLİYOR  4'), findsOneWidget);
     expect(find.text('Önerili kart'), findsOneWidget);
     expect(find.text('projects/kitap-kulubu/notlar/simyaci.md'), findsNWidgets(2));
     expect(find.text('Simyacı önerisi'), findsNWidgets(2));
@@ -339,5 +340,96 @@ void main() {
 
     expect(find.text('Bu işlem için yetkin yok.'), findsOneWidget);
     expect(find.text('Tekrar dene'), findsOneWidget);
+  });
+
+  group('Gönderiliyor', () {
+    Yakalama sunucuda(String id, String metin, YakalamaDurumu durum, int saat) => Yakalama(
+          id: id,
+          metin: metin,
+          durum: durum,
+          // Earlier than the fixed "now" of the test setup, so the phone's capture is the newest.
+          yakalandiAt: DateTime.utc(2026, 10, 30, saat),
+          olusturulma: DateTime.utc(2026, 10, 30, saat),
+        );
+
+    testWidgets('with nothing on its way the part is not drawn', (tester) async {
+      await goster(tester);
+
+      expect(find.textContaining('GÖNDERİLİYOR'), findsNothing);
+      expect(find.text('YERLEŞMEYİ BEKLİYOR  4'), findsOneWidget);
+    });
+
+    testWidgets('lists the waiting captures above the cards, newest first, and leaves out the ones already in the brain', (tester) async {
+      ortam.api.yakalamalar = [
+        sunucuda('a', 'sunucudaki', YakalamaDurumu.bekliyor, 9),
+        sunucuda('b', 'beyindeki', YakalamaDurumu.beyneGitti, 8),
+        sunucuda('c', 'islenmis', YakalamaDurumu.islendi, 7),
+      ];
+      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'telefondaki'));
+
+      await goster(tester);
+
+      expect(find.text('GÖNDERİLİYOR  2'), findsOneWidget);
+      expect(find.text('beyindeki'), findsNothing);
+      expect(find.text('islenmis'), findsNothing);
+      // Waiting on the server is the normal state and carries no mark; the one stuck on the phone does.
+      expect(find.text('Gönderilmedi'), findsOneWidget);
+      final telefonda = tester.getTopLeft(find.text('telefondaki')).dy;
+      final sunucudaki = tester.getTopLeft(find.text('sunucudaki')).dy;
+      final kart = tester.getTopLeft(find.text('Önerili kart')).dy;
+      expect(telefonda, lessThan(sunucudaki));
+      expect(sunucudaki, lessThan(kart), reason: 'Gönderiliyor is above the cards');
+    });
+
+    testWidgets('a capture the server refused gets a badge and the reason', (tester) async {
+      ortam.api.sunucuHatasi = 400;
+      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'reddedilecek'));
+      await tester.runAsync(ortam.esitleyici.gonder);
+      ortam.api.sunucuHatasi = null;
+
+      await goster(tester);
+
+      expect(find.text('reddedilecek'), findsOneWidget);
+      expect(find.text('Gönderilemedi'), findsOneWidget);
+      expect(find.textContaining('Sunucu reddetti: 400'), findsOneWidget);
+    });
+
+    testWidgets('swiping asks first, then deletes the capture', (tester) async {
+      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'silinecek'));
+      await goster(tester);
+
+      await tester.drag(find.text('silinecek'), const Offset(-500, 0));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Yakalama silinsin mi?'), findsOneWidget);
+      await tester.tap(find.text('Sil').last);
+      await gercekZaman(tester);
+
+      expect(find.text('silinecek'), findsNothing);
+      expect(find.textContaining('GÖNDERİLİYOR'), findsNothing, reason: 'the part goes when it is empty');
+      expect(await tester.runAsync(ortam.yakalamalar.yerelListe), isEmpty);
+    });
+
+    testWidgets('offline, the phone copy still shows and the cards part says there is no connection', (tester) async {
+      ortam.api.gelenKartlari = [];
+      ortam.api.cevrimdisi = true;
+      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'çevrimdışı'));
+
+      await goster(tester);
+
+      expect(find.text('çevrimdışı'), findsOneWidget);
+      expect(find.text('Bağlantı yok; bağlantı gelince kartlar burada görünür.'), findsOneWidget);
+      expect(find.text('Gelen kutusu boş.'), findsNothing);
+    });
+
+    testWidgets('when the cards are refused the waiting captures still show', (tester) async {
+      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'telefondaki'));
+      ortam.api.sunucuHatasi = 403;
+
+      await goster(tester, cevrimdisiOl: false);
+
+      expect(find.text('telefondaki'), findsOneWidget);
+      expect(find.text('Bu işlem için yetkin yok.'), findsOneWidget);
+      expect(find.text('Tekrar dene'), findsOneWidget);
+    });
   });
 }

@@ -53,7 +53,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
 
         var ham = await HamAsync(tarayici, "/");
 
-        Assert.Equal(["Bugün", "Gelen", "Projeler", "Hatırlatıcılar", "Daha fazla", "Alışkanlıklar", "Yakalamalar", "Yönetim"], UstMenu(ham));
+        Assert.Equal(["Bugün", "Gelen", "Projeler", "Hatırlatıcılar", "Daha fazla", "Alışkanlıklar", "Yönetim"], UstMenu(ham));
         // The magnifier opens the search page.
         Assert.Matches("<a class=\"kd-icon-btn kd-search-btn[^\"]*\"[^>]*href=\"/Beyin/Ara\"|href=\"/Beyin/Ara\"[^>]*class=\"kd-icon-btn kd-search-btn", ham);
         // The approval queue and the old brain sub-menu have no entry any more.
@@ -88,7 +88,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         cekmece = cekmece[..cekmece.IndexOf("</section>", StringComparison.Ordinal)];
         var adlar = Regex.Matches(cekmece, "<a (?:b-[a-z0-9]+ )?class=\"kd-drawer-link[^\"]*\"[^>]*>(.*?)</a>", RegexOptions.Singleline)
             .Select(m => Regex.Replace(Regex.Replace(m.Groups[1].Value, "<[^>]+>", " "), "\\s+", " ").Trim()).ToList();
-        Assert.Equal(["Bugün", "Gelen", "Projeler", "Hatırlatıcılar", "Alışkanlıklar", "Yakalamalar", "Yönetim"], adlar);
+        Assert.Equal(["Bugün", "Gelen", "Projeler", "Hatırlatıcılar", "Alışkanlıklar", "Yönetim"], adlar);
     }
 
     [Theory]
@@ -96,6 +96,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     [InlineData("/2026-11-03", "Bugün")]
     [InlineData("/Gelen", "Gelen")]
     [InlineData("/Eylemler", "Gelen")]
+    [InlineData("/Yakalamalar/Duzenle", "Gelen")]
     [InlineData("/Beyin", "Projeler")]
     [InlineData("/Hatirlaticilar", "Hatırlatıcılar")]
     [InlineData("/Aliskanliklar", "Daha fazla")]

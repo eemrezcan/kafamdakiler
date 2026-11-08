@@ -70,8 +70,6 @@ import '../ui/shell/ana_iskele.dart';
 import '../ui/yakalama/ses_view_model.dart';
 import '../ui/yakalama/yakala_screen.dart';
 import '../ui/yakalama/yakala_view_model.dart';
-import '../ui/yakalama/yakalama_liste_screen.dart';
-import '../ui/yakalama/yakalama_liste_view_model.dart';
 import '../ui/yonetim/yonetim_screen.dart';
 import '../ui/yonetim/yonetim_view_model.dart';
 
@@ -92,8 +90,6 @@ abstract final class Rotalar {
   /// The habit list: opened from Daha fazla, a full-screen page (not a tab).
   static const aliskanliklar = '/aliskanliklar';
 
-  /// The capture list: opened from Daha fazla until it merges into Gelen, a full-screen page.
-  static const yakalamalar = '/yakalamalar';
   static const yakala = '/yakala';
 
   /// The approval queue: opened from the Today and Gelen cards and from its notifications, a full-screen page.
@@ -234,6 +230,7 @@ GoRouter routerOlustur(
                     create: (c) => GelenListeViewModel(
                       repo: c.read<GelenRepository>(),
                       eylemler: c.read<EylemRepository>(),
+                      yakalamalar: c.read<YakalamaRepository>(),
                       esitleyici: c.read<Esitleyici>(),
                       beyin: c.read<BeyinRepository>(),
                     )..yukle(),
@@ -285,13 +282,6 @@ GoRouter routerOlustur(
         builder: (context, state) => _sayfa(
           (c) => AraViewModel(repo: c.read<BeyinRepository>()),
           (vm) => AraScreen(viewModel: vm),
-        ),
-      ),
-      GoRoute(
-        path: Rotalar.yakalamalar,
-        builder: (context, state) => _sayfa(
-          (c) => YakalamaListeViewModel(repo: c.read<YakalamaRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
-          (vm) => YakalamaListeScreen(viewModel: vm),
         ),
       ),
       // Full-screen pages above the tabs. `yeni` must come before `:id`.

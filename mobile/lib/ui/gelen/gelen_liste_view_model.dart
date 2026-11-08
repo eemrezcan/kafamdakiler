@@ -5,22 +5,27 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/models/beyin.dart';
 import '../../data/models/gelen.dart';
+import '../../data/models/yakalama.dart';
 import '../../data/repositories/beyin_repository.dart';
 import '../../data/repositories/esitleyici.dart';
 import '../../data/repositories/eylem_repository.dart';
 import '../../data/repositories/gelen_repository.dart';
+import '../../data/repositories/yakalama_repository.dart';
 import '../core/hata_metni.dart';
 
-/// The inbox: the cards with their suggestions. Every decision (approve, reject, place, delete) writes to the phone's
+/// The inbox, in two parts: the captures still on their way to the brain ("Gönderiliyor": waiting on the phone or on the server)
+/// and the cards in the brain with their suggestions ("Yerleşmeyi bekliyor"). Every decision (approve, reject, place, delete) writes to the phone's
 /// queue first, like every other write, so it works offline. "Suggest again" needs the network.
 class GelenListeViewModel extends ChangeNotifier {
   GelenListeViewModel({
     required this._repo,
     required this._eylemler,
+    required this._yakalamalar,
     required this._esitleyici,
     this._beyin,
   }) {
     _repo.addListener(_yerelYenile);
+    _yakalamalar.addListener(_yerelYenile);
     _eylemler.addListener(_yerelYenile);
     _esitleyici.addListener(_kuyrukDegisti);
     _gorulenGonderim = _esitleyici.gonderimSayisi;
@@ -28,6 +33,7 @@ class GelenListeViewModel extends ChangeNotifier {
 
   final GelenRepository _repo;
   final EylemRepository _eylemler;
+  final YakalamaRepository _yakalamalar;
   final Esitleyici _esitleyici;
   final BeyinRepository? _beyin;
   late int _gorulenGonderim;
@@ -48,6 +54,11 @@ class GelenListeViewModel extends ChangeNotifier {
       ...liste.where((k) => _sonra.contains(k.kimlik)),
     ];
   }
+
+  /// Captures that have not reached the brain yet, newest first: queued on the phone or waiting on the server. Shown even
+  /// offline (the phone's copy); empty most of the time.
+  List<YakalamaSatiri> _gonderiliyor = const [];
+  List<YakalamaSatiri> get gonderiliyor => _gonderiliyor;
 
   bool sonraMi(String kimlik) => _sonra.contains(kimlik);
 
@@ -71,13 +82,22 @@ class GelenListeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Fetches the server's list; offline, the cached list is shown.
+  /// Fetches both lists from the server; offline, the cached lists are shown.
   Future<void> yukle() async {
     if (_yukleniyor) return;
     _yukleniyor = true;
     _hata = null;
     notifyListeners();
     if (!_asistanBagli) unawaited(_asistanDurumunuAl());
+    try {
+      await Future.wait([_kartlariYukle(), _gonderilenleriYukle()]);
+    } finally {
+      _yukleniyor = false;
+      if (!_atildi) notifyListeners();
+    }
+  }
+
+  Future<void> _kartlariYukle() async {
     try {
       final sonuc = await _repo.listele();
       _liste = sonuc.liste;
@@ -87,11 +107,20 @@ class GelenListeViewModel extends ChangeNotifier {
           ? 'Beyin bu sunucuda bağlı değil; gelen kutusu boş görünüyor.'
           : hataMetni(e, islem: 'Gelen kutusu alınamadı');
       _liste ??= await _repo.yerelListe();
-    } finally {
-      _yukleniyor = false;
-      if (!_atildi) notifyListeners();
     }
   }
+
+  /// A failure here is not shown: the phone's copy stands in, and the cards part has its own message.
+  Future<void> _gonderilenleriYukle() async {
+    try {
+      _gonderiliyor = _gonderilenler((await _yakalamalar.listele()).liste);
+    } on DioException {
+      _gonderiliyor = _gonderilenler(await _yakalamalar.yerelListe());
+    }
+  }
+
+  static List<YakalamaSatiri> _gonderilenler(List<YakalamaSatiri> liste) =>
+      [for (final s in liste) if (s.konum != YakalamaKonumu.beyinde) s];
 
   void _kuyrukDegisti() {
     if (_esitleyici.gonderimSayisi != _gorulenGonderim) {
@@ -104,9 +133,17 @@ class GelenListeViewModel extends ChangeNotifier {
 
   Future<void> _yerelYenile() async {
     final liste = await _repo.yerelListe();
+    final gonderilenler = _gonderilenler(await _yakalamalar.yerelListe());
     if (_atildi) return;
     _liste = liste;
+    _gonderiliyor = gonderilenler;
     notifyListeners();
+  }
+
+  /// Deletes a capture that has not reached the brain (on the phone or on the server).
+  Future<void> yakalamaSil(String id) async {
+    await _yakalamalar.sil(id);
+    unawaited(_esitleyici.gonder());
   }
 
   /// Approve the card's suggestion: the approval queue's own decision, sent by the same sender.
@@ -178,6 +215,7 @@ class GelenListeViewModel extends ChangeNotifier {
   void dispose() {
     _atildi = true;
     _repo.removeListener(_yerelYenile);
+    _yakalamalar.removeListener(_yerelYenile);
     _eylemler.removeListener(_yerelYenile);
     _esitleyici.removeListener(_kuyrukDegisti);
     super.dispose();

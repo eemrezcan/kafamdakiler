@@ -267,6 +267,22 @@ void main() {
     });
   });
 
+  testWidgets('the Yakalamalar page is gone: its address matches no route, and the Gelen tab shows the waiting captures', (tester) async {
+    // Offline, so the capture stays on the phone instead of being sent at once.
+    ortam.api.cevrimdisi = true;
+    await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'yoldaki yakalama'));
+    await uygulamayiAc(tester);
+
+    final yollar = router.configuration.routes.whereType<GoRoute>().map((r) => r.path);
+    expect(yollar, isNot(contains('/yakalamalar')));
+    // The edit route stays: a row of "Gönderiliyor" opens it.
+    expect(router.configuration.routes.whereType<GoRoute>().map((r) => r.path), contains('/yakalama/:id/duzenle'));
+
+    await sekme(tester, 'Gelen');
+    expect(find.text('GÖNDERİLİYOR  1'), findsOneWidget);
+    expect(find.text('yoldaki yakalama'), findsOneWidget);
+  });
+
   testWidgets('Daha fazla opens the habit list, and the old habit routes still work', (tester) async {
     await uygulamayiAc(tester);
     await sekme(tester, 'Daha fazla');
@@ -284,23 +300,23 @@ void main() {
     expect(find.text('Su iç'), findsOneWidget);
   });
 
-  testWidgets('Daha fazla has the account, the captures (for now), Yönetim, the password and sign-out, and no tab entries', (tester) async {
+  testWidgets('Daha fazla has the account, Yönetim, the password and sign-out, and no tab entries', (tester) async {
     await uygulamayiAc(tester);
     tester.view.physicalSize = const Size(400, 1600);
     await sekme(tester, 'Daha fazla');
 
-    for (final metin in ['x@y.z', 'Alışkanlıklar', 'Yakalamalar', 'Yönetim', 'Şifremi değiştir', 'Çıkış yap', 'Sabah bildirimi']) {
+    for (final metin in ['x@y.z', 'Alışkanlıklar', 'Yönetim', 'Şifremi değiştir', 'Çıkış yap', 'Sabah bildirimi']) {
       expect(find.text(metin), findsOneWidget, reason: metin);
     }
-    for (final metin in ['Onay kuyruğu', 'Gelen kutusu', 'Sabah brifingi']) {
+    for (final metin in ['Onay kuyruğu', 'Gelen kutusu', 'Sabah brifingi', 'Yakalamalar']) {
       expect(find.text(metin), findsNothing, reason: '$metin is not a row here');
     }
     // "Hatırlatıcılar" is the tab label only, not a row.
     expect(find.text('Hatırlatıcılar'), findsOneWidget);
 
-    await tester.tap(find.text('Yakalamalar'));
+    await tester.tap(find.text('Yönetim'));
     await bekle(tester);
-    expect(router.state.matchedLocation, '/yakalamalar');
+    expect(router.state.matchedLocation, '/yonetim');
     expect(find.byType(NavigationBar), findsNothing, reason: 'a page above the tabs');
   });
 

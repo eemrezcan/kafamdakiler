@@ -28,7 +28,6 @@ const _herkesinRotalari = [
   '/projeler/kitap-kulubu',
   '/ara',
   '/not?yol=projects/a/notlar/b.md',
-  '/yakalamalar',
   '/hatirlaticilar',
   '/gelen',
   '/daha-fazla',

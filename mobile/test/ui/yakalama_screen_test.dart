@@ -7,8 +7,6 @@ import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/services/database/app_database.dart';
 import 'package:kafamdakiler/ui/yakalama/yakala_screen.dart';
 import 'package:kafamdakiler/ui/yakalama/yakala_view_model.dart';
-import 'package:kafamdakiler/ui/yakalama/yakalama_liste_screen.dart';
-import 'package:kafamdakiler/ui/yakalama/yakalama_liste_view_model.dart';
 
 import '../test_destek.dart';
 
@@ -212,81 +210,4 @@ void main() {
     });
   });
 
-  group('Yakalamalar list', () {
-    Future<YakalamaListeViewModel> listeGoster(WidgetTester tester) async {
-      tester.view.physicalSize = const Size(375, 800);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final vm = YakalamaListeViewModel(repo: ortam.yakalamalar, esitleyici: ortam.esitleyici);
-      addTearDown(vm.dispose);
-      await tester.runAsync(vm.yukle);
-      await tester.pumpWidget(MaterialApp(home: YakalamaListeScreen(viewModel: vm)));
-      await tester.pump();
-      return vm;
-    }
-
-    Yakalama sunucuda(String id, String metin, YakalamaDurumu durum, int saat) => Yakalama(
-          id: id,
-          metin: metin,
-          durum: durum,
-          // Earlier than the fixed "now" of the test setup, so the phone's capture is the newest.
-          yakalandiAt: DateTime.utc(2026, 10, 30, saat),
-          olusturulma: DateTime.utc(2026, 10, 30, saat),
-        );
-
-    testWidgets('marks only the captures not sent yet or in the brain, newest first', (tester) async {
-      ortam.api.yakalamalar = [
-        sunucuda('a', 'sunucudaki', YakalamaDurumu.bekliyor, 9),
-        sunucuda('b', 'beyindeki', YakalamaDurumu.beyneGitti, 8),
-      ];
-      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'telefondaki'));
-      await listeGoster(tester);
-
-      // Waiting on the server is the normal state and carries no mark.
-      expect(find.textContaining('Gönderilmedi'), findsOneWidget);
-      expect(find.textContaining('Beyinde'), findsOneWidget);
-      final y1 = tester.getTopLeft(find.text('telefondaki')).dy;
-      final y2 = tester.getTopLeft(find.text('sunucudaki')).dy;
-      final y3 = tester.getTopLeft(find.text('beyindeki')).dy;
-      expect(y1, lessThan(y2));
-      expect(y2, lessThan(y3));
-      // The brain's capture cannot be swiped away; the waiting ones can.
-      expect(find.byType(Dismissible), findsNWidgets(2));
-    });
-
-    testWidgets('a capture the server refused shows the reason', (tester) async {
-      ortam.api.sunucuHatasi = 400;
-      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'reddedilecek'));
-      await tester.runAsync(ortam.esitleyici.gonder);
-      ortam.api.sunucuHatasi = null;
-      await listeGoster(tester);
-
-      expect(find.text('reddedilecek'), findsOneWidget);
-      expect(find.textContaining('Gönderilemedi, sunucu reddetti: 400'), findsOneWidget);
-    });
-
-    testWidgets('empty list guides the user', (tester) async {
-      await listeGoster(tester);
-      expect(find.textContaining('Henüz yakalama yok'), findsOneWidget);
-    });
-
-    testWidgets('offline: the phone copy is shown without an error', (tester) async {
-      ortam.api.cevrimdisi = true;
-      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'çevrimdışı'));
-      final vm = await listeGoster(tester);
-
-      expect(find.text('çevrimdışı'), findsOneWidget);
-      expect(vm.cevrimdisi, isTrue);
-      expect(vm.hata, isNull);
-    });
-
-    testWidgets('a server error on the first load still shows the phone copy and the reason', (tester) async {
-      ortam.api.sunucuHatasi = 500;
-      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'yerelde'));
-      await listeGoster(tester);
-
-      expect(find.text('yerelde'), findsOneWidget);
-      expect(find.textContaining('Sunucu hata verdi (500)'), findsOneWidget);
-    });
-  });
 }

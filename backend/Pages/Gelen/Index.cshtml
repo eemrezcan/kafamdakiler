@@ -1,20 +1,144 @@
 @page
 @using Kafamdakiler.Eylemler
 @using Kafamdakiler.Gelen
+@using Kafamdakiler.Yakalamalar
 @model Kafamdakiler.Pages.Gelen.IndexModel
 @{
-    ViewData["Title"] = "Gelen kutusu";
+    ViewData["Title"] = "Gelen";
 }
 
 <div class="kd-page-head kd-rise kd-c-violet">
     <div>
         <p class="kd-eyebrow">Yakaladıkların beyne yerleşmeyi bekliyor</p>
-        <h1 class="kd-page-title">Gelen kutusu</h1>
+        <h1 class="kd-page-title">Gelen</h1>
     </div>
     <a class="btn btn-outline-primary" asp-page="/Eylemler/Index">Onay kuyruğu</a>
 </div>
 
 <partial name="_OnayKarti" />
+
+@* Quick capture: posts to the edit page's handler, so the rules and the photo handling live in one place. "İşe çevir" posts the same
+   box to this page instead and only shows a preview. *@
+<form method="post" asp-page="/Yakalamalar/Duzenle" enctype="multipart/form-data" class="kd-composer kd-c-violet" data-kd-composer>
+    <input type="hidden" name="Input.YakalandiAt" value="@DateTimeOffset.UtcNow.ToString("o")" data-kd-composer-now />
+    <label class="visually-hidden" for="kd-composer-metin">Aklında ne var?</label>
+    <textarea class="kd-composer-input" id="kd-composer-metin" name="Input.Metin" rows="2" maxlength="5000"
+              placeholder="Aklında ne var?" autofocus data-kd-composer-metin>@Model.IsMetni</textarea>
+
+    <div class="kd-composer-preview" hidden data-kd-composer-preview>
+        <img alt="Seçilen fotoğraf" />
+        <button type="button" class="kd-composer-remove" aria-label="Fotoğrafı çıkar" data-kd-composer-remove>
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-x"></use></svg>
+        </button>
+    </div>
+
+    <div class="kd-composer-bar">
+        <label class="kd-icon-btn kd-composer-photo" title="Fotoğraf ekle">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-image-plus"></use></svg>
+            <span class="visually-hidden">Fotoğraf ekle</span>
+            <input class="visually-hidden" type="file" name="Fotograf" accept="image/jpeg,image/png,image/webp" data-kd-composer-file />
+        </label>
+        <a class="kd-composer-more" asp-page="/Yakalamalar/Duzenle">Hedefle ekle</a>
+        <span class="kd-composer-hint" aria-hidden="true"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+        @if (Model.ClaudeBagli)
+        {
+            <button type="submit" class="btn btn-outline-primary" asp-page="/Gelen/Index" asp-page-handler="IsCikar" formnovalidate>İşe çevir</button>
+        }
+        <button type="submit" class="btn btn-primary kd-composer-save" disabled data-kd-composer-save>Kaydet</button>
+    </div>
+</form>
+
+@if (Model.Onizleme is { } onizleme)
+{
+    <section aria-labelledby="onizleme-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="onizleme-baslik">İşe çevir <span>@onizleme.Oneriler.Count</span></h2>
+
+        @if (onizleme.Oneriler.Count == 0)
+        {
+            <div class="kd-empty kd-empty--small">
+                <p class="kd-empty-title">Bu metinden çıkarılacak bir iş bulunamadı.</p>
+            </div>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="IsUygula" class="kd-form">
+                @foreach (var o in onizleme.Oneriler)
+                {
+                    <label class="kd-eylem kd-c-violet">
+                        <input type="checkbox" class="form-check-input mt-1" name="secilen" value="@IndexModel.OneriJson(o)" checked />
+                        <span class="kd-eylem-body">
+                            <span class="kd-eylem-meta d-block"><span class="kd-status">@IndexModel.TurAdi(o.Tur)</span></span>
+                            <span class="kd-eylem-ozet d-block">@o.Baslik</span>
+                            @if (IndexModel.OneriAyrintisi(o) is { Length: > 0 } ayrinti)
+                            {
+                                <span class="kd-eylem-meta d-block">@ayrinti</span>
+                            }
+                            @if (o.KaynakParca is not null)
+                            {
+                                <span class="kd-eylem-gerekce d-block">“@o.KaynakParca”</span>
+                            }
+                        </span>
+                    </label>
+                }
+                <div class="kd-form-actions">
+                    <button type="submit" class="btn btn-primary">Uygula</button>
+                </div>
+            </form>
+        }
+
+        @foreach (var a in onizleme.Atlananlar)
+        {
+            <p class="kd-muted">Atlandı: @(a.Baslik ?? "öneri") — @a.Neden</p>
+        }
+    </section>
+}
+
+@if (Model.Gonderiliyor.Count > 0)
+{
+    <section aria-labelledby="gonderiliyor-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="gonderiliyor-baslik">Gönderiliyor <span>@Model.Gonderiliyor.Count</span></h2>
+
+        @foreach (var y in Model.Gonderiliyor)
+        {
+            <article class="kd-capture kd-c-violet" id="y-@y.Id">
+                @if (y.FotografUrl is not null)
+                {
+                    <a class="kd-capture-photo" href="@y.FotografUrl" target="_blank" rel="noopener" aria-label="Fotoğrafı büyük aç">
+                        <img src="@y.FotografUrl" alt="" loading="lazy" />
+                    </a>
+                }
+                <div class="kd-capture-body">
+                    @if (!string.IsNullOrEmpty(y.Metin))
+                    {
+                        <p class="kd-capture-text">@y.Metin</p>
+                    }
+                    else
+                    {
+                        <p class="kd-capture-text is-empty">Fotoğraf</p>
+                    }
+                    <p class="kd-capture-meta">
+                        <time datetime="@y.YakalandiAt.ToString("o")">@YakalamaGorunum.Zaman(y.YakalandiAt)</time>
+                        @if (y.Hedef is not null)
+                        {
+                            <span class="kd-capture-target" title="@y.Hedef">
+                                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-folder"></use></svg>@YakalamaGorunum.HedefAdi(y.Hedef)
+                            </span>
+                        }
+                    </p>
+                </div>
+                <a class="kd-icon-btn kd-capture-edit" asp-page="/Yakalamalar/Duzenle" asp-route-id="@y.Id" aria-label="Yakalamayı düzenle">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
+                </a>
+                <form method="post" asp-page="/Yakalamalar/Duzenle" asp-page-handler="Sil" asp-route-id="@y.Id"
+                      onsubmit="return confirm('Bu yakalama ve fotoğrafı kalıcı olarak silinecek. Emin misin?');">
+                    <button type="submit" class="kd-icon-btn" aria-label="Yakalamayı sil">
+                        <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-trash-2"></use></svg>
+                    </button>
+                </form>
+            </article>
+        }
+    </section>
+}
 
 @if (Model.YazmaHatasi is not null)
 {
@@ -25,7 +149,7 @@
 @if (!Model.Hatali)
 {
     <section aria-labelledby="kart-baslik">
-        <h2 class="kd-eyebrow kd-section-title" id="kart-baslik">Kartlar <span>@Model.Kartlar.Count</span></h2>
+        <h2 class="kd-eyebrow kd-section-title" id="kart-baslik">Yerleşmeyi bekliyor <span>@Model.Kartlar.Count</span></h2>
 
         @if (Model.Kartlar.Count == 0)
         {
@@ -155,4 +279,8 @@
             </article>
         }
     </section>
+}
+
+@section Scripts {
+    <script src="~/js/yakalamalar.js" asp-append-version="true"></script>
 }

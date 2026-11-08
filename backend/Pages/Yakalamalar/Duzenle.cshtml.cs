@@ -29,9 +29,9 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
     [TempData]
     public string? Bildirim { get; set; }
 
-    // Shown on the list page when a capture cannot be changed.
+    // Shown on the inbox page when a capture cannot be changed (the key the Beyin pages use for a refused write).
     [TempData]
-    public string? Hata { get; set; }
+    public string? YazmaHatasi { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid? id, CancellationToken ct)
     {
@@ -113,7 +113,7 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
         }
 
         Bildirim = "Kaydedildi";
-        return RedirectToPage("Index");
+        return RedirectToPage("/Gelen/Index");
     }
 
     public async Task<IActionResult> OnPostSilAsync(Guid id, CancellationToken ct)
@@ -127,13 +127,13 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
             return Reddet(sonuc.Mesaj!);
 
         Bildirim = "Silindi";
-        return RedirectToPage("Index");
+        return RedirectToPage("/Gelen/Index");
     }
 
     private IActionResult Reddet(string mesaj)
     {
-        Hata = mesaj;
-        return RedirectToPage("Index");
+        YazmaHatasi = mesaj;
+        return RedirectToPage("/Gelen/Index");
     }
 
     private async Task BostaKalaniSil(Guid? yuklenen, CancellationToken ct)

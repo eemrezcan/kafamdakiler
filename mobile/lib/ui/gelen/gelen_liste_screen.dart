@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/gelen.dart';
+import '../../data/models/yakalama.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../utils/eylem_gorunum.dart';
 import '../ara/ara_dugmesi.dart';
@@ -13,8 +14,10 @@ import '../core/renkler.dart';
 import '../core/widgets.dart';
 import 'gelen_isle_dialog.dart';
 import 'gelen_liste_view_model.dart';
+import 'gonderiliyor_satiri.dart';
 
-/// The inbox, a tab. When actions wait in the approval queue a card at the top opens it. Each card shows Claude's suggestion under it: swipe right to
+/// The inbox, a tab, in two parts: "Gönderiliyor" (captures not in the brain yet; edit, delete) and "Yerleşmeyi bekliyor" (the
+/// brain's cards). When actions wait in the approval queue a card at the top opens it. Each card shows Claude's suggestion under it: swipe right to
 /// approve it, swipe left to look at it later, tap for the preview (correct, place by hand, delete, ask again).
 /// Deciding is for the Sahip (K-0009); other users only read.
 class GelenListeScreen extends StatelessWidget {
@@ -50,6 +53,23 @@ class GelenListeScreen extends StatelessWidget {
       ),
     );
     if (onay == true) await viewModel.sil(kart.kimlik);
+  }
+
+  Future<void> _yakalamaSil(BuildContext context, YakalamaSatiri s) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Yakalama silinsin mi?'),
+        content: Text(s.konum == YakalamaKonumu.telefonda
+            ? 'Henüz gönderilmedi; silersen sunucuya hiçbir şey gitmez.'
+            : 'Sunucudaki kayıt da silinecek.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Vazgeç')),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Sil')),
+        ],
+      ),
+    );
+    if (onay == true) await viewModel.yakalamaSil(s.id);
   }
 
   Future<void> _yenidenOner(BuildContext context, GelenKarti kart) async {
@@ -103,13 +123,15 @@ class GelenListeScreen extends StatelessWidget {
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
-          // Nothing to show and the last try failed: say why instead of showing an empty inbox.
-          if (viewModel.liste == null || (viewModel.hata != null && viewModel.liste!.isEmpty)) {
-            if (viewModel.yukleniyor) return const YuklemeIskeleti(yukseklik: 96);
-            return BosDurum(metin: viewModel.hata ?? 'Liste alınamadı.', dugme: 'Tekrar dene', onPressed: viewModel.yukle);
-          }
+          // First load still running: nothing to lay out yet.
+          if (viewModel.liste == null && viewModel.yukleniyor) return const YuklemeIskeleti(yukseklik: 96);
           final tema = Theme.of(context);
           final kartlar = viewModel.kartlar;
+          final gonderiliyor = viewModel.gonderiliyor;
+          // The cards could not be read (or are not there to read offline): say why in their own part, so "Gönderiliyor" above
+          // still shows. Offline with cached cards, the cards show with a note instead.
+          final kartlarAlinamadi = viewModel.liste == null ||
+              viewModel.liste!.isEmpty && (viewModel.hata != null || viewModel.cevrimdisi);
           return RefreshIndicator(
             onRefresh: () => Future.wait([viewModel.yukle(), if (onayBekleyen != null) onayBekleyen!.yukle()]),
             child: OrtaGenislik(
@@ -118,7 +140,7 @@ class GelenListeScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                 children: [
                   if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
-                  if (viewModel.cevrimdisi)
+                  if (viewModel.cevrimdisi && kartlar.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
@@ -126,44 +148,92 @@ class GelenListeScreen extends StatelessWidget {
                         style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
                       ),
                     ),
-                  if (viewModel.hata != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(viewModel.hata!, style: TextStyle(color: tema.colorScheme.error)),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
-                    child: Text(
-                      'KARTLAR  ${kartlar.length}',
-                      style: tema.textTheme.labelSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant, letterSpacing: 0.8),
-                    ),
-                  ),
-                  if (kartlar.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        'Gelen kutusu boş.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
+                  // Most of the time nothing is on its way, and then the part is not drawn at all.
+                  if (gonderiliyor.isNotEmpty) ...[
+                    _Baslik('GÖNDERİLİYOR  ${gonderiliyor.length}'),
+                    for (final s in gonderiliyor)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: GonderiliyorSatiri(satir: s, onSil: () => _yakalamaSil(context, s)),
                       ),
-                    ),
-                  for (final k in kartlar)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _KartSatiri(
-                        kart: k,
-                        karar: sahip,
-                        sonra: viewModel.sonraMi(k.kimlik),
-                        onAc: () => _onizle(context, k, karar: sahip),
-                        onUygula: () => viewModel.uygula(k),
-                        onSonra: () async => viewModel.sonraBak(k.kimlik),
+                    const SizedBox(height: 8),
+                  ],
+                  _Baslik(kartlarAlinamadi ? 'YERLEŞMEYİ BEKLİYOR' : 'YERLEŞMEYİ BEKLİYOR  ${kartlar.length}'),
+                  if (kartlarAlinamadi)
+                    _KartlarAlinamadi(
+                      metin: viewModel.cevrimdisi ? 'Bağlantı yok; bağlantı gelince kartlar burada görünür.' : viewModel.hata ?? 'Liste alınamadı.',
+                      onTekrar: viewModel.yukle,
+                    )
+                  else ...[
+                    if (viewModel.hata != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(viewModel.hata!, style: TextStyle(color: tema.colorScheme.error)),
                       ),
-                    ),
+                    if (kartlar.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text(
+                          'Gelen kutusu boş.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    for (final k in kartlar)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _KartSatiri(
+                          kart: k,
+                          karar: sahip,
+                          sonra: viewModel.sonraMi(k.kimlik),
+                          onAc: () => _onizle(context, k, karar: sahip),
+                          onUygula: () => viewModel.uygula(k),
+                          onSonra: () async => viewModel.sonraBak(k.kimlik),
+                        ),
+                      ),
+                  ],
                 ],
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _Baslik extends StatelessWidget {
+  const _Baslik(this.metin);
+
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      child: Text(metin, style: tema.textTheme.labelSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant, letterSpacing: 0.8)),
+    );
+  }
+}
+
+/// The cards part when the list is not there: offline, or the server said no. Retry stays within the part.
+class _KartlarAlinamadi extends StatelessWidget {
+  const _KartlarAlinamadi({required this.metin, required this.onTekrar});
+
+  final String metin;
+  final Future<void> Function() onTekrar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Text(metin, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 8),
+          TextButton(onPressed: onTekrar, child: const Text('Tekrar dene')),
+        ],
       ),
     );
   }
