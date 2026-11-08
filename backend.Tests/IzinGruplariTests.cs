@@ -107,7 +107,8 @@ public sealed partial class IzinGruplariTests(UygulamaFabrikasi uygulama) : ICla
         {
             var sayfa = await WebOturumu.MetinAsync(await tarayici.GetAsync("/Yonetim", Ct), Ct);
             Assert.Contains("Gelen ve yakalamalar", sayfa);
-            Assert.Contains("Okur ve yazar", sayfa);
+            Assert.Contains(">Yazar<", sayfa);
+            Assert.Contains("Yazar, okumayı da kapsar", sayfa);
             Assert.Contains("Asistan Claude'u çağırabilsin", sayfa);
             Assert.Contains("Gelişmiş", sayfa);
             Assert.DoesNotContain("403 alır", sayfa);

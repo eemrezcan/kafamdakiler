@@ -105,13 +105,26 @@ public class IndexModel(AppDbContext db) : PageModel
         return Don(sonuc, oge.AliskanlikId, "Oturum kaydedildi");
     }
 
-    // Post-redirect-get, back to the same card.
+    // Post-redirect-get, back to the same card: on this page, or on Bugün when the card was used there (the form says
+    // "donus=bugun"; nothing else is read from it, so it cannot send the browser anywhere else).
     private IActionResult Don(Sonuc sonuc, Guid aliskanlikId, string? bildirim)
     {
         if (!sonuc.Basarili)
             Hata = sonuc.Mesaj;
         else
             Bildirim = bildirim;
+
+        if (Request.HasFormContentType && Request.Form["donus"] == "bugun")
+        {
+            // Bugün shows its own error line; the message goes there instead of waiting for the habits page.
+            if (Hata is { } hata)
+            {
+                TempData["YazmaHatasi"] = hata;
+                Hata = null;
+            }
+
+            return RedirectToPage("/Index", null, null, "h-" + aliskanlikId);
+        }
 
         return RedirectToPage("/Aliskanliklar/Index", null, null, "h-" + aliskanlikId);
     }

@@ -99,7 +99,8 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         Assert.DoesNotContain("value=\"a1\"", ham);
         Assert.Contains("handler=Devret", ham);
         Assert.Contains("handler=Not", ham);
-        Assert.Contains("handler=GorevEkle", ham);
+        // One "Ekle": the target list offers the day's plan and each project for a task.
+        Assert.Contains("value=\"proje:", ham);
         Assert.Contains("handler=Bol", ham);
         Assert.Contains("__RequestVerificationToken", ham);
     }
@@ -191,7 +192,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
 
         Assert.Equal($"/{Gun}", yanit.Headers.Location!.ToString());
         Assert.Equal(["gun", "ekle", $"--tarih={Gun}", "--bolum=Okul", "--json", "--vault", _beyin.Vault, "--", "--gizli-dahil"], Cagrilar("gun", "ekle").Single());
-        Assert.Contains("Madde eklendi", sonraki);
+        Assert.Contains("Plana eklendi", sonraki);
     }
 
     [Fact]
@@ -268,7 +269,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Ekle", new() { ["metin"] = "iş" }));
 
         Assert.Contains("yazılmış olabilir", sonraki);
-        Assert.DoesNotContain("Madde eklendi", sonraki);
+        Assert.DoesNotContain("Plana eklendi", sonraki);
     }
 
     [Fact]
@@ -336,6 +337,45 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         Assert.Equal(["gorev", "ekle", "--baslik=Yeni görev", "--proje=kitap-kulubu", "--bitis=2026-12-01", "--json", "--vault", _beyin.Vault], Cagrilar("gorev", "ekle").Single());
         var kanit = Cagrilar("gorev", "bitir").Single().Single(a => a.StartsWith("--kanit="));
         Assert.Matches(@"^--kanit=onay:uygulama-\d{4}-\d{2}-\d{2}$", kanit);
+    }
+
+    [Fact]
+    public async Task TheOneAddForm_PutsAProjectTarget_IntoThatProjectAsATask_WithItsDueDay()
+    {
+        GunHazirla(Plan(Gun, false));
+        _beyin.Cikti("gorev ekle", """{"yol": "projects/kitap-kulubu/gorevler/yeni.md", "kimlik": "yeni"}""");
+        var tarayici = await SahipAsync();
+
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Ekle",
+            new() { ["metin"] = "Okuma listesi testleri", ["hedef"] = "proje:kitap-kulubu", ["bitis"] = "2026-12-01" }));
+
+        Assert.Contains("Görev eklendi", sonraki);
+        Assert.Equal(["gorev", "ekle", "--baslik=Okuma listesi testleri", "--proje=kitap-kulubu", "--bitis=2026-12-01", "--json", "--vault", _beyin.Vault],
+            Cagrilar("gorev", "ekle").Single());
+        Assert.Empty(Cagrilar("gun", "ekle"));
+    }
+
+    [Fact]
+    public async Task AnOverdueTask_ThatIsAlsoYesterdaysLeftover_ShowsOnce_UnderTheLeftover()
+    {
+        var bugun = GunSiniri.Bugun(DateTimeOffset.UtcNow);
+        // The fake brain answers yesterday and today with the same day: an open "Üye girişi" line and the late task itself.
+        var gun = $$"""
+            {"tarih": "{{bugun.AddDays(-1):yyyy-MM-dd}}", "plan_var": true, "kapandi": false,
+             "geciken": [{"kimlik": "uye-girisi", "baslik": "Üye girişi", "gun": 2, "proje": "kitap-kulubu"}],
+             "bolumler": [{"ad": "Görevler", "maddeler": [{"id": "c1d2e3", "baslik": "Üye girişi", "durum": "acik", "gorev": "uye-girisi"}]}]}
+            """;
+        GunHazirla(gun);
+        var tarayici = await SahipAsync();
+
+        var ham = await tarayici.GetStringAsync("/", Ct);
+        var sayfa = WebUtility.HtmlDecode(ham);
+
+        Assert.Contains("Dünden kalanlar", sayfa);
+        Assert.Contains("2 gün gecikti", sayfa);
+        Assert.Contains("Kitap Kulübü", sayfa);
+        // The task list leaves it out: no "Bitir" / "Günlere böl" row for the same job.
+        Assert.DoesNotContain("name=\"kimlik\" value=\"uye-girisi\"", ham);
     }
 
     [Fact]

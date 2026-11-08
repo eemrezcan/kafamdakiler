@@ -132,8 +132,8 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
         var metin = await WebOturumu.MetinAsync(yanit, Ct);
         Assert.DoesNotContain("<script>alert", ham);
         Assert.Contains("Kitap <script>alert", metin);
-        Assert.Contains("Hedef: projects/kitap-kulubu", metin);
-        Assert.Contains("2026-11-03 18:40", metin);
+        Assert.Contains("Önerilen yer: Kitap Kulübü Sitesi", metin);
+        Assert.Contains("3 Kas 18:40", metin);
         Assert.Contains("ogrenme/simyaci.md", metin);
         Assert.Contains("Simyacı önerisi", metin);
         Assert.Contains("kaynak, okul", metin);

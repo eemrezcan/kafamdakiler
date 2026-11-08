@@ -20,7 +20,7 @@
 
 <section class="kd-yonetim-blok" aria-labelledby="izinler-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="izinler-baslik">Asistan'ın izinleri</h2>
-    <p class="kd-muted">Asistan'ın neleri görüp değiştirebileceğini alana göre seç. Değişiklik Asistan'ın bir sonraki isteğinde geçerli olur.</p>
+    <p class="kd-muted">Asistan'ın neleri görüp değiştirebileceğini alana göre seç; Yazar, okumayı da kapsar. Değişiklik Asistan'ın bir sonraki isteğinde geçerli olur.</p>
 
     @foreach (var kart in Model.GrupKartlari)
     {
@@ -35,7 +35,7 @@
             </div>
             <form method="post" asp-page-handler="Grup" class="kd-kip-secenek" role="group" aria-label="@kart.Grup.Ad izni">
                 <input type="hidden" name="grup" value="@kart.Grup.Anahtar" />
-                @foreach (var (kip, ad) in new[] { (GrupKipi.Kapali, "Kapalı"), (GrupKipi.Okur, "Okur"), (GrupKipi.OkurVeYazar, "Okur ve yazar") })
+                @foreach (var (kip, ad) in new[] { (GrupKipi.Kapali, "Kapalı"), (GrupKipi.Okur, "Okur"), (GrupKipi.OkurVeYazar, "Yazar") })
                 {
                     <button type="submit" name="kip" value="@kip" class="btn btn-sm @(kart.Kip == kip ? "btn-primary" : "btn-outline-primary")"
                             aria-pressed="@(kart.Kip == kip ? "true" : "false")">@ad</button>

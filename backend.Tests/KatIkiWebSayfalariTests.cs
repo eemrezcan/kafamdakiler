@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.ProjeRepolari;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -340,8 +341,8 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
 
         Assert.Contains("Bugünün brifingi", sayfa);
         Assert.Contains("hazırlanır", sayfa);
-        // The page does not depend on the brain: the briefing note and the other parts are still there.
-        Assert.Contains("Zaman çizelgesi", sayfa);
+        // The page does not depend on the brain: the briefing note is there, and an empty timeline takes no room.
+        Assert.DoesNotContain("id=\"zaman-cizelgesi\"", sayfa);
         await using var db = YeniDb();
         Assert.Empty(await db.Brifingler.ToListAsync(Ct));
     }
@@ -373,6 +374,17 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
     public async Task Home_WithGoogleNotConnected_TellsThatTheEventsAreMissing()
     {
         await TemizleAsync();
+        // Something on the day, so the timeline shows (an empty one takes no room, warnings and all).
+        await using (var db = YeniDb())
+        {
+            db.Hatirlaticilar.Add(new Hatirlatici
+            {
+                Baslik = "Fatura öde", Tur = HatirlaticiTuru.Gorev, Tekrar = Tekrar.Yok, Durum = HatirlaticiDurumu.Acik,
+                Gun = Bugun, SonrakiAn = IstAn(2026, 11, 7, 15).ToUniversalTime(),
+            });
+            await db.SaveChangesAsync(Ct);
+        }
+
         var tarayici = await SahipAsync(WebFabrika());
 
         var sayfa = await MetinAsync(tarayici, "/");

@@ -6,7 +6,7 @@
 }
 @* An item in progress on the habit card: title, position and the "Nereye kadar geldin?" form. *@
 <div class="kd-shelf-body">
-    <a class="kd-shelf-title" asp-page="Oge" asp-route-id="@o.Id">@o.Ad</a>
+    <a class="kd-shelf-title" asp-page="/Aliskanliklar/Oge" asp-route-id="@o.Id">@o.Ad</a>
     @if (!string.IsNullOrEmpty(o.AltBaslik))
     {
         <span class="kd-muted">@o.AltBaslik</span>
@@ -14,7 +14,8 @@
     <p class="kd-readout">
         @Gorunum.Sayi(o.GuncelKonum)@(o.Toplam is { } toplam ? " / " + Gorunum.Sayi(toplam) : "") @a.Birim@(o.Ilerleme is { } ilerleme ? " · " + Gorunum.Yuzde(ilerleme) : "")
     </p>
-    <form method="post" asp-page-handler="Ilerleme" class="kd-progress-form">
+    <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Ilerleme" class="kd-progress-form">
+        @if (ViewData["Donus"] is string donus) { <input type="hidden" name="donus" value="@donus" /> }
         <input type="hidden" name="ogeId" value="@o.Id" />
         <label class="visually-hidden" for="p-@o.Id">Nereye kadar geldin?</label>
         <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"

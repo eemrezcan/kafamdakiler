@@ -45,7 +45,8 @@ public static class Gorunum
     // For style="width:...": always a dot.
     public static string Genislik(double oran) => (oran * 100).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
-    public static string Yuzde(double oran) => Math.Round(oran * 100).ToString("0", Tr) + "%";
+    // Turkish puts the sign first: "%14".
+    public static string Yuzde(double oran) => "%" + Math.Round(oran * 100).ToString("0", Tr);
 
     public static string GunAdi(Gunler gun) => gun switch
     {

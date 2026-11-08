@@ -122,7 +122,8 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var metin = await WebOturumu.MetinAsync(yanit, Ct);
         Assert.Contains("<title>Bugün - Kafamdakiler", metin);
         Assert.Contains("Bugünün brifingi", metin);
-        Assert.Contains("Zaman çizelgesi", metin);
+        // An empty timeline takes no room on Bugün.
+        Assert.DoesNotContain("Bu gün için bir şey yok", metin);
     }
 
     [Fact]
@@ -177,7 +178,9 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         Assert.Contains(hatirlatici, metin);
         Assert.Contains("Bugünün alışkanlıkları", metin);
         Assert.Contains(aliskanlik, metin);
-        Assert.Contains("href=\"/Aliskanliklar#h-", ham);
+        // The habit is the full card, usable here: its forms post to the habits page and come back to Bugün.
+        Assert.Contains("class=\"kd-habit ", ham);
+        Assert.Contains("name=\"donus\" value=\"bugun\"", ham);
 
         var baskaGun = Metin(await HamAsync(tarayici, "/2026-11-03"));
         Assert.DoesNotContain("Yaklaşan hatırlatıcılar", baskaGun);
@@ -198,6 +201,73 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         // The briefing's handlers moved with it.
         var yanit = await tarayici.PostAsync("/Aliskanliklar?handler=BrifingYenile", new FormUrlEncodedContent(new Dictionary<string, string>()), Ct);
         Assert.NotEqual(HttpStatusCode.Redirect, yanit.StatusCode);
+    }
+
+    [Fact]
+    public async Task AHabitCard_OnBugun_TicksThroughTheHabitsPage_AndComesBackToBugun()
+    {
+        var tarayici = await SahipAsync();
+        var ad = "Tik " + Guid.NewGuid().ToString("N");
+        Guid id;
+        await using (var db = uygulama.YeniDb())
+        {
+            var a = new Aliskanlik
+            {
+                Ad = ad, Tur = AliskanlikTuru.Sayac, Ikon = "book", Renk = "blue",
+                Olcu = Olcu.EvetHayir, HedefYonu = HedefYonu.EnAz, GunlukHedef = 1, Siklik = Siklik.HerGun,
+            };
+            db.Aliskanliklar.Add(a);
+            await db.SaveChangesAsync(Ct);
+            id = a.Id;
+        }
+
+        var ham = await HamAsync(tarayici, "/");
+        var token = Regex.Match(ham, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        var yanit = await tarayici.PostAsync($"/Aliskanliklar?handler=Tik&id={id}", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token,
+            ["donus"] = "bugun",
+        }), Ct);
+
+        Assert.Equal(HttpStatusCode.Redirect, yanit.StatusCode);
+        Assert.Equal($"/#h-{id}", yanit.Headers.Location!.ToString());
+        await using (var db = uygulama.YeniDb())
+            Assert.True(await db.AliskanlikKayitlari.AnyAsync(k => k.AliskanlikId == id && k.Miktar > 0, Ct));
+
+        // Any other "donus" is ignored: the habits page decides where to go back to.
+        var baska = await tarayici.PostAsync($"/Aliskanliklar?handler=Tik&id={id}", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token,
+            ["donus"] = "https://kotu.example",
+        }), Ct);
+        Assert.Equal($"/Aliskanliklar#h-{id}", baska.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task AShelfHabit_WithABookInProgress_RendersOnBugun_AndItsProgressFormComesBack()
+    {
+        var tarayici = await SahipAsync();
+        var kitap = "Kitap " + Guid.NewGuid().ToString("N");
+        await using (var db = uygulama.YeniDb())
+        {
+            var a = new Aliskanlik
+            {
+                Ad = "Okuma " + Guid.NewGuid().ToString("N"), Tur = AliskanlikTuru.Raf, Ikon = "book-open", Renk = "violet",
+                Olcu = Olcu.Sayili, HedefYonu = HedefYonu.EnAz, GunlukHedef = 20, Birim = "sayfa", OgeEtiketi = "Kitap", Siklik = Siklik.HerGun,
+            };
+            a.Ogeler.Add(new Oge { Ad = kitap, Toplam = 300, Durum = OgeDurumu.Devam });
+            db.Aliskanliklar.Add(a);
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var yanit = await tarayici.GetAsync("/", Ct);
+
+        // The card's own parts (cover, progress form) are found from Bugün too, not only from the habits page.
+        Assert.Equal(HttpStatusCode.OK, yanit.StatusCode);
+        var ham = await WebOturumu.HamAsync(yanit, Ct);
+        Assert.Contains(kitap, ham);
+        Assert.Contains("handler=Ilerleme", ham);
+        Assert.Contains("name=\"donus\" value=\"bugun\"", ham);
     }
 
     [Theory]

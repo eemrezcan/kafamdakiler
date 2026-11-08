@@ -38,6 +38,12 @@ public static class YakalamaGorunum
     }
 
     // "projects/kitap-kulubu" is shown as "kitap-kulubu".
-    public static string HedefAdi(string hedef) =>
-        hedef.StartsWith("projects/", StringComparison.Ordinal) ? hedef["projects/".Length..] : hedef;
+    // "projects/kitap-kulubu" → "Kitap kulubu": readable words when the project's title is not at hand.
+    public static string HedefAdi(string hedef)
+    {
+        var parcalar = hedef.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var kimlik = parcalar.Length >= 2 && parcalar[0] == "projects" ? parcalar[1] : parcalar.LastOrDefault() ?? hedef;
+        var duz = kimlik.Replace('-', ' ');
+        return duz.Length == 0 ? hedef : char.ToUpper(duz[0], Tr) + duz[1..];
+    }
 }

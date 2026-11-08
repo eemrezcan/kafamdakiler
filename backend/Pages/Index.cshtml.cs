@@ -61,6 +61,7 @@ public class IndexModel(
             var eksik = geciken.Values.Where(g => Gorevler.All(a => a.Kimlik != g.Kimlik))
                 .Select(g => new GorevSatiri(g.Kimlik, g.Baslik, g.Proje, g.Bitis, g.Gun ?? 0));
             return acik.Concat(eksik)
+                .Where(g => !SabahtaVar(g.Kimlik, g.Baslik))
                 .OrderBy(g => g.GecikenGun is null)
                 .ThenByDescending(g => g.GecikenGun ?? 0)
                 .ThenBy(g => g.Bitis ?? DateOnly.MaxValue)
@@ -80,8 +81,24 @@ public class IndexModel(
 
     public DateTimeOffset Simdi { get; private set; }
 
-    // The habits planned for today.
-    public List<AliskanlikDto> BugunkuAliskanliklar { get; private set; } = [];
+    // The habits planned for today, as the same cards as the habits page (tick, −/+, "Nereye kadar geldin?" work here too).
+    public List<Aliskanliklar.IndexModel.Kart> BugunkuAliskanliklar { get; private set; } = [];
+
+    // The project's title for a task line ("Staj Hazırlığı", not "staj-hazirligi"); the id when the brain did not name it.
+    public string ProjeAdi(string kimlik) => Projeler.FirstOrDefault(p => p.Kimlik == kimlik)?.Baslik ?? kimlik;
+
+    // The overdue task a leftover line stands for: the line is linked to it, or carries its title. Shown under the line,
+    // and the task is then left out of the task list below (one job, one place).
+    public GecikenGorevDto? SabahGorevi(SabahMaddesiDto madde) =>
+        Gun?.Geciken.FirstOrDefault(g => AyniIs(madde.Gorev, madde.Baslik, g.Kimlik, g.Baslik));
+
+    private bool SabahtaVar(string kimlik, string baslik) =>
+        Sabah?.Maddeler.Any(m => AyniIs(m.Gorev, m.Baslik, kimlik, baslik)) ?? false;
+
+    private static bool AyniIs(string? maddeGorevi, string maddeBasligi, string gorevKimligi, string gorevBasligi) =>
+        (maddeGorevi is not null && (maddeGorevi == gorevKimligi || maddeGorevi.EndsWith("/" + gorevKimligi, StringComparison.Ordinal)
+            || gorevKimligi.EndsWith("/" + maddeGorevi, StringComparison.Ordinal)))
+        || string.Equals(maddeBasligi.Trim(), gorevBasligi.Trim(), StringComparison.CurrentCultureIgnoreCase);
 
     public async Task OnGetAsync(string? tarih, CancellationToken ct)
     {
@@ -182,7 +199,14 @@ public class IndexModel(
         {
             var liste = await db.Aliskanliklar.Where(a => !a.Arsivlendi).OrderBy(a => a.Sira).ThenBy(a => a.CreatedAt).ToListAsync(ct);
             var dtolar = await AliskanlikEndpoints.DtoYapAsync(db, liste, ct);
-            BugunkuAliskanliklar = dtolar.Where(a => a.Bugun.Planli).ToList();
+            var bugun = AliskanlikIslemleri.Bugun();
+            for (var i = 0; i < liste.Count; i++)
+            {
+                if (!dtolar[i].Bugun.Planli)
+                    continue;
+                var gunler = await AliskanlikEndpoints.GunleriHesaplaAsync(db, liste[i], bugun.AddDays(-6), bugun, ct);
+                BugunkuAliskanliklar.Add(new Aliskanliklar.IndexModel.Kart(dtolar[i], gunler));
+            }
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -201,8 +225,15 @@ public class IndexModel(
 
     // Writes: not tied to the request, a closed tab must not leave one half done (like the API).
 
-    public async Task<IActionResult> OnPostEkleAsync(string? tarih, string? metin, string? bolum) =>
-        Don(await BeyinYazma.MaddeEkle(HedefTarih(tarih), new(metin, bolum, null), Istemci, Gunluk, CancellationToken.None), "Madde eklendi");
+    // The page's one "Ekle": a line on the day's plan, or (hedef = "proje:<id>") a task in that project with an optional due day.
+    public async Task<IActionResult> OnPostEkleAsync(string? tarih, string? metin, string? bolum, string? hedef, string? bitis)
+    {
+        if (hedef is not null && hedef.StartsWith("proje:", StringComparison.Ordinal))
+            return Don(await BeyinYazma.GorevEkle(new(metin, hedef["proje:".Length..], null, string.IsNullOrWhiteSpace(bitis) ? null : bitis, null, null),
+                Istemci, Gunluk, CancellationToken.None), "Görev eklendi");
+
+        return Don(await BeyinYazma.MaddeEkle(HedefTarih(tarih), new(metin, bolum, null), Istemci, Gunluk, CancellationToken.None), "Plana eklendi");
+    }
 
     public async Task<IActionResult> OnPostIsaretleAsync(string? tarih, string? madde, bool geri) =>
         Don(await BeyinYazma.MaddeIsaretle(HedefTarih(tarih), new(madde, geri), Istemci, Gunluk, CancellationToken.None),

@@ -52,18 +52,38 @@ public class IndexModel(
         Gonderiliyor = bekleyenler.Select(YakalamaEndpoints.DtoYap).ToList();
 
         if (Al(await GelenIslemleri.ListeAl(Istemci, db, Gunluk, ct)) is not { } kartlar)
+        {
+            if (Gonderiliyor.Count > 0)
+                await ProjeleriAlAsync(ct);
             return;
+        }
 
         Kartlar = kartlar;
+        if (kartlar.Count == 0 && Gonderiliyor.Count == 0)
+            return;
+
+        await ProjeleriAlAsync(ct);
         if (kartlar.Count == 0)
             return;
 
-        var projeler = await BeyinOkuma.ProjelerAl(Istemci, Gunluk, ct);
-        if (projeler.Basarili)
-            Projeler = projeler.Veri!;
         var sozluk = await GelenBeyin.SozluguAlAsync(Istemci, Gunluk, ct);
         if (sozluk.Basarili)
             Etiketler = sozluk.Veri!.AnaAdlar;
+    }
+
+    private async Task ProjeleriAlAsync(CancellationToken ct)
+    {
+        var projeler = await BeyinOkuma.ProjelerAl(Istemci, Gunluk, ct);
+        if (projeler.Basarili)
+            Projeler = projeler.Veri!;
+    }
+
+    // A capture's or card's target ("projects/kitap-kulubu") as the project's title, or as readable words when unknown.
+    public string HedefAdi(string hedef)
+    {
+        var parcalar = hedef.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var kimlik = parcalar.Length >= 2 && parcalar[0] == "projects" ? parcalar[1] : null;
+        return Projeler.FirstOrDefault(p => p.Kimlik == kimlik)?.Baslik ?? YakalamaGorunum.HedefAdi(hedef);
     }
 
     // "İşe çevir": asks Claude what the capture box holds (reminders, plan items, tasks, events). Nothing is saved; the preview is

@@ -121,7 +121,7 @@
                         @if (y.Hedef is not null)
                         {
                             <span class="kd-capture-target" title="@y.Hedef">
-                                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-folder"></use></svg>@YakalamaGorunum.HedefAdi(y.Hedef)
+                                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-folder"></use></svg>@Model.HedefAdi(y.Hedef)
                             </span>
                         }
                     </p>
@@ -166,11 +166,11 @@
                     <p class="kd-eylem-meta">
                         @if (k.Yakalandi is not null)
                         {
-                            <span>@k.Yakalandi.Replace('T', ' ')</span>
+                            <span>@Kafamdakiler.Beyin.BeyinGorunum.Zaman(k.Yakalandi)</span>
                         }
                         @if (k.Hedef is not null)
                         {
-                            <span>Hedef: @k.Hedef</span>
+                            <span title="@k.Hedef">Önerilen yer: @Model.HedefAdi(k.Hedef)</span>
                         }
                         @if (k.GorselVar)
                         {

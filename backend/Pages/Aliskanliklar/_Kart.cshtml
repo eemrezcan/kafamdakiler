@@ -7,6 +7,9 @@
     var yapildi = a.Bugun.Miktar > 0;
     // More items than this: the rest are reached from the shelf page.
     const int EnCokKapak = 5;
+    // The card is drawn on the habits page and on Bugün; links are absolute so they work from both, and the forms carry
+    // where to come back to (only "bugun" is understood: Aliskanliklar/Index decides the address itself).
+    var donus = ViewData["Donus"] as string;
 }
 <article class="kd-habit @Gorunum.RenkSinifi(a.Renk)" id="h-@a.Id">
     <header class="kd-habit-head">
@@ -14,10 +17,10 @@
             <svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg>
         </span>
         <div class="kd-habit-id">
-            <h2 class="kd-habit-name"><a asp-page="Detay" asp-route-id="@a.Id">@a.Ad</a></h2>
+            <h2 class="kd-habit-name"><a asp-page="/Aliskanliklar/Detay" asp-route-id="@a.Id">@a.Ad</a></h2>
             <p class="kd-habit-meta">@Gorunum.SiklikMetni(a) · <span title="Düzenin: yaptığın her gün artar, kaçırınca biraz düşer; tek kaçırma sıfırlamaz.">Güç @Gorunum.Yuzde(a.Guc)</span>@(a.Seri > 0 ? $" · Seri {a.Seri}" : "")</p>
         </div>
-        <a class="kd-icon-btn" asp-page="Duzenle" asp-route-id="@a.Id" aria-label="@a.Ad alışkanlığını düzenle">
+        <a class="kd-icon-btn" asp-page="/Aliskanliklar/Duzenle" asp-route-id="@a.Id" aria-label="@a.Ad alışkanlığını düzenle">
             <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg>
         </a>
     </header>
@@ -36,17 +39,17 @@
         {
             <div class="kd-habit-actions kd-habit-empty">
                 <p>Devam eden @((a.OgeEtiketi ?? "öğe").ToLower(new System.Globalization.CultureInfo("tr-TR"))) yok.</p>
-                <a class="btn btn-outline-primary" asp-page="OgeDuzenle" asp-route-aliskanlikId="@a.Id">+ @a.OgeEtiketi</a>
+                <a class="btn btn-outline-primary" asp-page="/Aliskanliklar/OgeDuzenle" asp-route-aliskanlikId="@a.Id">+ @a.OgeEtiketi</a>
             </div>
         }
         @if (a.DevamEdenler.Count == 1)
         {
             var o = a.DevamEdenler[0];
             <div class="kd-shelf">
-                <a class="kd-cover-link" asp-page="Oge" asp-route-id="@o.Id" tabindex="-1" aria-hidden="true">
-                    <partial name="_Kapak" model="(o.FotografUrl, a.Ikon)" />
+                <a class="kd-cover-link" asp-page="/Aliskanliklar/Oge" asp-route-id="@o.Id" tabindex="-1" aria-hidden="true">
+                    <partial name="~/Pages/Aliskanliklar/_Kapak.cshtml" model="(o.FotografUrl, a.Ikon)" />
                 </a>
-                <partial name="_DevamEden" model="(a, o)" />
+                <partial name="~/Pages/Aliskanliklar/_DevamEden.cshtml" model="(a, o)" />
             </div>
         }
         else if (a.DevamEdenler.Count > 1)
@@ -62,20 +65,20 @@
                         var o = gorunen[i];
                         <label class="kd-shelf-pick-tab" title="@o.Ad">
                             <input class="visually-hidden" type="radio" name="sec-@a.Id" value="@o.Id" checked="@(i == 0)" autocomplete="off" />
-                            <partial name="_Kapak" model="(o.FotografUrl, a.Ikon)" />
+                            <partial name="~/Pages/Aliskanliklar/_Kapak.cshtml" model="(o.FotografUrl, a.Ikon)" />
                             <span class="visually-hidden">@o.Ad</span>
                         </label>
                     }
                     @if (kalan > 0)
                     {
-                        <a class="kd-shelf-pick-more" asp-page="Raf" asp-route-aliskanlikId="@a.Id" aria-label="@kalan tane daha, rafa git">+@kalan</a>
+                        <a class="kd-shelf-pick-more" asp-page="/Aliskanliklar/Raf" asp-route-aliskanlikId="@a.Id" aria-label="@kalan tane daha, rafa git">+@kalan</a>
                     }
                 </div>
                 <div class="kd-shelf-pick-panels">
                     @foreach (var o in gorunen)
                     {
                         <div class="kd-shelf-pick-panel">
-                            <partial name="_DevamEden" model="(a, o)" />
+                            <partial name="~/Pages/Aliskanliklar/_DevamEden.cshtml" model="(a, o)" />
                         </div>
                     }
                 </div>
@@ -84,7 +87,8 @@
     }
     else if (a.Olcu == Olcu.EvetHayir)
     {
-        <form method="post" asp-page-handler="Tik" asp-route-id="@a.Id" class="kd-habit-actions">
+        <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Tik" asp-route-id="@a.Id" class="kd-habit-actions">
+                @if (donus is not null) { <input type="hidden" name="donus" value="@donus" /> }
             <button type="submit" class="kd-tick @(yapildi ? "is-done" : "")" aria-pressed="@(yapildi ? "true" : "false")">
                 <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
                 <span>@(yapildi ? "Yapıldı · geri al" : "Yaptım")</span>
@@ -94,13 +98,15 @@
     else
     {
         <div class="kd-habit-actions kd-stepper">
-            <form method="post" asp-page-handler="Sayi" asp-route-id="@a.Id">
+            <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Sayi" asp-route-id="@a.Id">
+                @if (donus is not null) { <input type="hidden" name="donus" value="@donus" /> }
                 <input type="hidden" name="delta" value="@Gorunum.Girdi(-adim)" />
                 <button type="submit" class="kd-step-btn" aria-label="@Gorunum.Sayi(adim) @a.Birim azalt">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-minus"></use></svg>
                 </button>
             </form>
-            <form method="post" asp-page-handler="Ayarla" asp-route-id="@a.Id" class="kd-stepper-set">
+            <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Ayarla" asp-route-id="@a.Id" class="kd-stepper-set">
+                @if (donus is not null) { <input type="hidden" name="donus" value="@donus" /> }
                 <label class="visually-hidden" for="m-@a.Id">Bugünkü miktar (@a.Birim)</label>
                 <input id="m-@a.Id" name="miktar" type="number" step="any" min="0" inputmode="decimal" enterkeyhint="done" class="form-control"
                        value="@Gorunum.Girdi(a.Bugun.Miktar)" />
@@ -109,7 +115,8 @@
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
                 </button>
             </form>
-            <form method="post" asp-page-handler="Sayi" asp-route-id="@a.Id">
+            <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Sayi" asp-route-id="@a.Id">
+                @if (donus is not null) { <input type="hidden" name="donus" value="@donus" /> }
                 <input type="hidden" name="delta" value="@Gorunum.Girdi(adim)" />
                 <button type="submit" class="kd-step-btn kd-step-btn--add" aria-label="@Gorunum.Sayi(adim) @a.Birim artır">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-plus"></use></svg>

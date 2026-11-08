@@ -1,13 +1,13 @@
 @page
 @model Kafamdakiler.Pages.Beyin.IndexModel
 @{
-    ViewData["Title"] = "Beyin";
+    ViewData["Title"] = "Projeler";
 }
 
 <div class="kd-page-head kd-rise kd-c-violet">
     <div>
         <p class="kd-eyebrow">İkinci beyin</p>
-        <h1 class="kd-page-title">Beyin</h1>
+        <h1 class="kd-page-title">Projeler</h1>
     </div>
 </div>
 
@@ -29,7 +29,6 @@
                 <a class="kd-capture kd-beyin-satir kd-c-violet" asp-page="/Beyin/Proje" asp-route-kimlik="@p.Kimlik">
                     <div class="kd-capture-body">
                         <p class="kd-capture-text mb-0">@p.Baslik</p>
-                        <p class="kd-capture-meta"><span>@p.Kimlik</span></p>
                     </div>
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#arrow-right"></use></svg>
                 </a>
