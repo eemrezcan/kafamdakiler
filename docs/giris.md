@@ -137,6 +137,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
     - Pencerelerin Yakala düğmesinin üstünde açılması.
     - Daha fazla ekranı ve brifing satırları (`ui/profil/daha_fazla_screen.dart`, `ui/brifing/brifing_ayar_karti.dart`).
     - Yönetim'de "Yazar" etiketi.
+    - İşe çevir önizlemesinde takvim önerisinin adı ("Takvim etkinliği"; `ui/yakalama/is_onizleme_sheet.dart`, `data/models/ses.dart`).
   - Web:
     - Bugün'de tek ekleme formu (`Pages/Index`, `wwwroot/js/bugun.js`).
     - Dünden kalanla aynı görevin ayıklanması.

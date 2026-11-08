@@ -30,8 +30,15 @@ class _TurBilgisi {
         IsOnerisi.hatirlatici => const _TurBilgisi('Hatırlatıcı', LucideIcons.bell),
         IsOnerisi.plan => const _TurBilgisi('Gün planı', LucideIcons.calendarPlus),
         IsOnerisi.gorev => const _TurBilgisi('Görev', LucideIcons.squareCheck),
-        _ => _TurBilgisi(tur, LucideIcons.circleDot),
+        IsOnerisi.takvim => const _TurBilgisi('Takvim etkinliği', LucideIcons.calendarClock),
+        // A kind the phone does not know yet still reads as words, never as the raw code ("yeni-tur" -> "Yeni tur").
+        _ => _TurBilgisi(_okunur(tur), LucideIcons.circleDot),
       };
+}
+
+String _okunur(String kod) {
+  final duz = kod.replaceAll('-', ' ').trim();
+  return duz.isEmpty ? kod : duz.replaceFirst(duz[0], duz[0].toUpperCase());
 }
 
 /// "13 Kasım Cuma" for a `yyyy-MM-dd` value; the value itself when it does not parse.

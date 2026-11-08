@@ -33,6 +33,7 @@ class IsOnerisi {
   static const hatirlatici = 'hatirlatici-kur';
   static const plan = 'plan-ekle';
   static const gorev = 'gorev-ekle';
+  static const takvim = 'takvim-ekle';
 
   /// Below this a suggestion is marked "not sure" (the same threshold as the approval queue).
   static const guvenEsigi = 0.7;

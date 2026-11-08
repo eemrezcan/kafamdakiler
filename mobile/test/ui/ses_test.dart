@@ -283,6 +283,21 @@ void main() {
       expect(ses.akis, IsAkisi.yok);
     });
 
+    testWidgets('a calendar suggestion reads as "Takvim etkinliği", never as its code', (tester) async {
+      ortam.api.isCikarYaniti = const IsCikarYaniti(
+        bugun: '2026-11-08',
+        haftaninGunu: 'Pazar',
+        oneriler: [IsOnerisi(tur: IsOnerisi.takvim, baslik: 'Kitap kulübü toplantısı', gun: '2026-11-13', guven: 0.9)],
+        atlananlar: [],
+      );
+      await goster(tester, metin: 'Cuma akşam kitap kulübü toplantısı var.');
+      await tester.tap(find.text('İşe çevir'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Takvim etkinliği · 13 Kasım Cuma'), findsOneWidget);
+      expect(find.textContaining('takvim-ekle'), findsNothing);
+    });
+
     testWidgets('ticking and correcting change what is sent; each result is shown', (tester) async {
       await goster(tester, metin: 'metin');
       await tester.tap(find.text('İşe çevir'));
