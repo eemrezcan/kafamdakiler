@@ -130,6 +130,23 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - G: web menüsü (`Pages/Shared/_Layout.cshtml`), Bugün ana sayfası (`Pages/Index`, `Shared/_OnayKarti.cshtml`, `Shared/_Brifing.cshtml`), `Pages/Beyin/Gun` yönlendirmesi, sade Alışkanlıklar sayfası, `site.css` bölümü.
   - Testler `mobile/test/` ve `backend.Tests/BugunSayfasiTests.cs` ile güncellenen sayfa testleri.
 - Arayüz sadeleştirme Dalga 3, H (2026-11-08, aynı düzen): mobil Gelen'de "Gönderiliyor" bölümü (`ui/gelen/gonderiliyor_satiri.dart`, `gelen_liste_*`), Yakalamalar ekranının kalkması (`routing/router.dart`, `daha_fazla_screen.dart`), web Gelen'de yakalama formu, "Gönderiliyor" ve "İşe çevir" akışı (`Pages/Gelen/`), `/Yakalamalar` yönlendirmesi (`Pages/Yakalamalar/`), menü (`_Layout.cshtml`); testler `mobile/test/ui/gelen_screen_test.dart`, `backend.Tests/GelenSayfalariTests.cs`.
+- Arayüz sadeleştirme son tur (2026-11-08): Claude yazdı. Mobil ekranlar ve sayfa görünümleri kullanıcının bölgesinde; bu tur kullanıcının "UI/UX'e sen bak, sen yaz" isteğiyle bir kerelik istisna.
+  - Mobil:
+    - Bugün: gün planı kartının başlığı, tek "Ekle" penceresi, dünden kalanla aynı görevin bir kez gösterilmesi, boş zaman çizelgesinin gizlenmesi (`ui/bugun/`).
+    - Okunur tarih ve proje adları (`ui/core/beyin_gorunum.dart`, `ui/gelen/`, `ui/projeler/`).
+    - Pencerelerin Yakala düğmesinin üstünde açılması.
+    - Daha fazla ekranı ve brifing satırları (`ui/profil/daha_fazla_screen.dart`, `ui/brifing/brifing_ayar_karti.dart`).
+    - Yönetim'de "Yazar" etiketi.
+  - Web:
+    - Bugün'de tek ekleme formu (`Pages/Index`, `wwwroot/js/bugun.js`).
+    - Dünden kalanla aynı görevin ayıklanması.
+    - Tıklanabilir alışkanlık kartları (`Pages/Aliskanliklar/_Kart.cshtml`, `_DevamEden.cshtml`, `Index.cshtml.cs` dönüş adresi).
+    - Boş zaman çizelgesinin gizlenmesi (`Shared/_ZamanCizelgesi.cshtml`).
+    - Projeler başlığı.
+    - Okunur tarih, durum ve hedef adları (`Beyin/BeyinGorunum.cs`, `Yakalamalar/YakalamaGorunum.cs`, `Pages/Gelen/`).
+    - "%14" biçimi (`Aliskanliklar/Gorunum.cs`).
+    - Yönetim'de "Yazar" etiketi.
+  - Testler `mobile/test/` (`beyin_gorunum_test.dart` ve güncellenenler) ve `backend.Tests/` (`GorunumMetinleriTests.cs` ve güncellenenler) altında.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
