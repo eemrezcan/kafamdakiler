@@ -276,42 +276,72 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         await TemizleAsync();
         var tarayici = await SahipAsync(WebFabrika());
 
-        var sayfa = await MetinAsync(tarayici, "/Aliskanliklar");
+        var sayfa = await MetinAsync(tarayici, "/");
         Assert.Contains("Bugünün brifingi", sayfa);
         Assert.Contains("Bugün sakin bir gün", sayfa);
         Assert.Contains("kurallarla hazırlandı", sayfa);
         Assert.DoesNotContain("aria-pressed=\"true\"", sayfa);
 
-        var oy = await PostAsync(tarayici, "/Aliskanliklar", "/Aliskanliklar?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "1" });
+        var oy = await PostAsync(tarayici, "/", "/?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "1" });
         Assert.Equal(HttpStatusCode.Redirect, oy.StatusCode);
         await using (var db = YeniDb())
             Assert.Equal(1, Assert.Single(await db.BrifingOylari.ToListAsync(Ct)).Oy);
-        Assert.Contains("aria-pressed=\"true\"", await MetinAsync(tarayici, "/Aliskanliklar"));
+        Assert.Contains("aria-pressed=\"true\"", await MetinAsync(tarayici, "/"));
 
         // Pressing the same thumb again sends 0 and takes the vote back.
-        var geri = await PostAsync(tarayici, "/Aliskanliklar", "/Aliskanliklar?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "0" });
+        var geri = await PostAsync(tarayici, "/", "/?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "0" });
         Assert.Equal(HttpStatusCode.Redirect, geri.StatusCode);
         await using (var db = YeniDb())
             Assert.Empty(await db.BrifingOylari.ToListAsync(Ct));
 
-        var yenile = await PostAsync(tarayici, "/Aliskanliklar", "/Aliskanliklar?handler=BrifingYenile");
+        var yenile = await PostAsync(tarayici, "/", "/?handler=BrifingYenile");
         Assert.Equal(HttpStatusCode.Redirect, yenile.StatusCode);
         await using (var db = YeniDb())
             Assert.Equal(1, Assert.Single(await db.Brifingler.ToListAsync(Ct)).YenilemeSayisi);
-        Assert.Contains("Bugün 2 yenileme hakkı kaldı.", await MetinAsync(tarayici, "/Aliskanliklar"));
+        Assert.Contains("Bugün 2 yenileme hakkı kaldı.", await MetinAsync(tarayici, "/"));
     }
 
     [Fact]
-    public async Task Home_BeforeTheBriefingHour_SaysWhenItComes_AndTheHabitPanelStillShows()
+    public async Task Home_BriefingStrip_LeavesOutTheKalanCard_BecauseTheSectionBelowSaysTheSame()
+    {
+        await TemizleAsync();
+        var beyin = Beyin(b => b.Cikti("gun goster", GunPlani));
+        var tarayici = await SahipAsync(WebFabrika(beyin));
+
+        var sayfa = await MetinAsync(tarayici, "/");
+
+        // The fake brain answers yesterday's card with the same plan, so the section is there and the rules made a "kalan" card.
+        Assert.Contains("Dünden kalanlar", sayfa);
+        Assert.Contains("Bugünün brifingi", sayfa);
+        Assert.DoesNotContain("Dünden kalan 1 madde", sayfa);
+    }
+
+    [Fact]
+    public void BriefingStrip_IsNotDrawnAtAll_WhenOnlyTheKalanCardWasThere()
+    {
+        Kafamdakiler.Brifing.BrifingKartDto Kart(int sira, string tur) => new(sira, tur, "Başlık " + tur, "Metin", [], 0);
+        var brifing = new Kafamdakiler.Brifing.BrifingDto(new DateOnly(2026, 11, 7), IstAn(2026, 11, 7, 8), Kafamdakiler.Brifing.BrifingYontemi.Hesap,
+            [Kart(0, "kalan")], 3);
+        Assert.Null(Kafamdakiler.Pages.IndexModel.KalanKartsiz(brifing));
+
+        var karisik = Kafamdakiler.Pages.IndexModel.KalanKartsiz(brifing with { Kartlar = [Kart(0, "kalan"), Kart(1, "plan")] });
+        // The remaining card keeps its original number, so a vote still lands on the right card.
+        var kalan = Assert.Single(karisik!.Brifing!.Kartlar);
+        Assert.Equal((1, "plan"), (kalan.Sira, kalan.Tur));
+    }
+
+    [Fact]
+    public async Task Home_BeforeTheBriefingHour_SaysWhenItComes_AndTheHabitsStillShow()
     {
         await TemizleAsync();
         var tarayici = await SahipAsync(WebFabrika(an: IstAn(2026, 11, 7, 5, 30)));
 
-        var sayfa = await MetinAsync(tarayici, "/Aliskanliklar");
+        var sayfa = await MetinAsync(tarayici, "/");
 
         Assert.Contains("Bugünün brifingi", sayfa);
         Assert.Contains("hazırlanır", sayfa);
-        Assert.Contains("Alışkanlıklar", sayfa);
+        // The page does not depend on the brain: the briefing note and the other parts are still there.
+        Assert.Contains("Zaman çizelgesi", sayfa);
         await using var db = YeniDb();
         Assert.Empty(await db.Brifingler.ToListAsync(Ct));
     }
@@ -327,7 +357,7 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         await TumGunEtkinligiEkleAsync("Tüm gün konferans", Bugun, Bugun);
         var tarayici = await SahipAsync(WebFabrika());
 
-        var sayfa = await MetinAsync(tarayici, "/Aliskanliklar");
+        var sayfa = await MetinAsync(tarayici, "/");
 
         // The briefing above names the same events; the timeline's own section is what is read.
         Assert.Contains("Zaman çizelgesi", sayfa);
@@ -345,7 +375,7 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         await TemizleAsync();
         var tarayici = await SahipAsync(WebFabrika());
 
-        var sayfa = await MetinAsync(tarayici, "/Aliskanliklar");
+        var sayfa = await MetinAsync(tarayici, "/");
 
         Assert.Contains("Google Takvim bağlı değil", sayfa);
     }
@@ -358,7 +388,7 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         var beyin = Beyin(b => b.Cikti("gun goster", GunPlani));
         var tarayici = await SahipAsync(WebFabrika(beyin));
 
-        var sayfa = await MetinAsync(tarayici, "/Beyin/Gun/2026-11-07");
+        var sayfa = await MetinAsync(tarayici, "/2026-11-07");
 
         Assert.Contains("Zaman çizelgesi", sayfa);
         Assert.Contains("Dişçi randevusu", sayfa);
@@ -374,7 +404,7 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
     {
         var fabrika = WebFabrika();
         var anonim = fabrika.CreateClient(new() { AllowAutoRedirect = false });
-        foreach (var yol in new[] { "/Aliskanliklar", "/Yonetim", $"/Beyin/Proje/{Proje}" })
+        foreach (var yol in new[] { "/", "/Aliskanliklar", "/Yonetim", $"/Beyin/Proje/{Proje}" })
         {
             var yanit = await anonim.GetAsync(yol, Ct);
             Assert.Equal(HttpStatusCode.Redirect, yanit.StatusCode);

@@ -53,8 +53,8 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
     [
         "/Beyin",
         "/Beyin/Proje/kitap-kulubu",
-        "/Beyin/Gun",
-        "/Beyin/Gun/2026-11-03",
+        "/",
+        "/2026-11-03",
         "/Beyin/Ara?q=kitap",
         "/Beyin/Not?yol=projects%2Fkitap-kulubu%2Fnotlar%2Ftakvim.md",
     ];
@@ -221,7 +221,7 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
         _beyin.Cikti(GunPlani);
         var tarayici = await SahipAsync(beyinBagli: true);
 
-        var (durum, _, metin) = await AlAsync(tarayici, "/Beyin/Gun");
+        var (durum, _, metin) = await AlAsync(tarayici, "/");
 
         Assert.Equal(HttpStatusCode.OK, durum);
         // Today is the brain's today (the day turns at 05:00); the page asks for that day, and for yesterday for the morning card.
@@ -243,12 +243,12 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
         _beyin.Cikti(GunPlani);
         var tarayici = await SahipAsync(beyinBagli: true);
 
-        var (_, ham, metin) = await AlAsync(tarayici, "/Beyin/Gun/2026-11-03");
+        var (_, ham, metin) = await AlAsync(tarayici, "/2026-11-03");
 
         Assert.Contains("--tarih=2026-11-03", SahteBeyin.Argumanlar(_beyin.Cagrilar().Single(c => SahteBeyin.Argumanlar(c)[0] == "gun")));
         Assert.Contains("3 Kasım 2026 Salı", metin);
-        Assert.Contains("href=\"/Beyin/Gun/2026-11-02\"", ham);
-        Assert.Contains("href=\"/Beyin/Gun/2026-11-04\"", ham);
+        Assert.Contains("href=\"/2026-11-02\"", ham);
+        Assert.Contains("href=\"/2026-11-04\"", ham);
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
     {
         var tarayici = await SahipAsync(beyinBagli: true);
 
-        var (durum, _, metin) = await AlAsync(tarayici, "/Beyin/Gun/2026-13-45");
+        var (durum, _, metin) = await AlAsync(tarayici, "/2026-13-45");
 
         Assert.Equal(HttpStatusCode.BadRequest, durum);
         Assert.Contains("Tarih yyyy-MM-dd biçiminde olmalı.", metin);
@@ -455,7 +455,7 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
             ("/Beyin/Proje/a",
                 """{"kimlik": "a", "baslik": "Temiz", "durum": "d", "siradaki_adim": "s", "acik_gorevler": [{"kimlik": "g", "baslik": "t", "durum": "aktif"}], "son_gunluk": [{"zaman": "z", "baslik": "b", "metin": "m"}]}""",
                 $$"""{"kimlik": "a", "baslik": "{{kotuMetin}}", "durum": "{{kotuMetin}}", "siradaki_adim": "{{kotuMetin}}", "acik_gorevler": [{"kimlik": "g", "baslik": "{{kotuMetin}}", "durum": "{{kotuMetin}}", "sonraki_adim": "{{kotuMetin}}"}], "son_gunluk": [{"zaman": "{{kotuMetin}}", "baslik": "{{kotuMetin}}", "metin": "{{kotuMetin}}"}]}"""),
-            ("/Beyin/Gun/2026-11-03",
+            ("/2026-11-03",
                 """{"tarih": "2026-11-03", "plan_var": true, "bolumler": [{"ad": "Yapılacaklar", "maddeler": [{"id": "1", "baslik": "t", "durum": "acik"}]}], "geciken": [{"kimlik": "g", "baslik": "t", "proje": "p"}]}""",
                 $$"""{"tarih": "2026-11-03", "plan_var": true, "bolumler": [{"ad": "{{kotuMetin}}", "maddeler": [{"id": "1", "baslik": "{{kotuMetin}}", "durum": "acik"}]}], "geciken": [{"kimlik": "g", "baslik": "{{kotuMetin}}", "proje": "{{kotuMetin}}"}]}"""),
             ("/Beyin/Ara?q=a",

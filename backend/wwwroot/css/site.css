@@ -3141,3 +3141,102 @@ textarea.form-control {
 .kd-brifing .kd-gun-actions {
   flex-direction: row;
 }
+
+/* ----- Menu: "Daha fazla" dropdown and the search icon (wave 2, G) ----- */
+
+.kd-nav-more {
+  display: flex;
+  align-self: stretch;
+}
+
+.kd-nav-more > .kd-nav-link {
+  gap: 0.25rem;
+  padding: 0;
+  background: transparent;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.kd-nav-caret {
+  width: 0.9rem;
+  height: 0.9rem;
+  transform: rotate(-90deg);
+}
+
+/* The list of plain page names (no second line, unlike the "new habit" menu). */
+.kd-menu--simple .dropdown-item {
+  flex-direction: row;
+  padding: 0.55rem 1rem;
+}
+
+.kd-search-btn {
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.kd-search-btn.active {
+  color: var(--kd-text);
+}
+
+@media (min-width: 576px) {
+  .kd-search-btn {
+    margin-left: 0;
+  }
+}
+
+/* The search icon takes the "push right" role, so the settings button after it must not push too. */
+.kd-topbar-inner > .kd-search-btn + .kd-icon-btn {
+  margin-left: 0;
+}
+
+/* A one-line pointer card ("N waiting for approval") on the day page and the inbox. */
+.kd-onay-karti {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--kd-line-strong);
+  border-radius: 0.5rem;
+  background: rgba(var(--kd-violet-rgb), 0.06);
+  color: var(--kd-text);
+  text-decoration: none;
+}
+
+.kd-onay-karti:hover {
+  color: var(--kd-text);
+  background: rgba(var(--kd-violet-rgb), 0.12);
+}
+
+/* The compact lists at the bottom of the day page. */
+.kd-bugun-liste {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.kd-bugun-satir {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.5rem;
+  color: var(--kd-text);
+  text-decoration: none;
+}
+
+.kd-bugun-satir:hover {
+  color: var(--kd-text);
+  border-color: var(--kd-line-strong);
+}
+
+.kd-bugun-satir small {
+  color: var(--kd-text-muted);
+  white-space: nowrap;
+}

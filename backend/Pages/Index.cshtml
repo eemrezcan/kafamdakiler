@@ -1,3 +1,317 @@
-@page
-@model IndexModel
-@* Redirects to /Aliskanliklar (see Index.cshtml.cs); no view of its own. *@
+@* Only date-shaped addresses match, so a mistyped address stays a 404 instead of an "invalid date" page. *@
+@page "{tarih:regex(^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$)?}"
+@using Kafamdakiler.Aliskanliklar
+@using Kafamdakiler.Beyin
+@using Kafamdakiler.Hatirlaticilar
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.IndexModel
+@{
+    ViewData["Title"] = Model.BugunSayfasi ? "Bugün" : "Gün planı";
+    var tarih = Model.Tarih;
+    var t = tarih?.ToString("yyyy-MM-dd");
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">@(Model.BugunSayfasi ? "Bugün" : "Gün planı")</p>
+        <h1 class="kd-page-title">@(tarih is { } baslikTarih ? BeyinGorunum.GunBasligi(baslikTarih) : "Gün planı")</h1>
+    </div>
+</div>
+
+@* Day by day, or straight to a date. The page works from the address (/2026-11-03) as well. *@
+<div class="kd-beyin-gun-gezinme">
+    @if (tarih is { } secili)
+    {
+        <a class="kd-filter-chip" asp-page="/Index" asp-route-tarih="@secili.AddDays(-1).ToString("yyyy-MM-dd")">‹ Önceki gün</a>
+        <a class="kd-filter-chip" asp-page="/Index" asp-route-tarih="@secili.AddDays(1).ToString("yyyy-MM-dd")">Sonraki gün ›</a>
+    }
+    @if (tarih != Model.Bugun)
+    {
+        <a class="kd-filter-chip" asp-page="/Index">Bugüne dön</a>
+    }
+    <form method="get" asp-page="/Index" class="kd-beyin-tarih-form">
+        <label class="visually-hidden" for="beyin-tarih">Tarih</label>
+        <input class="form-control" type="date" id="beyin-tarih" name="tarih" value="@(tarih?.ToString("yyyy-MM-dd"))" />
+        <button type="submit" class="btn btn-outline-primary">Git</button>
+    </form>
+</div>
+
+@if (Model.YazmaHatasi is not null)
+{
+    <div class="kd-alert" role="alert">@Model.YazmaHatasi</div>
+}
+
+@if (Model.BugunSayfasi)
+{
+    <partial name="_OnayKarti" />
+    if (Model.Brifing is { } brifingPaneli)
+    {
+        <partial name="_Brifing" model="brifingPaneli" />
+    }
+}
+
+<partial name="~/Pages/Beyin/_BeyinHata.cshtml" model="Model" />
+
+@* PlanGoster is off only while the plan is shown in its own sections below; without the plan the timeline carries what it has. *@
+@if (Model.Cizelge is { } cizelge)
+{
+    var cizelgeVeri = new ViewDataDictionary(ViewData);
+    cizelgeVeri["PlanGoster"] = Model.Gun is null;
+    <partial name="_ZamanCizelgesi" model="cizelge" view-data="cizelgeVeri" />
+}
+
+@if (Model.Gun is { } gun)
+{
+    var bos = gun.Bolumler.All(b => b.Maddeler.Count == 0) && gun.Geciken.Count == 0;
+    var yazilabilir = Model.Yazilabilir;
+
+    @if (Model.Sabah is { Maddeler.Count: > 0 } sabah)
+    {
+        <section class="kd-yonetim-blok" aria-labelledby="sabah-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="sabah-baslik">Dünden kalanlar <span>@sabah.Maddeler.Count</span></h2>
+            <p class="kd-muted">@BeyinGorunum.GunBasligi(sabah.Dun) planında bitmeyenler. Taşıyınca bugünün planına geçer; bırakırsan bu kart kapanır, dünün planı olduğu gibi kalır.</p>
+            @foreach (var madde in sabah.Maddeler)
+            {
+                <article class="kd-capture kd-c-violet">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0">@madde.Baslik</p>
+                        <p class="kd-capture-meta">
+                            <span>@madde.Bolum</span>
+                            @if (madde.TahminDk is { } dk)
+                            {
+                                <span>@BeyinGorunum.Dakika(dk)</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="kd-gun-actions">
+                        <form method="post" asp-page-handler="SabahTasi" asp-route-tarih="@t">
+                            <input type="hidden" name="madde" value="@madde.Id" />
+                            <button type="submit" class="btn btn-primary btn-sm">Taşı</button>
+                        </form>
+                        <form method="post" asp-page-handler="SabahBirak" asp-route-tarih="@t">
+                            <input type="hidden" name="madde" value="@madde.Id" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Bırak</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+
+    @if (gun.KapasiteUyarisi is { } uyari)
+    {
+        <div class="kd-gun-uyari" role="status">
+            <strong>Bugün sığmıyor.</strong>
+            Açık işlerin tahmini @BeyinGorunum.Dakika(uyari.AcikTahminDk), bir günlük kapasite @BeyinGorunum.Dakika(uyari.KapasiteDk):
+            @BeyinGorunum.Dakika(uyari.AsimDk) fazla. Bir kısmını devret.
+        </div>
+    }
+
+    @if (gun.Kapandi)
+    {
+        <p class="kd-muted">Bu gün kapandı; kapanmış güne yazılmaz.</p>
+    }
+
+    @if (bos)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Bu gün için plan yok.</p>
+        </div>
+    }
+
+    @if (yazilabilir)
+    {
+        <section class="kd-yonetim-blok" aria-labelledby="ekle-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="ekle-baslik">Madde ekle</h2>
+            <form method="post" asp-page-handler="Ekle" asp-route-tarih="@t" class="kd-gun-form">
+                <label class="visually-hidden" for="madde-metin">Madde</label>
+                <input class="form-control" id="madde-metin" name="metin" maxlength="@BeyinYazma.EnUzunMetin" placeholder="Yeni iş, tahmin için ~45dk ya da ~1s" required />
+                <label class="visually-hidden" for="madde-bolum">Bölüm</label>
+                <input class="form-control" id="madde-bolum" name="bolum" maxlength="@BeyinYazma.EnUzunBolum" list="bolum-listesi" placeholder="Bölüm (boşsa varsayılan)" />
+                <datalist id="bolum-listesi">
+                    @foreach (var ad in Model.Bolumler)
+                    {
+                        <option value="@ad"></option>
+                    }
+                </datalist>
+                <button type="submit" class="btn btn-primary">Ekle</button>
+            </form>
+        </section>
+    }
+
+    @foreach (var bolum in gun.Bolumler.Where(b => b.Maddeler.Count > 0))
+    {
+        <section class="kd-yonetim-blok" aria-label="@bolum.Ad">
+            @if (gun.Bolumler.Count > 1 || bolum.Ad != "Yapılacaklar")
+            {
+                <h2 class="kd-eyebrow kd-section-title">@bolum.Ad</h2>
+            }
+            @foreach (var madde in bolum.Maddeler)
+            {
+                var yapildi = BeyinGorunum.Yapildi(madde.Durum);
+                var acik = madde.Durum == "acik";
+                var islemli = yazilabilir && BeyinYazma.MaddeKimligiGecerli(madde.Id);
+                <article class="kd-capture kd-c-violet">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0 @(yapildi ? "kd-beyin-yapildi" : "")">@madde.Baslik</p>
+                        <p class="kd-capture-meta">
+                            <span class="kd-status @(yapildi ? "is-bitti" : "is-birakildi")">@(yapildi ? "Yapıldı" : "Açık")</span>
+                            @if (madde.TahminDk is { } dk)
+                            {
+                                <span>@BeyinGorunum.Dakika(dk)</span>
+                            }
+                        </p>
+                        @if (islemli && acik)
+                        {
+                            <details class="kd-gun-not">
+                                <summary>Not ekle</summary>
+                                <form method="post" asp-page-handler="Not" asp-route-tarih="@t" class="kd-gun-form">
+                                    <input type="hidden" name="madde" value="@madde.Id" />
+                                    <label class="visually-hidden" for="not-@madde.Id">Not</label>
+                                    <input class="form-control" id="not-@madde.Id" name="metin" maxlength="@BeyinYazma.EnUzunNot" required />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Kaydet</button>
+                                </form>
+                            </details>
+                        }
+                    </div>
+                    @if (islemli && (acik || yapildi))
+                    {
+                        <div class="kd-gun-actions">
+                            <form method="post" asp-page-handler="Isaretle" asp-route-tarih="@t">
+                                <input type="hidden" name="madde" value="@madde.Id" />
+                                <input type="hidden" name="geri" value="@(yapildi ? "true" : "false")" />
+                                <button type="submit" class="btn btn-@(yapildi ? "outline-primary" : "primary") btn-sm">@(yapildi ? "Geri al" : "Yaptım")</button>
+                            </form>
+                            @if (acik)
+                            {
+                                <form method="post" asp-page-handler="Devret" asp-route-tarih="@t">
+                                    <input type="hidden" name="madde" value="@madde.Id" />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Devret</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </article>
+            }
+        </section>
+    }
+
+    @if (gun.Toplam is { Madde: > 0 } toplam)
+    {
+        <p class="kd-muted">@toplam.Yapildi / @toplam.Madde tamam</p>
+    }
+
+    @if ((Model.Tarih is not null && Model.Projeler.Count > 0) || Model.GorevListesi.Count > 0)
+    {
+        <section class="kd-yonetim-blok" aria-labelledby="gorev-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="gorev-baslik">Görevler</h2>
+
+            @if (Model.Tarih is not null && Model.Projeler.Count > 0)
+            {
+                <form method="post" asp-page-handler="GorevEkle" asp-route-tarih="@t" class="kd-gun-form">
+                    <label class="visually-hidden" for="gorev-baslik-girdi">Görev başlığı</label>
+                    <input class="form-control" id="gorev-baslik-girdi" name="baslik" maxlength="@BeyinYazma.EnUzunBaslik" placeholder="Yeni görev" required />
+                    <label class="visually-hidden" for="gorev-proje">Proje</label>
+                    <select class="form-select" id="gorev-proje" name="proje" required>
+                        @foreach (var p in Model.Projeler)
+                        {
+                            <option value="@p.Kimlik">@p.Baslik</option>
+                        }
+                    </select>
+                    <label class="visually-hidden" for="gorev-bitis">Bitiş</label>
+                    <input class="form-control" type="date" id="gorev-bitis" name="bitis" />
+                    <button type="submit" class="btn btn-primary">Görev ekle</button>
+                </form>
+            }
+
+            @* One list: late tasks come first, marked with a badge. "Günlere böl" opens from the task's own row. *@
+            @foreach (var g in Model.GorevListesi)
+            {
+                <article class="kd-capture kd-c-violet">
+                    <div class="kd-capture-body">
+                        <p class="kd-capture-text mb-0">@g.Baslik</p>
+                        <p class="kd-capture-meta">
+                            @if (g.GecikenGun is { } kac)
+                            {
+                                <span class="kd-status is-hata">@(kac > 0 ? $"{kac} gün gecikti" : "Gecikti")</span>
+                            }
+                            @if (g.Proje is not null)
+                            {
+                                <span>@g.Proje</span>
+                            }
+                            @if (g.Bitis is { } bitis)
+                            {
+                                <span>Bitiş @BeyinGorunum.KisaTarih(bitis)</span>
+                            }
+                        </p>
+                        @if (Model.Tarih is not null)
+                        {
+                            <details class="kd-gun-not">
+                                <summary>Günlere böl</summary>
+                                <form method="post" asp-page-handler="Bol" asp-route-tarih="@t" class="kd-gun-form">
+                                    <input type="hidden" name="kimlik" value="@g.Kimlik" />
+                                    <label class="visually-hidden" for="bol-gun-@g.Kimlik">Kaç güne</label>
+                                    <input class="form-control" type="number" id="bol-gun-@g.Kimlik" name="gunSayisi" min="1" max="@BeyinYazma.EnCokBolmeGunu" value="2" required />
+                                    <label class="visually-hidden" for="bol-baslangic-@g.Kimlik">Başlangıç günü</label>
+                                    <input class="form-control" type="date" id="bol-baslangic-@g.Kimlik" name="baslangic" value="@t" />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Böl</button>
+                                </form>
+                                <small class="kd-muted">Her güne bir madde yazılır; görev yalnız son günün maddesine bağlanır, o madde yapılınca görev biter.</small>
+                            </details>
+                        }
+                    </div>
+                    @if (Model.Tarih is not null)
+                    {
+                        <div class="kd-gun-actions">
+                            <form method="post" asp-page-handler="GorevBitir" asp-route-tarih="@t">
+                                <input type="hidden" name="kimlik" value="@g.Kimlik" />
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Bitir</button>
+                            </form>
+                        </div>
+                    }
+                </article>
+            }
+        </section>
+    }
+}
+
+@if (Model.BugunSayfasi && Model.Yaklasanlar.Count > 0)
+{
+    <section class="kd-yonetim-blok" aria-labelledby="yaklasan-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="yaklasan-baslik">Yaklaşan hatırlatıcılar <span>@Model.Yaklasanlar.Count</span></h2>
+        <div class="kd-bugun-liste">
+            @foreach (var h in Model.Yaklasanlar)
+            {
+                var gecikmis = h.KalanGun < 0 || h.EtkinAn < Model.Simdi;
+                <a class="kd-bugun-satir" asp-page="/Hatirlaticilar/Duzenle" asp-route-id="@h.Id">
+                    <span>
+                        @h.Baslik
+                        @if (gecikmis)
+                        {
+                            <span class="kd-status is-hata">Gecikti</span>
+                        }
+                    </span>
+                    <small>@YakalamaGorunum.Zaman(h.EtkinAn) · @HatirlaticiGorunum.KalanGunMetni(h.KalanGun)</small>
+                </a>
+            }
+        </div>
+        <p class="kd-footnote"><a asp-page="/Hatirlaticilar/Index">Tüm hatırlatıcılar</a></p>
+    </section>
+}
+
+@if (Model.BugunSayfasi && Model.BugunkuAliskanliklar.Count > 0)
+{
+    <section class="kd-yonetim-blok" aria-labelledby="aliskanlik-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="aliskanlik-baslik">Bugünün alışkanlıkları <span>@Model.BugunkuAliskanliklar.Count</span></h2>
+        <div class="kd-bugun-liste">
+            @foreach (var a in Model.BugunkuAliskanliklar)
+            {
+                <a class="kd-bugun-satir" asp-page="/Aliskanliklar/Index" asp-fragment="h-@a.Id">
+                    <span>@a.Ad</span>
+                    <small>@Gorunum.BugunMetni(a)</small>
+                </a>
+            }
+        </div>
+        <p class="kd-footnote"><a asp-page="/Aliskanliklar/Index">Tüm alışkanlıklar</a></p>
+    </section>
+}

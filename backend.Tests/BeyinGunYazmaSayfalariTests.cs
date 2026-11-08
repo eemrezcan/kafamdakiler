@@ -89,7 +89,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, false, ("a3f09c", "Takvim", "acik", 90), ("b4e1d2", "Kitap", "yapildi", 30), ("a1", "Eski kimlik", "acik", null)));
         var tarayici = await SahipAsync();
 
-        var ham = await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct);
+        var ham = await tarayici.GetStringAsync($"/{Gun}", Ct);
 
         Assert.Contains("handler=Ekle", ham);
         Assert.Contains("handler=Isaretle", ham);
@@ -113,7 +113,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gorev liste", """[{"kimlik": "a-yeni", "baslik": "Afiş bas", "durum": "aktif", "proje": "kitap-kulubu", "bitis": "2026-11-20"}, {"kimlik": "uye-girisi", "baslik": "Üye girişi", "durum": "aktif", "proje": "kitap-kulubu", "bitis": "2026-10-31"}, {"kimlik": "z-son", "baslik": "Zil sesi", "durum": "aktif"}]""");
         var tarayici = await SahipAsync();
 
-        var ham = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct));
+        var ham = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/{Gun}", Ct));
 
         Assert.DoesNotContain("Geciken görevler", ham);
         Assert.DoesNotContain("Açık görevler", ham);
@@ -131,7 +131,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, true, ("a3f09c", "Takvim", "acik", 90)));
         var tarayici = await SahipAsync();
 
-        var ham = await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct);
+        var ham = await tarayici.GetStringAsync($"/{Gun}", Ct);
 
         Assert.Contains("Bu gün kapandı", WebUtility.HtmlDecode(ham));
         Assert.DoesNotContain("handler=Ekle", ham);
@@ -145,7 +145,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, false, ("a3f09c", "Büyük iş", "acik", 400)));
         var tarayici = await SahipAsync();
 
-        var metin = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct));
+        var metin = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/{Gun}", Ct));
 
         Assert.Contains("Bugün sığmıyor", metin);
         Assert.Contains("6 sa", metin);
@@ -158,7 +158,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, false, ("a3f09c", "Küçük iş", "acik", 60)));
         var tarayici = await SahipAsync();
 
-        Assert.DoesNotContain("Bugün sığmıyor", WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct)));
+        Assert.DoesNotContain("Bugün sığmıyor", WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/{Gun}", Ct)));
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gorev liste", $$"""[{"kimlik": "g1", "baslik": "{{Kotu}}", "durum": "aktif", "proje": "kitap-kulubu", "yol": "projects/kitap-kulubu/gorevler/g1.md"}]""");
         var tarayici = await SahipAsync();
 
-        var ham = await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct);
+        var ham = await tarayici.GetStringAsync($"/{Gun}", Ct);
 
         // The layout has its own script tags; the hostile one is the one with alert(...) in it.
         Assert.DoesNotContain("<script>alert", ham, StringComparison.OrdinalIgnoreCase);
@@ -186,10 +186,10 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gun ekle", $$"""{"tarih": "{{Gun}}", "madde": {{Madde}}, "tahmin_onerisi": null}""");
         var tarayici = await SahipAsync();
 
-        var yanit = await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "Ekle", new() { ["metin"] = "--gizli-dahil", ["bolum"] = "Okul" });
+        var yanit = await PostAsync(tarayici, $"/{Gun}", "Ekle", new() { ["metin"] = "--gizli-dahil", ["bolum"] = "Okul" });
         var sonraki = await SonrakiSayfaAsync(tarayici, yanit);
 
-        Assert.Equal($"/Beyin/Gun/{Gun}", yanit.Headers.Location!.ToString());
+        Assert.Equal($"/{Gun}", yanit.Headers.Location!.ToString());
         Assert.Equal(["gun", "ekle", $"--tarih={Gun}", "--bolum=Okul", "--json", "--vault", _beyin.Vault, "--", "--gizli-dahil"], Cagrilar("gun", "ekle").Single());
         Assert.Contains("Madde eklendi", sonraki);
     }
@@ -202,7 +202,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gun devret", $$"""{"tarih": "{{Gun}}", "devredilen_gun": "2026-11-04", "madde": {{Madde}}}""");
         _beyin.Cikti("gun not", $$"""{"tarih": "{{Gun}}", "madde": {{Madde}}}""");
         var tarayici = await SahipAsync();
-        var sayfa = $"/Beyin/Gun/{Gun}";
+        var sayfa = $"/{Gun}";
 
         var tik = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, sayfa, "Isaretle", new() { ["madde"] = "a3f09c", ["geri"] = "false" }));
         var geri = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, sayfa, "Isaretle", new() { ["madde"] = "a3f09c", ["geri"] = "true" }));
@@ -226,7 +226,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, false));
         var tarayici = await SahipAsync();
 
-        var yanit = await tarayici.PostAsync($"/Beyin/Gun/{Gun}?handler=Ekle", new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş" }), Ct);
+        var yanit = await tarayici.PostAsync($"/{Gun}?handler=Ekle", new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş" }), Ct);
 
         Assert.Equal(HttpStatusCode.BadRequest, yanit.StatusCode);
         Assert.Empty(Cagrilar("gun", "ekle"));
@@ -238,7 +238,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, false));
         var misafir = Acik.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, HandleCookies = true });
 
-        var yanit = await misafir.PostAsync($"/Beyin/Gun/{Gun}?handler=Ekle", new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş" }), Ct);
+        var yanit = await misafir.PostAsync($"/{Gun}?handler=Ekle", new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş" }), Ct);
 
         Assert.NotEqual(HttpStatusCode.OK, yanit.StatusCode);
         Assert.Empty(_beyin.Cagrilar());
@@ -251,7 +251,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gun isaretle", """{"hata": {"kod": "gun-kapali", "mesaj": "kapandı: /srv/gizli/yer"}}""", cikis: 1);
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "Isaretle", new() { ["madde"] = "a3f09c", ["geri"] = "false" }));
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Isaretle", new() { ["madde"] = "a3f09c", ["geri"] = "false" }));
 
         Assert.Contains("Kapanmış güne yazılmaz.", sonraki);
         Assert.DoesNotContain("Madde yapıldı", sonraki);
@@ -265,7 +265,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gun ekle", "???");
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "Ekle", new() { ["metin"] = "iş" }));
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Ekle", new() { ["metin"] = "iş" }));
 
         Assert.Contains("yazılmış olabilir", sonraki);
         Assert.DoesNotContain("Madde eklendi", sonraki);
@@ -276,7 +276,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
     {
         GunHazirla(Plan(Gun, false));
         var tarayici = await SahipAsync();
-        var sayfa = $"/Beyin/Gun/{Gun}";
+        var sayfa = $"/{Gun}";
 
         var konum = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, sayfa, "Isaretle", new() { ["madde"] = "3", ["geri"] = "false" }));
         var bos = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, sayfa, "Ekle", new() { ["metin"] = "  " }));
@@ -293,9 +293,9 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(Plan(Gun, false));
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "Ekle", new() { ["metin"] = "iş" }));
-        var kotu = await tarayici.PostAsync("/Beyin/Gun/bugun?handler=Ekle",
-            new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş", ["__RequestVerificationToken"] = await TokenAsync(tarayici, $"/Beyin/Gun/{Gun}") }), Ct);
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Ekle", new() { ["metin"] = "iş" }));
+        var kotu = await tarayici.PostAsync("/2026-13-45?handler=Ekle",
+            new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş", ["__RequestVerificationToken"] = await TokenAsync(tarayici, $"/{Gun}") }), Ct);
 
         Assert.NotNull(sonraki);
         var kotuSonraki = await SonrakiSayfaAsync(tarayici, kotu);
@@ -306,7 +306,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
     public async Task BrainOff_APostIsAMessage_NeverA500()
     {
         var tarayici = await WebOturumu.GirisliAsync(uygulama, UygulamaFabrikasi.SahipEposta, Ct);
-        var sayfa = $"/Beyin/Gun/{Gun}";
+        var sayfa = $"/{Gun}";
 
         var yanit = await tarayici.PostAsync($"{sayfa}?handler=Ekle",
             new FormUrlEncodedContent(new Dictionary<string, string> { ["metin"] = "iş", ["__RequestVerificationToken"] = await TokenAsync(tarayici, "/Hesap/Sifre") }), Ct);
@@ -326,7 +326,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gorev ekle", """{"yol": "projects/kitap-kulubu/gorevler/yeni.md", "kimlik": "yeni"}""");
         _beyin.Cikti("gorev bitir", """{"yol": "projects/kitap-kulubu/gorevler/uye-girisi.md", "kimlik": "uye-girisi", "degisen": ["durum"]}""");
         var tarayici = await SahipAsync();
-        var sayfa = $"/Beyin/Gun/{Gun}";
+        var sayfa = $"/{Gun}";
 
         var ekle = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, sayfa, "GorevEkle", new() { ["baslik"] = "Yeni görev", ["proje"] = "kitap-kulubu", ["bitis"] = "2026-12-01" }));
         var bitir = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, sayfa, "GorevBitir", new() { ["kimlik"] = "uye-girisi" }));
@@ -346,7 +346,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gorev bitir", """{"yol": "x", "kimlik": "gizli-gorev", "degisen": []}""");
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "GorevBitir", new() { ["kimlik"] = "gizli-gorev" }));
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "GorevBitir", new() { ["kimlik"] = "gizli-gorev" }));
 
         Assert.Contains("görev bulunamadı", sonraki);
         Assert.Empty(Cagrilar("gorev", "bitir"));
@@ -359,7 +359,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gun ekle", $$"""{"tarih": "{{Gun}}", "madde": {{Madde}}, "tahmin_onerisi": null}""");
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "Bol",
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Bol",
             new() { ["kimlik"] = "uye-girisi", ["gunSayisi"] = "3", ["baslangic"] = Gun }));
 
         Assert.Contains("Görev günlere bölündü", sonraki);
@@ -379,7 +379,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
             ("""{"hata": {"kod": "gun-kapali", "mesaj": "kapandı"}}""", 1));
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/Beyin/Gun/{Gun}", "Bol",
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, $"/{Gun}", "Bol",
             new() { ["kimlik"] = "uye-girisi", ["gunSayisi"] = "3", ["baslangic"] = Gun }));
 
         Assert.Contains("Yarıda kaldı: 1 gün yazıldı", sonraki);
@@ -419,8 +419,8 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(SabahKartiGunu(bugun.AddDays(-1)));
         var tarayici = await SahipAsync();
 
-        var bugunSayfasi = WebUtility.HtmlDecode(await tarayici.GetStringAsync("/Beyin/Gun", Ct));
-        var baskaGun = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/Beyin/Gun/{Gun}", Ct));
+        var bugunSayfasi = WebUtility.HtmlDecode(await tarayici.GetStringAsync("/", Ct));
+        var baskaGun = WebUtility.HtmlDecode(await tarayici.GetStringAsync($"/{Gun}", Ct));
 
         Assert.Contains("Dünden kalanlar", bugunSayfasi);
         Assert.Contains("Dünden kalan", bugunSayfasi);
@@ -436,7 +436,7 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("gun devret", $$"""{"tarih": "{{dun}}", "devredilen_gun": "{{bugun:yyyy-MM-dd}}", "madde": {{Madde}}}""");
         var tarayici = await SahipAsync();
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, "/Beyin/Gun", "SabahTasi", new() { ["madde"] = "a3f09c" }));
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, "/", "SabahTasi", new() { ["madde"] = "a3f09c" }));
 
         Assert.Contains("Bugüne taşındı", sonraki);
         Assert.Equal(["gun", "devret", $"--tarih={dun}", "--json", "--vault", _beyin.Vault, "--", "a3f09c"], Cagrilar("gun", "devret").Single());
@@ -449,15 +449,15 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         GunHazirla(SabahKartiGunu(bugun.AddDays(-1)));
         var tarayici = await SahipAsync();
 
-        Assert.Contains("handler=SabahTasi", await tarayici.GetStringAsync("/Beyin/Gun", Ct));
+        Assert.Contains("handler=SabahTasi", await tarayici.GetStringAsync("/", Ct));
 
-        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, "/Beyin/Gun", "SabahBirak", new() { ["madde"] = "a3f09c" }));
+        var sonraki = await SonrakiSayfaAsync(tarayici, await PostAsync(tarayici, "/", "SabahBirak", new() { ["madde"] = "a3f09c" }));
 
         // The fake serves the same plan for both days, so the item is still in the plan itself; the card is what is gone.
         Assert.DoesNotContain("handler=SabahTasi", sonraki);
         Assert.DoesNotContain(_beyin.Cagrilar().Select(SahteBeyin.Argumanlar), c => c[0] == "gun" && c[1] is "devret" or "isaretle" or "ekle" or "not");
         // A fresh page in the same browser still has it gone: the let-go ids are kept in a cookie.
-        var ham = await tarayici.GetStringAsync("/Beyin/Gun", Ct);
+        var ham = await tarayici.GetStringAsync("/", Ct);
         Assert.DoesNotContain("handler=SabahTasi", ham);
         Assert.DoesNotContain("Dünden kalanlar", WebUtility.HtmlDecode(ham));
     }

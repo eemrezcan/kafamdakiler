@@ -1,0 +1,19 @@
+@inject Kafamdakiler.Eylemler.EylemServisi EylemServisi
+@* A pointer to the approval queue, shown only while something waits. A failing count hides the card instead of breaking the page. *@
+@{
+    var bekleyen = 0;
+    try
+    {
+        bekleyen = await EylemServisi.BekleyenSayisiAsync(Context.RequestAborted);
+    }
+    catch (Exception e) when (e is not OperationCanceledException)
+    {
+    }
+}
+@if (bekleyen > 0)
+{
+    <a class="kd-onay-karti" asp-page="/Eylemler/Index">
+        <strong>Onay bekleyen @bekleyen</strong>
+        <span>Aç ›</span>
+    </a>
+}

@@ -100,14 +100,14 @@ public sealed partial class EylemSayfalariTests(UygulamaFabrikasi uygulama) : IC
         Assert.Contains("%30", metin);
         Assert.Contains("Bir daha önerme", metin);
         Assert.DoesNotContain("<script>alert", ham);
-        // The menu entry carries the number of waiting actions.
-        using var db = uygulama.YeniDb();
-        var bekleyen = await db.Eylemler.CountAsync(e => e.Durum == EylemDurumu.Bekliyor, Ct);
-        // The layout's scoped-CSS attribute (b-xxxx) sits inside the tag, so it is matched loosely.
-        var rozet = Regex.Match(ham, "<span [^>]*class=\"kd-badge\"[^>]*>[^<]*</span>");
-        Assert.True(rozet.Success);
-        Assert.Contains($">{bekleyen}</span>", rozet.Value);
         Assert.Contains("Onay kuyruğu", metin);
+        // The queue has no menu entry of its own (and so no badge): the inbox entry is the lit one, and the badge on it
+        // counts placement suggestions only, which this "reminder" action is not.
+        var etkinMenu = Regex.Match(ham, "class=\"kd-nav-link active\"[^>]*>\\s*([^<\\s]+)");
+        Assert.True(etkinMenu.Success);
+        Assert.Equal("Gelen", etkinMenu.Groups[1].Value);
+        Assert.DoesNotContain("href=\"/Eylemler\" class=\"kd-nav-link", ham);
+        Assert.DoesNotContain("class=\"kd-badge\"", ham);
     }
 
     [Fact]

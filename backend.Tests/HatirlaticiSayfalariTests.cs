@@ -97,6 +97,20 @@ public sealed partial class HatirlaticiSayfalariTests(UygulamaFabrikasi uygulama
     }
 
     [Fact]
+    public async Task TheEmptyList_SaysYapilacakBirIs_NotBirGorev()
+    {
+        var tarayici = await WebOturumu.GirisliAsync(uygulama, UygulamaFabrikasi.SahipEposta, Ct);
+        // Each test class has its own throwaway database, so clearing the table touches no other test.
+        await using (var db = uygulama.YeniDb())
+            await db.Hatirlaticilar.ExecuteDeleteAsync(Ct);
+
+        var metin = await WebOturumu.MetinAsync(await tarayici.GetAsync("/Hatirlaticilar", Ct), Ct);
+
+        Assert.Contains("Yapılacak bir iş, verdiğin bir söz ya da özel bir tarih ekle", metin);
+        Assert.DoesNotContain("Bir görev,", metin);
+    }
+
+    [Fact]
     public async Task ABadInterval_IsRefused_AndNothingIsStored()
     {
         var tarayici = await WebOturumu.GirisliAsync(uygulama, UygulamaFabrikasi.SahipEposta, Ct);
