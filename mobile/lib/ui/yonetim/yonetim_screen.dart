@@ -125,7 +125,7 @@ class YonetimScreen extends StatelessWidget {
                             },
                     ),
                   ),
-                  const _Baslik('Google Takvim'),
+                  const _Baslik('Google'),
                   _GoogleKarti(
                     viewModel: viewModel,
                     onEsitle: () async {
@@ -323,7 +323,8 @@ class _GoogleKarti extends StatelessWidget {
       satir = ListTile(
         leading: const Icon(LucideIcons.calendarCheck),
         title: const Text('Google Takvim bağlı'),
-        subtitle: Text(son == null ? 'Henüz eşitlenmedi' : 'Son eşitleme: ${tarihSaatMetni(son)}'),
+        // It syncs by itself; the button is only for "now".
+        subtitle: Text(son == null ? 'Henüz eşitlenmedi · 5 dakikada bir kendiliğinden' : 'Son eşitleme: ${tarihSaatMetni(son)} · 5 dakikada bir kendiliğinden'),
         trailing: TextButton.icon(
           onPressed: viewModel.esitleniyor ? null : onEsitle,
           icon: viewModel.esitleniyor
@@ -345,7 +346,30 @@ class _GoogleKarti extends StatelessWidget {
         subtitle: const Text('Bağlamak için web\'deki Yönetim sayfasını aç.'),
       );
     }
-    return Card(child: satir);
+    final gmail = google?.bagli == true && google!.gmail != 'kapali' ? _gmailSatiri(google) : null;
+    return Card(child: gmail == null ? satir : Column(mainAxisSize: MainAxisSize.min, children: [satir, const Divider(height: 1), gmail]));
+  }
+
+  // Gmail rides on the same Google connection: on, or waiting for the permission (granted by connecting again on the web).
+  static Widget _gmailSatiri(GoogleDurum g) {
+    if (g.gmail == 'acik') {
+      final son = g.gmailSonTarama;
+      return ListTile(
+        key: const ValueKey('gmail-satiri'),
+        leading: const Icon(LucideIcons.mail),
+        title: const Text('Gmail açık'),
+        subtitle: Text(
+          '${son == null ? 'İlk tarama bekleniyor' : 'Son tarama: ${tarihSaatMetni(son)}'} · ${g.gmailIslenen} mail. '
+          'Mailden çıkan öneriler onay kuyruğuna düşer; sen onaylamadan hiçbir şey yapılmaz.',
+        ),
+      );
+    }
+    return const ListTile(
+      key: ValueKey('gmail-satiri'),
+      leading: Icon(LucideIcons.mailWarning),
+      title: Text('Gmail izni yok'),
+      subtitle: Text('Web\'deki Yönetim sayfasından "Gmail için yeniden bağla" de.'),
+    );
   }
 }
 

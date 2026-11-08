@@ -148,6 +148,9 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
     - "%14" biçimi (`Aliskanliklar/Gorunum.cs`).
     - Yönetim'de "Yazar" etiketi.
   - Testler `mobile/test/` (`beyin_gorunum_test.dart` ve güncellenenler) ve `backend.Tests/` (`GorunumMetinleriTests.cs` ve güncellenenler) altında.
+- Gmail'den öneri ve özellik başına model (2026-11-08, kullanıcının "Gmail özelliğini ekleyebilirsin, yazabilirsin" isteğiyle):
+  - Backend'i Claude'un açtığı Sonnet işçisi yazdı, ana oturum denetledi: `backend/Gmail/` (istemci, tarayıcı, arka plan servisi, HTML'den metin), `GmailMesajlari` tablosu ve migration'ı, `gmail.readonly` izni (`Takvim/TakvimAyari.cs`, `GoogleErisimi.cs`, `GoogleBaglanti.cs` durum alanları), `Claude:Modeller` özellik başına model (`Claude/`), `IsOnerisi`'ne ısrarlı/acil/önceden haber alanları, `deploy/compose.yaml` ve `.env.example` ayarları, testler (`backend.Tests/Gmail*`, `SahteGmail.cs`).
+  - Arayüzü Claude yazdı: web ve mobil Yönetim'de Gmail satırı ve "kendiliğinden eşitlenir" notu (`Pages/Yonetim/Index.cshtml`, `mobile/lib/ui/yonetim/`, `data/models/yonetim.dart`), onay kuyruğunda "Mailde aç" (`Eylemler/EylemGorunum.cs`, `Pages/Eylemler/`, `mobile/lib/utils/eylem_gorunum.dart`, `ui/eylemler/`, `url_launcher` paketi), testler (`EylemGerekceTests.cs`, `eylem_gerekce_test.dart`, `yonetim_screen_test.dart`).
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

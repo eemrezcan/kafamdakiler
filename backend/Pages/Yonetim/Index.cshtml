@@ -170,7 +170,7 @@
 </section>
 
 <section class="kd-yonetim-blok" aria-labelledby="google-baslik">
-    <h2 class="kd-eyebrow kd-section-title" id="google-baslik">Google Takvim</h2>
+    <h2 class="kd-eyebrow kd-section-title" id="google-baslik">Google</h2>
 
     @if (Model.GoogleSonucu is not null)
     {
@@ -196,6 +196,8 @@
     }
     else
     {
+        @* The calendar and the mail work by themselves; the buttons are only for "now". *@
+        <p class="kd-muted">Takvim 5 dakikada bir kendiliğinden eşitlenir.@(g.Gmail == "acik" ? " Gmail 10 dakikada bir taranır; mailden çıkan öneriler onay kuyruğuna düşer, sen onaylamadan hiçbir şey yapılmaz." : "")</p>
         <dl class="kd-facts">
             <div>
                 <dt>Son eşitleme</dt>
@@ -205,7 +207,23 @@
                 <dt>Etkinlik</dt>
                 <dd>@g.EtkinlikSayisi</dd>
             </div>
+            @if (g.Gmail != "kapali")
+            {
+                <div>
+                    <dt>Gmail</dt>
+                    <dd>@(g.Gmail == "acik"
+                        ? $"Açık · {(g.GmailSonTarama is { } tarama ? "son tarama " + tarama.ToLocalTime().ToString("HH:mm") : "ilk tarama bekleniyor")} · {g.GmailIslenen} mail"
+                        : "İzin yok")</dd>
+                </div>
+            }
         </dl>
+        @if (g.Gmail == "izinYok")
+        {
+            <p class="kd-muted">Gmail'i okuyabilmesi için Google'a bir kez daha bağlanıp Gmail iznini onayla.</p>
+            <form method="post" asp-page-handler="GoogleBagla" class="mb-2">
+                <button type="submit" class="btn btn-primary">Gmail için yeniden bağla</button>
+            </form>
+        }
         <div class="kd-gun-actions">
             <form method="post" asp-page-handler="GoogleEsitle">
                 <button type="submit" class="btn btn-primary">Şimdi eşitle</button>

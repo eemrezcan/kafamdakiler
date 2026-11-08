@@ -22,9 +22,11 @@ public class IsrarProjeRepoGocTests : IAsyncLifetime
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     [Fact]
-    public void TheMigrations_MatchTheModel_AndTheNewMigrationIsLast()
+    public void TheMigrations_MatchTheModel_AndTheNewMigrationFollowsTheCalendarOne()
     {
-        Assert.Equal(Bu, _vt.Db.Database.GetMigrations().Last());
+        // Later migrations may follow; this one comes right after the calendar's.
+        var gocler = _vt.Db.Database.GetMigrations().ToList();
+        Assert.Equal(Bu, gocler[gocler.IndexOf(Onceki) + 1]);
         Assert.False(_vt.Db.Database.HasPendingModelChanges());
     }
 
@@ -64,7 +66,8 @@ public class IsrarProjeRepoGocTests : IAsyncLifetime
         await gocmen.MigrateAsync(null, Ct);
 
         await gocmen.MigrateAsync(Onceki, Ct);
-        Assert.Equal([Bu], await db.Database.GetPendingMigrationsAsync(Ct));
+        // This migration and any that came after it are the ones undone.
+        Assert.Equal(Bu, (await db.Database.GetPendingMigrationsAsync(Ct)).First());
 
         await gocmen.MigrateAsync(null, Ct);
         Assert.Empty(await db.Database.GetPendingMigrationsAsync(Ct));

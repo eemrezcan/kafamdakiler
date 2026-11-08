@@ -14,6 +14,8 @@ public enum ErisimDurumu
     BagliDegil,
     // The stored token no longer works: the Sahip has to connect again.
     YenidenBaglan,
+    // The connection works but was made without the scope this feature needs: the Sahip has to connect again to grant it.
+    IzinYok,
 }
 
 public record ErisimSonucu(ErisimDurumu Durum, string? Token = null)
@@ -25,6 +27,7 @@ public record ErisimSonucu(ErisimDurumu Durum, string? Token = null)
         ErisimDurumu.Kapali => "Google Takvim ayarlı değil.",
         ErisimDurumu.BagliDegil => "Google bağlı değil.",
         ErisimDurumu.YenidenBaglan => "Google bağlantısı geçersiz: yeniden bağlanmak gerekiyor.",
+        ErisimDurumu.IzinYok => "Google bağlantısında bu özellik için izin yok: yeniden bağlanmak gerekiyor.",
         _ => "",
     };
 }
@@ -71,6 +74,25 @@ public class GoogleErisimi(
 
     // The refresh token in the clear, or null when it is not there or cannot be opened. Used to revoke it.
     public string? YenilemeTokeniAc(GoogleBaglantisi baglanti) => Ac(_tokenKoruyucu, baglanti.YenilemeTokeni);
+
+    // The same token, after a look at the scopes Google granted to the connection: IzinYok when `kapsam` is not among them.
+    // The calendar does not ask this (its scopes are required to connect); a feature added later, like Gmail, does.
+    public async Task<ErisimSonucu> TokenAlAsync(string kapsam, CancellationToken ct)
+    {
+        if (!ayar.Acik)
+            return new ErisimSonucu(ErisimDurumu.Kapali);
+
+        using (var kapsamKapsami = kapsamlar.CreateScope())
+        {
+            var db = kapsamKapsami.ServiceProvider.GetRequiredService<AppDbContext>();
+            var baglanti = await db.GoogleBaglantilari.AsNoTracking().FirstOrDefaultAsync(ct);
+            // No connection, or one that needs reconnecting, is answered by the plain call below.
+            if (baglanti is { Durum: GoogleBaglantiDurumu.Bagli } && !baglanti.KapsamVar(kapsam))
+                return new ErisimSonucu(ErisimDurumu.IzinYok);
+        }
+
+        return await TokenAlAsync(ct);
+    }
 
     public async Task<ErisimSonucu> TokenAlAsync(CancellationToken ct)
     {

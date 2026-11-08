@@ -95,7 +95,10 @@ public sealed class GoogleBaglantiTests(UygulamaFabrikasi uygulama) : TakvimTest
         Assert.Equal(43, QueryDegeri(adres, "code_challenge").Length);
         Assert.True(QueryDegeri(adres, "state").Length >= 43);
         Assert.Equal(
-            ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly"],
+            [
+                "https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly",
+                "https://www.googleapis.com/auth/gmail.readonly",
+            ],
             QueryDegeri(adres, "scope").Split(' ').Order().ToArray());
         // The secret never goes into an address a browser holds.
         Assert.DoesNotContain("test-gizli", adres);
@@ -294,6 +297,24 @@ public sealed class GoogleBaglantiTests(UygulamaFabrikasi uygulama) : TakvimTest
         Assert.Equal([SahteGoogle.YenilemeTokeni], Google.IptalEdilenler);
         await using var db = YeniDb();
         Assert.Empty(await db.GoogleBaglantilari.ToListAsync(Ct));
+    }
+
+    [Fact]
+    public async Task TheCallback_WhenThePersonUnticksOnlyGmail_StillConnects_ForTheCalendar_AndTheGrantedScopesAreKept()
+    {
+        await TemizleAsync();
+        var fabrika = Fabrika();
+        Google.TokenSonucu = Google.TokenSonucu with { Kapsamlar = [.. Kafamdakiler.Takvim.TakvimAyari.TakvimKapsamlari] };
+        var state = QueryDegeri(await AdresAlAsync(fabrika), "state");
+
+        var donus = await DonusAsync(fabrika, $"?state={state}&code=kod-1");
+
+        Assert.Contains("google=bagli", Yonlendirme(donus));
+        Assert.Empty(Google.IptalEdilenler);
+        await using var db = YeniDb();
+        var baglanti = await db.GoogleBaglantilari.SingleAsync(Ct);
+        Assert.True(baglanti.KapsamVar("https://www.googleapis.com/auth/calendar.events"));
+        Assert.False(baglanti.KapsamVar(Kafamdakiler.Takvim.TakvimAyari.GmailKapsami));
     }
 
     [Fact]

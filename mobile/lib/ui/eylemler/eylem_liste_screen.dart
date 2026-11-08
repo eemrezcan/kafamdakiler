@@ -193,7 +193,7 @@ class _BekleyenKart extends StatelessWidget {
               if (e.gerekce != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(e.gerekce!, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: soluk)),
+                  child: Text(eylemGerekcesi(e.gerekce!).metin, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: soluk)),
                 ),
               if (karar) ...[
                 const SizedBox(height: 10),

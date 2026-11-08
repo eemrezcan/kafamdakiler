@@ -45,7 +45,13 @@
     {
         <div>
             <dt>Gerekçe</dt>
-            <dd>@e.Gerekce</dd>
+            @{ var (gerekceMetni, mailBaglantisi) = EylemGorunum.GerekceAyir(e.Gerekce); }
+            <dd>@gerekceMetni
+                @if (mailBaglantisi is not null)
+                {
+                    <a href="@mailBaglantisi" target="_blank" rel="noopener noreferrer">Mailde aç</a>
+                }
+            </dd>
         </div>
     }
     @if (e.HataMesaji is not null)

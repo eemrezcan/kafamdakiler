@@ -10,6 +10,7 @@ String eylemKaynakAdi(String kaynak) => switch (kaynak) {
       'gelen' => 'Gelen kutusu',
       'brifing' => 'Brifing',
       'mail' => 'Mail',
+      'gmail' => 'Gmail',
       _ => kaynak,
     };
 
@@ -40,3 +41,14 @@ Map<String, dynamic>? eylemYukCoz(String metin) {
     return null;
   }
 }
+
+/// A Gmail suggestion ends its reason with a link to the mail on the last line (after a one-line quote). The screens show the quote and
+/// a "Mailde aç" button instead of the raw address; only a link of exactly that shape is taken.
+({String metin, Uri? mail}) eylemGerekcesi(String gerekce) {
+  final son = gerekce.lastIndexOf('\n');
+  final sonSatir = (son >= 0 ? gerekce.substring(son + 1) : gerekce).trim();
+  if (!_mailBaglantisi.hasMatch(sonSatir)) return (metin: gerekce, mail: null);
+  return (metin: son >= 0 ? gerekce.substring(0, son).trimRight() : '', mail: Uri.parse(sonSatir));
+}
+
+final _mailBaglantisi = RegExp(r'^https://mail\.google\.com/mail/u/0/#inbox/[A-Za-z0-9]{1,64}$');

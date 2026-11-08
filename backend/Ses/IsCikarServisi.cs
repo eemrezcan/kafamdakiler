@@ -44,7 +44,7 @@ public class IsCikarServisi(
     private const int GorunenGunSayisi = 14;
     private const int YeniMetinEnUzun = 2 * EnUzunMetin;
 
-    private static readonly string[] GunAdlari = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    public static readonly string[] GunAdlari =["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
     // The permission each kind needs: the same that the kind's own page or endpoint asks for.
     private static readonly Dictionary<string, string> TurIzinleri = new()
@@ -61,7 +61,7 @@ public class IsCikarServisi(
     private static readonly string[] SaatBicimleri = ["H:mm", "H:mm:ss"];
 
     // A suggestion after the checks: what the preview shows (normalised), and what the queue gets.
-    private sealed record Cevrilmis(IsOnerisi Oneri, JsonElement Yuk, string Ozet, string? Gerekce);
+    public sealed record Cevrilmis(IsOnerisi Oneri, JsonElement Yuk, string Ozet, string? Gerekce);
 
     // Preview
 
@@ -219,8 +219,9 @@ public class IsCikarServisi(
     }
 
     // The same rules for what Claude suggested and what a person sent back: the kind, the dates, the project, then the kind's own
-    // shape check. Returns the suggestion in the queue's terms, or the reason it is refused. Nothing is written here.
-    private (Cevrilmis? Sonuc, string? Neden) Cevir(IsOnerisi? o, DateOnly bugun, IReadOnlySet<string> projeler, string gerekceOnEki = "Sesten")
+    // shape check. Returns the suggestion in the queue's terms, or the reason it is refused. Nothing is written here. The Gmail
+    // scan uses it too, so a mail's suggestion passes the very same rules as a spoken one.
+    public (Cevrilmis? Sonuc, string? Neden) Cevir(IsOnerisi? o, DateOnly bugun, IReadOnlySet<string> projeler, string gerekceOnEki = "Sesten")
     {
         if (o is null)
             return (null, "Boş öneri.");
@@ -238,7 +239,8 @@ public class IsCikarServisi(
 
         var yuk = new JsonObject();
         string ozet;
-        var yeni = o with { Baslik = baslik, Gun = null, Saat = null, Tekrar = null, Bolum = null, TahminDk = null, Proje = null, Alan = null, Bitis = null, BitisSaati = null, Yer = null };
+        var yeni = o with { Baslik = baslik, Gun = null, Saat = null, Tekrar = null, Bolum = null, TahminDk = null, Proje = null, Alan = null, Bitis = null, BitisSaati = null, Yer = null,
+            Israrli = null, Acil = null, OnceGun = null };
         switch (o.Tur)
         {
             case HatirlaticiKurTuru.Anahtar:
@@ -258,13 +260,37 @@ public class IsCikarServisi(
                 if (tekrar is null)
                     return (null, "Tekrar yok, gunluk, haftalik, aylik ya da yillik olmalı.");
 
+                // Persistent, urgent and "warn me N days before" (H4): left out unless asked, so a spoken reminder is as it was.
+                var israrli = o.Israrli == true;
+                var acil = o.Acil == true;
+                var onceGun = o.OnceGun ?? 0;
+                if (onceGun is < 0 or > 60)
+                    return (null, "Kaç gün önce uyarılacağı 0 ile 60 arasında olmalı.");
+
                 yuk["baslik"] = baslik;
                 yuk["gun"] = $"{gun:yyyy-MM-dd}";
                 if (saatDegeri is { } sv)
                     yuk["saat"] = $"{sv:HH:mm:ss}";
                 yuk["tekrar"] = tekrar;
-                ozet = $"Hatırlatıcı: {baslik} ({gun:yyyy-MM-dd}{(saatDegeri is { } sh ? $" {sh:HH:mm}" : "")})";
-                yeni = yeni with { Gun = $"{gun:yyyy-MM-dd}", Saat = saatDegeri is { } sa ? $"{sa:HH:mm}" : null, Tekrar = tekrar };
+                if (israrli)
+                    yuk["israrli"] = true;
+                if (acil)
+                    yuk["acil"] = true;
+                if (onceGun > 0)
+                    yuk["onceGun"] = onceGun;
+                var ekler = new List<string>();
+                if (israrli)
+                    ekler.Add("ısrarlı");
+                if (acil)
+                    ekler.Add("acil");
+                if (onceGun > 0)
+                    ekler.Add($"{onceGun} gün önce haber");
+                ozet = $"Hatırlatıcı: {baslik} ({gun:yyyy-MM-dd}{(saatDegeri is { } sh ? $" {sh:HH:mm}" : "")}{string.Concat(ekler.Select(e => $", {e}"))})";
+                yeni = yeni with
+                {
+                    Gun = $"{gun:yyyy-MM-dd}", Saat = saatDegeri is { } sa ? $"{sa:HH:mm}" : null, Tekrar = tekrar,
+                    Israrli = israrli ? true : null, Acil = acil ? true : null, OnceGun = onceGun > 0 ? onceGun : null,
+                };
                 break;
             }
 
@@ -399,23 +425,12 @@ public class IsCikarServisi(
     // The fixed part of the call. The person's text is not in it: that goes as data.
     public static string Talimat(DateOnly bugun, IEnumerable<ProjeOzetDto> projeler)
     {
-        var gunler = Enumerable.Range(0, GorunenGunSayisi).Select(i =>
-        {
-            var gun = bugun.AddDays(i);
-            var not = i switch { 0 => " (bugün)", 1 => " (yarın)", 2 => " (öbür gün)", _ => "" };
-            return $"  {gun:yyyy-MM-dd} {GunAdlari[(int)gun.DayOfWeek]}{not}";
-        });
         var projeSatirlari = projeler.Select(p => $"    - {Satir(p.Kimlik, 80)}: {Satir(p.Baslik, 80)}").ToList();
 
         return
             "Sen kişisel bir asistanın \"sesten iş çıkarma\" yardımcısısın. Kullanıcı bir şey söyledi ve telefon bunu yazıya çevirdi " +
             "(yazıda dikte hataları olabilir). Metinden yapılacak işleri çıkar. Hiçbir şey kaydedilmez: önerilerin kullanıcıya gösterilir, o seçer ve onaylar.\n\n" +
-            $"Bugün: {bugun:yyyy-MM-dd} {GunAdlari[(int)bugun.DayOfWeek]}. Günün sınırı saat 05:00'tir: gece yarısından sonra 05:00'e kadar hâlâ önceki günün sayılır. " +
-            "Tarihleri yalnız buna göre çevir. Önümüzdeki günler:\n" + string.Join('\n', gunler) + "\n\n" +
-            "Tarih kuralları: \"bugün\" bugünün tarihi, \"yarın\" ertesi gün, \"öbür gün\" iki gün sonrası. \"Haftaya cuma\" bir sonraki haftanın cumasıdır. " +
-            "Yalnız gün adı (\"cuma\") bugünden sonraki ilk o gündür (bugün o günse bir hafta sonrası). \"Ayın 15'i\" bugünden sonraki ilk 15'tir. " +
-            "Tarihleri hep yyyy-MM-dd yaz, geçmişte bir tarih verme. Metin bir tarih söylemiyorsa gun alanını boş bırak, uydurma. " +
-            "Saat 24 saatlik HH:mm yazılır (\"akşam 8\" 20:00, \"öğlen\" 12:00); söylenmediyse saat alanını boş bırak.\n\n" +
+            TarihKurallari(bugun) +
             "Öneri türleri (tur):\n" +
             "- hatirlatici-kur: belirli bir güne (ve istenirse saate) bağlı hatırlatma (\"hatırlat\", \"unutma\", \"ara\", \"öde\"). gun zorunlu; saat ve tekrar " +
             "(yok, gunluk, haftalik, aylik, yillik) isteğe bağlı. baslik: kısa hatırlatma metni.\n" +
@@ -430,6 +445,26 @@ public class IsCikarServisi(
             "kaynakParca: önerinin dayandığı cümle ya da cümle parçası, metinden olduğu gibi. guven: 0 ile 1 arasında bir sayı; tür ya da tarih konusunda emin değilsen düşük ver.";
     }
 
+    // Today, the next days and how a spoken or written date becomes yyyy-MM-dd. Shared by every call that turns text into dates
+    // (the voice here, the Gmail scan); ends with a blank line.
+    public static string TarihKurallari(DateOnly bugun)
+    {
+        var gunler = Enumerable.Range(0, GorunenGunSayisi).Select(i =>
+        {
+            var gun = bugun.AddDays(i);
+            var not = i switch { 0 => " (bugün)", 1 => " (yarın)", 2 => " (öbür gün)", _ => "" };
+            return $"  {gun:yyyy-MM-dd} {GunAdlari[(int)gun.DayOfWeek]}{not}";
+        });
+
+        return
+            $"Bugün: {bugun:yyyy-MM-dd} {GunAdlari[(int)bugun.DayOfWeek]}. Günün sınırı saat 05:00'tir: gece yarısından sonra 05:00'e kadar hâlâ önceki günün sayılır. " +
+            "Tarihleri yalnız buna göre çevir. Önümüzdeki günler:\n" + string.Join('\n', gunler) + "\n\n" +
+            "Tarih kuralları: \"bugün\" bugünün tarihi, \"yarın\" ertesi gün, \"öbür gün\" iki gün sonrası. \"Haftaya cuma\" bir sonraki haftanın cumasıdır. " +
+            "Yalnız gün adı (\"cuma\") bugünden sonraki ilk o gündür (bugün o günse bir hafta sonrası). \"Ayın 15'i\" bugünden sonraki ilk 15'tir. " +
+            "Tarihleri hep yyyy-MM-dd yaz, geçmişte bir tarih verme. Metin bir tarih söylemiyorsa gun alanını boş bırak, uydurma. " +
+            "Saat 24 saatlik HH:mm yazılır (\"akşam 8\" 20:00, \"öğlen\" 12:00); söylenmediyse saat alanını boş bırak.\n\n";
+    }
+
     public static string YenidenYazTalimati(string kip) => kip == "madde"
         ? "Kullanıcı bir şeyi sesle söyledi ve telefon bunu yazıya çevirdi. Metni kısa maddeler hâlinde yeniden yaz: her madde ayrı satırda ve \"- \" ile başlar, " +
           "metindeki sıra korunur, aynı dilde yazılır. Metinde olmayan bilgi ekleme, yorum yapma. Yanıtın metin alanında yalnız maddeler olsun."
@@ -438,14 +473,16 @@ public class IsCikarServisi(
 
     // The answer shape. The project is an enum of the projects that exist (left out when there are none: an empty enum is no schema).
     // The optional fields are left out of `required`; the ranges and dates are checked after the answer, not here.
-    public static string Sema(IEnumerable<ProjeOzetDto> projeler)
+    // `turler` narrows the kinds that may be named (all of them when null); `israrAlanlari` adds the reminder's persistent, urgent and
+    // days-before fields, which the voice call leaves out.
+    public static string Sema(IEnumerable<ProjeOzetDto> projeler, IEnumerable<string>? turler = null, bool israrAlanlari = false)
     {
         static JsonObject Metin(string aciklama) => new() { ["type"] = "string", ["description"] = aciklama };
         static JsonArray Dizi(IEnumerable<string> degerler) => new(degerler.Select(d => (JsonNode)JsonValue.Create(d)!).ToArray());
 
         var ozellikler = new JsonObject
         {
-            ["tur"] = new JsonObject { ["type"] = "string", ["enum"] = Dizi(TurIzinleri.Keys) },
+            ["tur"] = new JsonObject { ["type"] = "string", ["enum"] = Dizi(turler ?? TurIzinleri.Keys) },
             ["baslik"] = Metin("Hatırlatıcının başlığı, plan maddesinin metni ya da görevin başlığı"),
             ["gun"] = Metin("yyyy-MM-dd; hatırlatıcı, plan maddesi ve takvim etkinliği için"),
             ["saat"] = Metin("HH:mm; hatırlatıcı ve takvim etkinliğinin başlangıcı için"),
@@ -460,6 +497,13 @@ public class IsCikarServisi(
         ozellikler["bitis"] = Metin("yyyy-MM-dd; görev için");
         ozellikler["bitisSaati"] = Metin("HH:mm; takvim etkinliği için");
         ozellikler["yer"] = Metin("Takvim etkinliğinin yeri");
+        if (israrAlanlari)
+        {
+            ozellikler["israrli"] = new JsonObject { ["type"] = "boolean", ["description"] = "Hatırlatıcı: telefon cevap verilene kadar tekrar tekrar haber versin" };
+            ozellikler["acil"] = new JsonObject { ["type"] = "boolean", ["description"] = "Hatırlatıcı: telefon sessiz kipte bile haber versin" };
+            ozellikler["onceGun"] = new JsonObject { ["type"] = "integer", ["description"] = "Hatırlatıcı: kaç gün önceden de haber verilsin (0 ile 60)" };
+        }
+
         ozellikler["kaynakParca"] = Metin("Önerinin dayandığı cümle, metinden olduğu gibi");
         ozellikler["guven"] = new JsonObject { ["type"] = "number" };
 

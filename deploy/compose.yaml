@@ -58,6 +58,13 @@ services:
       Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
       Google__DonusAdresi: ${GOOGLE_DONUS_ADRESI:-}
       GitHub__Token: ${GITHUB_TOKEN:-}
+      # Gmail (read only), off unless GMAIL_ACIK=true: it also needs the Google connection made with the Gmail permission and Claude.
+      # Blocked senders: comma-separated addresses or domains. The model of each kind of Claude call is Claude__Modeller__<name>;
+      # the defaults are in appsettings.json, this one is set here because the Gmail scan is the call most worth tuning.
+      Gmail__Acik: ${GMAIL_ACIK:-false}
+      Gmail__AralikDakika: ${GMAIL_ARALIK_DAKIKA:-10}
+      Gmail__EngellenenGonderenler: ${GMAIL_ENGELLENEN_GONDERENLER:-}
+      Claude__Modeller__gmail-cikar: ${CLAUDE_MODEL_GMAIL:-sonnet}
     # Host folders outside the git clone (/srv/<project>/veri, /srv/<project>/beyin), so a fresh clone never
     # touches the data and the backup takes plain paths. veri/ must belong to the container user (uid 1654).
     volumes:

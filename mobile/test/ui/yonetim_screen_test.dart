@@ -306,7 +306,9 @@ void main() {
     testWidgets('connected: shows the last sync and "Şimdi eşitle" syncs and refreshes the time', (tester) async {
       ortam.api.googleDurum = const GoogleDurum(durum: GoogleDurumu.bagli);
       await goster(tester);
-      expect(find.text('Henüz eşitlenmedi'), findsOneWidget);
+      expect(find.textContaining('Henüz eşitlenmedi'), findsOneWidget);
+      expect(find.textContaining('5 dakikada bir kendiliğinden'), findsOneWidget);
+      expect(find.byKey(const ValueKey('gmail-satiri')), findsNothing, reason: 'Gmail off on the server: no line');
 
       await tester.tap(find.text('Şimdi eşitle'));
       await tester.pump();
@@ -315,6 +317,24 @@ void main() {
       expect(ortam.api.cagrilar, contains('googleEsitle'));
       expect(find.text('Takvim eşitlendi: 2 yeni, 1 silinen.'), findsOneWidget);
       expect(find.textContaining('Son eşitleme: 8 Kasım'), findsOneWidget);
+    });
+
+    testWidgets('Gmail on the same connection: on with its last scan, or waiting for the permission', (tester) async {
+      ortam.api.googleDurum = GoogleDurum(
+        durum: GoogleDurumu.bagli,
+        gmail: 'acik',
+        gmailSonTarama: DateTime.utc(2026, 11, 8, 12, 40),
+        gmailIslenen: 7,
+      );
+      await goster(tester);
+      expect(find.text('Gmail açık'), findsOneWidget);
+      expect(find.textContaining('7 mail'), findsOneWidget);
+      expect(find.textContaining('sen onaylamadan hiçbir şey yapılmaz'), findsOneWidget);
+
+      ortam.api.googleDurum = const GoogleDurum(durum: GoogleDurumu.bagli, gmail: 'izinYok');
+      await goster(tester);
+      expect(find.text('Gmail izni yok'), findsOneWidget);
+      expect(find.textContaining('Gmail için yeniden bağla'), findsOneWidget);
     });
 
     testWidgets('a sync Google refuses says to connect again on the web', (tester) async {

@@ -4,6 +4,7 @@ using Kafamdakiler.Brifing;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
+using Kafamdakiler.Gmail;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Takvim;
@@ -36,6 +37,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<GoogleYetkilendirmesi> GoogleYetkilendirmeleri => Set<GoogleYetkilendirmesi>();
     public DbSet<TakvimEsitlemeDurumu> TakvimEsitlemeleri => Set<TakvimEsitlemeDurumu>();
     public DbSet<TakvimEtkinligi> TakvimEtkinlikleri => Set<TakvimEtkinligi>();
+    public DbSet<GmailMesaji> GmailMesajlari => Set<GmailMesaji>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -187,6 +189,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Id).ValueGeneratedNever();
             e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Kapsamlar).HasMaxLength(1000);
+        });
+
+        builder.Entity<GmailMesaji>(e =>
+        {
+            e.Property(x => x.GmailKimligi).HasMaxLength(64);
+            e.HasIndex(x => x.GmailKimligi).IsUnique();
+            e.Property(x => x.Sonuc).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Neden).HasMaxLength(200);
+            e.Property(x => x.Konu).HasMaxLength(200);
         });
 
         builder.Entity<GoogleYetkilendirmesi>(e =>

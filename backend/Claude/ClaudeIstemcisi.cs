@@ -60,6 +60,17 @@ public class ClaudeIstemcisi(ClaudeAyari ayar, TimeProvider saat, ILogger<Claude
 
     public bool Bagli => ayar.Acik;
 
+    // The calls the daily cap still allows today. Background jobs that nobody asked for look at this and leave the last few
+    // to the person's own requests.
+    public int KalanCagri
+    {
+        get
+        {
+            lock (_sayacKilidi)
+                return HatirlaticiHesap.IstanbulGunu(saat.GetUtcNow()) != _sayacGunu ? ayar.GunlukEnCokCagri : Math.Max(0, ayar.GunlukEnCokCagri - _sayac);
+        }
+    }
+
     public async Task<ClaudeSonucu<T>> SorAsync<T>(ClaudeIstegi istek, CancellationToken ct)
     {
         if (!Bagli)
@@ -135,7 +146,7 @@ public class ClaudeIstemcisi(ClaudeAyari ayar, TimeProvider saat, ILogger<Claude
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
-            foreach (var arguman in Argumanlar(ayar.Model, talimat, sema))
+            foreach (var arguman in Argumanlar(ayar.ModelSec(istek.Tur), talimat, sema))
                 bilgi.ArgumentList.Add(arguman);
 
             using var surec = new Process { StartInfo = bilgi };

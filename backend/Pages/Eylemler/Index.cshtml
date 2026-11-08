@@ -54,7 +54,13 @@
                     </p>
                     @if (e.Gerekce is not null)
                     {
-                        <p class="kd-eylem-gerekce">@e.Gerekce</p>
+                        var (gerekceMetni, mailBaglantisi) = EylemGorunum.GerekceAyir(e.Gerekce);
+                        <p class="kd-eylem-gerekce">@gerekceMetni
+                            @if (mailBaglantisi is not null)
+                            {
+                                <a href="@mailBaglantisi" target="_blank" rel="noopener noreferrer">Mailde aç</a>
+                            }
+                        </p>
                     }
                 </div>
 

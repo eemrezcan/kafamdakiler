@@ -83,6 +83,7 @@ public abstract class TakvimTestTabani(UygulamaFabrikasi uygulama) : IDisposable
         await db.Hatirlaticilar.ExecuteDeleteAsync(Ct);
         await db.BrifingOylari.ExecuteDeleteAsync(Ct);
         await db.Brifingler.ExecuteDeleteAsync(Ct);
+        await db.GmailMesajlari.ExecuteDeleteAsync(Ct);
     }
 
     protected async Task<string> GirisAsync(string eposta, WebApplicationFactory<Program> fabrika)

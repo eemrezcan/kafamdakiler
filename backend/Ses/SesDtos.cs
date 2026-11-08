@@ -21,7 +21,8 @@ public record YenidenYazGirdi(string? Metin, string? Kip);
 // `Tur` is hatirlatici-kur, plan-ekle, gorev-ekle or takvim-ekle; `Baslik` is the reminder's title, the plan item's text, the task's
 // title or the event's title.
 // Dates are yyyy-MM-dd, `Saat` and `BitisSaati` are HH:mm, `Tekrar` is yok, gunluk, haftalik, aylik or yillik.
-//   hatirlatici-kur: Gun (required), Saat, Tekrar
+//   hatirlatici-kur: Gun (required), Saat, Tekrar, Israrli (persistent), Acil (urgent), OnceGun (0 to 60: warn this many days before).
+//                    The voice instruction does not ask for the last three; the Gmail scan does.
 //   plan-ekle:       Gun (required), Bolum, TahminDk
 //   gorev-ekle:      Proje or Alan (exactly one), Bitis
 //   takvim-ekle:     Gun (required), Saat (left out: an all-day event), BitisSaati (left out: an hour after Saat), Yer
@@ -29,7 +30,7 @@ public record YenidenYazGirdi(string? Metin, string? Kip);
 public record IsOnerisi(
     string Tur, string Baslik, string? Gun = null, string? Saat = null, string? Tekrar = null, string? Bolum = null,
     int? TahminDk = null, string? Proje = null, string? Alan = null, string? Bitis = null, string? KaynakParca = null, double? Guven = null,
-    string? BitisSaati = null, string? Yer = null);
+    string? BitisSaati = null, string? Yer = null, bool? Israrli = null, bool? Acil = null, int? OnceGun = null);
 
 // Answers
 

@@ -18,12 +18,20 @@ public class TakvimAyari
     public const int GecmisGun = 7;
     public const int GelecekGun = 60;
 
-    // The narrowest scopes that do the job: events (read and write) and the calendar list (read).
-    public static readonly IReadOnlyList<string> Kapsamlar =
+    // The narrowest scopes that do the calendar's job: events (read and write) and the calendar list (read). A connection
+    // made without them is refused.
+    public static readonly IReadOnlyList<string> TakvimKapsamlari =
     [
         "https://www.googleapis.com/auth/calendar.events",
         "https://www.googleapis.com/auth/calendar.readonly",
     ];
+
+    // Gmail, read only. A reply draft would need gmail.compose, which is asked for when that feature is written. A connection
+    // made without this scope (or before it was asked for) still works for the calendar and leaves Gmail in "izinYok".
+    public const string GmailKapsami = "https://www.googleapis.com/auth/gmail.readonly";
+
+    // Everything the consent screen asks for.
+    public static readonly IReadOnlyList<string> Kapsamlar = [.. TakvimKapsamlari, GmailKapsami];
 
     private const int EnCokTakvim = 10;
     private const int TakvimKimligiEnUzun = 200;

@@ -106,11 +106,23 @@ class Gonderim {
 /// `GoogleDurumDto` (`GET /api/google/durum`): is Google Calendar set up and connected, and when it was last synced.
 /// Hand-written JSON (camelCase, like the API); [durum] is one of [GoogleDurumu].
 class GoogleDurum {
-  const GoogleDurum({required this.durum, this.sonEsitleme, this.etkinlikSayisi = 0});
+  const GoogleDurum({
+    required this.durum,
+    this.sonEsitleme,
+    this.etkinlikSayisi = 0,
+    this.gmail = 'kapali',
+    this.gmailSonTarama,
+    this.gmailIslenen = 0,
+  });
 
   final String durum;
   final DateTime? sonEsitleme;
   final int etkinlikSayisi;
+
+  /// `kapali` (off on the server, or not connected), `izinYok` (connect again with the Gmail permission) or `acik`.
+  final String gmail;
+  final DateTime? gmailSonTarama;
+  final int gmailIslenen;
 
   bool get bagli => durum == GoogleDurumu.bagli;
 
@@ -118,6 +130,9 @@ class GoogleDurum {
         durum: json['durum'] as String? ?? GoogleDurumu.kapali,
         sonEsitleme: json['sonEsitleme'] == null ? null : DateTime.parse(json['sonEsitleme'] as String),
         etkinlikSayisi: json['etkinlikSayisi'] as int? ?? 0,
+        gmail: json['gmail'] as String? ?? 'kapali',
+        gmailSonTarama: json['gmailSonTarama'] == null ? null : DateTime.parse(json['gmailSonTarama'] as String),
+        gmailIslenen: json['gmailIslenen'] as int? ?? 0,
       );
 }
 

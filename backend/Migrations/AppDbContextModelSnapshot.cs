@@ -497,6 +497,47 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("GelenKartlari");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Gmail.GmailMesaji", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Deneme")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GmailKimligi")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("IslenmeAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Konu")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Neden")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("OneriSayisi")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sonuc")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GmailKimligi")
+                        .IsUnique();
+
+                    b.ToTable("GmailMesajlari");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Hatirlaticilar.Hatirlatici", b =>
                 {
                     b.Property<Guid>("Id")

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -95,7 +96,21 @@ class _EylemDetayScreenState extends State<EylemDetayScreen> {
                       _Satir('Kaynak', eylemKaynakAdi(e.kaynak) + (e.disKaynak ? ' (dış kaynak)' : '')),
                       if (e.guven != null) _Satir('Güven', eylemGuvenMetni(e.guven!) + (e.eminDegil ? ' (emin değil)' : '')),
                       _Satir('Önerildi', DateFormat('d MMMM HH:mm', 'tr').format(e.createdAt.toLocal())),
-                      if (e.gerekce != null) _Satir('Gerekçe', e.gerekce!),
+                      if (e.gerekce != null) ...[
+                        _Satir('Gerekçe', eylemGerekcesi(e.gerekce!).metin),
+                        if (eylemGerekcesi(e.gerekce!).mail case final mail?)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 100, bottom: 4),
+                              child: TextButton.icon(
+                                onPressed: () => launchUrl(mail, mode: LaunchMode.externalApplication),
+                                icon: const Icon(LucideIcons.externalLink, size: 18),
+                                label: const Text('Mailde aç'),
+                              ),
+                            ),
+                          ),
+                      ],
                       if (e.hataMesaji != null) _Satir('Hata', e.hataMesaji!),
                     ],
                   ),

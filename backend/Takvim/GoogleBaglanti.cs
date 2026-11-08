@@ -3,7 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Requests;
+using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
+using Kafamdakiler.Gmail;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kafamdakiler.Takvim;
@@ -34,7 +36,12 @@ public record BaglantiSonucu(BaglantiSonucuTuru Tur)
 public record BaglantiKesmeSonucu(bool BaglantiVardi, bool GoogleIptal);
 
 // `Durum`: kapali (settings missing), bagliDegil, bagli, yenidenBaglan. The token itself is never in here.
-public record GoogleDurumDto(bool Acik, string Durum, DateTimeOffset? BaglananAni, IReadOnlyList<string> Takvimler, DateTimeOffset? SonEsitleme, int EtkinlikSayisi);
+// `Gmail`: kapali (off in the settings, or Google or Claude not set up, or no account connected), izinYok (connected, but without the
+// Gmail scope or the connection needs reconnecting: "Gmail için yeniden bağla"), acik. `GmailSonTarama` is when the scan last got as far
+// as asking Gmail (empty after a restart until the next round); `GmailIslenen` is how many mails it has dealt with.
+public record GoogleDurumDto(
+    bool Acik, string Durum, DateTimeOffset? BaglananAni, IReadOnlyList<string> Takvimler, DateTimeOffset? SonEsitleme, int EtkinlikSayisi,
+    string Gmail = "kapali", DateTimeOffset? GmailSonTarama = null, int GmailIslenen = 0);
 
 // Connecting the Google account (K2.3c): OAuth 2.0 authorization code with PKCE. The rules of it, in one place:
 //  - `state` is 256 random bits, kept only as its SHA-256, good for one callback within BaglantiSuresi, and bound to the Sahip who
@@ -43,7 +50,8 @@ public record GoogleDurumDto(bool Acik, string Durum, DateTimeOffset? BaglananAn
 //    S256 challenge only.
 //  - the refresh token is sealed with Data Protection before it is stored, and only the scopes the app asked for are accepted.
 public class GoogleBaglanti(
-    AppDbContext db, IGoogleTakvimIstemcisi istemci, GoogleErisimi erisim, TakvimAyari ayar, TimeProvider saat, ILogger<GoogleBaglanti> gunluk)
+    AppDbContext db, IGoogleTakvimIstemcisi istemci, GoogleErisimi erisim, TakvimAyari ayar, GmailAyari gmailAyar, ClaudeAyari claudeAyar,
+    GmailTaramaDurumu gmailDurumu, TimeProvider saat, ILogger<GoogleBaglanti> gunluk)
 {
     // A connect has to be finished within this.
     public static readonly TimeSpan BaglantiSuresi = TimeSpan.FromMinutes(10);
@@ -127,8 +135,9 @@ public class GoogleBaglanti(
             return new BaglantiSonucu(BaglantiSonucuTuru.KodGecersiz);
         }
 
-        // Granted scopes are checked against what the app needs, not trusted to be what was asked.
-        if (TakvimAyari.Kapsamlar.Any(k => !token.Kapsamlar.Contains(k, StringComparer.Ordinal)))
+        // Granted scopes are checked against what the calendar needs, not trusted to be what was asked. The Gmail scope is not required:
+        // the consent screen lets a person untick it, and the connection then works for the calendar with Gmail in "izinYok".
+        if (TakvimAyari.TakvimKapsamlari.Any(k => !token.Kapsamlar.Contains(k, StringComparer.Ordinal)))
         {
             gunluk.LogWarning("Google granted fewer scopes than the calendar module needs; the connection was not made.");
             await IptalEtmeyiDeneAsync(token.YenilemeTokeni ?? token.ErisimTokeni, ct);
@@ -195,7 +204,12 @@ public class GoogleBaglanti(
             : "yenidenBaglan";
         var sonEsitleme = await db.TakvimEsitlemeleri.AsNoTracking().MaxAsync(e => e.SonEsitleme, ct);
         var sayi = await db.TakvimEtkinlikleri.CountAsync(ct);
-        return new GoogleDurumDto(ayar.Acik, durum, baglanti?.BaglananAni, ayar.Takvimler, sonEsitleme, sayi);
+
+        var gmail = !gmailAyar.Acik || !ayar.Acik || !claudeAyar.Acik || baglanti is null ? "kapali"
+            : baglanti.Durum != GoogleBaglantiDurumu.Bagli || !baglanti.KapsamVar(TakvimAyari.GmailKapsami) ? "izinYok"
+            : "acik";
+        var gmailIslenen = await db.GmailMesajlari.CountAsync(m => m.Sonuc != GmailSonucu.Hata, ct);
+        return new GoogleDurumDto(ayar.Acik, durum, baglanti?.BaglananAni, ayar.Takvimler, sonEsitleme, sayi, gmail, gmailDurumu.SonTarama, gmailIslenen);
     }
 
     private async Task<bool> IptalEtmeyiDeneAsync(string token, CancellationToken ct)

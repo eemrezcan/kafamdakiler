@@ -9,6 +9,7 @@ using Kafamdakiler.Data;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
+using Kafamdakiler.Gmail;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Mobil;
@@ -108,6 +109,8 @@ builder.Services.AddSes();
 builder.Services.AddBrifing(builder.Configuration);
 // Google Calendar (K2.3c): off until the Google settings are given. Events are synced into the database; writes go through the approval queue.
 builder.Services.AddTakvim(builder.Configuration);
+// Gmail (read only): off until Gmail:Acik is set. New mail of the primary inbox is read by Claude; whatever it finds waits in the approval queue.
+builder.Services.AddGmail(builder.Configuration);
 builder.Services.AddProjeRepolari(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));

@@ -18,6 +18,9 @@ public class GoogleBaglantisi
     public string Kapsamlar { get; set; } = "";
     public DateTimeOffset BaglananAni { get; set; }
     public Guid? BaglayanId { get; set; }
+
+    // Whether Google granted this scope to the stored token.
+    public bool KapsamVar(string kapsam) => Kapsamlar.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains(kapsam, StringComparer.Ordinal);
 }
 
 // A connect that was started and not finished. `state` is kept only as its SHA-256 (a copy of the database does not give a
