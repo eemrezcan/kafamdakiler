@@ -184,6 +184,30 @@
     </form>
 </section>
 
+<section class="kd-yonetim-blok" aria-labelledby="push-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="push-baslik">Telefona bildirim</h2>
+    <p class="kd-muted">Sunucu "şimdi" dediğinde uygulama kapalıyken de telefona bildirim düşer. Google'dan yalnız içeriksiz bir uyandırma geçer; metni telefon kendi API'mizden çeker.</p>
+    <dl class="kd-facts">
+        <div>
+            <dt>Push</dt>
+            <dd>@(Model.PushBilgisi.Acik ? "Açık" : "Kapalı (Firebase:AnahtarDosyasi ayarlı değil)")</dd>
+        </div>
+        <div>
+            <dt>Kayıtlı cihaz</dt>
+            <dd>@Model.PushBilgisi.CihazSayisi</dd>
+        </div>
+        <div>
+            <dt>Son gönderim</dt>
+            <dd>@(Model.PushBilgisi.SonGonderim is { } p
+                ? $"{p.An.ToLocalTime():dd.MM HH:mm} · {p.Giden}/{p.Hedef} cihaza gitti" + (p.Silinen > 0 ? $" · {p.Silinen} geçersiz kayıt silindi" : "") + (p.Hatali > 0 ? $" · {p.Hatali} hata" : "")
+                : "Henüz gönderilmedi")</dd>
+        </div>
+    </dl>
+    <form method="post" asp-page-handler="PushTest">
+        <button type="submit" class="btn btn-outline-primary" disabled="@(!Model.PushBilgisi.Acik)">Test bildirimi gönder</button>
+    </form>
+</section>
+
 <section class="kd-yonetim-blok" aria-labelledby="google-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="google-baslik">Google</h2>
 

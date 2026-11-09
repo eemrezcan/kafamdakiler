@@ -8,10 +8,14 @@ import '../services/token_depo.dart';
 /// The session: whether tokens exist. The router listens to this
 /// (`refreshListenable`) and sends signed-out users to the login screen.
 class AuthRepository extends ChangeNotifier {
-  AuthRepository({required this._api, required this._depo, this.cikistaTemizle});
+  AuthRepository({required this._api, required this._depo, this.cikistaTemizle, this.cikistanOnce});
 
   final ApiService _api;
   final TokenDepo _depo;
+
+  /// Runs on an explicit sign-out while the session still works (before the tokens are wiped): it may still call the API.
+  /// A failure here never stops the sign-out.
+  final Future<void> Function()? cikistanOnce;
 
   /// Wiped on an explicit sign-out (cache, queue, role); not when the session
   /// merely expired, so unsent entries survive a re-login.
@@ -35,6 +39,11 @@ class AuthRepository extends ChangeNotifier {
   }
 
   Future<void> cikis() async {
+    try {
+      await cikistanOnce?.call();
+    } on Object catch (e) {
+      debugPrint('Çıkış öncesi işi yapılamadı: $e');
+    }
     await _depo.temizle();
     await cikistaTemizle?.call();
     _girisYapildi = false;

@@ -46,10 +46,19 @@ class HatirlaticiBildirimYoneticisi {
 
   /// Starts the plugin, listens to local changes and answers the notification that opened the app, if any.
   /// [listeyiAc] is called when a tap (not a button) should show the reminders list, [kuyruguAc] for the approval queue,
-  /// [brifingiAc] for the morning briefing.
-  Future<void> baslat({required void Function() listeyiAc, void Function()? kuyruguAc, void Function()? brifingiAc}) async {
+  /// [brifingiAc] for the morning briefing, [rotayiAc] for a notification of the server (FCM) with the route it names.
+  Future<void> baslat({
+    required void Function() listeyiAc,
+    void Function()? kuyruguAc,
+    void Function()? brifingiAc,
+    void Function(String rota)? rotayiAc,
+  }) async {
     _repo.addListener(_yerelDegisti);
     Future<void> yanitla(BildirimYaniti y) async {
+      if (y.rota != null) {
+        rotayiAc?.call(y.rota!);
+        return;
+      }
       if (y.brifing) {
         brifingiAc?.call();
         return;

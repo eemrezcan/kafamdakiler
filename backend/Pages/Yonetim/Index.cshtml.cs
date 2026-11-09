@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Bildirimler;
 using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
@@ -21,7 +22,7 @@ namespace Kafamdakiler.Pages.Yonetim;
 public class IndexModel(
     AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler,
     GoogleBaglanti googleBaglanti, TakvimEsitleyici esitleyici, ClaudeIstemcisi claude, GmailTaramaDurumu gmailDurumu, HaftalikOzetYazici haftalikOzet,
-    TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
+    BildirimServisi bildirimler, PushDurumu pushDurumu, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
 {
     public record GrupKarti(IzinGruplari.Grup Grup, GrupKipi Kip);
 
@@ -59,6 +60,9 @@ public class IndexModel(
 
     // The last weekly summary note written to the brain (null: none yet).
     public HaftalikOzetKaydi? SonOzet { get; private set; }
+
+    // Push to the phones (FCM): on or off, how many devices are registered, and how the last send went.
+    public PushDurumDto PushBilgisi { get; private set; } = new(false, 0, null);
 
     public GoogleDurumDto GoogleDurumu { get; private set; } = new(false, "kapali", null, [], null, 0);
 
@@ -127,6 +131,7 @@ public class IndexModel(
         ClaudeKullanimi = claude.Kullanim();
         GmailSayilari = gmailDurumu.SonSayilar;
         SonOzet = await haftalikOzet.SonKayitAsync(ct);
+        PushBilgisi = new(bildirimler.PushAcik, await bildirimler.CihazSayisiAsync(ct), pushDurumu.Son);
 
         RepoEslemeleri = (await db.ProjeRepolari.AsNoTracking().OrderBy(r => r.ProjeKimligi).ToListAsync(ct))
             .Select(r => new ProjeRepoDto(r.ProjeKimligi, r.Depo, RepoOzetServisi.Baglanti(r.Depo))).ToList();
@@ -234,6 +239,30 @@ public class IndexModel(
                 Hata = "Beyin haftalık özeti almadı; sonra yeniden dene.";
                 break;
         }
+
+        return RedirectToPage();
+    }
+
+    // Sends a test notification to the Sahip's own phones, the same way as POST /api/bildirim/test.
+    public async Task<IActionResult> OnPostPushTestAsync(CancellationToken ct)
+    {
+        if (EylemEndpoints.KullaniciId(User) is not { } id)
+            return Forbid();
+
+        if (!bildirimler.PushAcik)
+        {
+            Hata = "Push kapalı: Firebase:AnahtarDosyasi ayarlı değil.";
+            return RedirectToPage();
+        }
+
+        var bildirim = await bildirimler.OlusturAsync(id, "Test bildirimi", "Sunucudan telefona anlık bildirim çalışıyor.", "test", rota: null, hedefKimligi: null, ct);
+        var sonuc = (await bildirimler.GonderAsync(bildirim, ct))!;
+        if (sonuc.Hedef == 0)
+            Hata = "Bu hesapta kayıtlı cihaz yok; uygulamayı açıp giriş yap.";
+        else if (sonuc.Giden == 0)
+            Hata = $"Bildirim gitmedi ({sonuc.Hedef} cihaz denendi); ayrıntı sunucu günlüğünde.";
+        else
+            Bildirim = $"Test bildirimi {sonuc.Giden} cihaza gönderildi";
 
         return RedirectToPage();
     }

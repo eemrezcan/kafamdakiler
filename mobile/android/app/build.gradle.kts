@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// google-services.json holds the Firebase project's keys and is not in the repository (public repo). Without it the
+// app still builds; Firebase then fails to start at run time and the app goes on without push (see main.dart).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.eemrezcan.kafamdakiler"
     compileSdk = flutter.compileSdkVersion

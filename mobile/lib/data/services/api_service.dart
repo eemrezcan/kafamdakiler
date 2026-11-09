@@ -19,6 +19,7 @@ import '../models/gun.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/ses.dart';
+import '../models/sunucu_bildirimi.dart';
 import '../models/yonetim.dart';
 import '../models/yakalama.dart';
 import 'token_depo.dart';
@@ -80,6 +81,24 @@ class ApiService {
       options: Options(extra: {TokenInterceptor.girissizAnahtari: true}),
     );
     return yanit.data!['enAzMobilSurumKodu'] as int;
+  }
+
+  // ---- Push (FCM) ----
+
+  /// Registers this phone's FCM token for the signed-in user; the same token again only refreshes the row.
+  Future<void> bildirimCihazKaydet({required String token, String? cihazAdi}) async {
+    await _dio.post<void>('/api/bildirim/cihaz', data: {'token': token, 'cihazAdi': ?cihazAdi});
+  }
+
+  /// Removes the token (sign-out). A token the server no longer knows is not an error.
+  Future<void> bildirimCihazSil(String token) async {
+    await _dio.delete<void>('/api/bildirim/cihaz', data: {'token': token});
+  }
+
+  /// The text of the notification the server woke the phone for (404: not this user's, or gone).
+  Future<SunucuBildirimi> sunucuBildirimiGetir(String id) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/bildirimler/$id');
+    return SunucuBildirimi.fromJson(yanit.data!);
   }
 
   // ---- Habits ----

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Bildirimler;
 using Kafamdakiler.Brifing;
 using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
@@ -117,6 +118,8 @@ builder.Services.AddProjeRepolari(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(TimeProvider.System);
+// Server to phone push (FCM): off while Firebase:AnahtarDosyasi is empty.
+builder.Services.AddBildirimler(builder.Configuration);
 builder.Services.AddHostedService<YakalamaGondericisi>();
 
 // Production behind a TLS-ending proxy (K2.1). Both are off when their setting is empty.
@@ -239,6 +242,7 @@ app.MapBrifingEndpoints();
 app.MapTakvimEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
+app.MapBildirimEndpoints();
 
 app.Run();
 

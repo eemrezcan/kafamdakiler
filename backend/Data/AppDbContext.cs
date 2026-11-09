@@ -1,5 +1,6 @@
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Bildirimler;
 using Kafamdakiler.Brifing;
 using Kafamdakiler.Dosyalar;
 using Kafamdakiler.Eylemler;
@@ -41,6 +42,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<TakvimEsitlemeDurumu> TakvimEsitlemeleri => Set<TakvimEsitlemeDurumu>();
     public DbSet<TakvimEtkinligi> TakvimEtkinlikleri => Set<TakvimEtkinligi>();
     public DbSet<GmailMesaji> GmailMesajlari => Set<GmailMesaji>();
+    public DbSet<Bildirim> Bildirimler => Set<Bildirim>();
+    public DbSet<BildirimCihazi> BildirimCihazlari => Set<BildirimCihazi>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -234,6 +237,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             // A synced event is one row per calendar and Google id: the sync updates it in place.
             e.HasIndex(x => new { x.TakvimKimligi, x.GoogleKimligi }).IsUnique();
             e.HasIndex(x => x.Baslangic);
+        });
+
+        builder.Entity<Bildirim>(e =>
+        {
+            e.Property(x => x.Baslik).HasMaxLength(200);
+            e.Property(x => x.Metin).HasMaxLength(2000);
+            e.Property(x => x.Rota).HasMaxLength(200);
+            e.Property(x => x.HedefKimligi).HasMaxLength(100);
+            e.Property(x => x.KaynakTuru).HasMaxLength(30);
+            e.HasIndex(x => x.OlusmaAni);
+        });
+
+        builder.Entity<BildirimCihazi>(e =>
+        {
+            e.Property(x => x.Token).HasMaxLength(1024);
+            e.Property(x => x.CihazAdi).HasMaxLength(100);
+            e.HasIndex(x => x.Token).IsUnique();
+            e.HasIndex(x => x.KullaniciId);
         });
 
         builder.Entity<Dosya>(e =>

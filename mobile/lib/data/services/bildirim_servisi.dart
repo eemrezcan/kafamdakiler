@@ -3,13 +3,17 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../utils/bildirim_plani.dart';
+import '../../utils/push_hedefi.dart';
 
 /// What the user did with a notification: [eylem] is a [BildirimEylemi] id, or null for a tap on the notification.
 class BildirimYaniti {
-  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId, this.brifing = false});
+  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId, this.brifing = false, this.rota});
 
   /// A tap on the morning briefing notification.
   final bool brifing;
+
+  /// Set for a notification that came from the server (FCM): the in-app route it points at.
+  final String? rota;
 
   final String? eylem;
   final String? hatirlaticiId;
@@ -58,12 +62,14 @@ class YerelBildirimServisi implements BildirimServisi {
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _eklenti.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-  static BildirimYaniti? _yanittan(NotificationResponse? y) {
+  @visibleForTesting
+  static BildirimYaniti? yanittan(NotificationResponse? y) {
     if (y == null) return null;
     final eylem = y.actionId;
     final secilen = eylem == null || eylem.isEmpty ? null : eylem;
     final yuk = y.payload;
     if (yuk == brifingBildirimYuku) return const BildirimYaniti(brifing: true);
+    if (sunucuBildirimRotasi(yuk) case final rota?) return BildirimYaniti(rota: rota);
     if (yuk != null && yuk.startsWith(eylemBildirimOneki)) {
       return BildirimYaniti(eylem: secilen, eylemId: yuk.substring(eylemBildirimOneki.length));
     }
@@ -76,7 +82,7 @@ class YerelBildirimServisi implements BildirimServisi {
       await _eklenti.initialize(
         settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
         onDidReceiveNotificationResponse: (y) {
-          final b = _yanittan(y);
+          final b = yanittan(y);
           if (b != null) yanit(b);
         },
       );
@@ -90,7 +96,7 @@ class YerelBildirimServisi implements BildirimServisi {
     try {
       final ayrinti = await _eklenti.getNotificationAppLaunchDetails();
       if (ayrinti == null || !ayrinti.didNotificationLaunchApp) return null;
-      return _yanittan(ayrinti.notificationResponse);
+      return yanittan(ayrinti.notificationResponse);
     } on Object {
       return null;
     }

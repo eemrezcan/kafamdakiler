@@ -68,6 +68,8 @@ services:
       Claude__Modeller__gmail-sec: ${CLAUDE_MODEL_GMAIL_SEC:-haiku}
       Claude__ModelSiniri__haiku: ${CLAUDE_SINIR_HAIKU:-200}
       Claude__ModelSiniri__opus: ${CLAUDE_SINIR_OPUS:-10}
+      # Push to the phones (FCM): the service account key, mounted below. Remove the file and push is off; the app still runs.
+      Firebase__AnahtarDosyasi: /gizli/firebase-adminsdk.json
     # Host folders outside the git clone (/srv/<project>/veri, /srv/<project>/beyin), so a fresh clone never
     # touches the data and the backup takes plain paths. veri/ must belong to the container user (uid 1654).
     volumes:
@@ -75,6 +77,8 @@ services:
       - ${BEYIN_KLASORU:-./beyin}:/beyin
       # Claude Code's login and settings (CLAUDE_CONFIG_DIR in the image); owned by uid 1654, mode 700.
       - ${CLAUDE_KLASORU:-./claude}:/claude
+      # Secret files (K-0012), read only: firebase-adminsdk.json, the Firebase service account key. Owned by uid 1654, mode 400.
+      - ${GIZLI_KLASORU:-./gizli}:/gizli:ro
       # The host's single Claude Code binary (not in the image), read only; the version comes from the host install.
       # Set CLAUDE_IKILISI if it lives elsewhere. A missing file fails the start instead of leaving an empty
       # directory on the host (create_host_path: false).

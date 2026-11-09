@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FirebaseAdmin" Version="3.7.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.78.0" />
     <PackageReference Include="Google.Apis.Calendar.v3" Version="1.78.0.4285" />
     <PackageReference Include="Google.Apis.Gmail.v1" Version="1.78.0.4295" />

@@ -256,6 +256,82 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("BeyinIslemleri");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Bildirimler.Bildirim", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Baslik")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("HedefKimligi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("KaynakTuru")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Metin")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("OlusmaAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Rota")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OlusmaAni");
+
+                    b.ToTable("Bildirimler");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Bildirimler.BildirimCihazi", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CihazAdi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("GuncellemeAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("KayitAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KullaniciId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("BildirimCihazlari");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Brifing.BrifingOyu", b =>
                 {
                     b.Property<DateOnly>("Gun")

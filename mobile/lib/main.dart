@@ -22,6 +22,8 @@ import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
 import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
+import 'data/repositories/push_mesaj_isleyici.dart';
+import 'data/repositories/push_yoneticisi.dart';
 import 'data/repositories/zaman_cizelgesi_repository.dart';
 import 'data/repositories/surum_denetcisi.dart';
 import 'data/repositories/yakala_yonlendirici.dart';
@@ -31,6 +33,9 @@ import 'data/services/database/app_database.dart';
 import 'data/services/bildirim_servisi.dart';
 import 'data/services/esitleme_tetikleyici.dart';
 import 'data/services/paylasim_kaynagi.dart';
+import 'data/services/push_arka_plan.dart';
+import 'data/services/push_kaynagi.dart';
+import 'data/services/sunucu_bildirim_gosterici.dart';
 import 'data/services/token_depo.dart';
 import 'routing/router.dart';
 import 'ui/surum/guncelleme_gerekli_screen.dart';
@@ -38,6 +43,8 @@ import 'ui/surum/guncelleme_gerekli_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr');
+  // Push (FCM) is optional: if Firebase cannot start the app goes on without it.
+  final pushKaynagi = await pushKaynaginiHazirla(pushArkaPlanIsleyici);
 
   final db = AppDatabase();
   final depo = GuvenliTokenDepo();
@@ -63,6 +70,13 @@ Future<void> main() async {
     servis: bildirimServisi,
     yazabilir: () => kullanici.sahip,
   );
+  final push = PushYoneticisi(
+    api: api,
+    kaynak: pushKaynagi,
+    isleyici: PushMesajIsleyici(getir: api.sunucuBildirimiGetir, gosterici: YerelSunucuBildirimGosterici()),
+    girisYapildi: () => auth.girisYapildi,
+    cihazAdi: 'Android',
+  );
   final brifing = BrifingRepository(api: api, db: db);
   final zamanCizelgesi = ZamanCizelgesiRepository(api: api, db: db);
   final bildirimler = HatirlaticiBildirimYoneticisi(
@@ -79,6 +93,8 @@ Future<void> main() async {
   auth = AuthRepository(
     api: api,
     depo: depo,
+    // The phone leaves the server's list of devices while the session still works.
+    cikistanOnce: push.cikisOncesiSil,
     // Explicit sign-out: the user confirmed losing unsent entries.
     cikistaTemizle: () async {
       await yakalamalar.yerelFotograflariSil();
@@ -98,12 +114,15 @@ Future<void> main() async {
       kullanici.yukle();
       // Keeps the phone's project list (the capture screen's picker) fresh; quiet when offline or not allowed.
       unawaited(beyin.projeleriYenile());
+      // The phone's FCM token goes to the server for this user.
+      unawaited(push.kaydet());
     }
     girisYapildiydi = auth.girisYapildi;
   }
 
   auth.addListener(rolIcin);
   rolIcin();
+  push.baslat();
 
   runApp(KafamdakilerApp(
     auth: auth,
@@ -117,6 +136,7 @@ Future<void> main() async {
     gelen: gelen,
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
+    push: push,
     brifing: brifing,
     zamanCizelgesi: zamanCizelgesi,
     beyin: beyin,
@@ -140,6 +160,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.gelen,
     required this.bildirimler,
     required this.eylemBildirimleri,
+    required this.push,
     required this.brifing,
     required this.zamanCizelgesi,
     required this.beyin,
@@ -159,6 +180,7 @@ class KafamdakilerApp extends StatefulWidget {
   final GelenRepository gelen;
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
+  final PushYoneticisi push;
   final BrifingRepository brifing;
   final ZamanCizelgesiRepository zamanCizelgesi;
   final BeyinRepository beyin;
@@ -196,6 +218,8 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         await widget.bildirimler.esitleVeKur();
         // And announce the actions that came into the approval queue meanwhile.
         await widget.eylemBildirimleri.esitleVeBildir();
+        // And hand the FCM token to the server if that has not worked yet (offline at sign-in).
+        await widget.push.kaydet();
       }
     },
   );
@@ -215,6 +239,14 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
           if (widget.auth.girisYapildi) _router.push(Rotalar.eylemler);
         }, brifingiAc: () {
           if (widget.auth.girisYapildi) _router.go(Rotalar.bugun);
+        }, rotayiAc: (rota) {
+          // A tap on a notification of the server: the route it names (Bugün when it names none).
+          if (!widget.auth.girisYapildi) return;
+          if (Rotalar.sekmeler.contains(rota)) {
+            _router.go(rota);
+          } else {
+            _router.push(rota);
+          }
         })
         .catchError((Object _) {});
   }
@@ -223,6 +255,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
   void dispose() {
     _tetikleyici.durdur();
     widget.bildirimler.durdur();
+    widget.push.durdur();
     _yakalaYonlendirici.durdur();
     _router.dispose();
     super.dispose();
