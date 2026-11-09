@@ -39,7 +39,7 @@
         {
             <div class="kd-habit-actions kd-habit-empty">
                 <p>Devam eden @((a.OgeEtiketi ?? "öğe").ToLower(new System.Globalization.CultureInfo("tr-TR"))) yok.</p>
-                <a class="btn btn-outline-primary" asp-page="/Aliskanliklar/OgeDuzenle" asp-route-aliskanlikId="@a.Id">+ @a.OgeEtiketi</a>
+                <a class="btn btn-primary" asp-page="/Aliskanliklar/OgeDuzenle" asp-route-aliskanlikId="@a.Id">+ @a.OgeEtiketi</a>
             </div>
         }
         @if (a.DevamEdenler.Count == 1)

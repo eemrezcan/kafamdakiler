@@ -19,7 +19,7 @@
         <input type="hidden" name="ogeId" value="@o.Id" />
         <label class="visually-hidden" for="p-@o.Id">Nereye kadar geldin?</label>
         <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
-               class="form-control" placeholder="Nereye kadar geldin?" required />
+               class="form-control" placeholder="@(string.IsNullOrWhiteSpace(a.Birim) ? "Konum" : a.Birim)" title="Nereye kadar geldin?" required />
         <label class="visually-hidden" for="d-@o.Id">Dakika</label>
         <input id="d-@o.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute" placeholder="dk" />
         <button type="submit" class="btn btn-primary">Kaydet</button>

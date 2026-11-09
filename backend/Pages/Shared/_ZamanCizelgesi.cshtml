@@ -4,14 +4,16 @@
    ViewData["PlanGoster"] = false leaves the plan items out (the day page shows the plan itself). *@
 @{
     var planGoster = ViewData["PlanGoster"] as bool? ?? true;
-    var saatsiz = Model.Saatsiz.Where(o => planGoster || o.Tur != "plan").ToList();
+    // YalnizSaatli (the home page): undated plan lines and reminders belong to the plan and the coming list; all-day events stay.
+    var yalnizSaatli = ViewData["YalnizSaatli"] as bool? ?? false;
+    var saatsiz = Model.Saatsiz.Where(o => (planGoster || o.Tur != "plan") && (!yalnizSaatli || o.Tur == "etkinlik")).ToList();
     // An empty day with nothing to warn about takes no room: the plan below already says what the day holds.
     var bos = Model.Saatli.Count == 0 && saatsiz.Count == 0;
     var gizli = bos && Model.Kapasite is null && !(Model.Plan == "okunamadi" && planGoster);
 }
 @if (!gizli)
 {
-<section class="kd-yonetim-blok" id="zaman-cizelgesi" aria-labelledby="cizelge-baslik">
+<section class="kd-blok kd-cizelge" id="zaman-cizelgesi" aria-labelledby="cizelge-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="cizelge-baslik">Zaman çizelgesi</h2>
 
     @if (Model.Google == "bagliDegil" || Model.Google == "yenidenBaglan")

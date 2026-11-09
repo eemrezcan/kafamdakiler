@@ -117,6 +117,11 @@ body {
   z-index: 1;
 }
 
+/* One container width on every page, top bar and footer included. */
+.container {
+  max-width: 1200px;
+}
+
 ::selection {
   background: rgba(var(--kd-violet-rgb), 0.28);
 }
@@ -863,24 +868,22 @@ body {
   pointer-events: none;
 }
 
-/* Fades an element in once on load, like a slide coming into focus. */
+/* Fades an element in once on load: a short rise, no blur. */
 .kd-rise {
-  animation: kd-focus 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: kd-focus 0.15s ease-out both;
 }
 
 .kd-rise-delay {
-  animation-delay: 0.15s;
+  animation-delay: 0s;
 }
 
 @keyframes kd-focus {
   from {
     opacity: 0;
-    filter: blur(6px);
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    filter: none;
     transform: none;
   }
 }
@@ -1128,9 +1131,14 @@ body {
 
 .kd-habits {
   display: grid;
-  align-items: start;
+  align-items: stretch;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+
+/* Cards in a row are equally tall: the 7-day strip sits at the bottom. */
+.kd-habits > .kd-habit > .kd-strip {
+  margin-top: auto;
 }
 
 .kd-habits--dim {
@@ -1485,16 +1493,24 @@ body {
   margin: 0.6rem 0 0;
 }
 
+.kd-progress-form {
+  flex-wrap: nowrap;
+}
+
+/* Short placeholders (unit, "dk"), so nothing is cut off; the field, the minutes and the button share one row and one height. */
 .kd-progress-form .form-control {
-  /* Wide enough for the "Nereye kadar geldin?" placeholder; the button wraps below instead. */
-  flex: 1 1 11rem;
-  min-width: 11rem;
+  flex: 1 1 5rem;
+  min-width: 0;
   min-height: 2.75rem;
 }
 
 .kd-progress-form .kd-minute {
-  flex: 0 0 4.5rem;
-  min-width: 0;
+  flex: 0 0 4rem;
+}
+
+.kd-progress-form .btn {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
 }
 
 /* Last 7 days. */
@@ -2628,9 +2644,13 @@ textarea.form-control {
 
 /* ----- Yönetim (Sahip panel): the Asistan's permissions, the brain, the sending queue ----- */
 
-.kd-yonetim-blok {
-  max-width: 48rem;
+.kd-yonetim-blok,
+.kd-blok {
   margin-bottom: 2rem;
+}
+
+.kd-yonetim-blok {
+  max-width: 47.5rem;
 }
 
 .kd-izin {
@@ -2684,11 +2704,10 @@ textarea.form-control {
 
 /* ----- Beyin (read-only pages of the second brain) ----- */
 
-.kd-beyin-liste,
-.kd-beyin-gun-gezinme,
+/* Only forms keep a readable width; lists and the day page use the whole container. */
 .kd-beyin-ara-form,
 .kd-yonetim-blok {
-  max-width: 48rem;
+  max-width: 47.5rem;
 }
 
 /* A list row that is a link as a whole (projects, search hits). */
@@ -3057,7 +3076,6 @@ textarea.form-control {
 
 /* "Bugün sığmıyor": a warning, not an error. */
 .kd-gun-uyari {
-  max-width: 48rem;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--kd-line);
@@ -3239,4 +3257,319 @@ textarea.form-control {
 .kd-bugun-satir small {
   color: var(--kd-text-muted);
   white-space: nowrap;
+}
+
+/* ---------- Bugün layout, rows and day navigation (UI pass) ---------- */
+
+/* Two columns from 992px; below, one column where `order` interleaves the wrappers' children (they dissolve with display: contents). */
+.kd-bugun {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.kd-bugun-ana,
+.kd-bugun-yan,
+.kd-bugun-plan {
+  display: contents;
+}
+
+@media (max-width: 991.98px) {
+  .kd-bugun-aliskanlik { order: 1; }
+  .kd-bugun-yan > .kd-brifing,
+  .kd-bugun-yan > .kd-onay-karti { order: 2; }
+  .kd-bugun-yan > .kd-cizelge { order: 3; }
+  .kd-bugun-plan { order: 4; }
+  .kd-bugun-yan > .kd-bugun-yaklasan { order: 5; }
+
+  /* display: contents drops the box, so the plan's children carry the order. */
+  .kd-bugun-plan > * { order: 4; }
+}
+
+@media (min-width: 992px) {
+  .kd-bugun {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    align-items: start;
+    column-gap: 2rem;
+  }
+
+  .kd-bugun-ana,
+  .kd-bugun-yan {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .kd-bugun-plan {
+    display: block;
+  }
+}
+
+.kd-bugun .kd-blok {
+  margin-bottom: 1.5rem;
+}
+
+.kd-bugun .kd-section-title {
+  margin-bottom: 0.6rem;
+}
+
+/* Day navigation: ‹ 9 Kasım Pzt › and a small calendar, one row. */
+.kd-gun-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.kd-gun-nav .kd-icon-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  text-decoration: none;
+}
+
+.kd-gun-nav-etiket {
+  min-width: 6.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.kd-gun-nav-tarih {
+  position: relative;
+  display: inline-flex;
+  margin: 0 0 0 0.25rem;
+}
+
+/* The date field is only there to carry the value and the picker; the calendar button stands for it. */
+.kd-gun-nav-girdi {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kd-gun-nav .kd-filter-chip {
+  margin-left: 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .kd-gun-nav {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .kd-gun-nav-etiket {
+    flex: 0 1 auto;
+  }
+}
+
+/* A compact row: plan line, task, "left over from yesterday". Title, small meta under it, small actions on the right. */
+.kd-satir {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.5rem;
+  margin-bottom: 0.4rem;
+  padding: 0.45rem 0.5rem 0.45rem 0.85rem;
+  border: 1px solid var(--kd-line);
+  border-left: 3px solid var(--kd-hue, var(--kd-violet));
+  border-radius: 0.5rem;
+  background: var(--kd-surface-solid);
+}
+
+.kd-satir-govde {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kd-satir-baslik {
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.kd-satir-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.6rem;
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-satir-meta .kd-status {
+  margin: 0;
+}
+
+/* "Günlere böl" / "Not ekle" sit in the meta line as a small link; opened, the form takes a line of its own. */
+.kd-satir-ac > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  cursor: pointer;
+  color: var(--kd-text-muted);
+  text-decoration: underline dotted;
+}
+
+.kd-satir-ac[open] {
+  flex-basis: 100%;
+}
+
+.kd-satir-ac .kd-gun-form {
+  margin: 0.4rem 0 0.25rem;
+}
+
+.kd-satir .kd-gun-actions .btn {
+  min-height: 2.5rem;
+}
+
+.kd-satir-islem {
+  margin: 0;
+}
+
+.kd-bitir-btn {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--kd-line-strong);
+  color: var(--kd-text);
+}
+
+.kd-bitir-btn:hover {
+  border-color: var(--kd-ok);
+  color: var(--kd-ok);
+}
+
+/* No habits today: a visible card, not hidden text. */
+.kd-bos-kart {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px dashed var(--kd-line-strong);
+  border-radius: 0.6rem;
+  color: var(--kd-text-muted);
+}
+
+/* The briefing folds; the approval pointer stays visible above the fold. */
+.kd-brifing .kd-onay-karti {
+  margin-bottom: 0.6rem;
+}
+
+.kd-brifing-ac > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.75rem;
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+
+.kd-brifing-ac > summary .kd-section-title {
+  margin: 0;
+}
+
+.kd-brifing-ozet {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-brifing-ac[open] .kd-brifing-ozet {
+  display: none;
+}
+
+.kd-brifing .kd-capture {
+  padding: 0.6rem 0.6rem 0.6rem 0.8rem;
+}
+
+.kd-cizelge .kd-capture {
+  padding: 0.55rem 0.8rem;
+}
+
+/* Inbox cards: tighter, the actions in one row at the top right, the manual form only when opened. */
+.kd-gelen-kart {
+  gap: 0.4rem 1rem;
+  padding: 0.65rem 0.75rem 0.65rem 1rem;
+}
+
+.kd-gelen-kart .kd-eylem-ozet {
+  margin-bottom: 0.15rem;
+}
+
+.kd-gelen-kart .kd-eylem-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.kd-gelen-kart .kd-eylem-actions .btn {
+  min-height: 2.5rem;
+}
+
+.kd-gelen-elle {
+  margin-top: 0.3rem;
+}
+
+.kd-gelen-elle summary {
+  display: inline-flex;
+  min-height: 2.5rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.4rem;
+}
+
+.kd-gelen-elle[open] summary {
+  margin-bottom: 0.4rem;
+}
+
+@media (max-width: 575.98px) {
+  .kd-gelen-kart {
+    flex-direction: column;
+  }
+
+  .kd-gelen-kart .kd-eylem-actions {
+    order: -1;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .kd-satir .kd-gun-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Menu: six entries fit between 576px and 992px. */
+@media (max-width: 991.98px) {
+  .kd-topbar-inner {
+    gap: 1rem;
+  }
+
+  .kd-nav-links {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .kd-brand-name {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-rise {
+    animation: none;
+  }
+}
+
+.kd-bugun-satir {
+  flex-wrap: wrap;
 }
