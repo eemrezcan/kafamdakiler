@@ -512,3 +512,6 @@ deploy/beyin/
 deploy/veri/
 deploy/claude/
 deploy/yedek/restic.env
+
+# Firebase config (project id, app id); kept out of the public repo
+mobile/android/app/google-services.json
