@@ -613,6 +613,46 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Hatirlaticilar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Hatirlaticilar.HatirlaticiOlayi", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("HatirlaticiId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("HedefAn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("Zaman")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Zaman");
+
+                    b.ToTable("HatirlaticiOlaylari");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Ozet.HaftalikOzetKaydi", b =>
+                {
+                    b.Property<DateOnly>("Hafta")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("YazilmaAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Hafta");
+
+                    b.ToTable("HaftalikOzetler");
+                });
+
             modelBuilder.Entity("Kafamdakiler.ProjeRepolari.ProjeRepo", b =>
                 {
                     b.Property<string>("ProjeKimligi")

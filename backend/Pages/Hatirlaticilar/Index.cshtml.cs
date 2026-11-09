@@ -50,7 +50,7 @@ public class IndexModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider saa
         if (h is null)
             return NotFound();
 
-        var sonuc = HatirlaticiIslemleri.Yaptim(h, ayar.VarsayilanSaat, saat.GetUtcNow());
+        var sonuc = HatirlaticiIslemleri.Yaptim(db, h,ayar.VarsayilanSaat, saat.GetUtcNow());
         if (sonuc.Basarili)
         {
             await db.SaveChangesAsync(ct);
@@ -70,7 +70,7 @@ public class IndexModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider saa
         if (h is null)
             return NotFound();
 
-        var sonuc = HatirlaticiIslemleri.Ertele(h, sure, ayar.VarsayilanSaat, saat.GetUtcNow());
+        var sonuc = HatirlaticiIslemleri.Ertele(db, h,sure, ayar.VarsayilanSaat, saat.GetUtcNow());
         if (sonuc.Basarili)
         {
             await db.SaveChangesAsync(ct);

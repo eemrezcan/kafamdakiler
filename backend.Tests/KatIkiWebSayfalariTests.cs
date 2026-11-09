@@ -168,6 +168,45 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
             Assert.Empty(await db.ProjeRepolari.ToListAsync(Ct));
     }
 
+    // Weekly summary (Yönetim)
+
+    [Fact]
+    public async Task Yonetim_WeeklySummary_ShowsNoneYet_WritesOnTheButton_AndLeavesTheWrittenWeekAlone()
+    {
+        await TemizleAsync();
+        await using (var db = YeniDb())
+            await db.HaftalikOzetler.ExecuteDeleteAsync(Ct);
+        var beyin = Beyin(_ => { });
+        var tarayici = await SahipAsync(WebFabrika(beyin));
+
+        Assert.Contains("Henüz yazılmadı", await MetinAsync(tarayici, "/Yonetim"));
+
+        var ilk = await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=OzetYaz");
+        Assert.Equal(HttpStatusCode.Redirect, ilk.StatusCode);
+        var sayfa = await MetinAsync(tarayici, "/Yonetim");
+        Assert.Contains("Haftalık özet beyne yazıldı (2026-W45)", sayfa);
+        Assert.Contains("2026-W45 · yazıldı", sayfa);
+
+        await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=OzetYaz");
+        Assert.Contains("zaten yazılmış", await MetinAsync(tarayici, "/Yonetim"));
+        Assert.Single(beyin.Cagrilar(), c => SahteBeyin.Argumanlar(c)[0] == "not-ekle");
+    }
+
+    [Fact]
+    public async Task Yonetim_WeeklySummary_WithoutTheBrain_SaysSo_AndRecordsNothing()
+    {
+        await TemizleAsync();
+        await using (var db = YeniDb())
+            await db.HaftalikOzetler.ExecuteDeleteAsync(Ct);
+        var tarayici = await SahipAsync(WebFabrika());
+
+        await PostAsync(tarayici, "/Yonetim", "/Yonetim?handler=OzetYaz");
+
+        var sayfa = await MetinAsync(tarayici, "/Yonetim");
+        Assert.Contains("Beyin bağlı değil; haftalık özet yazılamadı.", sayfa);
+        Assert.Contains("Henüz yazılmadı", sayfa);
+    }
+
     // Google Calendar (Yönetim)
 
     [Fact]

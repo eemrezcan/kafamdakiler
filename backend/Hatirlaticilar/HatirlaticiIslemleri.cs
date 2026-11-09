@@ -1,4 +1,5 @@
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Data;
 
 namespace Kafamdakiler.Hatirlaticilar;
 
@@ -54,6 +55,24 @@ public static class HatirlaticiIslemleri
 
         h.ErteleAn = an;
         return Sonuc.Tamam;
+    }
+
+    // The same two actions, and on success the event the weekly summary counts. The event is added to the context; the caller saves.
+    public static Sonuc Yaptim(AppDbContext db, Hatirlatici h, TimeOnly varsayilan, DateTimeOffset simdi) =>
+        OlayliUygula(db, h, HatirlaticiOlayTuru.Yapildi, simdi, () => Yaptim(h, varsayilan, simdi));
+
+    public static Sonuc Ertele(AppDbContext db, Hatirlatici h, string? sure, TimeOnly varsayilan, DateTimeOffset simdi) =>
+        OlayliUygula(db, h, HatirlaticiOlayTuru.Ertelendi, simdi, () => Ertele(h, sure, varsayilan, simdi));
+
+    private static Sonuc OlayliUygula(AppDbContext db, Hatirlatici h, HatirlaticiOlayTuru tur, DateTimeOffset simdi, Func<Sonuc> uygula)
+    {
+        // The due moment is read before the action moves it.
+        var hedef = h.EtkinAn;
+        var sonuc = uygula();
+        if (sonuc.Basarili)
+            db.HatirlaticiOlaylari.Add(new HatirlaticiOlayi { HatirlaticiId = h.Id, Tur = tur, HedefAn = hedef, Zaman = simdi });
+
+        return sonuc;
     }
 
     public static HatirlaticiDto DtoYap(Hatirlatici h, DateTimeOffset simdi) => new(
