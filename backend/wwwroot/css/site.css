@@ -1328,6 +1328,22 @@ body {
   color: var(--kd-ink-text);
 }
 
+/* A habit card's main action (the shelf "Kaydet") wears the card's hue, like the stepper's "+". */
+.kd-btn-hue {
+  border: 1px solid var(--kd-hue);
+  background: var(--kd-hue);
+  color: var(--kd-ink-text);
+  font-weight: 600;
+}
+
+.kd-btn-hue:hover,
+.kd-btn-hue:focus-visible {
+  border-color: var(--kd-hue);
+  background: var(--kd-hue);
+  color: var(--kd-ink-text);
+  filter: brightness(1.08);
+}
+
 /* The typed amount: a centered number with a small check button inside the field, on the right. */
 .kd-stepper-set {
   position: relative;
