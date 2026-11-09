@@ -20,17 +20,7 @@ RUN dotnet tool install --global dotnet-ef --version 10.0.14
 ENV PATH="${PATH}:/root/.dotnet/tools"
 RUN dotnet ef migrations bundle --project backend/Kafamdakiler.csproj --configuration Release --output /out/efbundle
 
-# Stage 3: Claude Code (Kat 2 karar 7), the official native build pinned to one version. Downloaded here so the
-# runtime image needs no curl; the single binary is copied over.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS claude
-ARG CLAUDE_CODE_SURUMU=2.1.296
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_CODE_SURUMU" \
-    && cp -L /root/.local/bin/claude /claude
-
-# Stage 4: the runtime image. No SDK and no source code.
+# Stage 3: the runtime image. No SDK and no source code.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 
 # beyin.py (K-0023) runs inside this container: Python 3 (standard library only) and git.
@@ -38,9 +28,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 git \
     && rm -rf /var/lib/apt/lists/*
 
-# Claude Code: the app calls it without tools (backend/Claude/). Its login and settings live in /claude, a host
-# folder (deploy/compose.yaml), so a rebuilt image stays signed in. Updates come with a new pinned version, not by itself.
-COPY --from=claude /claude /usr/local/bin/claude
+# Claude Code: the app calls it without tools (backend/Claude/). The image carries no binary: the host's single
+# install is bind-mounted read-only at /usr/local/bin/claude (deploy/compose.yaml), so the version is the host's.
+# Its login and settings live in /claude, a host folder, so a rebuilt image stays signed in.
 ENV CLAUDE_CONFIG_DIR=/claude \
     DISABLE_AUTOUPDATER=1
 

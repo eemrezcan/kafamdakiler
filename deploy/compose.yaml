@@ -72,6 +72,15 @@ services:
       - ${BEYIN_KLASORU:-./beyin}:/beyin
       # Claude Code's login and settings (CLAUDE_CONFIG_DIR in the image); owned by uid 1654, mode 700.
       - ${CLAUDE_KLASORU:-./claude}:/claude
+      # The host's single Claude Code binary (not in the image), read only; the version comes from the host install.
+      # Set CLAUDE_IKILISI if it lives elsewhere. A missing file fails the start instead of leaving an empty
+      # directory on the host (create_host_path: false).
+      - type: bind
+        source: ${CLAUDE_IKILISI:-/usr/local/bin/claude}
+        target: /usr/local/bin/claude
+        read_only: true
+        bind:
+          create_host_path: false
     healthcheck:
       # The image has no curl; Python is there for beyin.py anyway.
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/saglik', timeout=3)"]
