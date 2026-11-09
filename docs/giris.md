@@ -154,6 +154,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - Tek Claude kurulumu (2026-11-09): `deploy/Dockerfile` (Claude aşaması kalktı), `deploy/compose.yaml` (ana makinedeki ikilinin salt okunur bağlanması), `deploy/.env.example`: Claude'un açtığı Sonnet işçisi yazdı, bağlamanın eksik dosyada hata vermesi Claude.
 - Gmail elemesi ve model başına bütçe (2026-11-09): `backend/Gmail/` (kategori elemesi, toplu Haiku seçimi, yalnız önemliye Sonnet), `backend/Claude/` (model başına günlük sınır), Yönetim'deki "Claude kullanımı" bölümü ve testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - Yeni etiket akışı (2026-11-09): `backend/Gelen/` (öneride yeni etiket, sözlük bölümleri), `backend/Eylemler/YerlestirTuru.cs` (önce `etiket ekle`, sonra yerleştirme), `EylemHatasi`, web ve mobil Gelen ekranları ve testleri: Claude'un açtığı Sonnet işçisi yazdı, istemdeki eş sözcük kuralı Claude.
+- Haftalık ölçüm özeti (2026-11-09): `backend/Ozet/` (Pazar 21:00 özet, beyne `not-ekle`), `backend/Hatirlaticilar/HatirlaticiOlayi.cs` (yaptım/ertele olayları), `BeyinIstemcisi.NotEkleAsync`, `HaftalikOzet` migration, Yönetim'deki özet satırı ve testleri: Claude'un açtığı Sonnet işçisi yazdı; etiket yazımı ve Yönetim birleştirmesi Claude.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
