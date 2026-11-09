@@ -156,6 +156,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - Yeni etiket akışı (2026-11-09): `backend/Gelen/` (öneride yeni etiket, sözlük bölümleri), `backend/Eylemler/YerlestirTuru.cs` (önce `etiket ekle`, sonra yerleştirme), `EylemHatasi`, web ve mobil Gelen ekranları ve testleri: Claude'un açtığı Sonnet işçisi yazdı, istemdeki eş sözcük kuralı Claude.
 - Haftalık ölçüm özeti (2026-11-09): `backend/Ozet/` (Pazar 21:00 özet, beyne `not-ekle`), `backend/Hatirlaticilar/HatirlaticiOlayi.cs` (yaptım/ertele olayları), `BeyinIstemcisi.NotEkleAsync`, `HaftalikOzet` migration, Yönetim'deki özet satırı ve testleri: Claude'un açtığı Sonnet işçisi yazdı; etiket yazımı ve Yönetim birleştirmesi Claude.
 - Sunucudan anlık bildirim, FCM (2026-11-09): `backend/Bildirimler/` (bildirim ve cihaz kaydı, yalnız kimlik taşıyan FCM mesajı, uçlar), `BildirimKanali` migration, Yönetim'deki "Telefona bildirim" bölümü, `deploy/` gizli klasör bağlaması, mobilde `push_*` dosyaları, `sunucu_bildirim_gosterici.dart`, `push_hedefi.dart`, Firebase Gradle ayarı ve testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
+- Tek bildirim hattı (2026-11-10): `backend/Bildirimler/` (zamanlayıcı, hatırlatıcı ve görev bildirimcileri, `GorevKaniti`), `backend/Eylemler/GorevKapatTuru.cs`, `TekBildirimHatti` migration, mobilde `bildirim_izni.dart`, `bildirim_kapali_uyarisi.dart` ve push ile yerel bildirimin eşleşmesi, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
