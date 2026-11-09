@@ -9,6 +9,7 @@ import 'brifing_repository.dart';
 import 'esitleyici.dart';
 import 'eylem_bildirim_yoneticisi.dart';
 import 'hatirlatici_repository.dart';
+import 'is_bildirim_yoneticisi.dart';
 
 /// Keeps the phone's scheduled notifications in step with the reminders: after every sync, at app start and after
 /// every local write the whole plan is cancelled and set up again ([bildirimleriPlanla]). Also answers the notification
@@ -20,6 +21,7 @@ class HatirlaticiBildirimYoneticisi {
     required this._servis,
     required this._yazabilir,
     this.eylemler,
+    this.isler,
     this.brifing,
     bool Function()? brifingOkuyabilir,
     DateTime Function()? simdi,
@@ -32,6 +34,9 @@ class HatirlaticiBildirimYoneticisi {
 
   /// The approval queue's notifications share the plugin and its one response callback; its responses go here.
   final EylemBildirimYoneticisi? eylemler;
+
+  /// The work cards' notification buttons go here.
+  final IsBildirimYoneticisi? isler;
 
   /// The morning briefing's setting lives here; without it (or when the user may not read the briefing) no briefing
   /// notification is planned. It joins the reminders in the one plan, because setting a plan up cancels every other.
@@ -55,6 +60,11 @@ class HatirlaticiBildirimYoneticisi {
   }) async {
     _repo.addListener(_yerelDegisti);
     Future<void> yanitla(BildirimYaniti y) async {
+      if (y.isEylemi != null) {
+        // A card's button: the answer or approval is written there; the card opens only when it could not be.
+        if (await (isler?.yanitla(y) ?? Future.value(true)) && y.rota != null) rotayiAc?.call(y.rota!);
+        return;
+      }
       if (y.rota != null) {
         rotayiAc?.call(y.rota!);
         return;

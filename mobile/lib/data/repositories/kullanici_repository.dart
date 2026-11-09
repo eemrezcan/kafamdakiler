@@ -27,6 +27,12 @@ class KullaniciRepository extends ChangeNotifier {
 
   static const brifingIzni = 'brifing.oku';
 
+  /// The work cards (Asistan işleri) are read with the `isler.oku` permission; the Sahip always may. Writing them from the app
+  /// is the Sahip's, like every other write (M07).
+  bool get islerOkuyabilir => sahip || (_ben?.izinler.contains(islerIzni) ?? false);
+
+  static const islerIzni = 'isler.oku';
+
   /// Reads the cached answer (no network): called at app start.
   Future<void> baslat() async {
     final satir = await (_db.select(_db.kullaniciOnbellek)..where((t) => t.id.equals(1))).getSingleOrNull();

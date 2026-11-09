@@ -15,6 +15,8 @@ import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/gelen.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/hatirlatici.dart';
+import 'package:kafamdakiler/data/models/is_karti.dart';
+import 'package:kafamdakiler/data/repositories/is_repository.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/data/models/giris.dart';
 import 'package:kafamdakiler/data/models/oturum.dart';
@@ -529,6 +531,24 @@ class SahteApi extends ApiService {
     return projeler;
   }
 
+  // ---- Work cards (/api/isler; the writes go through [beyinYaz]) ----
+
+  /// The board the fake server answers (open and finished this week).
+  List<IsKarti> isKartlari = [];
+  Map<String, IsAyrinti> isAyrintilari = {};
+
+  @override
+  Future<List<IsKarti>> islerGetir({bool kapali = false}) async {
+    _beyinKontrol('islerGetir');
+    return isKartlari;
+  }
+
+  @override
+  Future<IsAyrinti> isGetir(String kimlik) async {
+    _beyinKontrol('isGetir');
+    return isAyrintilari[kimlik] ?? (throw _yok('isGetir'));
+  }
+
   @override
   Future<ProjeDetay> beyinProje(String kimlik) async {
     _beyinKontrol('beyinProje');
@@ -929,6 +949,7 @@ class TestOrtami {
       simdi: () => sabitAn,
     );
     beyin = BeyinRepository(api: this.api, db: db);
+    isler = IsRepository(api: this.api, db: db);
     gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici, simdi: () => sabitAn);
     hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
@@ -943,6 +964,7 @@ class TestOrtami {
   late final AliskanlikRepository repo;
   late final YakalamaRepository yakalamalar;
   late final BeyinRepository beyin;
+  late final IsRepository isler;
   late final GunPlaniRepository gunPlani;
   late final HatirlaticiRepository hatirlaticilar;
   late final EylemRepository eylemler;
@@ -1016,4 +1038,10 @@ class SahteBildirimServisi implements BildirimServisi {
 
   @override
   Future<void> bildirimiKapat(int id) async => kapatilanlar.add(id);
+
+  /// Work card notices that said a button did not work: (notification id, card id).
+  final List<(int, String)> isHatalari = [];
+
+  @override
+  Future<void> isHatasiBildir({required int id, required String baslik, required String kimlik}) async => isHatalari.add((id, kimlik));
 }

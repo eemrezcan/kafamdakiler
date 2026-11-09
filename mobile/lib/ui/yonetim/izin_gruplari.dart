@@ -77,6 +77,13 @@ const izinGruplari = [
     yazar: ['plan.yaz', 'gorev.yaz'],
   ),
   IzinGrubu(
+    id: 'isler',
+    ad: 'Asistan işleri',
+    aciklama: 'İş kartlarını, planlarını ve sorularını görür; yazarsa kart açar, soruları cevaplar, kapıları onaylar.',
+    okur: ['isler.oku'],
+    yazar: ['isler.yaz'],
+  ),
+  IzinGrubu(
     id: 'takvim',
     ad: 'Takvim ve brifing',
     aciklama: 'Zaman çizelgesini ve sabah brifingini görür; yazarsa takvime etkinlik ekler (onaydan geçerek).',

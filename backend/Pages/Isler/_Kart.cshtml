@@ -1,0 +1,21 @@
+@using Kafamdakiler.Isler
+@model IsKartiDto
+
+<a class="kd-capture kd-beyin-satir kd-c-violet" asp-page="/Isler/Detay" asp-route-kimlik="@Model.Kimlik">
+    <div class="kd-capture-body">
+        <p class="kd-capture-text mb-1">@Model.Baslik</p>
+        <p class="kd-capture-meta">
+            <span>@IsGorunum.Asama(Model.Asama)</span>
+            <span>@IsGorunum.Sahip(Model.Sahip)</span>
+            @if (IsGorunum.Yer(Model) is { Length: > 0 } yer)
+            {
+                <span>@yer</span>
+            }
+            @if (Model.BekleyenSoru > 0)
+            {
+                <span>@Model.BekleyenSoru cevapsız soru</span>
+            }
+        </p>
+    </div>
+    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#arrow-right"></use></svg>
+</a>

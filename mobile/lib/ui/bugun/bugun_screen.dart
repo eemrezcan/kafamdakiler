@@ -5,6 +5,8 @@ import '../../data/models/aliskanlik.dart';
 import '../../data/repositories/bildirim_izni.dart';
 import '../../utils/aliskanlik_gunu.dart';
 import '../ara/ara_dugmesi.dart';
+import '../asistan/asistan_ozet_karti.dart';
+import '../asistan/asistan_pano_view_model.dart';
 import '../brifing/brifing_seridi.dart';
 import '../brifing/brifing_view_model.dart';
 import '../core/renkler.dart';
@@ -25,7 +27,7 @@ import 'zaman_cizelgesi_karti.dart';
 import 'zaman_cizelgesi_view_model.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.zamanCizelgesi, this.brifing, this.brifingSes, this.bildirimIzni});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.asistanOzet, this.zamanCizelgesi, this.brifing, this.brifingSes, this.bildirimIzni});
 
   final BugunViewModel viewModel;
 
@@ -40,6 +42,9 @@ class BugunScreen extends StatelessWidget {
 
   /// The "Onay bekleyen N" card, above the plan card; it hides itself when nothing waits.
   final OnayBekleyenViewModel? onayBekleyen;
+
+  /// The "Asistan" card (work cards: waiting on the person, at the VPS, finished this week); null for someone who may not read them.
+  final AsistanOzetViewModel? asistanOzet;
 
   /// Today's one timeline (events, timed reminders, plan items), above the plan card; hidden until it has an answer.
   final ZamanCizelgesiViewModel? zamanCizelgesi;
@@ -88,6 +93,7 @@ class BugunScreen extends StatelessWidget {
                 plan.yukle(),
                 if (yaklasanlar != null) yaklasanlar!.yukle(),
                 if (onayBekleyen != null) onayBekleyen!.yukle(),
+                if (asistanOzet != null) asistanOzet!.yukle(),
                 if (zamanCizelgesi != null) zamanCizelgesi!.yukle(),
                 if (brifing != null) brifing!.yukle(),
               ]),
@@ -172,6 +178,7 @@ class BugunScreen extends StatelessWidget {
         const _Tarih(),
         if (brifing != null && brifingSes != null) BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!),
         if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
+        if (asistanOzet != null) AsistanOzetKarti(viewModel: asistanOzet!),
         if (zamanCizelgesi != null) ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
         if (plan != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: GunPlaniKarti(viewModel: plan)),
         // Hidden until it has an answer, so a failing reminders read leaves no gap.

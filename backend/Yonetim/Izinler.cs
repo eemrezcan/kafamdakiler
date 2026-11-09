@@ -4,6 +4,7 @@ using Kafamdakiler.Brifing;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Isler;
 using Kafamdakiler.Ses;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Yakalamalar;
@@ -27,6 +28,8 @@ public static class Izinler
         new(BeyinPolicies.Oku, "Beyni okur: proje, gün planı, arama, not"),
         new(BeyinPolicies.PlanYaz, "Gün planına madde ekler, işaretler, devreder, not yazar; görevi günlere böler"),
         new(BeyinPolicies.GorevYaz, "Görev ekler ve bitirir"),
+        new(IsPolicies.Oku, "İş kartlarını okur: plan, sorular, geçmiş"),
+        new(IsPolicies.Yaz, "İş kartı açar, sorularını cevaplar, aşamasını değiştirir (kapı onayları dahil), not yazar"),
         new(EylemPolicies.Oku,"Onay kuyruğunu okur: bekleyen ve karara bağlanmış eylemler"),
         new(EylemPolicies.Onayla, "Onay kuyruğundaki eylemi uygular, reddeder, geri alır"),
         new(GelenPolicies.Oku, "Gelen kutusunu okur: kartlar ve Claude'un yerleştirme önerileri"),

@@ -1,8 +1,9 @@
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Isler;
 
 namespace Kafamdakiler.Bildirimler;
 
-// The one timer of the notification line. Every minute: the reminders that came due are sent. At the set hours of the day
+// The one timer of the notification line. Every minute: the reminders that came due are sent, and the work cards that have fallen to the person are told about. At the set hours of the day
 // (Istanbul): the brain's due tasks are looked at, once for each hour. A late start (the server was down at 09:00) still makes that
 // hour's round if it is within the window; later than that the hour is skipped, not made up.
 public class BildirimZamanlayici(IServiceScopeFactory kapsamlar, BildirimHattiAyari ayar, TimeProvider saat, ILogger<BildirimZamanlayici> log) : BackgroundService
@@ -31,6 +32,18 @@ public class BildirimZamanlayici(IServiceScopeFactory kapsamlar, BildirimHattiAy
             var yapilan = await kapsam.ServiceProvider.GetRequiredService<HatirlaticiBildirimci>().TurAsync(ct);
             if (yapilan > 0)
                 log.LogInformation("{Sayi} reminder notification(s) were sent.", yapilan);
+
+            // The card watcher is its own try: a trouble with the brain's cards must not stop the task round below.
+            try
+            {
+                var isler = await kapsam.ServiceProvider.GetRequiredService<IsBildirimci>().TurAsync(ct);
+                if (isler.Bildirilen > 0)
+                    log.LogInformation("{Sayi} work card notification(s) were sent.", isler.Bildirilen);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                log.LogError(e, "The work card round failed.");
+            }
 
             if (GorevSaati(ayar, saat.GetUtcNow()) is { } vakit && !_yapilanlar.Contains(vakit))
             {
@@ -75,6 +88,7 @@ public static class BildirimHattiServisleri
         services.AddSingleton<IKomitOkuyucu, GitKomitOkuyucu>();
         services.AddScoped<HatirlaticiBildirimci>();
         services.AddScoped<GorevBildirimci>();
+        services.AddScoped<IsBildirimci>();
         services.AddSingleton<BildirimZamanlayici>();
         services.AddHostedService(sp => sp.GetRequiredService<BildirimZamanlayici>());
         return services;

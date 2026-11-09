@@ -1,3 +1,5 @@
+import 'is_karti.dart';
+
 /// Response of `GET /api/bildirimler/{id}`: the text of a notification the server woke the phone for. FCM carries only
 /// the id; the phone reads the rest from here over the tailnet.
 class SunucuBildirimi {
@@ -8,6 +10,7 @@ class SunucuBildirimi {
     this.rota,
     this.hedefKimligi,
     this.kaynakTuru,
+    this.secenekler = const [],
   });
 
   final String id;
@@ -19,8 +22,15 @@ class SunucuBildirimi {
   final String? hedefKimligi;
 
   /// What made it: `hatirlatici` is a reminder's moment (its [hedefKimligi] is the reminder), `gorev` and `dogrulama` come from the
-  /// brain's tasks, `test` is the Yönetim test send.
+  /// brain's tasks, `is` from a work card, `test` is the Yönetim test send.
   final String? kaynakTuru;
+
+  /// The buttons the server offers (work cards: the answers of a decision, "Onayla" at the code gate). Empty for any other
+  /// notification, and for a person who may not write the cards.
+  final List<BildirimSecenegi> secenekler;
+
+  /// A work card fell to the person (`hedefKimligi` is the card).
+  bool get isKartiMi => kaynakTuru == 'is' && hedefKimligi != null && hedefKimligi!.isNotEmpty;
 
   /// A reminder's moment, sent by the server as the backup of the phone's own schedule.
   bool get hatirlaticiZamaniMi => kaynakTuru == 'hatirlatici' && hedefKimligi != null && hedefKimligi!.isNotEmpty;
@@ -32,5 +42,8 @@ class SunucuBildirimi {
         rota: json['rota'] as String?,
         hedefKimligi: json['hedefKimligi'] as String?,
         kaynakTuru: json['kaynakTuru'] as String?,
+        secenekler: [
+          for (final s in (json['secenekler'] as List?) ?? const []) BildirimSecenegi.fromJson(s as Map<String, dynamic>),
+        ],
       );
 }

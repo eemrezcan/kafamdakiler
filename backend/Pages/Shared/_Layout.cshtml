@@ -6,7 +6,7 @@
     var gelenAktif = currentPage.StartsWith("/Gelen") || currentPage.StartsWith("/Eylemler") || currentPage.StartsWith("/Yakalamalar");
     var projelerAktif = currentPage is "/Beyin/Index" or "/Beyin/Proje";
     var hatirlaticiAktif = currentPage.StartsWith("/Hatirlaticilar");
-    var dahaFazlaAktif = currentPage.StartsWith("/Aliskanliklar") || currentPage.StartsWith("/Yonetim");
+    var dahaFazlaAktif = currentPage.StartsWith("/Aliskanliklar") || currentPage.StartsWith("/Yonetim") || currentPage.StartsWith("/Isler");
     var araAktif = currentPage is "/Beyin/Ara" or "/Beyin/Not";
     // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
     var showChrome = User.Identity?.IsAuthenticated == true;
@@ -66,6 +66,7 @@
                     </button>
                     <ul class="dropdown-menu kd-menu kd-menu--simple">
                         <li><a class="dropdown-item @(currentPage.StartsWith("/Aliskanliklar") ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a></li>
+                        <li><a class="dropdown-item @(currentPage.StartsWith("/Isler") ? "active" : "")" asp-area="" asp-page="/Isler/Index">Asistan işleri</a></li>
                         <li><a class="dropdown-item @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">Yönetim</a></li>
                     </ul>
                 </div>
@@ -128,6 +129,10 @@
                 <a class="kd-drawer-link @(currentPage.StartsWith("/Aliskanliklar") ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
                     Alışkanlıklar
+                </a>
+                <a class="kd-drawer-link @(currentPage.StartsWith("/Isler") ? "active" : "")" asp-area="" asp-page="/Isler/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
+                    Asistan işleri
                 </a>
                 <a class="kd-drawer-link @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>

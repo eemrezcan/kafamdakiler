@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 
 import '../../utils/bildirim_plani.dart';
+import '../../utils/is_bildirimi.dart';
 import '../../utils/push_hedefi.dart';
 import '../models/sunucu_bildirimi.dart';
 import '../services/sunucu_bildirim_gosterici.dart';
@@ -51,6 +52,23 @@ class PushMesajIsleyici {
         baslik: bildirim.baslik,
         govde: bildirim.metin,
         hatirlaticiId: bildirim.hedefKimligi!,
+      );
+      return;
+    }
+
+    // A work card that fell to the person: the notification carries the buttons the server offered (only the ones a notification
+    // may carry; a forged option for a push or deploy approval is dropped).
+    if (bildirim != null && bildirim.isKartiMi) {
+      final kimlik = bildirim.hedefKimligi!;
+      await _gosterici.isKartiGoster(
+        id: bildirimKimligi('sunucu:$id'),
+        baslik: bildirim.baslik,
+        govde: bildirim.metin,
+        yuk: sunucuBildirimYuku(bildirim.rota, kimlik),
+        dugmeler: [
+          for (final s in bildirim.secenekler)
+            if (IsBildirimEylemi.secenekten(kimlik, s) case final e?) (kod: e.kod, etiket: s.etiket),
+        ],
       );
       return;
     }

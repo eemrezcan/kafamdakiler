@@ -91,6 +91,16 @@ class DahaFazlaScreen extends StatelessWidget {
                       trailing: const Icon(LucideIcons.chevronRight),
                       onTap: () => context.push(Rotalar.aliskanliklar),
                     ),
+                    // The work cards: for whoever may read them (the Sahip, or the Asistan with `isler.oku`).
+                    if (kullanici.islerOkuyabilir)
+                      ListTile(
+                        minTileHeight: 56,
+                        leading: const Icon(LucideIcons.bot),
+                        title: const Text('Asistan işleri'),
+                        subtitle: const Text('İş kartları, planlar ve sorular'),
+                        trailing: const Icon(LucideIcons.chevronRight),
+                        onTap: () => context.push(Rotalar.asistan),
+                      ),
                     // Permissions, brain status and the sending queue: the Sahip's only.
                     if (kullanici.sahip)
                       ListTile(

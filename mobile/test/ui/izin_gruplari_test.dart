@@ -7,7 +7,7 @@ void main() {
   const sunucuIzinleri = {
     'aliskanlik.oku', 'aliskanlik.yaz', 'yakalama.oku', 'yakalama.yaz', 'hatirlatici.oku', 'hatirlatici.yaz',
     'beyin.oku', 'plan.yaz', 'gorev.yaz', 'eylem.oku', 'eylem.onayla', 'gelen.oku', 'gelen.yaz',
-    'asistan.kullan', 'brifing.oku', 'takvim.oku', 'takvim.yaz', //
+    'asistan.kullan', 'brifing.oku', 'takvim.oku', 'takvim.yaz', 'isler.oku', 'isler.yaz', //
   };
 
   test('every permission is in exactly one group or is the Claude switch', () {

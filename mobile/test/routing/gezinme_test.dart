@@ -17,6 +17,8 @@ import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/gelen_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
+import 'package:kafamdakiler/data/repositories/is_repository.dart';
+import 'package:kafamdakiler/data/models/is_karti.dart';
 import 'package:kafamdakiler/data/repositories/kronometre_repository.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
 import 'package:kafamdakiler/data/repositories/yakalama_repository.dart';
@@ -114,6 +116,7 @@ void main() {
           ChangeNotifierProvider<HatirlaticiRepository>.value(value: ortam.hatirlaticilar),
           ChangeNotifierProvider<EylemRepository>.value(value: ortam.eylemler),
           ChangeNotifierProvider<GelenRepository>.value(value: ortam.gelen),
+          ChangeNotifierProvider<IsRepository>.value(value: ortam.isler),
           Provider<HatirlaticiBildirimYoneticisi>.value(
             value: HatirlaticiBildirimYoneticisi(
               repo: ortam.hatirlaticilar,
@@ -362,6 +365,77 @@ void main() {
     await tester.tap(find.text('Onay bekleyen 2'));
     await bekle(tester);
     expect(router.state.matchedLocation, '/eylemler');
+  });
+
+  group('the work cards', () {
+    IsKarti kart(String kimlik, {String asama = 'karar', String sahip = 'kullanici'}) => IsKarti(
+          kimlik: kimlik,
+          baslik: 'Kart $kimlik',
+          tip: 'kod',
+          asama: asama,
+          sahip: sahip,
+          proje: 'kitap-kulubu',
+          gecisler: const ['plan', 'iptal'],
+        );
+
+    testWidgets('the Asistan card on Bugün opens the board, and a card on the board opens its detail', (tester) async {
+      ortam.api.isKartlari = [kart('takvim'), kart('liste', asama: 'plan', sahip: 'vps')];
+      ortam.api.isAyrintilari = {
+        'takvim': IsAyrinti(kart: kart('takvim'), talep: 'Buluşma takvimi', plan: '## Adımlar\n- Ay görünümü'),
+      };
+      await uygulamayiAc(tester);
+
+      expect(find.text('Asistan'), findsOneWidget);
+      await tester.tap(find.text('Asistan'));
+      await bekle(tester);
+      expect(router.state.matchedLocation, '/asistan');
+      expect(find.text('Sende bekleyen · 1'), findsOneWidget);
+
+      await tester.tap(find.text('Kart takvim'));
+      await bekle(tester);
+      expect(router.state.matchedLocation, '/asistan/takvim');
+      expect(find.text('Buluşma takvimi'), findsOneWidget);
+    });
+
+    testWidgets('Daha fazla has "Asistan işleri", which opens the board', (tester) async {
+      ortam.api.isKartlari = [kart('takvim')];
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Daha fazla');
+
+      await tester.tap(find.text('Asistan işleri'));
+      await bekle(tester);
+
+      expect(router.state.matchedLocation, '/asistan');
+      expect(find.text('Kart takvim'), findsOneWidget);
+    });
+
+    testWidgets('the Sahip can open the new card form from its address', (tester) async {
+      await uygulamayiAc(tester);
+
+      router.go('/asistan/yeni');
+      await bekle(tester);
+
+      expect(router.state.matchedLocation, '/asistan/yeni');
+      expect(find.text('Kartı aç'), findsOneWidget);
+    });
+
+    testWidgets('the Asistan account is sent away from the form\'s address', (tester) async {
+      await uygulamayiAc(tester, rol: 'Asistan');
+
+      router.go('/asistan/yeni');
+      await bekle(tester);
+
+      expect(router.state.matchedLocation, '/aliskanliklar');
+    });
+
+    testWidgets('someone without the permission has no Asistan card on Bugün and no entry in Daha fazla', (tester) async {
+      ortam.api.isKartlari = [kart('takvim')];
+      await uygulamayiAc(tester, rol: 'Asistan');
+
+      expect(find.text('Asistan'), findsNothing);
+      await sekme(tester, 'Daha fazla');
+      expect(find.text('Asistan işleri'), findsNothing);
+    });
   });
 
   testWidgets('with nothing waiting neither Bugün nor Gelen has the "Onay bekleyen" card', (tester) async {

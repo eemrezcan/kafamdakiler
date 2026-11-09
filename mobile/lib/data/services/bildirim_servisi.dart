@@ -4,11 +4,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../utils/bildirim_plani.dart';
+import '../../utils/is_bildirimi.dart';
 import '../../utils/push_hedefi.dart';
 
 /// What the user did with a notification: [eylem] is a [BildirimEylemi] id, or null for a tap on the notification.
 class BildirimYaniti {
-  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId, this.brifing = false, this.rota});
+  const BildirimYaniti({this.eylem, this.hatirlaticiId, this.eylemId, this.brifing = false, this.rota, this.isEylemi, this.bildirimNo});
 
   /// A tap on the morning briefing notification.
   final bool brifing;
@@ -21,6 +22,12 @@ class BildirimYaniti {
 
   /// Set for an approval queue notification: the action it announced ('' for the summary of many).
   final String? eylemId;
+
+  /// A button on a work card's notification: what it asks for.
+  final IsBildirimEylemi? isEylemi;
+
+  /// The id of the notification the response came from (a work card button takes it down when it worked).
+  final int? bildirimNo;
 }
 
 /// The phone's notification scheduler, behind a small interface so the rest of the app (and the tests) never touch
@@ -50,6 +57,9 @@ abstract class BildirimServisi {
 
   /// Takes the notification with [id] down (the action was decided).
   Future<void> bildirimiKapat(int id);
+
+  /// Replaces the notification [id] of a work card with a plain one that says the button did not work: opening it shows the card.
+  Future<void> isHatasiBildir({required int id, required String baslik, required String kimlik});
 }
 
 /// [BildirimServisi] on `flutter_local_notifications`. Not covered by unit tests (platform channels); tried by hand
@@ -75,6 +85,8 @@ class YerelBildirimServisi implements BildirimServisi {
     final eylem = y.actionId;
     final secilen = eylem == null || eylem.isEmpty ? null : eylem;
     final yuk = y.payload;
+    // A work card's button carries the whole request in its id; checked before the payload, which only names the card's route.
+    if (IsBildirimEylemi.coz(secilen) case final isEylemi?) return BildirimYaniti(isEylemi: isEylemi, bildirimNo: y.id, rota: sunucuBildirimRotasi(yuk));
     if (yuk == brifingBildirimYuku) return const BildirimYaniti(brifing: true);
     if (sunucuBildirimRotasi(yuk) case final rota?) return BildirimYaniti(rota: rota);
     if (yuk != null && yuk.startsWith(eylemBildirimOneki)) {
@@ -215,6 +227,29 @@ class YerelBildirimServisi implements BildirimServisi {
       await _eklenti.cancel(id: id);
     } on Object catch (e) {
       debugPrint('Bildirim kapatılamadı ($id): $e');
+    }
+  }
+
+  @override
+  Future<void> isHatasiBildir({required int id, required String baslik, required String kimlik}) async {
+    try {
+      await _eklenti.show(
+        id: id,
+        title: baslik,
+        body: 'Yapılamadı. Kartı açıp tekrar dene.',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'sunucu',
+            'Sunucu bildirimleri',
+            channelDescription: 'Sunucunun uygulama kapalıyken de gönderdiği anlık bildirimler',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+        payload: sunucuBildirimYuku(isRotasi(kimlik), null),
+      );
+    } on Object catch (e) {
+      debugPrint('İş kartı hata bildirimi gösterilemedi ($id): $e');
     }
   }
 

@@ -16,6 +16,7 @@ import '../data/repositories/eylem_repository.dart';
 import '../data/repositories/gelen_repository.dart';
 import '../data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import '../data/repositories/hatirlatici_repository.dart';
+import '../data/repositories/is_repository.dart';
 import '../data/repositories/kronometre_repository.dart';
 import '../data/repositories/kullanici_repository.dart';
 import '../data/repositories/yakalama_repository.dart';
@@ -31,6 +32,12 @@ import '../ui/aliskanliklar/aliskanlik_liste_view_model.dart';
 import '../ui/ara/ara_screen.dart';
 import '../ui/ara/ara_view_model.dart';
 import '../ui/ara/not_screen.dart';
+import '../ui/asistan/asistan_pano_screen.dart';
+import '../ui/asistan/asistan_pano_view_model.dart';
+import '../ui/asistan/is_detay_screen.dart';
+import '../ui/asistan/is_detay_view_model.dart';
+import '../ui/asistan/is_form_screen.dart';
+import '../ui/asistan/is_form_view_model.dart';
 import '../ui/brifing/brifing_view_model.dart';
 import '../ui/bugun/bugun_screen.dart';
 import '../ui/bugun/bugun_view_model.dart';
@@ -93,6 +100,10 @@ abstract final class Rotalar {
 
   static const yakala = '/yakala';
 
+  /// The work card board: opened from the Bugün card and from Daha fazla, a full-screen page. `yeni` is the form; a card is `/asistan/:kimlik`.
+  static const asistan = '/asistan';
+  static const asistanYeni = '/asistan/yeni';
+
   /// The approval queue: opened from the Today and Gelen cards and from its notifications, a full-screen page.
   static const eylemler = '/eylemler';
 
@@ -123,6 +134,7 @@ final _yonetimRotalari = [
   RegExp(r'^/hatirlatici/yeni$'),
   RegExp(r'^/hatirlatici/[^/]+/duzenle$'),
   RegExp(r'^/yonetim$'),
+  RegExp(r'^/asistan/yeni$'),
 ];
 
 /// Where a visit to [konum] must be sent instead, or null to let it through.
@@ -194,6 +206,8 @@ GoRouter routerOlustur(
                   ChangeNotifierProvider(
                     create: (c) => OnayBekleyenViewModel(repo: c.read<EylemRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
                   ),
+                  // Lazy, like the briefing: the cards are read only when the card is built, i.e. for someone who may read them.
+                  ChangeNotifierProvider(create: (c) => AsistanOzetViewModel(repo: c.read<IsRepository>())..yukle()),
                   // Lazy: made (and the briefing fetched) only when the strip is built, i.e. for someone who may read it.
                   ChangeNotifierProvider(
                     create: (c) => BrifingViewModel(repo: c.read<BrifingRepository>(), yenileyebilir: () => kullanici.sahip)..yukle(),
@@ -209,11 +223,13 @@ GoRouter routerOlustur(
                 ],
                 child: Builder(builder: (context) {
                   final brifingOkuyabilir = context.watch<KullaniciRepository>().brifingOkuyabilir;
+                  final islerOkuyabilir = context.watch<KullaniciRepository>().islerOkuyabilir;
                   return BugunScreen(
                     viewModel: context.read<BugunViewModel>(),
                     gunPlani: context.read<GunPlaniViewModel>(),
                     yaklasanlar: context.read<YaklasanlarViewModel>(),
                     onayBekleyen: context.read<OnayBekleyenViewModel>(),
+                    asistanOzet: islerOkuyabilir ? context.read<AsistanOzetViewModel>() : null,
                     zamanCizelgesi: context.read<ZamanCizelgesiViewModel>(),
                     brifing: brifingOkuyabilir ? context.read<BrifingViewModel>() : null,
                     brifingSes: brifingOkuyabilir ? context.read<SesViewModel>() : null,
@@ -292,6 +308,28 @@ GoRouter routerOlustur(
         builder: (context, state) => _sayfa(
           (c) => AliskanlikListeViewModel(repo: c.read<AliskanlikRepository>())..yukle(),
           (vm) => AliskanlikListeScreen(viewModel: vm),
+        ),
+      ),
+      // The work card board, the new card form and a card. `yeni` comes before `:kimlik`.
+      GoRoute(
+        path: Rotalar.asistan,
+        builder: (context, state) => _sayfa(
+          (c) => AsistanPanoViewModel(repo: c.read<IsRepository>())..yukle(),
+          (vm) => AsistanPanoScreen(viewModel: vm, yazabilir: kullanici.sahip),
+        ),
+      ),
+      GoRoute(
+        path: Rotalar.asistanYeni,
+        builder: (context, state) => _sayfa(
+          (c) => IsFormViewModel(repo: c.read<IsRepository>(), beyin: c.read<BeyinRepository>()),
+          (vm) => IsFormScreen(viewModel: vm),
+        ),
+      ),
+      GoRoute(
+        path: '/asistan/:kimlik',
+        builder: (context, state) => _sayfa(
+          (c) => IsDetayViewModel(repo: c.read<IsRepository>(), kimlik: state.pathParameters['kimlik']!, yazabilir: kullanici.sahip)..yukle(),
+          (vm) => IsDetayScreen(viewModel: vm),
         ),
       ),
       GoRoute(

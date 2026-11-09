@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
+using Kafamdakiler.Isler;
 using Kafamdakiler.Yonetim;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +26,11 @@ public class CihazSilDto
     public string? Token { get; set; }
 }
 
-public record BildirimDto(Guid Id, string Baslik, string Metin, string? Rota, string? HedefKimligi, string KaynakTuru, DateTimeOffset OlusmaAni, string? Anahtar);
+// `Secenekler`: the buttons the notification can show (work cards: the answers of a decision, "Onayla" at the code gate). The push carries
+// only the id, so they come from here, worked out when the notification is read, from the card as it is now.
+public record BildirimDto(
+    Guid Id, string Baslik, string Metin, string? Rota, string? HedefKimligi, string KaynakTuru, DateTimeOffset OlusmaAni, string? Anahtar,
+    List<BildirimSecenegiDto>? Secenekler = null);
 
 public record PushDurumDto(bool Acik, int CihazSayisi, SonGonderim? SonGonderim);
 
@@ -61,15 +67,20 @@ public static class BildirimEndpoints
         });
 
         // Somebody else's notification is a 404, not a 403: the id of another user's row must not be confirmed.
-        girisli.MapGet("/bildirimler/{id:guid}", async (Guid id, AppDbContext db, ClaimsPrincipal kullanici, CancellationToken ct) =>
+        girisli.MapGet("/bildirimler/{id:guid}", async (Guid id, AppDbContext db, ClaimsPrincipal kullanici, BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
         {
             if (KullaniciId(kullanici) is not { } kullaniciId)
                 return Results.Unauthorized();
 
             var b = await db.Bildirimler.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && x.KullaniciId == kullaniciId, ct);
-            return b is null
-                ? Results.NotFound()
-                : Results.Ok(new BildirimDto(b.Id, b.Baslik, b.Metin, b.Rota, b.HedefKimligi, b.KaynakTuru, b.OlusmaAni, b.Anahtar));
+            if (b is null)
+                return Results.NotFound();
+
+            // Buttons only for a person who may write to the cards: a tap on one is a write.
+            var secenekler = b.KaynakTuru == IsBildirimci.KaynakTuru && b.HedefKimligi is not null && IzinVar(kullanici, IsPolicies.Yaz)
+                ? await IsSecenekleriAsync(b.HedefKimligi, beyin, log, ct)
+                : null;
+            return Results.Ok(new BildirimDto(b.Id, b.Baslik, b.Metin, b.Rota, b.HedefKimligi, b.KaynakTuru, b.OlusmaAni, b.Anahtar, secenekler));
         });
 
         var sahip = app.MapGroup("/api/bildirim").WithTags("Bildirimler")
@@ -94,6 +105,16 @@ public static class BildirimEndpoints
             var sonuc = (await servis.GonderAsync(bildirim, ct))!;
             return Results.Ok(new TestSonucuDto(bildirim.Id, sonuc.Hedef, sonuc.Giden, sonuc.Silinen, sonuc.Hatali));
         });
+    }
+
+    private static bool IzinVar(ClaimsPrincipal kullanici, string izin) =>
+        kullanici.IsInRole(SeedData.OwnerRole) || kullanici.HasClaim(Aliskanliklar.AliskanlikPolicies.IzinClaim, izin);
+
+    // The card as it is now; when it cannot be read the notification simply has no buttons (opening it still works).
+    private static async Task<List<BildirimSecenegiDto>> IsSecenekleriAsync(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    {
+        var kart = await IsKartlari.Al(kimlik, beyin, log, ct);
+        return kart.Basarili ? IsKartlari.BildirimSecenekleri(kart.Veri!) : [];
     }
 
     internal static Guid? KullaniciId(ClaimsPrincipal kullanici) =>

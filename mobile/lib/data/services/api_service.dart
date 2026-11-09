@@ -16,6 +16,7 @@ import '../models/gelen.dart';
 import '../models/giris.dart';
 import '../models/hatirlatici.dart';
 import '../models/gun.dart';
+import '../models/is_karti.dart';
 import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/ses.dart';
@@ -462,6 +463,24 @@ class ApiService {
     final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/not', queryParameters: {'yol': yol});
     return BeyinNotu.fromJson(yanit.data!);
   }
+
+  // ---- Work cards (/api/isler, backend/Isler) ----
+  // 403: no `isler.oku` / `isler.yaz` permission; 503: the brain is not set up. A refusal of the brain is a ProblemDetails whose
+  // `detail` is a sentence for the person (409: the card cannot do that now, 404: no such card).
+
+  /// The open cards, newest update first; [kapali] adds the ones finished this week.
+  Future<List<IsKarti>> islerGetir({bool kapali = false}) async {
+    final yanit = await _dio.get<List<dynamic>>('/api/isler', queryParameters: {if (kapali) 'kapali': true});
+    return _liste(yanit, IsKarti.fromJson);
+  }
+
+  Future<IsAyrinti> isGetir(String kimlik) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/isler/${Uri.encodeComponent(kimlik)}');
+    return IsAyrinti.fromJson(yanit.data!);
+  }
+
+  /// A write on a card (open, answer, stage, note). [anahtar] is the `Idempotency-Key` (see [beyinYaz]); the answer's `govde` is the card.
+  Future<BeyinYazmaSonucu> isYaz(String yol, Map<String, dynamic> govde, {required String anahtar}) => beyinYaz(yol, govde, anahtar: anahtar);
 
   // ---- Management (Sahip only, /api/yonetim) ----
 

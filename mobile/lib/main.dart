@@ -21,6 +21,8 @@ import 'data/repositories/gelen_repository.dart';
 import 'data/repositories/gun_plani_repository.dart';
 import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
+import 'data/repositories/is_bildirim_yoneticisi.dart';
+import 'data/repositories/is_repository.dart';
 import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
 import 'data/repositories/push_mesaj_isleyici.dart';
@@ -64,6 +66,7 @@ Future<void> main() async {
   final eylemler = EylemRepository(api: api, db: db, esitleyici: esitleyici);
   final gelen = GelenRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
+  final isler = IsRepository(api: api, db: db);
   final bildirimServisi = YerelBildirimServisi();
   final bildirimIzni = BildirimIzni(servis: bildirimServisi);
   final eylemBildirimleri = EylemBildirimYoneticisi(
@@ -72,6 +75,7 @@ Future<void> main() async {
     servis: bildirimServisi,
     yazabilir: () => kullanici.sahip,
   );
+  final isBildirimleri = IsBildirimYoneticisi(repo: isler, servis: bildirimServisi, yazabilir: () => kullanici.sahip);
   final push = PushYoneticisi(
     api: api,
     kaynak: pushKaynagi,
@@ -87,6 +91,7 @@ Future<void> main() async {
     servis: bildirimServisi,
     yazabilir: () => kullanici.sahip,
     eylemler: eylemBildirimleri,
+    isler: isBildirimleri,
     brifing: brifing,
     brifingOkuyabilir: () => kullanici.brifingOkuyabilir,
   );
@@ -102,6 +107,7 @@ Future<void> main() async {
       await yakalamalar.yerelFotograflariSil();
       await db.hepsiniTemizle();
       await bildirimler.temizle();
+      await isler.temizle();
       bildirimIzni.sifirla();
       aliskanliklar.resimleriBirak();
       kullanici.temizle();
@@ -138,6 +144,7 @@ Future<void> main() async {
     yakalamalar: yakalamalar,
     hatirlaticilar: hatirlaticilar,
     eylemler: eylemler,
+    isler: isler,
     gelen: gelen,
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
@@ -163,6 +170,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.yakalamalar,
     required this.hatirlaticilar,
     required this.eylemler,
+    required this.isler,
     required this.gelen,
     required this.bildirimler,
     required this.eylemBildirimleri,
@@ -184,6 +192,7 @@ class KafamdakilerApp extends StatefulWidget {
   final YakalamaRepository yakalamalar;
   final HatirlaticiRepository hatirlaticilar;
   final EylemRepository eylemler;
+  final IsRepository isler;
   final GelenRepository gelen;
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
@@ -284,6 +293,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.yakalamalar),
         ChangeNotifierProvider.value(value: widget.hatirlaticilar),
         ChangeNotifierProvider.value(value: widget.eylemler),
+        ChangeNotifierProvider.value(value: widget.isler),
         ChangeNotifierProvider.value(value: widget.gelen),
         Provider.value(value: widget.bildirimler),
         ChangeNotifierProvider.value(value: widget.bildirimIzni),

@@ -25,7 +25,7 @@ public sealed partial class IzinGruplariTests(UygulamaFabrikasi uygulama) : ICla
         Assert.Equal(
             Izinler.Tumu.Select(i => i.Ad).Order(),
             gruptakiler.Append(IzinGruplari.AsistanAnahtari).Order());
-        Assert.Equal(6, IzinGruplari.Tumu.Count);
+        Assert.Equal(7, IzinGruplari.Tumu.Count);
     }
 
     [Fact]

@@ -1,0 +1,94 @@
+@page "{kimlik}"
+@using Kafamdakiler.Beyin
+@using Kafamdakiler.Isler
+@model Kafamdakiler.Pages.Isler.DetayModel
+@{
+    ViewData["Title"] = Model.Kart?.Baslik ?? "İş kartı";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">İş kartı</p>
+        <h1 class="kd-page-title">@(Model.Kart?.Baslik ?? "İş kartı")</h1>
+    </div>
+</div>
+
+<partial name="~/Pages/Beyin/_BeyinHata.cshtml" model="Model" />
+
+@if (Model.Kart is { } kart)
+{
+    <p class="kd-capture-meta">
+        <span>@IsGorunum.Asama(kart.Asama)</span>
+        <span>@IsGorunum.Sahip(kart.Sahip)</span>
+        @if (IsGorunum.Yer(kart.Proje, kart.Alan) is { Length: > 0 } yer)
+        {
+            <span>@yer</span>
+        }
+        <span>@kart.Tip</span>
+    </p>
+
+    <section class="kd-yonetim-blok" aria-labelledby="talep-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="talep-baslik">Talep</h2>
+        <div class="kd-md">@kart.Talep</div>
+    </section>
+
+    <section class="kd-yonetim-blok" aria-labelledby="plan-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="plan-baslik">Plan</h2>
+        @if (string.IsNullOrWhiteSpace(kart.Plan))
+        {
+            <p class="kd-muted">Plan henüz yazılmadı.</p>
+        }
+        else
+        {
+            <div class="kd-md">@kart.Plan</div>
+        }
+    </section>
+
+    <section class="kd-yonetim-blok" aria-labelledby="soru-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="soru-baslik">Sorular</h2>
+        @if (kart.Sorular.Count == 0)
+        {
+            <p class="kd-muted">Soru yok.</p>
+        }
+        @foreach (var s in kart.Sorular)
+        {
+            <article class="kd-capture kd-c-violet">
+                <div class="kd-capture-body">
+                    <p class="kd-capture-text mb-1">S@(s.No): @s.Soru</p>
+                    @if (s.Secenekler.Count > 0)
+                    {
+                        <p class="kd-capture-meta"><span>Seçenekler: @string.Join(", ", s.Secenekler)</span></p>
+                    }
+                    @if (s.Onerilen is not null)
+                    {
+                        <p class="kd-capture-meta"><span>Önerilen: @s.Onerilen</span></p>
+                    }
+                    @if (s.Neden is not null)
+                    {
+                        <p class="kd-capture-meta"><span>Neden: @s.Neden</span></p>
+                    }
+                    <p class="kd-capture-meta mt-1"><span>@(s.Cevap is null ? "Cevap bekliyor" : "Cevap: " + s.Cevap)</span></p>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="kd-yonetim-blok" aria-labelledby="gecmis-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="gecmis-baslik">Geçmiş</h2>
+        @if (kart.Gecmis.Count == 0)
+        {
+            <p class="kd-muted">Geçmiş satırı yok.</p>
+        }
+        @foreach (var g in kart.Gecmis)
+        {
+            <article class="kd-capture kd-c-violet">
+                <div class="kd-capture-body">
+                    <p class="kd-capture-text mb-1">@g.Olay</p>
+                    <p class="kd-capture-meta"><span>@BeyinGorunum.Zaman(g.Zaman)</span><span>@g.Kim</span></p>
+                </div>
+            </article>
+        }
+    </section>
+
+    <p><a asp-page="/Isler/Index">← Bütün kartlar</a></p>
+}

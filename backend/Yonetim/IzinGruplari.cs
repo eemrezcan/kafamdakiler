@@ -4,6 +4,7 @@ using Kafamdakiler.Brifing;
 using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Isler;
 using Kafamdakiler.Ses;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Yakalamalar;
@@ -19,7 +20,7 @@ public enum GrupKipi
     Ozel,
 }
 
-// The Asistan's permissions grouped by area for the Yönetim screens: six cards with Kapalı / Okur / Okur ve yazar, and the
+// The Asistan's permissions grouped by area for the Yönetim screens: seven cards with Kapalı / Okur / Okur ve yazar, and the
 // assistant switch on its own. Every permission of `Izinler.Tumu` falls in exactly one card, or is the switch (a test checks it).
 // The mobile screen keeps the same table in Dart (mobile/lib/ui/yonetim/); change both together.
 public static class IzinGruplari
@@ -43,6 +44,8 @@ public static class IzinGruplari
             [YakalamaPolicies.Oku, GelenPolicies.Oku], [YakalamaPolicies.Yaz, GelenPolicies.Yaz]),
         new("beyin", "Beyin ve plan", "Beyni okur; yazınca gün planına ve görevlere de dokunur.",
             [BeyinPolicies.Oku], [BeyinPolicies.PlanYaz, BeyinPolicies.GorevYaz]),
+        new("isler", "Asistan işleri", "İş kartlarını, planlarını ve sorularını görür; yazınca kart açar, soruları cevaplar, kapıları onaylar.",
+            [IsPolicies.Oku], [IsPolicies.Yaz]),
         new("takvim", "Takvim ve brifing", "Günün çizelgesini ve brifingi okur; yazınca takvime etkinlik ekler ve taşır (onay kuyruğundan geçerek).",
             [TakvimPolicies.Oku, BrifingPolicies.Oku], [TakvimPolicies.Yaz]),
         new("eylem", "Onay kuyruğu", "Bekleyen önerileri görür; yazınca onaylar, reddeder, geri alır.",

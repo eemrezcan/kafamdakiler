@@ -1,0 +1,44 @@
+@page
+@using Kafamdakiler.Isler
+@model Kafamdakiler.Pages.Isler.IndexModel
+@{
+    ViewData["Title"] = "Asistan işleri";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">İş kartları</p>
+        <h1 class="kd-page-title">Asistan işleri</h1>
+    </div>
+</div>
+
+<partial name="~/Pages/Beyin/_BeyinHata.cshtml" model="Model" />
+
+@if (!Model.Hatali)
+{
+    <section class="kd-yonetim-blok" aria-labelledby="acik-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="acik-baslik">Açık kartlar</h2>
+        @if (Model.Acik.Count == 0)
+        {
+            <p class="kd-muted">Açık kart yok.</p>
+        }
+        @foreach (var k in Model.Acik)
+        {
+            <partial name="_Kart" model="k" />
+        }
+    </section>
+
+    <section class="kd-yonetim-blok" aria-labelledby="biten-baslik">
+        <h2 class="kd-eyebrow kd-section-title" id="biten-baslik">Bu hafta biten</h2>
+        @if (Model.BuHaftaBiten.Count == 0)
+        {
+            <p class="kd-muted">Bu hafta biten kart yok.</p>
+        }
+        @foreach (var k in Model.BuHaftaBiten)
+        {
+            <partial name="_Kart" model="k" />
+        }
+    </section>
+
+    <p class="kd-muted">Kartları telefondan cevaplarsın ve onaylarsın; burası yalnız okumak için.</p>
+}

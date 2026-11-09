@@ -53,9 +53,29 @@ class HatirlaticiGosterimi {
   final String hatirlaticiId;
 }
 
+class IsKartiGosterimi {
+  IsKartiGosterimi(this.id, this.baslik, this.govde, this.yuk, this.dugmeler);
+  final int id;
+  final String baslik;
+  final String govde;
+  final String yuk;
+  final List<IsBildirimDugmesi> dugmeler;
+}
+
 class SahteGosterici implements SunucuBildirimGosterici {
   final gosterilenler = <Gosterilen>[];
   final hatirlaticilar = <HatirlaticiGosterimi>[];
+  final isKartlari = <IsKartiGosterimi>[];
+
+  @override
+  Future<void> isKartiGoster({
+    required int id,
+    required String baslik,
+    required String govde,
+    required String yuk,
+    required List<IsBildirimDugmesi> dugmeler,
+  }) async =>
+      isKartlari.add(IsKartiGosterimi(id, baslik, govde, yuk, dugmeler));
 
   @override
   Future<void> hatirlaticiGoster({required int id, required String baslik, required String govde, required String hatirlaticiId}) async =>

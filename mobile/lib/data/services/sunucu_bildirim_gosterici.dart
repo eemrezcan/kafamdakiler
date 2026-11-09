@@ -5,6 +5,9 @@ import '../../utils/bildirim_plani.dart';
 
 /// Shows a notification of the server at once, behind a small interface so the message handler (and its tests) never
 /// touch the plugin.
+/// One button of a work card's notification: [kod] is the id of the Android action (see `IsBildirimEylemi`), [etiket] its text.
+typedef IsBildirimDugmesi = ({String kod, String etiket});
+
 abstract interface class SunucuBildirimGosterici {
   Future<void> goster({required int id, required String baslik, required String govde, required String yuk});
 
@@ -12,6 +15,16 @@ abstract interface class SunucuBildirimGosterici {
   /// (`bildirimKimligi(hatirlaticiId)`), so there is only ever one: the scheduled one is taken down when it has not rung
   /// yet, and one that already rang (still in the tray) is updated in place without a new sound.
   Future<void> hatirlaticiGoster({required int id, required String baslik, required String govde, required String hatirlaticiId});
+
+  /// A work card that fell to the person. [dugmeler] (at most three) open the app and write the choice to the server; a tap
+  /// opens the card ([yuk] names its route). Without buttons it is a plain notification.
+  Future<void> isKartiGoster({
+    required int id,
+    required String baslik,
+    required String govde,
+    required String yuk,
+    required List<IsBildirimDugmesi> dugmeler,
+  });
 }
 
 /// [SunucuBildirimGosterici] on `flutter_local_notifications`, in its own channel. Not covered by unit tests (platform
@@ -59,6 +72,46 @@ class YerelSunucuBildirimGosterici implements SunucuBildirimGosterici {
       );
     } on Object catch (e) {
       debugPrint('Sunucu bildirimi gösterilemedi ($id): $e');
+    }
+  }
+
+  @override
+  Future<void> isKartiGoster({
+    required int id,
+    required String baslik,
+    required String govde,
+    required String yuk,
+    required List<IsBildirimDugmesi> dugmeler,
+  }) async {
+    try {
+      if (eklentiyiBaslat && !_basladi) {
+        await _eklenti.initialize(
+          settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+        );
+        _basladi = true;
+      }
+      await _eklenti.show(
+        id: id,
+        title: baslik,
+        body: govde,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            kanalKimligi,
+            'Sunucu bildirimleri',
+            channelDescription: 'Sunucunun uygulama kapalıyken de gönderdiği anlık bildirimler',
+            importance: Importance.high,
+            priority: Priority.high,
+            // The buttons open the app, like the reminders': the choice is written to the server there, and a failure
+            // is told on this same notification ("açıp tekrar dene").
+            actions: [
+              for (final d in dugmeler.take(3)) AndroidNotificationAction(d.kod, d.etiket, showsUserInterface: true),
+            ],
+          ),
+        ),
+        payload: yuk,
+      );
+    } on Object catch (e) {
+      debugPrint('İş kartı bildirimi gösterilemedi ($id): $e');
     }
   }
 

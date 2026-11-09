@@ -12,6 +12,7 @@ using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Gmail;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Isler;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Mobil;
 using Kafamdakiler.OpenApi;
@@ -62,6 +63,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(BeyinPolicies.Oku, policy => IzinPolicy(policy, [BeyinPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(BeyinPolicies.PlanYaz, policy => IzinPolicy(policy, [BeyinPolicies.PlanYaz], IdentityConstants.BearerScheme))
     .AddPolicy(BeyinPolicies.GorevYaz, policy => IzinPolicy(policy, [BeyinPolicies.GorevYaz], IdentityConstants.BearerScheme))
+    .AddPolicy(IsPolicies.Oku, policy => IzinPolicy(policy, [IsPolicies.Oku], IdentityConstants.BearerScheme))
+    .AddPolicy(IsPolicies.Yaz, policy => IzinPolicy(policy, [IsPolicies.Yaz], IdentityConstants.BearerScheme))
     .AddPolicy(EylemPolicies.Oku, policy => IzinPolicy(policy, [EylemPolicies.Oku], IdentityConstants.BearerScheme))
     .AddPolicy(EylemPolicies.Onayla, policy => IzinPolicy(policy, [EylemPolicies.Onayla], IdentityConstants.BearerScheme))
     .AddPolicy(GelenPolicies.Oku, policy => IzinPolicy(policy, [GelenPolicies.Oku], IdentityConstants.BearerScheme))
@@ -235,6 +238,7 @@ app.MapDosyaEndpoints();
 app.MapYakalamaEndpoints();
 app.MapHatirlaticiEndpoints();
 app.MapBeyinEndpoints();
+app.MapIsEndpoints();
 app.MapEylemEndpoints();
 app.MapGelenEndpoints();
 app.MapSesEndpoints();
