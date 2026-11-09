@@ -94,7 +94,7 @@ class _AraScreenState extends State<AraScreen> {
     return ListView.separated(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       // Room for the floating "Yakala" button under the last row.
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+      padding: listeKenarlari(ust: 4),
       itemCount: sonuclar.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) => _Sonuc(sonuclar[i]),

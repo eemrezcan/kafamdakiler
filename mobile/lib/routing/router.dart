@@ -82,21 +82,21 @@ import '../ui/yonetim/yonetim_screen.dart';
 import '../ui/yonetim/yonetim_view_model.dart';
 
 abstract final class Rotalar {
-  // The five bottom tabs, in the order they are shown (K-0004 menu: Bugün · Gelen · Projeler · Hatırlatıcılar · Daha fazla).
+  // The five bottom tabs, in the order they are shown: Bugün · Alışkanlıklar · Gelen · Hatırlatıcılar · Daha fazla.
   static const bugun = '/';
+  static const aliskanliklar = '/aliskanliklar';
   static const gelen = '/gelen';
-  static const projeler = '/projeler';
   static const hatirlaticilar = '/hatirlaticilar';
   static const dahaFazla = '/daha-fazla';
 
   /// The tabs' routes, in tab order.
-  static const sekmeler = [bugun, gelen, projeler, hatirlaticilar, dahaFazla];
+  static const sekmeler = [bugun, aliskanliklar, gelen, hatirlaticilar, dahaFazla];
 
-  /// The search page: opened by the magnifier in the top bar of every tab, a full-screen page (not a tab).
+  /// The search page: opened by the magnifier in the top bar of the tabs, a full-screen page (not a tab).
   static const ara = '/ara';
 
-  /// The habit list: opened from Daha fazla, a full-screen page (not a tab).
-  static const aliskanliklar = '/aliskanliklar';
+  /// The project list: first row of Daha fazla, a full-screen page (not a tab); a project is `/projeler/:kimlik`.
+  static const projeler = '/projeler';
 
   static const yakala = '/yakala';
 
@@ -190,6 +190,7 @@ GoRouter routerOlustur(
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AnaIskele(navigationShell: shell),
         branches: [
+          // Bugün
           StatefulShellBranch(routes: [
             GoRoute(
               path: Rotalar.bugun,
@@ -234,11 +235,23 @@ GoRouter routerOlustur(
                     brifing: brifingOkuyabilir ? context.read<BrifingViewModel>() : null,
                     brifingSes: brifingOkuyabilir ? context.read<SesViewModel>() : null,
                     bildirimIzni: context.read<BildirimIzni>(),
+                    onAliskanlikEkle: kullanici.sahip ? () => context.push('/aliskanlik/yeni') : null,
                   );
                 }),
               ),
             ),
           ]),
+          // Alışkanlıklar
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: Rotalar.aliskanliklar,
+              builder: (context, state) => _sayfa(
+                (c) => AliskanlikListeViewModel(repo: c.read<AliskanlikRepository>())..yukle(),
+                (vm) => AliskanlikListeScreen(viewModel: vm),
+              ),
+            ),
+          ]),
+          // Gelen
           StatefulShellBranch(routes: [
             GoRoute(
               path: Rotalar.gelen,
@@ -266,15 +279,7 @@ GoRouter routerOlustur(
               ),
             ),
           ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: Rotalar.projeler,
-              builder: (context, state) => _sayfa(
-                (c) => ProjeListeViewModel(repo: c.read<BeyinRepository>())..yukle(),
-                (vm) => ProjeListeScreen(viewModel: vm),
-              ),
-            ),
-          ]),
+          // Hatırlatıcılar
           StatefulShellBranch(routes: [
             GoRoute(
               path: Rotalar.hatirlaticilar,
@@ -304,10 +309,10 @@ GoRouter routerOlustur(
       ),
       // Full-screen pages above the tabs. `yeni` must come before `:id`.
       GoRoute(
-        path: Rotalar.aliskanliklar,
+        path: Rotalar.projeler,
         builder: (context, state) => _sayfa(
-          (c) => AliskanlikListeViewModel(repo: c.read<AliskanlikRepository>())..yukle(),
-          (vm) => AliskanlikListeScreen(viewModel: vm),
+          (c) => ProjeListeViewModel(repo: c.read<BeyinRepository>())..yukle(),
+          (vm) => ProjeListeScreen(viewModel: vm),
         ),
       ),
       // The work card board, the new card form and a card. `yeni` comes before `:kimlik`.

@@ -48,7 +48,7 @@ class EylemListeScreen extends StatelessWidget {
             child: OrtaGenislik(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                padding: listeKenarlari(ust: 12),
                 children: [
                   if (viewModel.cevrimdisi)
                     Padding(

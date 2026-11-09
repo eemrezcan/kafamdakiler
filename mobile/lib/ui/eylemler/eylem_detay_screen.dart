@@ -82,7 +82,7 @@ class _EylemDetayScreenState extends State<EylemDetayScreen> {
           final bekliyor = e.durum == EylemDurumu.bekliyor;
           return OrtaGenislik(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+              padding: listeKenarlari(ust: 12),
               children: [
                 Text(e.ozet, style: tema.textTheme.titleLarge),
                 const SizedBox(height: 4),

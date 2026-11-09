@@ -54,7 +54,7 @@ class HatirlaticiListeScreen extends StatelessWidget {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 // Room for the floating "Yakala" button under the last row.
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                padding: listeKenarlari(ust: 12),
                 children: [
                   SegmentedButton<HatirlaticiDurumu>(
                     showSelectedIcon: false,

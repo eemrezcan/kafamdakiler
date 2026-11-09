@@ -19,6 +19,69 @@ class OrtaGenislik extends StatelessWidget {
       );
 }
 
+/// The height of the floating "Yakala" button (an extended FAB) and the gap it keeps from the bottom bar.
+const double yakalaDugmesiYuksekligi = 56;
+const double yakalaDugmesiAraligi = 16;
+
+/// Space under the last row of a scrolling screen so the floating "Yakala" button never covers it: the button's height,
+/// its own gap from the bar, and 16 dp of air. Every list uses [listeKenarlari] instead of a number of its own.
+const double yakalaAltBosluk = yakalaDugmesiYuksekligi + yakalaDugmesiAraligi + 16;
+
+/// The padding of a scrolling screen: 16 dp at the sides, [ust] on top and [yakalaAltBosluk] at the bottom.
+EdgeInsets listeKenarlari({double ust = 16}) => EdgeInsets.fromLTRB(16, ust, 16, yakalaAltBosluk);
+
+/// Inner padding of a card and the gap between two cards, so the cards of every screen share one measure.
+const kartIcBosluk = EdgeInsets.fromLTRB(16, 12, 16, 12);
+const double kartAraligi = 16;
+
+/// The title of a card or of a section on a card ("Gün planı", "Bugünün alışkanlıkları").
+class KartBasligi extends StatelessWidget {
+  const KartBasligi(this.metin, {super.key});
+
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(metin, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600));
+}
+
+/// An empty state that lives inside a list, as a card: a sentence, and when [onTap] is given the whole card is a button.
+class BosKart extends StatelessWidget {
+  const BosKart({super.key, required this.metin, this.onTap, this.ikon});
+
+  final String metin;
+  final VoidCallback? onTap;
+  final IconData? ikon;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final renk = onTap == null ? tema.colorScheme.onSurfaceVariant : tema.colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: kartAraligi),
+      child: Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Padding(
+              padding: kartIcBosluk,
+              child: Row(
+                children: [
+                  if (ikon != null) ...[Icon(ikon, size: 20, color: renk), const SizedBox(width: 12)],
+                  Expanded(child: Text(metin, style: TextStyle(color: renk))),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Empty and error states: a message and an optional action. Scrollable, so
 /// pull-to-refresh also works on top of it.
 class BosDurum extends StatelessWidget {

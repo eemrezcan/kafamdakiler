@@ -5,12 +5,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../data/models/zaman_cizelgesi.dart';
 import '../../utils/aliskanlik_gunu.dart';
 import '../core/beyin_gorunum.dart';
+import '../core/widgets.dart';
 import 'zaman_cizelgesi_view_model.dart';
 
-/// Today's one timeline (K2.3c): what has an hour (calendar events, timed reminders) on a time strip in the order of the
-/// clock, and what has none (plan items, all-day events, reminders without an hour) under it. Tapping an item shows its detail.
-/// Hidden until the first answer, when the read failed, and when the day has nothing on it (the plan card below already says
-/// what the day holds); offline it shows the phone's last copy and says so.
+/// Today's timeline (K2.3c): what has an hour (calendar events, timed reminders) on a time strip in the order of the clock,
+/// and under it all-day events and reminders without an hour. Plan items are not repeated here: the plan card lists them.
+/// Tapping an item shows its detail. Hidden until the first answer, when the read failed, and when nothing has an hour (unless
+/// the day does not fit, which is worth saying); offline it shows the phone's last copy and says so.
 class ZamanCizelgesiKarti extends StatelessWidget {
   const ZamanCizelgesiKarti({super.key, required this.viewModel});
 
@@ -23,18 +24,19 @@ class ZamanCizelgesiKarti extends StatelessWidget {
       builder: (context, _) {
         final cizelge = viewModel.cizelge;
         if (cizelge == null || _gizli(cizelge)) return const SizedBox.shrink();
+        final saatsiz = [for (final o in cizelge.saatsiz) if (o.tur != ZamanCizelgesiTuru.plan) o];
         final tema = Theme.of(context);
         final soluk = tema.colorScheme.onSurfaceVariant;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: kartAraligi),
           child: Card(
             key: const Key('zaman-cizelgesi'),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: kartIcBosluk,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Zaman çizelgesi', style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  const KartBasligi('Zaman çizelgesi'),
                   if (viewModel.cevrimdisi)
                     _Not(
                       ikon: LucideIcons.cloudOff,
@@ -78,12 +80,12 @@ class ZamanCizelgesiKarti extends StatelessWidget {
                         onTap: () => _ayrinti(context, cizelge.saatli[i]),
                       ),
                   ],
-                  if (cizelge.saatsiz.isNotEmpty) ...[
+                  if (saatsiz.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.only(top: 12, bottom: 2),
                       child: Text('Saatsiz', style: tema.textTheme.labelLarge?.copyWith(color: soluk)),
                     ),
-                    for (final o in cizelge.saatsiz) _SaatsizSatir(oge: o, onTap: () => _ayrinti(context, o)),
+                    for (final o in saatsiz) _SaatsizSatir(oge: o, onTap: () => _ayrinti(context, o)),
                   ],
                   if (cizelge.sonEsitleme case final an?)
                     Padding(
@@ -102,8 +104,9 @@ class ZamanCizelgesiKarti extends StatelessWidget {
     );
   }
 
-  /// An empty day with nothing worth saying about it takes no room on Bugün.
-  static bool _gizli(ZamanCizelgesi c) => c.bos && c.kapasite == null && c.plan != 'okunamadi';
+  /// Without an item that has an hour the card takes no room on Bugün (the plan card lists the hourless plan items); only the
+  /// "does not fit" warning keeps it.
+  static bool _gizli(ZamanCizelgesi c) => c.saatli.isEmpty && c.kapasite == null;
 
   /// What to tell about the Google link; null when it is fine or the module is simply off (nothing to say).
   static String? _googleNotu(ZamanCizelgesi c) => switch (c.google) {

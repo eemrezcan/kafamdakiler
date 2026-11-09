@@ -7,6 +7,7 @@ import 'package:kafamdakiler/data/models/ses.dart';
 import 'package:kafamdakiler/routing/router.dart';
 import 'package:kafamdakiler/ui/brifing/brifing_seridi.dart';
 import 'package:kafamdakiler/ui/brifing/brifing_view_model.dart';
+import 'package:kafamdakiler/ui/bugun/onay_bekleyen_view_model.dart';
 import 'package:kafamdakiler/ui/yakalama/ses_view_model.dart';
 
 import '../test_destek.dart';
@@ -42,7 +43,7 @@ void main() {
   });
   tearDown(() async => ortam.kapat());
 
-  Future<List<String>> goster(WidgetTester tester) async {
+  Future<List<String>> goster(WidgetTester tester, {bool acik = true, OnayBekleyenViewModel? onay}) async {
     tester.view.physicalSize = const Size(400, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -54,7 +55,7 @@ void main() {
     final router = GoRouter(routes: [
       GoRoute(
         path: '/',
-        builder: (_, _) => Scaffold(body: ListView(children: [BrifingSeridi(viewModel: vm, sesViewModel: ses)])),
+        builder: (_, _) => Scaffold(body: ListView(children: [BrifingSeridi(viewModel: vm, sesViewModel: ses, onayBekleyen: onay, baslangicAcik: acik)])),
       ),
       for (final yol in [Rotalar.hatirlaticilar, Rotalar.eylemler])
         GoRoute(path: yol, builder: (_, _) {
@@ -78,6 +79,51 @@ void main() {
     expect(find.text('Sabah brifingi'), findsOneWidget);
     expect(find.text('8 Kasım Pazar · Asistan hazırladı'), findsOneWidget);
     expect(find.byKey(const ValueKey('brifing-eski')), findsNothing);
+  });
+
+  testWidgets('it starts closed: the title and one line, no cards, no thumbs, no writing box', (tester) async {
+    ortam.api.brifingYaniti = ornek();
+    await goster(tester, acik: false);
+
+    expect(find.text('Sabah brifingi'), findsOneWidget);
+    expect(find.text('Rapor ve iki küçük iş.'), findsOneWidget, reason: 'the one-line summary');
+    expect(find.text('Cuma: diş randevusu'), findsNothing);
+    expect(find.byKey(const ValueKey('brifing-oy-yukari-1')), findsNothing);
+    expect(find.byKey(const ValueKey('brifing-metin')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
+    await tester.pumpAndSettle();
+    expect(find.text('Cuma: diş randevusu'), findsOneWidget);
+    expect(find.byKey(const ValueKey('brifing-oy-yukari-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('brifing-metin')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
+    await tester.pumpAndSettle();
+    expect(find.text('Cuma: diş randevusu'), findsNothing);
+  });
+
+  testWidgets('the header carries the number of actions waiting; the badge opens the approval queue', (tester) async {
+    ortam.api.brifingYaniti = ornek();
+    ortam.api.eylemler = [ornekEylem(id: 'e1'), ornekEylem(id: 'e2')];
+    final onay = OnayBekleyenViewModel(repo: ortam.eylemler, esitleyici: ortam.esitleyici);
+    addTearDown(onay.dispose);
+    await tester.runAsync(onay.yukle);
+    final gidilen = await goster(tester, acik: false, onay: onay);
+
+    expect(find.text('Onay bekleyen 2'), findsOneWidget);
+    await tester.tap(find.text('Onay bekleyen 2'));
+    await tester.pumpAndSettle();
+    expect(gidilen, [Rotalar.eylemler]);
+  });
+
+  testWidgets('without waiting actions there is no badge', (tester) async {
+    ortam.api.brifingYaniti = ornek();
+    final onay = OnayBekleyenViewModel(repo: ortam.eylemler, esitleyici: ortam.esitleyici);
+    addTearDown(onay.dispose);
+    await tester.runAsync(onay.yukle);
+    await goster(tester, acik: false, onay: onay);
+
+    expect(find.textContaining('Onay bekleyen'), findsNothing);
   });
 
   testWidgets('the box that turns a note into work is hidden while Claude is not connected', (tester) async {

@@ -10,7 +10,7 @@ import '../brifing/brifing_ayar_karti.dart';
 import '../core/widgets.dart';
 import 'daha_fazla_view_model.dart';
 
-/// "Daha fazla", the last tab: the account, the pages that are not tabs (habits, captures, management), the morning
+/// "Daha fazla", the last tab: the account, the pages that are not tabs (projects, work cards, management), the morning
 /// notification, the offline queue, the password and sign-out.
 class DahaFazlaScreen extends StatelessWidget {
   const DahaFazlaScreen({super.key, required this.viewModel});
@@ -56,7 +56,7 @@ class DahaFazlaScreen extends StatelessWidget {
           listenable: viewModel,
           builder: (context, _) => ListView(
             // Room for the floating "Yakala" button under the last card.
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            padding: listeKenarlari(),
             children: [
               // The account and its password together; the role is told only when it is not the owner's (one user app).
               Card(
@@ -85,11 +85,11 @@ class DahaFazlaScreen extends StatelessWidget {
                   children: [
                     ListTile(
                       minTileHeight: 56,
-                      leading: const Icon(LucideIcons.target),
-                      title: const Text('Alışkanlıklar'),
-                      subtitle: const Text('Liste, detay ve raf'),
+                      leading: const Icon(LucideIcons.folder),
+                      title: const Text('Projeler'),
+                      subtitle: const Text('Beyindeki projeler ve durumları'),
                       trailing: const Icon(LucideIcons.chevronRight),
-                      onTap: () => context.push(Rotalar.aliskanliklar),
+                      onTap: () => context.push(Rotalar.projeler),
                     ),
                     // The work cards: for whoever may read them (the Sahip, or the Asistan with `isler.oku`).
                     if (kullanici.islerOkuyabilir)

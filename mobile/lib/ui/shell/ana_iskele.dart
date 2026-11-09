@@ -6,11 +6,11 @@ import 'package:provider/provider.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../routing/router.dart';
 
-/// Bottom navigation: Bugün / Gelen / Projeler / Hatırlatıcılar / Daha fazla (the
-/// same order as the web menu), and the "Yakala" button that opens the capture
-/// screen from any of them. Search is a page opened by the magnifier in each
-/// tab's top bar. The habit list and the management screen are opened from Daha
-/// fazla, a Raf habit's shelf from the habit itself, as on the web (M07).
+/// Bottom navigation: Bugün / Alışkanlıklar / Gelen / Hatırlatıcılar / Daha fazla,
+/// and the "Yakala" button that opens the capture screen from any of them. Search
+/// is a page opened by the magnifier in the tabs' top bar. The project list and
+/// the management screen are opened from Daha fazla, a Raf habit's shelf from the
+/// habit itself (M07).
 class AnaIskele extends StatelessWidget {
   const AnaIskele({super.key, required this.navigationShell});
 
@@ -55,8 +55,8 @@ class AnaIskele extends StatelessWidget {
         onDestinationSelected: (i) => navigationShell.goBranch(i, initialLocation: i == navigationShell.currentIndex),
         destinations: const [
           NavigationDestination(icon: Icon(LucideIcons.calendarCheck), label: 'Bugün'),
+          NavigationDestination(icon: Icon(LucideIcons.target), label: 'Alışkanlıklar'),
           NavigationDestination(icon: Icon(LucideIcons.inbox), label: 'Gelen'),
-          NavigationDestination(icon: Icon(LucideIcons.folder), label: 'Projeler'),
           NavigationDestination(icon: Icon(LucideIcons.bell), label: 'Hatırlatıcılar'),
           NavigationDestination(icon: Icon(LucideIcons.ellipsis), label: 'Daha fazla'),
         ],

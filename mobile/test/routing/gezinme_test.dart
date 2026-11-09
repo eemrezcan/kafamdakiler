@@ -144,13 +144,24 @@ void main() {
 
   int secili(WidgetTester tester) => tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
 
-  const sekmeAdlari = ['Bugün', 'Gelen', 'Projeler', 'Hatırlatıcılar', 'Daha fazla'];
+  const sekmeAdlari = ['Bugün', 'Alışkanlıklar', 'Gelen', 'Hatırlatıcılar', 'Daha fazla'];
 
-  testWidgets('five tabs in the agreed order; search and the habit list are not among them', (tester) async {
+  testWidgets('five tabs in the agreed order; search and the project list are not among them', (tester) async {
     await uygulamayiAc(tester);
 
     final etiketler = tester.widgetList<NavigationDestination>(find.byType(NavigationDestination)).map((d) => d.label).toList();
     expect(etiketler, sekmeAdlari);
+  });
+
+  testWidgets('at 360 dp the five labels fit and no tab overflows', (tester) async {
+    await uygulamayiAc(tester);
+    tester.view.physicalSize = const Size(360, 800);
+    await bekle(tester);
+
+    for (final ad in sekmeAdlari) {
+      await sekme(tester, ad);
+      expect(tester.takeException(), isNull, reason: ad);
+    }
   });
 
   testWidgets('tabs are switched in the order of the bar', (tester) async {
@@ -177,7 +188,7 @@ void main() {
   testWidgets('the addresses of the tabs open the tab', (tester) async {
     await uygulamayiAc(tester);
 
-    for (final (yol, sira) in [('/gelen', 1), ('/hatirlaticilar', 3), ('/daha-fazla', 4), ('/projeler', 2), ('/', 0)]) {
+    for (final (yol, sira) in [('/gelen', 2), ('/hatirlaticilar', 3), ('/daha-fazla', 4), ('/aliskanliklar', 1), ('/', 0)]) {
       router.go(yol);
       await bekle(tester);
       expect(secili(tester), sira, reason: yol);
@@ -214,9 +225,13 @@ void main() {
     }
   });
 
-  testWidgets('Projeler: list -> detail -> back to the list', (tester) async {
+  testWidgets('Projeler is the first row of Daha fazla: list -> detail -> back to the list', (tester) async {
     await uygulamayiAc(tester);
-    await sekme(tester, 'Projeler');
+    await sekme(tester, 'Daha fazla');
+    await tester.tap(find.text('Projeler'));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/projeler');
+    expect(find.byType(NavigationBar), findsNothing, reason: 'a page above the tabs');
     expect(find.text('Kitap Kulübü Sitesi'), findsOneWidget);
 
     await tester.tap(find.text('Kitap Kulübü Sitesi'));
@@ -230,20 +245,22 @@ void main() {
   });
 
   group('search', () {
-    testWidgets('the magnifier is in the top bar of the four tabs and not on Daha fazla', (tester) async {
+    testWidgets('the magnifier is in the top bar of Bugün, Gelen and Hatırlatıcılar, and not on Alışkanlıklar or Daha fazla', (tester) async {
       await uygulamayiAc(tester);
 
-      for (final ad in ['Bugün', 'Gelen', 'Projeler', 'Hatırlatıcılar']) {
+      for (final ad in ['Bugün', 'Gelen', 'Hatırlatıcılar']) {
         await sekme(tester, ad);
         expect(find.byTooltip('Ara'), findsOneWidget, reason: 'on the $ad tab');
       }
-      await sekme(tester, 'Daha fazla');
-      expect(find.byTooltip('Ara'), findsNothing);
+      for (final ad in ['Alışkanlıklar', 'Daha fazla']) {
+        await sekme(tester, ad);
+        expect(find.byTooltip('Ara'), findsNothing, reason: 'on the $ad tab');
+      }
     });
 
     testWidgets('the magnifier opens a full-screen page: query -> hit -> the note rendered -> back keeps the results', (tester) async {
       await uygulamayiAc(tester);
-      await sekme(tester, 'Projeler');
+      await sekme(tester, 'Gelen');
 
       await tester.tap(find.byTooltip('Ara'));
       await bekle(tester);
@@ -268,7 +285,7 @@ void main() {
       // Back from the search page returns to the tab it was opened from.
       router.pop();
       await bekle(tester);
-      expect(secili(tester), 2);
+      expect(secili(tester), 2, reason: 'Gelen');
     });
   });
 
@@ -288,20 +305,18 @@ void main() {
     expect(find.text('yoldaki yakalama'), findsOneWidget);
   });
 
-  testWidgets('Daha fazla opens the habit list, and the old habit routes still work', (tester) async {
+  testWidgets('Alışkanlıklar is a tab of its own: the list shows there, and the address opens the tab', (tester) async {
     await uygulamayiAc(tester);
-    await sekme(tester, 'Daha fazla');
+    await sekme(tester, 'Alışkanlıklar');
+    expect(secili(tester), 1);
+    expect(find.text('Su iç'), findsOneWidget, reason: 'the habit list');
 
-    await tester.tap(find.text('Alışkanlıklar'));
-    await bekle(tester);
-    expect(find.text('Su iç'), findsOneWidget, reason: 'the habit list page');
-
-    // The address works on its own too (an old link, a redirect), not only through Daha fazla.
+    // The address works on its own too (an old link, a redirect).
     router.go('/');
     await bekle(tester);
     router.go('/aliskanliklar');
     await bekle(tester);
-    expect(router.state.matchedLocation, '/aliskanliklar');
+    expect(secili(tester), 1);
     expect(find.text('Su iç'), findsOneWidget);
   });
 
@@ -310,14 +325,17 @@ void main() {
     tester.view.physicalSize = const Size(400, 1600);
     await sekme(tester, 'Daha fazla');
 
-    for (final metin in ['x@y.z', 'Alışkanlıklar', 'Yönetim', 'Şifremi değiştir', 'Çıkış yap', 'Sabah bildirimi']) {
+    for (final metin in ['x@y.z', 'Projeler', 'Yönetim', 'Şifremi değiştir', 'Çıkış yap', 'Sabah bildirimi']) {
       expect(find.text(metin), findsOneWidget, reason: metin);
     }
     for (final metin in ['Onay kuyruğu', 'Gelen kutusu', 'Sabah brifingi', 'Yakalamalar']) {
       expect(find.text(metin), findsNothing, reason: '$metin is not a row here');
     }
-    // "Hatırlatıcılar" is the tab label only, not a row.
+    // "Hatırlatıcılar" and "Alışkanlıklar" are tab labels only, not rows.
     expect(find.text('Hatırlatıcılar'), findsOneWidget);
+    expect(find.text('Alışkanlıklar'), findsOneWidget);
+    // Projeler is the first of the page rows.
+    expect(tester.getTopLeft(find.text('Projeler')).dy, lessThan(tester.getTopLeft(find.text('Yönetim')).dy));
 
     await tester.tap(find.text('Yönetim'));
     await bekle(tester);
@@ -438,6 +456,38 @@ void main() {
     });
   });
 
+  testWidgets('with a briefing the approval count is a badge on its header, not a card of its own; it opens the queue', (tester) async {
+    ortam.api.eylemler = [ornekEylem(id: 'e1'), ornekEylem(id: 'e2')];
+    ortam.api.brifingYaniti = Brifing(
+      gun: '2026-11-08',
+      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
+      yontem: Brifing.claudeYontemi,
+      kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Bugün 3 iş var', metin: 'Rapor ve iki küçük iş.')],
+    );
+    await uygulamayiAc(tester);
+
+    expect(find.text('Onay bekleyen 2'), findsOneWidget, reason: 'one entry, in the briefing header');
+    expect(find.byKey(const ValueKey('brifing-onay')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('brifing-onay')));
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/eylemler');
+  });
+
+  testWidgets('the last row of a tab\'s list stays clear of the floating Yakala button by its height plus 16 dp', (tester) async {
+    ortam.api.aliskanliklar = [for (var i = 0; i < 14; i++) ornekAliskanlik(id: 'h$i', ad: 'Alışkanlık $i', sira: i)];
+    await uygulamayiAc(tester);
+    await sekme(tester, 'Alışkanlıklar');
+
+    final liste = find.descendant(of: find.byType(Scaffold).last, matching: find.byType(ListView));
+    await tester.drag(liste.first, const Offset(0, -5000));
+    await bekle(tester);
+
+    final son = find.ancestor(of: find.text('Alışkanlık 13'), matching: find.byType(Card)).first;
+    final dugme = tester.getRect(find.byType(FloatingActionButton));
+    expect(dugme.height, 56);
+    expect(dugme.top - tester.getRect(son).bottom, greaterThanOrEqualTo(16 - 0.01));
+  });
+
   testWidgets('with nothing waiting neither Bugün nor Gelen has the "Onay bekleyen" card', (tester) async {
     await uygulamayiAc(tester);
     expect(find.textContaining('Onay bekleyen'), findsNothing);
@@ -463,9 +513,14 @@ void main() {
       await uygulamayiAc(tester);
 
       expect(find.text('Sabah brifingi'), findsOneWidget);
+      expect(find.text('Üç gün sonra saat 10:00.'), findsOneWidget, reason: 'closed: one line of the first card');
+      expect(find.text('Cuma: diş randevusu'), findsNothing, reason: 'closed: the cards are not drawn');
+      await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
+      await bekle(tester);
       expect(find.text('Cuma: diş randevusu'), findsOneWidget);
       expect(find.text('Dünden 2 iş kaldı'), findsNothing);
       expect(find.byKey(const ValueKey('brifing-metin')), findsNothing, reason: 'the assistant is not connected');
+      expect(tester.getTopLeft(find.text('Su iç')).dy, lessThan(tester.getTopLeft(find.text('Sabah brifingi')).dy), reason: 'habits first');
       expect(tester.getTopLeft(find.text('Sabah brifingi')).dy, lessThan(tester.getTopLeft(find.text('Gün planı')).dy));
     });
 
@@ -474,6 +529,9 @@ void main() {
       ortam.api.asistanBagli = true;
       await uygulamayiAc(tester);
 
+      expect(find.byKey(const ValueKey('brifing-metin')), findsNothing, reason: 'closed');
+      await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
+      await bekle(tester);
       expect(find.byKey(const ValueKey('brifing-metin')), findsOneWidget);
     });
 
@@ -481,6 +539,8 @@ void main() {
       ortam.api.brifingYaniti = brifing;
       await uygulamayiAc(tester);
 
+      await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
+      await bekle(tester);
       await tester.tap(find.text('Cuma: diş randevusu'));
       await bekle(tester);
       expect(secili(tester), 3);

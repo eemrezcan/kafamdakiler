@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:kafamdakiler/data/models/brifing.dart';
+import 'package:kafamdakiler/data/models/ses.dart';
+import 'package:kafamdakiler/data/models/zaman_cizelgesi.dart';
 import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
+import 'package:kafamdakiler/ui/brifing/brifing_view_model.dart';
+import 'package:kafamdakiler/ui/bugun/zaman_cizelgesi_view_model.dart';
+import 'package:kafamdakiler/ui/yakalama/ses_view_model.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
@@ -9,6 +15,7 @@ import 'package:kafamdakiler/ui/bugun/bugun_screen.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_view_model.dart';
 
 import '../test_destek.dart';
+import 'ses_test.dart' show SahteBaglanti, SahteDikte;
 
 void main() {
   late TestOrtami ortam;
@@ -26,11 +33,22 @@ void main() {
     return vm;
   }
 
-  Future<void> goster(WidgetTester tester, BugunViewModel vm, {Size boyut = const Size(360, 800), BildirimIzni? izin}) async {
+  Future<void> goster(
+    WidgetTester tester,
+    BugunViewModel vm, {
+    Size boyut = const Size(360, 800),
+    BildirimIzni? izin,
+    BrifingViewModel? brifing,
+    SesViewModel? ses,
+    ZamanCizelgesiViewModel? zaman,
+    VoidCallback? ekle,
+  }) async {
     tester.view.physicalSize = boyut;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(home: BugunScreen(viewModel: vm, bildirimIzni: izin)));
+    await tester.pumpWidget(MaterialApp(
+      home: BugunScreen(viewModel: vm, bildirimIzni: izin, brifing: brifing, brifingSes: ses, zamanCizelgesi: zaman, onAliskanlikEkle: ekle),
+    ));
     await tester.pump();
   }
 
@@ -89,7 +107,59 @@ void main() {
   testWidgets('empty state guides the user', (tester) async {
     final vm = await yukle(tester, SahteApi());
     await goster(tester, vm);
-    expect(find.textContaining('Henüz alışkanlık yok'), findsOneWidget);
+    expect(find.text('Bugün için alışkanlık yok'), findsOneWidget);
+    expect(find.text('Bugünün alışkanlıkları'), findsNothing);
+  });
+
+  testWidgets('no habits today: one card that opens the new habit form when the person may add', (tester) async {
+    final vm = await yukle(tester, SahteApi());
+    var acildi = 0;
+    await goster(tester, vm, ekle: () => acildi++);
+
+    expect(find.text('Bugün için alışkanlık yok · + Alışkanlık ekle'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('aliskanlik-yok')));
+    expect(acildi, 1);
+  });
+
+  testWidgets('today\'s habits come first, above the briefing, which starts closed', (tester) async {
+    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
+    ortam.api.brifingYaniti = Brifing(
+      gun: '2026-11-08',
+      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
+      yontem: Brifing.claudeYontemi,
+      kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Bugün 3 iş var', metin: 'Rapor ve iki küçük iş.')],
+    );
+    final brifing = BrifingViewModel(repo: ortam.brifing, yenileyebilir: () => true);
+    final ses = SesViewModel(api: ortam.api, dikte: SahteDikte(), baglanti: SahteBaglanti(), kaynak: IsCikarKaynagi.brifing);
+    addTearDown(brifing.dispose);
+    addTearDown(ses.dispose);
+    await tester.runAsync(brifing.yukle);
+    await goster(tester, vm, brifing: brifing, ses: ses);
+
+    expect(find.text('Bugünün alışkanlıkları'), findsOneWidget);
+    expect(find.text('Sabah brifingi'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Bugünün alışkanlıkları')).dy, lessThan(tester.getTopLeft(find.text('Su')).dy));
+    expect(tester.getTopLeft(find.text('Su')).dy, lessThan(tester.getTopLeft(find.text('Sabah brifingi')).dy));
+    expect(find.text('Bugün 3 iş var'), findsNothing, reason: 'closed: its cards are not drawn');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('hourless tasks alone leave no timeline card: the plan lists them already', (tester) async {
+    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
+    ortam.api.zamanCizelgesiYaniti = const ZamanCizelgesi(
+      gun: '2026-10-31',
+      google: GoogleDurumu.bagli,
+      plan: 'tamam',
+      saatli: [],
+      saatsiz: [ZamanCizelgesiOgesi(tur: ZamanCizelgesiTuru.plan, kimlik: 'm1', baslik: 'Rapor', durum: 'acik')],
+    );
+    final zaman = ZamanCizelgesiViewModel(repo: ortam.zamanCizelgesi);
+    addTearDown(zaman.dispose);
+    await tester.runAsync(zaman.yukle);
+    await goster(tester, vm, zaman: zaman);
+
+    expect(find.byKey(const Key('zaman-cizelgesi')), findsNothing);
+    expect(find.text('Saatsiz'), findsNothing);
   });
 
   testWidgets('a server error on the first load shows a Turkish message and a retry button', (tester) async {

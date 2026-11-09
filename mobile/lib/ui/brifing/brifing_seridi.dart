@@ -4,6 +4,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/models/brifing.dart';
 import '../../routing/router.dart';
+import '../bugun/onay_bekleyen_karti.dart';
+import '../bugun/onay_bekleyen_view_model.dart';
+import '../core/widgets.dart';
 import '../yakalama/is_onizleme_sheet.dart';
 import '../yakalama/ses_view_model.dart';
 import 'brifing_view_model.dart';
@@ -39,13 +42,21 @@ List<BrifingKarti> brifingSeridiKartlari(Brifing brifing) => [
         if (k.tur != BrifingTuru.kalan) k,
     ];
 
-/// The morning briefing (K2.7) as a strip at the top of Bugün: the day's cards with a thumb on each, a way into the screen a
-/// card is about, and (while the assistant is connected) a box to write a correction that goes through the same preview as
-/// "İşe çevir". Hidden until there is a briefing to show: loading, "not ready yet" and failures leave no gap on Bugün.
+/// The morning briefing (K2.7) as a card on Bugün. It starts closed: the title, one line of what it says and a badge with the
+/// number of actions waiting for approval (a tap on the badge opens the queue). Opened, it shows the day's cards with a thumb
+/// on each, a way into the screen a card is about, and (while the assistant is connected) a box to write a correction that
+/// goes through the same preview as "İşe çevir". Hidden until there is a briefing to show: loading, "not ready yet" and
+/// failures leave no gap on Bugün (the approval card then stands in for the badge, when something waits).
 class BrifingSeridi extends StatefulWidget {
-  const BrifingSeridi({super.key, required this.viewModel, required this.sesViewModel});
+  const BrifingSeridi({super.key, required this.viewModel, required this.sesViewModel, this.onayBekleyen, this.baslangicAcik = false});
 
   final BrifingViewModel viewModel;
+
+  /// The approval queue's count, shown as a badge on the header; null without it.
+  final OnayBekleyenViewModel? onayBekleyen;
+
+  /// Whether the card starts open; the briefing is closed by default.
+  final bool baslangicAcik;
 
   /// Made with `kaynak: 'brifing'`, so what the box adds is labelled as coming from the briefing.
   final SesViewModel sesViewModel;
@@ -56,6 +67,7 @@ class BrifingSeridi extends StatefulWidget {
 
 class _BrifingSeridiState extends State<BrifingSeridi> {
   final _metin = TextEditingController();
+  late bool _acik = widget.baslangicAcik;
 
   @override
   void dispose() {
@@ -90,16 +102,19 @@ class _BrifingSeridiState extends State<BrifingSeridi> {
   Widget build(BuildContext context) {
     final vm = widget.viewModel;
     return ListenableBuilder(
-      listenable: Listenable.merge([vm, widget.sesViewModel, _metin]),
+      listenable: Listenable.merge([vm, widget.sesViewModel, _metin, if (widget.onayBekleyen != null) widget.onayBekleyen!]),
       builder: (context, _) {
         _mesajiGoster();
         final brifing = vm.brifing;
-        if (brifing == null) return const SizedBox.shrink();
-        final kartlar = brifingSeridiKartlari(brifing);
-        // Nothing left to show once the leftovers card is out: no empty box with only a title.
-        if (kartlar.isEmpty) return const SizedBox.shrink();
+        final kartlar = brifing == null ? const <BrifingKarti>[] : brifingSeridiKartlari(brifing);
+        // Nothing to show (no briefing, or only the leftovers card): no empty box with only a title. When actions wait, their
+        // own card takes the badge's place.
+        if (brifing == null || kartlar.isEmpty) {
+          final onay = widget.onayBekleyen;
+          return onay == null ? const SizedBox.shrink() : OnayBekleyenKarti(viewModel: onay);
+        }
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: kartAraligi),
           child: Card(
             key: const ValueKey('brifing-seridi'),
             margin: EdgeInsets.zero,
@@ -112,12 +127,18 @@ class _BrifingSeridiState extends State<BrifingSeridi> {
                   guncel: vm.guncel,
                   yenileyebilir: vm.yenileyebilir,
                   onYenile: vm.mesgul || vm.yukleniyor ? null : vm.yenile,
+                  acik: _acik,
+                  ozet: kartlar.first.metin,
+                  onayBekleyen: widget.onayBekleyen?.sayi ?? 0,
+                  onAcKapa: () => setState(() => _acik = !_acik),
                 ),
-                for (final kart in kartlar)
-                  _KartSatiri(kart: kart, mesgul: vm.mesgul, onOy: (oy) => vm.oyVer(kart.sira, oy)),
-                // The box is the "İşe çevir" entry: it needs Claude, so it is hidden while the assistant is not connected.
-                if (widget.sesViewModel.asistanBagli)
-                  _YazmaKutusu(metin: _metin, ses: widget.sesViewModel, onGonder: _duzeltmeyiGonder),
+                if (_acik) ...[
+                  for (final kart in kartlar)
+                    _KartSatiri(kart: kart, mesgul: vm.mesgul, onOy: (oy) => vm.oyVer(kart.sira, oy)),
+                  // The box is the "İşe çevir" entry: it needs Claude, so it is hidden while the assistant is not connected.
+                  if (widget.sesViewModel.asistanBagli)
+                    _YazmaKutusu(metin: _metin, ses: widget.sesViewModel, onGonder: _duzeltmeyiGonder),
+                ],
               ],
             ),
           ),
@@ -128,7 +149,16 @@ class _BrifingSeridiState extends State<BrifingSeridi> {
 }
 
 class _Baslik extends StatelessWidget {
-  const _Baslik({required this.brifing, required this.guncel, required this.yenileyebilir, required this.onYenile});
+  const _Baslik({
+    required this.brifing,
+    required this.guncel,
+    required this.yenileyebilir,
+    required this.onYenile,
+    required this.acik,
+    required this.ozet,
+    required this.onayBekleyen,
+    required this.onAcKapa,
+  });
 
   final Brifing brifing;
   final bool guncel;
@@ -139,51 +169,83 @@ class _Baslik extends StatelessWidget {
   /// Null while something is on its way.
   final VoidCallback? onYenile;
 
+  final bool acik;
+
+  /// One line of what the briefing says (its first card), shown while it is closed.
+  final String ozet;
+
+  /// Actions waiting for approval; the badge is there only when it is above zero.
+  final int onayBekleyen;
+  final VoidCallback onAcKapa;
+
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final soluk = tema.colorScheme.onSurfaceVariant;
     final yontem = brifing.yontem == Brifing.hesapYontemi ? 'Sabit kurallarla hazırlandı' : 'Asistan hazırladı';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 4, 4),
+      padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(LucideIcons.sun, size: 22, color: tema.colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Sabah brifingi', style: tema.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                  Text('${brifingGunMetni(brifing.gun)} · $yontem', style: tema.textTheme.bodySmall?.copyWith(color: soluk)),
-                  if (!guncel)
+            child: InkWell(
+              key: const ValueKey('brifing-baslik'),
+              onTap: onAcKapa,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Row(
-                        key: const ValueKey('brifing-eski'),
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(LucideIcons.sun, size: 22, color: tema.colorScheme.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(LucideIcons.wifiOff, size: 16, color: soluk),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Bugünün brifingi alınamadı; telefondaki son brifing gösteriliyor.',
-                              style: tema.textTheme.bodySmall?.copyWith(color: soluk),
+                          const KartBasligi('Sabah brifingi'),
+                          if (acik)
+                            Text('${brifingGunMetni(brifing.gun)} · $yontem', style: tema.textTheme.bodySmall?.copyWith(color: soluk))
+                          else
+                            Text(ozet, maxLines: 1, overflow: TextOverflow.ellipsis, style: tema.textTheme.bodySmall?.copyWith(color: soluk)),
+                          if (!guncel)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Row(
+                                key: const ValueKey('brifing-eski'),
+                                children: [
+                                  Icon(LucideIcons.wifiOff, size: 16, color: soluk),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Bugünün brifingi alınamadı; telefondaki son brifing gösteriliyor.',
+                                      style: tema.textTheme.bodySmall?.copyWith(color: soluk),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
-                ],
+                    Icon(acik ? LucideIcons.chevronUp : LucideIcons.chevronDown, color: soluk),
+                  ],
+                ),
               ),
             ),
           ),
-          if (yenileyebilir)
+          if (onayBekleyen > 0)
+            ActionChip(
+              key: const ValueKey('brifing-onay'),
+              avatar: Icon(LucideIcons.listChecks, size: 18, color: tema.colorScheme.primary),
+              label: Text('Onay bekleyen $onayBekleyen'),
+              visualDensity: VisualDensity.compact,
+              onPressed: () => rotayaGit(context, Rotalar.eylemler),
+            ),
+          if (yenileyebilir && acik)
             IconButton(
               tooltip: 'Yeniden hazırla',
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),

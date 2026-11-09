@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/models/aliskanlik.dart';
 import '../../data/repositories/bildirim_izni.dart';
@@ -27,29 +28,32 @@ import 'zaman_cizelgesi_karti.dart';
 import 'zaman_cizelgesi_view_model.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.asistanOzet, this.zamanCizelgesi, this.brifing, this.brifingSes, this.bildirimIzni});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.asistanOzet, this.zamanCizelgesi, this.brifing, this.brifingSes, this.bildirimIzni, this.onAliskanlikEkle});
 
   final BugunViewModel viewModel;
+
+  /// Opens the new habit form from the "no habits today" card; null (not the Sahip) leaves the card as plain text.
+  final VoidCallback? onAliskanlikEkle;
 
   /// The "Bildirimler kapalı" warning at the very top; without it (tests) there is no warning.
   final BildirimIzni? bildirimIzni;
 
-  /// The morning briefing strip at the very top (K2.7); null for someone who may not read it. Needs [brifingSes] too.
+  /// The morning briefing strip (K2.7), closed until opened; null for someone who may not read it. Needs [brifingSes] too.
   final BrifingViewModel? brifing;
 
   /// Behind the strip's "Brifinge yaz" box (shown only while the assistant is connected).
   final SesViewModel? brifingSes;
 
-  /// The "Onay bekleyen N" card, above the plan card; it hides itself when nothing waits.
+  /// The approval queue count: a badge on the briefing's header (its own card only when there is no briefing); hidden when nothing waits.
   final OnayBekleyenViewModel? onayBekleyen;
 
   /// The "Asistan" card (work cards: waiting on the person, at the VPS, finished this week); null for someone who may not read them.
   final AsistanOzetViewModel? asistanOzet;
 
-  /// Today's one timeline (events, timed reminders, plan items), above the plan card; hidden until it has an answer.
+  /// Today's timeline, under the upcoming reminders; there only when something has an hour.
   final ZamanCizelgesiViewModel? zamanCizelgesi;
 
-  /// The brain's plan for the day, shown above the habit cards. Without it the screen is habits only.
+  /// The brain's plan for the day, under the habit cards and the briefing. Without it the screen is habits only.
   final GunPlaniViewModel? gunPlani;
 
   /// Upcoming reminders, shown under the plan card. Without it the card is not there.
@@ -83,24 +87,9 @@ class BugunScreen extends StatelessWidget {
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
-          final liste = viewModel.liste;
           final plan = gunPlani;
-          if (plan != null) {
-            // Plan card and habits in one scroll: a failing side never hides the other.
-            return RefreshIndicator(
-              onRefresh: () => Future.wait([
-                viewModel.yukle(),
-                plan.yukle(),
-                if (yaklasanlar != null) yaklasanlar!.yukle(),
-                if (onayBekleyen != null) onayBekleyen!.yukle(),
-                if (asistanOzet != null) asistanOzet!.yukle(),
-                if (zamanCizelgesi != null) zamanCizelgesi!.yukle(),
-                if (brifing != null) brifing!.yukle(),
-              ]),
-              child: OrtaGenislik(child: _liste(context, plan: plan)),
-            );
-          }
-          if (liste == null) {
+          // Without the plan card (the habits-only screen) a failed or loading first read fills the whole screen.
+          if (plan == null && viewModel.liste == null) {
             if (viewModel.yukleniyor) return const YuklemeIskeleti();
             return BosDurum(
               metin: viewModel.hata ?? 'Alışkanlıklar alınamadı.',
@@ -108,48 +97,53 @@ class BugunScreen extends StatelessWidget {
               onPressed: viewModel.yukle,
             );
           }
+          // Every part in one scroll: a failing side never hides the others.
           return RefreshIndicator(
-            onRefresh: viewModel.yukle,
-            child: liste.isEmpty
-                ? const BosDurum(metin: 'Henüz alışkanlık yok. Daha fazla > Alışkanlıklar ekranından + ile ekleyebilirsin.')
-                : OrtaGenislik(child: _liste(context)),
+            onRefresh: () => Future.wait([
+              viewModel.yukle(),
+              if (plan != null) plan.yukle(),
+              if (yaklasanlar != null) yaklasanlar!.yukle(),
+              if (onayBekleyen != null) onayBekleyen!.yukle(),
+              if (asistanOzet != null) asistanOzet!.yukle(),
+              if (zamanCizelgesi != null) zamanCizelgesi!.yukle(),
+              if (brifing != null) brifing!.yukle(),
+            ]),
+            child: OrtaGenislik(child: _liste(context, plan: plan)),
           );
         },
       ),
     );
   }
 
-  /// The habit part when the list is not there (yet): a skeleton, the error with a retry, or the empty hint.
+  /// The habit part when the list is not there (yet): a skeleton, or the error with a retry.
   List<Widget> _aliskanlikDurumu(BuildContext context) {
     final tema = Theme.of(context);
-    final soluk = TextStyle(color: tema.colorScheme.onSurfaceVariant);
-    if (viewModel.liste == null) {
-      if (viewModel.yukleniyor) {
-        return [
-          for (var i = 0; i < 2; i++)
-            Container(
-              height: 88,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: tema.colorScheme.outlineVariant, borderRadius: BorderRadius.circular(12)),
-            ),
-        ];
-      }
+    if (viewModel.yukleniyor) {
       return [
-        Text(viewModel.hata ?? 'Alışkanlıklar alınamadı.', style: soluk),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(onPressed: viewModel.yukle, child: const Text('Tekrar dene')),
-        ),
+        for (var i = 0; i < 2; i++)
+          Container(
+            height: 88,
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(color: tema.colorScheme.outlineVariant, borderRadius: BorderRadius.circular(12)),
+          ),
       ];
     }
-    return [Text('Henüz alışkanlık yok. Daha fazla > Alışkanlıklar ekranından + ile ekleyebilirsin.', style: soluk)];
+    return [
+      BosKart(metin: viewModel.hata ?? 'Alışkanlıklar alınamadı.'),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton(onPressed: viewModel.yukle, child: const Text('Tekrar dene')),
+      ),
+    ];
   }
 
-  Widget _liste(BuildContext context, {GunPlaniViewModel? plan}) {
+  /// Today's habits first: the heading, the summary bar and the cards; or one card that says there are none (and, for the
+  /// Sahip, opens the new habit form).
+  List<Widget> _aliskanliklar(BuildContext context) {
+    final tema = Theme.of(context);
+    final liste = viewModel.liste;
     final planli = viewModel.planli;
     final plansiz = viewModel.plansiz;
-    final tema = Theme.of(context);
-    final aliskanlikVar = viewModel.liste != null && viewModel.liste!.isNotEmpty;
     Widget kart(Aliskanlik a) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: AliskanlikKarti(
@@ -160,11 +154,40 @@ class BugunScreen extends StatelessWidget {
             onSayiGir: () => _sayiGir(context, a),
           ),
         );
+    if (liste == null) return _aliskanlikDurumu(context);
+    if (liste.isEmpty) {
+      return [
+        BosKart(
+          key: const ValueKey('aliskanlik-yok'),
+          ikon: onAliskanlikEkle == null ? null : LucideIcons.plus,
+          metin: onAliskanlikEkle == null ? 'Bugün için alışkanlık yok' : 'Bugün için alışkanlık yok · + Alışkanlık ekle',
+          onTap: onAliskanlikEkle,
+        ),
+      ];
+    }
+    return [
+      const Padding(padding: EdgeInsets.only(bottom: 8), child: KartBasligi('Bugünün alışkanlıkları')),
+      if (planli.isEmpty) const BosKart(metin: 'Bugün planlı alışkanlık yok.') else _BugunOzeti(planli: planli),
+      for (final a in planli) kart(a),
+      if (plansiz.isNotEmpty) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 12),
+          child: Text(
+            'Bugün planlı değil',
+            style: tema.textTheme.titleSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant),
+          ),
+        ),
+        for (final a in plansiz) Opacity(opacity: 0.55, child: kart(a)),
+      ],
+    ];
+  }
 
+  Widget _liste(BuildContext context, {GunPlaniViewModel? plan}) {
+    final tema = Theme.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       // Room for the floating "Yakala" button under the last card.
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      padding: listeKenarlari(),
       children: [
         if (viewModel.cevrimdisi)
           Padding(
@@ -176,38 +199,21 @@ class BugunScreen extends StatelessWidget {
           ),
         if (bildirimIzni != null) BildirimKapaliUyarisi(izin: bildirimIzni!),
         const _Tarih(),
-        if (brifing != null && brifingSes != null) BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!),
-        if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
+        ..._aliskanliklar(context),
         if (asistanOzet != null) AsistanOzetKarti(viewModel: asistanOzet!),
-        if (zamanCizelgesi != null) ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
-        if (plan != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: GunPlaniKarti(viewModel: plan)),
+        // The approval queue's entry is the badge on the briefing's header; without a briefing it is its own card.
+        if (brifing != null && brifingSes != null)
+          BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!, onayBekleyen: onayBekleyen)
+        else if (onayBekleyen != null)
+          OnayBekleyenKarti(viewModel: onayBekleyen!),
+        if (plan != null) Padding(padding: const EdgeInsets.only(bottom: kartAraligi), child: GunPlaniKarti(viewModel: plan)),
         // Hidden until it has an answer, so a failing reminders read leaves no gap.
         if (yaklasanlar != null) ...[
           YaklasanlarKarti(viewModel: yaklasanlar!),
-          if (yaklasanlar!.liste != null) const SizedBox(height: 16),
+          if (yaklasanlar!.liste != null) const SizedBox(height: kartAraligi),
         ],
-        // The habit list is not there (yet) or empty: say so under the plan card.
-        if (plan != null && !aliskanlikVar) ..._aliskanlikDurumu(context),
-        if (planli.isNotEmpty) _BugunOzeti(planli: planli),
-        if (planli.isEmpty && (plan == null || aliskanlikVar))
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              'Bugün planlı alışkanlık yok.',
-              style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
-            ),
-          ),
-        for (final a in planli) kart(a),
-        if (plansiz.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 12),
-            child: Text(
-              'Bugün planlı değil',
-              style: tema.textTheme.titleSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant),
-            ),
-          ),
-          for (final a in plansiz) Opacity(opacity: 0.55, child: kart(a)),
-        ],
+        // Only when something has an hour; what has none is on the plan card already.
+        if (zamanCizelgesi != null) ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
       ],
     );
   }
