@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Claude;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
+using Kafamdakiler.Gmail;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Yonetim;
@@ -17,7 +19,7 @@ namespace Kafamdakiler.Pages.Yonetim;
 // shared with /api/yonetim and /api/google.
 public class IndexModel(
     AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler,
-    GoogleBaglanti googleBaglanti, TakvimEsitleyici esitleyici, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
+    GoogleBaglanti googleBaglanti, TakvimEsitleyici esitleyici, ClaudeIstemcisi claude, GmailTaramaDurumu gmailDurumu, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
 {
     public record GrupKarti(IzinGruplari.Grup Grup, GrupKipi Kip);
 
@@ -47,6 +49,11 @@ public class IndexModel(
     public List<ProjeOzetDto> Projeler { get; private set; } = [];
 
     public string? ProjeListesiHatasi { get; private set; }
+
+    // Today's Claude calls per model against their caps, and what the last Gmail scan did with the mail it met.
+    public IReadOnlyList<ClaudeKullanimi> ClaudeKullanimi { get; private set; } = [];
+
+    public GmailTaramaSayilari? GmailSayilari { get; private set; }
 
     public GoogleDurumDto GoogleDurumu { get; private set; } = new(false, "kapali", null, [], null, 0);
 
@@ -112,6 +119,8 @@ public class IndexModel(
         BeyinDurumu = await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, simdi, ct);
         Kuyruk = await YonetimIslemleri.KuyrukAsync(db, simdi, yalnizIlgilenilecek: true, ct);
         GoogleDurumu = await googleBaglanti.DurumAsync(ct);
+        ClaudeKullanimi = claude.Kullanim();
+        GmailSayilari = gmailDurumu.SonSayilar;
 
         RepoEslemeleri = (await db.ProjeRepolari.AsNoTracking().OrderBy(r => r.ProjeKimligi).ToListAsync(ct))
             .Select(r => new ProjeRepoDto(r.ProjeKimligi, r.Depo, RepoOzetServisi.Baglanti(r.Depo))).ToList();

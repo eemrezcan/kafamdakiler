@@ -231,6 +231,63 @@ public class ClaudeIstemcisiTests
     }
 
     [Fact]
+    public async Task DailyLimit_IsCountedPerModel_ASpentModelDoesNotBlockAnother_AndEveryCountResetsNextDay()
+    {
+        using var claude = new SahteClaude();
+        var saat = new ElleSaat(new DateTimeOffset(2026, 11, 7, 10, 0, 0, TimeSpan.Zero));
+        var ayar = new ClaudeAyari
+        {
+            Komut = claude.Komut,
+            Model = "sonnet",
+            Modeller = new Dictionary<string, string> { ["ucuz"] = "haiku", ["pahali"] = "claude-opus-4-1" },
+            GunlukEnCokCagri = 3,
+            ModelSiniri = new Dictionary<string, int> { ["haiku"] = 2, ["opus"] = 1 },
+        };
+        var istemci = new ClaudeIstemcisi(ayar, saat, Microsoft.Extensions.Logging.Abstractions.NullLogger<ClaudeIstemcisi>.Instance);
+        Task<ClaudeSonucu<Yanit>> Sor(string tur) => istemci.SorAsync<Yanit>(new ClaudeIstegi(tur, "talimat", "metin"), TestContext.Current.CancellationToken);
+
+        // The cheap model has its own cap of two; the full name of the dear one counts as its family.
+        Assert.Equal(ClaudeDurumu.Tamam, (await Sor("ucuz")).Durum);
+        Assert.Equal(ClaudeDurumu.Tamam, (await Sor("ucuz")).Durum);
+        Assert.Equal(ClaudeDurumu.SinirDoldu, (await Sor("ucuz")).Durum);
+        Assert.Equal(ClaudeDurumu.Tamam, (await Sor("pahali")).Durum);
+        Assert.Equal(ClaudeDurumu.SinirDoldu, (await Sor("pahali")).Durum);
+
+        // A model with no cap of its own takes the general one; the spent models did not touch it.
+        Assert.Equal(3, istemci.KalanCagri("baska"));
+        Assert.Equal(0, istemci.KalanCagri("ucuz"));
+        Assert.Equal(3, (await Task.WhenAll(Sor("a"), Sor("b"), Sor("c"))).Count(s => s.Basarili));
+        Assert.Equal(ClaudeDurumu.SinirDoldu, (await Sor("d")).Durum);
+        Assert.Equal(2 + 1 + 3, claude.Cagrilar().Count);
+
+        var kullanim = istemci.Kullanim().ToDictionary(k => k.Model);
+        Assert.Equal((2, 2), (kullanim["haiku"].Kullanilan, kullanim["haiku"].Sinir));
+        Assert.Equal((1, 1), (kullanim["opus"].Kullanilan, kullanim["opus"].Sinir));
+        Assert.Equal((3, 3), (kullanim["sonnet"].Kullanilan, kullanim["sonnet"].Sinir));
+
+        saat.Simdi = saat.Simdi.AddDays(1);
+        Assert.Equal(2, istemci.KalanCagri("ucuz"));
+        Assert.All(istemci.Kullanim(), k => Assert.Equal(0, k.Kullanilan));
+        Assert.Equal(ClaudeDurumu.Tamam, (await Sor("ucuz")).Durum);
+    }
+
+    [Fact]
+    public void ModelLimits_HaveDefaults_AreOverriddenByTheSettings_AndAFullModelNameCountsAsItsFamily()
+    {
+        var bos = ClaudeAyari.Oku(new ConfigurationBuilder().Build(), "/uygulama");
+        Assert.Equal((200, 10, 50), (bos.SinirBul("haiku"), bos.SinirBul("opus"), bos.SinirBul("sonnet")));
+
+        var ayar = ClaudeAyari.Oku(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Claude:GunlukEnCokCagri"] = "30",
+            ["Claude:ModelSiniri:Haiku"] = "75",
+            ["Claude:ModelSiniri:sonnet"] = "20",
+        }).Build(), "/uygulama");
+        Assert.Equal((75, 10, 20), (ayar.SinirBul("claude-haiku-4-5"), ayar.SinirBul("opus"), ayar.SinirBul("Sonnet")));
+        Assert.Equal(30, ayar.SinirBul("baska-model"));
+    }
+
+    [Fact]
     public async Task Off_WhenThereIsNoCommand_OrItCannotStart()
     {
         var kapali = new ClaudeIstemcisi(new ClaudeAyari(), TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<ClaudeIstemcisi>.Instance);

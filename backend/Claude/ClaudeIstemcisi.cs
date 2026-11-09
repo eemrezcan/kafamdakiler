@@ -18,7 +18,7 @@ public enum ClaudeDurumu
     ZamanAsimi,
     // The command exited cleanly but its answer is not JSON of the expected shape. Rejected, never repaired.
     BozukCikti,
-    // The daily call cap is reached; nothing was started.
+    // The daily call cap of the call's model is reached; nothing was started.
     SinirDoldu,
     // The command failed or reported an error.
     Hata,
@@ -28,6 +28,9 @@ public record ClaudeSonucu<T>(ClaudeDurumu Durum, T? Veri = default, string? Mes
 {
     public bool Basarili => Durum == ClaudeDurumu.Tamam;
 }
+
+// One model's use today: the calls started and the daily cap.
+public record ClaudeKullanimi(string Model, int Kullanilan, int Sinir);
 
 // `Tur` only names the kind of call in the log. `Metin` is the untrusted content (a mail, a transcript); it goes to stdin.
 // `Sema` is a JSON schema; left null it is derived from the answer type.
@@ -56,18 +59,31 @@ public class ClaudeIstemcisi(ClaudeAyari ayar, TimeProvider saat, ILogger<Claude
     private readonly SemaphoreSlim _sira = new(Math.Max(1, ayar.EsZamanliEnCok));
     private readonly object _sayacKilidi = new();
     private DateOnly _sayacGunu;
-    private int _sayac;
+    private readonly Dictionary<string, int> _sayaclar = [];
 
     public bool Bagli => ayar.Acik;
 
-    // The calls the daily cap still allows today. Background jobs that nobody asked for look at this and leave the last few
-    // to the person's own requests.
-    public int KalanCagri
+    // The calls the daily cap still allows today to the model that a call named `tur` uses. Background jobs that nobody asked for
+    // look at this and leave the last few to the person's own requests.
+    public int KalanCagri(string tur)
     {
-        get
+        var model = ayar.ModelSec(tur);
+        lock (_sayacKilidi)
         {
-            lock (_sayacKilidi)
-                return HatirlaticiHesap.IstanbulGunu(saat.GetUtcNow()) != _sayacGunu ? ayar.GunlukEnCokCagri : Math.Max(0, ayar.GunlukEnCokCagri - _sayac);
+            GunuYenile();
+            return Math.Max(0, ayar.SinirBul(model) - _sayaclar.GetValueOrDefault(ClaudeAyari.ModelAnahtari(model)));
+        }
+    }
+
+    // Today's use per model, for the management page: every model with a cap of its own, the default ones and any other used today.
+    public IReadOnlyList<ClaudeKullanimi> Kullanim()
+    {
+        lock (_sayacKilidi)
+        {
+            GunuYenile();
+            var modeller = ayar.ModelSiniri.Keys.Concat(_sayaclar.Keys).Append(ClaudeAyari.ModelAnahtari(ayar.Model))
+                .Concat(ayar.Modeller.Values.Select(ClaudeAyari.ModelAnahtari)).Distinct().Order().ToList();
+            return modeller.Select(m => new ClaudeKullanimi(m, _sayaclar.GetValueOrDefault(m), ayar.SinirBul(m))).ToList();
         }
     }
 
@@ -82,10 +98,11 @@ public class ClaudeIstemcisi(ClaudeAyari ayar, TimeProvider saat, ILogger<Claude
         var baslangic = Stopwatch.GetTimestamp();
         try
         {
-            if (!CagriHakkiAl())
+            var model = ayar.ModelSec(istek.Tur);
+            if (!CagriHakkiAl(model))
                 return Bitir<T>(istek.Tur, new ClaudeSonucu<T>(ClaudeDurumu.SinirDoldu, Mesaj: "Claude için bugünlük sınır doldu."), Stopwatch.GetElapsedTime(baslangic));
 
-            var sonuc = await CalistirAsync<T>(istek, sema, ct);
+            var sonuc = await CalistirAsync<T>(istek, model, sema, ct);
             return Bitir(istek.Tur, sonuc, Stopwatch.GetElapsedTime(baslangic));
         }
         finally
@@ -101,26 +118,33 @@ public class ClaudeIstemcisi(ClaudeAyari ayar, TimeProvider saat, ILogger<Claude
         return sonuc;
     }
 
-    private bool CagriHakkiAl()
+    // Must be called with the counter lock held: a new day starts every count from zero.
+    private void GunuYenile()
+    {
+        var gun = HatirlaticiHesap.IstanbulGunu(saat.GetUtcNow());
+        if (gun != _sayacGunu)
+        {
+            _sayacGunu = gun;
+            _sayaclar.Clear();
+        }
+    }
+
+    private bool CagriHakkiAl(string model)
     {
         lock (_sayacKilidi)
         {
-            var gun = HatirlaticiHesap.IstanbulGunu(saat.GetUtcNow());
-            if (gun != _sayacGunu)
-            {
-                _sayacGunu = gun;
-                _sayac = 0;
-            }
-
-            if (_sayac >= ayar.GunlukEnCokCagri)
+            GunuYenile();
+            var anahtar = ClaudeAyari.ModelAnahtari(model);
+            var sayac = _sayaclar.GetValueOrDefault(anahtar);
+            if (sayac >= ayar.SinirBul(model))
                 return false;
 
-            _sayac++;
+            _sayaclar[anahtar] = sayac + 1;
             return true;
         }
     }
 
-    private async Task<ClaudeSonucu<T>> CalistirAsync<T>(ClaudeIstegi istek, string sema, CancellationToken ct)
+    private async Task<ClaudeSonucu<T>> CalistirAsync<T>(ClaudeIstegi istek, string model, string sema, CancellationToken ct)
     {
         // The delimiter carries a random token, so the text cannot close the data block by itself.
         var ayrac = Guid.NewGuid().ToString("N");
@@ -146,7 +170,7 @@ public class ClaudeIstemcisi(ClaudeAyari ayar, TimeProvider saat, ILogger<Claude
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
-            foreach (var arguman in Argumanlar(ayar.ModelSec(istek.Tur), talimat, sema))
+            foreach (var arguman in Argumanlar(model, talimat, sema))
                 bilgi.ArgumentList.Add(arguman);
 
             using var surec = new Process { StartInfo = bilgi };

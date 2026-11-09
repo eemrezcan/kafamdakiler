@@ -3,10 +3,22 @@ using Kafamdakiler.Takvim;
 
 namespace Kafamdakiler.Gmail;
 
-// When the last scan round got as far as asking Gmail. Held in memory: after a restart it is empty until the next round.
+// What the last round did with the mail it met: how many came, how many the rules dropped before any model, how many went to the cheap
+// model, how many it found important, how many went on to the extraction model. `Uyari` is a fixed sentence when the round stopped
+// because a model's daily cap is reached (the mail waits for the next day); null otherwise.
+public record GmailTaramaSayilari(int Gelen, int Elenen, int SecmeyeGiden, int Onemli, int CikarmayaGiden, string? Uyari = null);
+
+// When the last scan round got as far as asking Gmail, and its numbers. Held in memory: after a restart it is empty until the next round.
 public class GmailTaramaDurumu
 {
     private long _sonTarama;
+    private volatile GmailTaramaSayilari? _sonSayilar;
+
+    public GmailTaramaSayilari? SonSayilar
+    {
+        get => _sonSayilar;
+        set => _sonSayilar = value;
+    }
 
     public DateTimeOffset? SonTarama
     {
@@ -38,7 +50,7 @@ public class GmailTaramaServisi(
                 if (ozet.ErisimSorunu is { } sorun)
                     log.LogInformation("Gmail scan waits: {Sorun}.", sorun);
                 else if (ozet.SinirDoldu)
-                    log.LogInformation("Gmail scan stopped: Claude's daily calls are nearly used up.");
+                    log.LogInformation("Gmail scan stopped: a model's daily calls are nearly used up.");
 
                 if (ozet.Islenen + ozet.Atlanan + ozet.Basarisiz > 0)
                     log.LogInformation("Gmail scan: {Read} read ({Suggested} suggestions), {Skipped} skipped, {Failed} failed (will retry).", ozet.Islenen, ozet.Onerilen, ozet.Atlanan, ozet.Basarisiz);

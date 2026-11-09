@@ -236,6 +236,35 @@
     }
 </section>
 
+<section class="kd-yonetim-blok" aria-labelledby="claude-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="claude-baslik">Claude kullanımı</h2>
+    <p class="kd-muted">Bugünün çağrıları, model başına. Sınır dolan model çağrılmaz; gece yarısı (İstanbul) sayaç sıfırlanır.</p>
+    <dl class="kd-facts">
+        @foreach (var k in Model.ClaudeKullanimi)
+        {
+            <div>
+                <dt>@k.Model</dt>
+                <dd>@k.Kullanilan / @k.Sinir@(k.Kullanilan >= k.Sinir ? " · sınır doldu" : "")</dd>
+            </div>
+        }
+    </dl>
+    @if (Model.GmailSayilari is { } sayilar)
+    {
+        <p class="kd-muted">Son Gmail taraması:</p>
+        <dl class="kd-facts">
+            <div><dt>Gelen</dt><dd>@sayilar.Gelen</dd></div>
+            <div><dt>Elenen (kural)</dt><dd>@sayilar.Elenen</dd></div>
+            <div><dt>Ucuz modele giden</dt><dd>@sayilar.SecmeyeGiden</dd></div>
+            <div><dt>Önemli</dt><dd>@sayilar.Onemli</dd></div>
+            <div><dt>Çıkarıma giden</dt><dd>@sayilar.CikarmayaGiden</dd></div>
+        </dl>
+        @if (sayilar.Uyari is not null)
+        {
+            <div class="kd-alert" role="alert">@sayilar.Uyari</div>
+        }
+    }
+</section>
+
 <section class="kd-yonetim-blok" aria-labelledby="repo-baslik">
     <h2 class="kd-eyebrow kd-section-title" id="repo-baslik">Proje ↔ depo</h2>
     <p class="kd-muted">Bir proje bir GitHub deposuna bağlanınca proje sayfasında son commit'ler ve açık PR sayısı görünür.</p>

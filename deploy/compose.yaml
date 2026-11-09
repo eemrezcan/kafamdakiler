@@ -65,6 +65,9 @@ services:
       Gmail__AralikDakika: ${GMAIL_ARALIK_DAKIKA:-10}
       Gmail__EngellenenGonderenler: ${GMAIL_ENGELLENEN_GONDERENLER:-}
       Claude__Modeller__gmail-cikar: ${CLAUDE_MODEL_GMAIL:-sonnet}
+      Claude__Modeller__gmail-sec: ${CLAUDE_MODEL_GMAIL_SEC:-haiku}
+      Claude__ModelSiniri__haiku: ${CLAUDE_SINIR_HAIKU:-200}
+      Claude__ModelSiniri__opus: ${CLAUDE_SINIR_OPUS:-10}
     # Host folders outside the git clone (/srv/<project>/veri, /srv/<project>/beyin), so a fresh clone never
     # touches the data and the backup takes plain paths. veri/ must belong to the container user (uid 1654).
     volumes:
