@@ -125,6 +125,23 @@ public class BeyinIstemcisi(BeyinAyari ayar)
 
     private static string Kisalt(string metin) => metin.Length <= 300 ? metin.Trim() : metin[..300].Trim() + "…";
 
+    // `not-ekle`: a new note. The body goes through a file, like `gelen ekle`. The brain never overwrites: a path that exists is
+    // refused, which the caller may read as "already written".
+    public async Task<BeyinSonucu> NotEkleAsync(string yol, string baslik, string etiketler, string tur, string govde, CancellationToken ct)
+    {
+        var govdeDosyasi = Path.Combine(Path.GetTempPath(), "kd-not-" + Guid.NewGuid().ToString("N") + ".md");
+        try
+        {
+            await File.WriteAllTextAsync(govdeDosyasi, govde, new UTF8Encoding(false), ct);
+            return await CalistirAsync(
+                ["not-ekle", $"--metin-dosya={govdeDosyasi}", $"--yol={yol}", $"--baslik={baslik}", $"--tags={etiketler}", $"--tur={tur}"], ct);
+        }
+        finally
+        {
+            File.Delete(govdeDosyasi);
+        }
+    }
+
     // `gelen ekle`: the text goes through a file (a text such as "-" or "--x" would be read as an option on the command line).
     // `gorselYolu` must already be a JPEG.
     public async Task<BeyinSonucu> GelenEkleAsync(string? metin, string? gorselYolu, string? hedef, DateTimeOffset yakalandi, CancellationToken ct)

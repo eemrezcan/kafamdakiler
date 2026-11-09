@@ -98,7 +98,7 @@ public static class HatirlaticiEndpoints
                 return Results.NotFound();
 
             var simdi = saat.GetUtcNow();
-            var sonuc = Yaptim(h, ayar.VarsayilanSaat, simdi);
+            var sonuc = Yaptim(db, h, ayar.VarsayilanSaat, simdi);
             if (!sonuc.Basarili)
                 return Yanit(sonuc);
 
@@ -113,7 +113,7 @@ public static class HatirlaticiEndpoints
                 return Results.NotFound();
 
             var simdi = saat.GetUtcNow();
-            var sonuc = Ertele(h, dto.Sure, ayar.VarsayilanSaat, simdi);
+            var sonuc = Ertele(db, h, dto.Sure, ayar.VarsayilanSaat, simdi);
             if (!sonuc.Basarili)
                 return Yanit(sonuc);
 

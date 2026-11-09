@@ -6,6 +6,7 @@ using Kafamdakiler.Eylemler;
 using Kafamdakiler.Gelen;
 using Kafamdakiler.Gmail;
 using Kafamdakiler.Hatirlaticilar;
+using Kafamdakiler.Ozet;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Yakalamalar;
@@ -25,6 +26,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Dosya> Dosyalar => Set<Dosya>();
     public DbSet<Yakalama> Yakalamalar => Set<Yakalama>();
     public DbSet<Hatirlatici> Hatirlaticilar => Set<Hatirlatici>();
+    public DbSet<HatirlaticiOlayi> HatirlaticiOlaylari => Set<HatirlaticiOlayi>();
+    public DbSet<HaftalikOzetKaydi> HaftalikOzetler => Set<HaftalikOzetKaydi>();
     public DbSet<ProjeRepo> ProjeRepolari => Set<ProjeRepo>();
     public DbSet<Eylem> Eylemler => Set<Eylem>();
     public DbSet<EylemIzni> EylemIzinleri => Set<EylemIzni>();
@@ -114,6 +117,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Ignore(x => x.EtkinAn);
             e.HasIndex(x => new { x.Durum, x.SonrakiAn });
         });
+
+        builder.Entity<HatirlaticiOlayi>(e =>
+        {
+            e.Property(x => x.Tur).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(x => x.Zaman);
+        });
+
+        builder.Entity<HaftalikOzetKaydi>(e => e.HasKey(x => x.Hafta));
 
         builder.Entity<ProjeRepo>(e =>
         {

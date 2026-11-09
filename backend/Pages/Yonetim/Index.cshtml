@@ -1,5 +1,6 @@
 @page
 @using Kafamdakiler.Eylemler
+@using Kafamdakiler.Ozet
 @using Kafamdakiler.Yonetim
 @model Kafamdakiler.Pages.Yonetim.IndexModel
 @{
@@ -167,6 +168,20 @@
             <dd>@Model.BeyinDurumu.HataliYakalama</dd>
         </div>
     </dl>
+</section>
+
+<section class="kd-yonetim-blok" aria-labelledby="ozet-baslik">
+    <h2 class="kd-eyebrow kd-section-title" id="ozet-baslik">Haftalık özet</h2>
+    <p class="kd-muted">Her Pazar 21:00'de alışkanlık, kitap, kilo ve hatırlatıcı sayıları beyne bir not olarak yazılır. Uygulama kapalıysa bir sonraki açılışta yazılır; aynı hafta iki kez yazılmaz.</p>
+    <dl class="kd-facts">
+        <div>
+            <dt>Son özet</dt>
+            <dd>@(Model.SonOzet is { } ozet ? $"{HaftalikOzetOlusturucu.Kimlik(ozet.Hafta)} · yazıldı {ozet.YazilmaAni.ToLocalTime():dd.MM HH:mm}" : "Henüz yazılmadı")</dd>
+        </div>
+    </dl>
+    <form method="post" asp-page-handler="OzetYaz">
+        <button type="submit" class="btn btn-outline-primary">Şimdi yaz</button>
+    </form>
 </section>
 
 <section class="kd-yonetim-blok" aria-labelledby="google-baslik">

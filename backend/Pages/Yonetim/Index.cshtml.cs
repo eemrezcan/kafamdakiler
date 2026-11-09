@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
+using Kafamdakiler.Ozet;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Yonetim;
@@ -17,7 +18,7 @@ namespace Kafamdakiler.Pages.Yonetim;
 // shared with /api/yonetim and /api/google.
 public class IndexModel(
     AppDbContext db, UserManager<IdentityUser<Guid>> kullanicilar, BeyinIstemcisi beyin, BeyinAyari ayar, EylemServisi eylemler,
-    GoogleBaglanti googleBaglanti, TakvimEsitleyici esitleyici, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
+    GoogleBaglanti googleBaglanti, TakvimEsitleyici esitleyici, HaftalikOzetYazici haftalikOzet, TimeProvider saat, ILogger<BeyinIstemcisi> gunluk) : PageModel
 {
     public record GrupKarti(IzinGruplari.Grup Grup, GrupKipi Kip);
 
@@ -47,6 +48,9 @@ public class IndexModel(
     public List<ProjeOzetDto> Projeler { get; private set; } = [];
 
     public string? ProjeListesiHatasi { get; private set; }
+
+    // The last weekly summary note written to the brain (null: none yet).
+    public HaftalikOzetKaydi? SonOzet { get; private set; }
 
     public GoogleDurumDto GoogleDurumu { get; private set; } = new(false, "kapali", null, [], null, 0);
 
@@ -112,6 +116,7 @@ public class IndexModel(
         BeyinDurumu = await YonetimIslemleri.BeyinDurumuAsync(db, beyin, ayar, simdi, ct);
         Kuyruk = await YonetimIslemleri.KuyrukAsync(db, simdi, yalnizIlgilenilecek: true, ct);
         GoogleDurumu = await googleBaglanti.DurumAsync(ct);
+        SonOzet = await haftalikOzet.SonKayitAsync(ct);
 
         RepoEslemeleri = (await db.ProjeRepolari.AsNoTracking().OrderBy(r => r.ProjeKimligi).ToListAsync(ct))
             .Select(r => new ProjeRepoDto(r.ProjeKimligi, r.Depo, RepoOzetServisi.Baglanti(r.Depo))).ToList();
@@ -196,6 +201,29 @@ public class IndexModel(
             Hata = sonuc.Mesaj;
         else
             Bildirim = "Yeniden gönderilecek";
+
+        return RedirectToPage();
+    }
+
+    // Writes this week's summary note now, for trying it out. A week already written is left as it is.
+    public async Task<IActionResult> OnPostOzetYazAsync(CancellationToken ct)
+    {
+        var sonuc = await haftalikOzet.SimdiYazAsync(ct);
+        switch (sonuc.Durum)
+        {
+            case OzetDurumu.Yazildi:
+                Bildirim = $"Haftalık özet beyne yazıldı ({HaftalikOzetOlusturucu.Kimlik(sonuc.Hafta)})";
+                break;
+            case OzetDurumu.ZatenVardi:
+                Bildirim = $"Bu haftanın özeti zaten yazılmış ({HaftalikOzetOlusturucu.Kimlik(sonuc.Hafta)}); üstüne yazılmaz";
+                break;
+            case OzetDurumu.BeyinYok:
+                Hata = "Beyin bağlı değil; haftalık özet yazılamadı.";
+                break;
+            default:
+                Hata = "Beyin haftalık özeti almadı; sonra yeniden dene.";
+                break;
+        }
 
         return RedirectToPage();
     }
