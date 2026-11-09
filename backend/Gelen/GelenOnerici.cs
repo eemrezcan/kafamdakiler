@@ -9,14 +9,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Kafamdakiler.Gelen;
 
 // What Claude is asked for: where a card goes, under what title and with which tags. Only ever a suggestion.
-public record YerlestirmeOnerisi(string Yol, string Baslik, List<string> Etiketler, string Gerekce, double Guven, bool YeniEtiketGerekir);
+// `Etiketler` are main names of the dictionary only; a tag the dictionary lacks goes in `YeniEtiket` (never in `Etiketler`), and
+// the server adds it to the tags when it queues the suggestion.
+public record YerlestirmeOnerisi(string Yol, string Baslik, List<string> Etiketler, string Gerekce, double Guven, YeniEtiket? YeniEtiket);
 
 public enum OneriDurumu
 {
     // The suggestion is in the approval queue (or was applied at once, if the kind's mode allowed it).
     Olustu,
-    // Claude found no fitting tag: the card waits for the laptop, nothing is queued.
-    LaptoptaIslenecek,
     // The kind is Yasak: the suggestion was dropped.
     Atlandi,
     // No such card in the visible list (a hidden card looks the same).
@@ -104,7 +104,7 @@ public class GelenOnerici(
             {
                 case OneriDurumu.BagliDegil or OneriDurumu.SinirDoldu:
                     return new TurOzeti(onerilen, basarisiz, atlanan);
-                case OneriDurumu.Olustu or OneriDurumu.LaptoptaIslenecek:
+                case OneriDurumu.Olustu:
                     onerilen++;
                     denenen++;
                     break;
@@ -201,27 +201,14 @@ public class GelenOnerici(
             }
 
             var oneri = yanit.Veri!;
-            if (Denetle(oneri, baglam.Sozluk, baglam.Projeler, out var etiketler) is { } sorun)
+            if (Denetle(oneri, baglam.Sozluk, baglam.Projeler, out var etiketler, out var yeniEtiket) is { } sorun)
                 return await BasarisizAsync(kart.Kimlik, $"Claude'un önerisi kurala uymuyor: {sorun}", ct);
 
             var gerekce = Kisalt(oneri.Gerekce.Trim(), GerekceEnUzun);
             var simdi = saat.GetUtcNow();
-            if (oneri.YeniEtiketGerekir)
-            {
-                await KaydetAsync(kart.Kimlik, s =>
-                {
-                    s.LaptoptaIslenecek = true;
-                    s.LaptopNotu = gerekce;
-                    s.OneriAni = simdi;
-                    s.DenemeSayisi = 0;
-                    s.SonHata = null;
-                }, ct);
-                return new OneriSonucu(OneriDurumu.LaptoptaIslenecek, "Yeni etiket gerekiyor; kart laptopta işlenecek olarak işaretlendi.");
-            }
-
-            var yuk = JsonSerializer.SerializeToElement(new YerlestirYuku(kart.Kimlik, oneri.Yol, oneri.Baslik.Trim(), etiketler), JsonSerializerOptions.Web);
+            var yuk = JsonSerializer.SerializeToElement(new YerlestirYuku(kart.Kimlik, oneri.Yol, oneri.Baslik.Trim(), etiketler, YeniEtiket: yeniEtiket), JsonSerializerOptions.Web);
             var oner = new EylemOnerisi(
-                YerlestirTuru.Anahtar, yuk, Kisalt($"{kart.Baslik} → {oneri.Yol}", 200), "gelen", GelenKurallari.DisKaynakMi(metin), gerekce.Length > 0 ? gerekce : null, oneri.Guven);
+                YerlestirTuru.Anahtar, yuk, Kisalt($"{kart.Baslik} → {oneri.Yol}" + (yeniEtiket is null ? "" : $" (yeni etiket: {yeniEtiket.Ad})"), 200), "gelen", GelenKurallari.DisKaynakMi(metin), gerekce.Length > 0 ? gerekce : null, oneri.Guven);
             var sonuc = await eylemler.OnerAsync(oner, ct);
 
             switch (sonuc.Tur)
@@ -278,16 +265,20 @@ public class GelenOnerici(
     }
 
     // The answer is checked as if a stranger had typed it: the schema asked for these shapes, nothing here trusts it.
-    // Null when it is fine. With a new tag needed only the reason and the score matter; the card is not placed yet.
-    public static string? Denetle(YerlestirmeOnerisi o, EtiketSozlugu sozluk, IReadOnlySet<string> projeler, out List<string> etiketler)
+    // Null when it is fine. `etiketler` are the tags as the brain would store them, the new tag (if any) last; `yeniEtiket` is
+    // that new tag with its section as the dictionary writes it.
+    public static string? Denetle(YerlestirmeOnerisi o, EtiketSozlugu sozluk, IReadOnlySet<string> projeler, out List<string> etiketler) =>
+        Denetle(o, sozluk, projeler, out etiketler, out _);
+
+    public static string? Denetle(
+        YerlestirmeOnerisi o, EtiketSozlugu sozluk, IReadOnlySet<string> projeler, out List<string> etiketler, out YeniEtiket? yeniEtiket)
     {
         etiketler = [];
+        yeniEtiket = null;
         if (o.Gerekce is null || o.Baslik is null || o.Yol is null || o.Etiketler is null)
             return "eksik alan";
         if (double.IsNaN(o.Guven) || o.Guven is < 0 or > 1)
             return "güven 0 ile 1 arasında olmalı";
-        if (o.YeniEtiketGerekir)
-            return null;
 
         if (GelenYolu.Denetle(o.Yol, projeler) is { } yolHatasi)
             return $"yol: {yolHatasi}";
@@ -296,10 +287,24 @@ public class GelenOnerici(
         if (baslik.Length is 0 or > YerlestirTuru.EnUzunBaslik || GelenKurallari.DenetimKarakteriVar(baslik))
             return "başlık boş, çok uzun ya da satır sonu içeriyor";
 
-        // Main names of the dictionary only, whatever the schema said.
+        // A new tag must be new: not a main name and not a synonym, and its section must exist in the dictionary.
+        if (o.YeniEtiket is not null)
+        {
+            if (YerlestirTuru.YeniEtiketHatasi(o.YeniEtiket) is { } yeniHatasi)
+                return $"yeni etiket: {yeniHatasi}";
+            if (sozluk.Coz(o.YeniEtiket.Ad) is not null || o.YeniEtiket.Esler.Any(e => sozluk.Coz(e) is not null))
+                return "yeni etiket ya da eş sözcüğü sözlükte zaten var";
+            if (sozluk.BolumAdi(o.YeniEtiket.Bolum) is not { } bolum)
+                return "yeni etiketin bölümü sözlükte yok";
+            yeniEtiket = new YeniEtiket(o.YeniEtiket.Ad, [.. o.YeniEtiket.Esler], bolum);
+        }
+
+        // Main names of the dictionary only, whatever the schema said: an invented tag passes only as the marked new one.
         if (o.Etiketler.Any(e => !sozluk.AnaAdMi(e)))
             return "etiket sözlükte yok";
         etiketler = o.Etiketler.Select(e => sozluk.Coz(e)!).Distinct(StringComparer.Ordinal).ToList();
+        if (yeniEtiket is not null)
+            etiketler.Add(yeniEtiket.Ad);
         // The instruction asks for 3 to 6, but one is enough for the brain (it wants at least one); a short answer is not thrown away.
         if (etiketler.Count is < 1 or > 6)
             return "etiket sayısı 1 ile 6 arasında olmalı";
@@ -323,7 +328,10 @@ public class GelenOnerici(
             "- Alt klasör, başka bir klasör, finans/, kisisel/ ya da listede olmayan bir proje kullanma.\n\n" +
             "baslik: kartı anlatan kısa başlık, en çok 80 karakter, kartın dilinde.\n" +
             $"etiketler: yalnız şu listeden, 3 ile 6 tane: {string.Join(", ", sozluk.AnaAdlar.Select(a => Satir(a, 40)))}\n" +
-            "Listedeki etiketler karta yetmiyorsa ve yeni bir etiket gerekiyorsa yeniEtiketGerekir değerini true yap; etiketlere yine listeden uygun olanları koy.\n" +
+            "Listedeki etiketler karta yetmiyorsa ve gerçekten yeni bir etiket gerekiyorsa yeniEtiket alanını doldur, yoksa null bırak. " +
+            "Var olan bir etiket işi görüyorsa yeni etiket önerme. Yeni etiket etiketler listesine yazılmaz, sunucu ekler (toplam en çok 6 etiket).\n" +
+            "yeniEtiket.ad: küçük harf, boşluksuz, çok sözcük tireyle, en çok 40 karakter; yeniEtiket.esler: eş sözcükler, adla aynı kurallarla (küçük harf, boşluksuz, çok sözcük tireyle; en çok 6, listede olmayanlar, boş olabilir); " +
+            $"yeniEtiket.bolum: yalnız şu bölümlerden biri: {string.Join(", ", sozluk.Bolumler.Select(b => Satir(b, 60)))}\n" +
             "gerekce: seçimini anlatan tek kısa Türkçe cümle. guven: 0 ile 1 arasında bir sayı; emin değilsen düşük ver.";
     }
 
@@ -354,12 +362,33 @@ public class GelenOnerici(
                 },
                 ["gerekce"] = new JsonObject { ["type"] = "string" },
                 ["guven"] = new JsonObject { ["type"] = "number" },
-                ["yeniEtiketGerekir"] = new JsonObject { ["type"] = "boolean" },
+                ["yeniEtiket"] = YeniEtiketSemasi(sozluk),
             },
-            ["required"] = new JsonArray("yol", "baslik", "etiketler", "gerekce", "guven", "yeniEtiketGerekir"),
+            ["required"] = new JsonArray("yol", "baslik", "etiketler", "gerekce", "guven", "yeniEtiket"),
             ["additionalProperties"] = false,
         };
         return sema.ToJsonString();
+    }
+
+    // Null, or a tag the dictionary lacks. The section is an enum of the dictionary's own headings.
+    private static JsonObject YeniEtiketSemasi(EtiketSozlugu sozluk)
+    {
+        var bolum = new JsonObject { ["type"] = "string" };
+        if (sozluk.Bolumler.Count > 0)
+            bolum["enum"] = new JsonArray(sozluk.Bolumler.Select(b => (JsonNode)JsonValue.Create(b)!).ToArray());
+
+        return new JsonObject
+        {
+            ["type"] = new JsonArray("object", "null"),
+            ["properties"] = new JsonObject
+            {
+                ["ad"] = new JsonObject { ["type"] = "string" },
+                ["esler"] = new JsonObject { ["type"] = "array", ["items"] = new JsonObject { ["type"] = "string" } },
+                ["bolum"] = bolum,
+            },
+            ["required"] = new JsonArray("ad", "esler", "bolum"),
+            ["additionalProperties"] = false,
+        };
     }
 
     private static string Satir(string metin, int enUzun) =>

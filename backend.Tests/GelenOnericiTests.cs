@@ -78,11 +78,13 @@ public class GelenOnericiTests : IAsyncLifetime
 
     private void ClaudeCevabi(
         string yol = "projects/kitap-kulubu/notlar/simyaci-onerisi.md", string baslik = "Simyacı önerisi",
-        string[]? etiketler = null, double guven = 0.9, bool yeni = false) =>
+        string[]? etiketler = null, double guven = 0.9, YeniEtiket? yeni = null) =>
         _claude.YapiliYanit(JsonSerializer.Serialize(new
         {
-            yol, baslik, etiketler = etiketler ?? ["kaynak", "okul", "özet"], gerekce = "Kitap önerisi.", guven, yeniEtiketGerekir = yeni,
-        }));
+            yol, baslik, etiketler = etiketler ?? ["kaynak", "okul", "özet"], gerekce = "Kitap önerisi.", guven, yeniEtiket = yeni,
+        }, JsonSerializerOptions.Web));
+
+    private static YeniEtiket Yeni(string ad = "kitap-onerisi", string bolum = "ogrenme") => new(ad, ["oneri"], bolum);
 
     private sealed record Takim(GelenOnerici Onerici, EylemServisi Eylemler, ClaudeIstemcisi Claude);
 
@@ -265,28 +267,146 @@ public class GelenOnericiTests : IAsyncLifetime
 
     // New tag
 
+    private void YeniEtiketliOneriHazirla(YeniEtiket? yeni = null) =>
+        ClaudeCevabi(etiketler: ["kaynak", "okul"], yeni: yeni ?? Yeni());
+
     [Fact]
-    public async Task NewTagNeeded_MarksTheCardForTheLaptop_AndQueuesNothing()
+    public async Task NewTagSuggested_IsQueuedWithTheTag_AndNothingIsWrittenYet()
     {
         BeyniKur();
-        ClaudeCevabi(yeni: true);
+        YeniEtiketliOneriHazirla();
         var t = Kur();
 
         var ozet = await t.Onerici.TurAsync(Ct);
 
         Assert.Equal(1, ozet.Onerilen);
-        Assert.Empty(await EylemleriAlAsync());
-        var satir = (await SatirAsync(Kart1))!;
-        Assert.True(satir.LaptoptaIslenecek);
-        Assert.Equal("Kitap önerisi.", satir.LaptopNotu);
+        var eylem = Assert.Single(await EylemleriAlAsync());
+        Assert.Equal(EylemDurumu.Bekliyor, eylem.Durum);
+        using var yuk = JsonDocument.Parse(eylem.Yuk);
+        Assert.Equal(["kaynak", "okul", "kitap-onerisi"], yuk.RootElement.GetProperty("etiketler").EnumerateArray().Select(e => e.GetString()).ToArray());
+        var yeni = yuk.RootElement.GetProperty("yeniEtiket");
+        Assert.Equal("kitap-onerisi", yeni.GetProperty("ad").GetString());
+        Assert.Equal(["oneri"], yeni.GetProperty("esler").EnumerateArray().Select(e => e.GetString()).ToArray());
+        Assert.Equal("ogrenme", yeni.GetProperty("bolum").GetString());
+        Assert.False((await SatirAsync(Kart1))!.LaptoptaIslenecek);
+        Assert.Equal(0, IsleCagrisi());
+        Assert.DoesNotContain(BeyinCagrilari(), a => a[0] == "etiket");
 
-        // The inbox read shows the mark, and the round leaves the card alone.
-        var liste = await GelenIslemleri.ListeAl(_beyin.Istemci(), _vt.Db, NullLogger.Instance, Ct);
-        var kart = Assert.Single(liste.Veri!);
-        Assert.True(kart.LaptoptaIslenecek);
-        Assert.Null(kart.Oneri);
+        // The inbox read hands the new tag to the screens.
+        var kart = Assert.Single((await GelenIslemleri.ListeAl(_beyin.Istemci(), _vt.Db, NullLogger.Instance, Ct)).Veri!);
+        Assert.Equal("kitap-onerisi", kart.Oneri!.YeniEtiket!.Ad);
+        Assert.Equal(["oneri"], kart.Oneri.YeniEtiket.Esler);
+        Assert.Equal("ogrenme", kart.Oneri.YeniEtiket.Bolum);
+    }
+
+    [Theory]
+    [InlineData("okul", "ogrenme")]
+    [InlineData("kitap-onerisi", "yok-bolum")]
+    [InlineData("Kitap Önerisi", "ogrenme")]
+    public async Task NewTagThatBreaksARule_IsNotQueued_AndTheTryIsCounted(string ad, string bolum)
+    {
+        BeyniKur();
+        YeniEtiketliOneriHazirla(Yeni(ad, bolum));
+        var t = Kur();
+
+        var ozet = await t.Onerici.TurAsync(Ct);
+
+        Assert.Equal(1, ozet.Basarisiz);
+        Assert.Empty(await EylemleriAlAsync());
+        Assert.Equal(1, (await SatirAsync(Kart1))!.DenemeSayisi);
+    }
+
+    [Fact]
+    public async Task ApprovingANewTag_AddsItToTheDictionaryFirst_ThenPlacesTheCard()
+    {
+        BeyniKur();
+        YeniEtiketliOneriHazirla();
+        _beyin.Cikti("etiket ekle", """{"yol": "etiketler.md", "ana": "kitap-onerisi", "es": ["oneri"], "bolum": "ogrenme", "satir": "- kitap-onerisi: oneri"}""");
+        _beyin.Cikti("gelen isle", $$"""{"yol": "projects/kitap-kulubu/notlar/simyaci-onerisi.md", "kart": "gelen/{{Kart1}}.md", "gorsel": null}""");
+        var t = Kur();
         await t.Onerici.TurAsync(Ct);
-        Assert.Single(_claude.Cagrilar());
+        var eylem = Assert.Single(await EylemleriAlAsync());
+
+        var sonuc = await t.Eylemler.UygulaAsync(eylem.Id, null, null, Ct);
+
+        Assert.Equal(EylemSonucuTuru.Tamam, sonuc.Tur);
+        var komutlar = BeyinCagrilari().Where(a => a[0] is "etiket" or "gelen" && a[1] is "ekle" or "isle").ToList();
+        Assert.Equal(2, komutlar.Count);
+        Assert.Equal(
+            ["etiket", "ekle", "--bolum=ogrenme", "--es=oneri", "--json", "--vault", _beyin.Vault, "--", "kitap-onerisi"],
+            komutlar[0]);
+        Assert.Equal(["gelen", "isle"], komutlar[1][..2]);
+        Assert.Contains("--tags=kaynak,okul,kitap-onerisi", komutlar[1]);
+    }
+
+    [Fact]
+    public async Task WhenTheTagCannotBeAdded_TheCardIsNotPlaced_AndTheActionIsHatali()
+    {
+        BeyniKur();
+        YeniEtiketliOneriHazirla();
+        _beyin.Cikti("etiket ekle", """{"hata": {"kod": "etiket-var", "mesaj": "sözlükte zaten var: /srv/beyin/etiketler.md"}}""", cikis: 1);
+        _beyin.Cikti("gelen isle", """{"yol": "x", "kart": "y", "gorsel": null}""");
+        var t = Kur();
+        await t.Onerici.TurAsync(Ct);
+        var eylem = Assert.Single(await EylemleriAlAsync());
+
+        var sonuc = await t.Eylemler.UygulaAsync(eylem.Id, null, null, Ct);
+
+        Assert.Equal(EylemSonucuTuru.Hata, sonuc.Tur);
+        Assert.Equal(0, IsleCagrisi());
+        var kayit = Assert.Single(await EylemleriAlAsync());
+        Assert.Equal(EylemDurumu.Hatali, kayit.Durum);
+        Assert.Contains("kart işlenmedi", kayit.HataMesaji);
+        Assert.DoesNotContain("/srv/beyin", kayit.HataMesaji);
+    }
+
+    [Fact]
+    public async Task ApprovingWithoutTheNewTag_PlacesTheCardWithTheExistingTagsAlone()
+    {
+        BeyniKur();
+        YeniEtiketliOneriHazirla();
+        _beyin.Cikti("gelen isle", $$"""{"yol": "projects/kitap-kulubu/notlar/simyaci-onerisi.md", "kart": "gelen/{{Kart1}}.md", "gorsel": null}""");
+        var t = Kur();
+        await t.Onerici.TurAsync(Ct);
+        var eylem = Assert.Single(await EylemleriAlAsync());
+        var yuk = GelenIslemleri.YeniEtiketsizYuk(eylem)!.Value;
+
+        var sonuc = await t.Eylemler.UygulaAsync(eylem.Id, yuk, null, Ct);
+
+        Assert.Equal(EylemSonucuTuru.Tamam, sonuc.Tur);
+        Assert.DoesNotContain(BeyinCagrilari(), a => a[0] == "etiket");
+        Assert.Contains("--tags=kaynak,okul", Assert.Single(BeyinCagrilari(), a => a[0] == "gelen" && a[1] == "isle"));
+    }
+
+    [Fact]
+    public async Task WithoutTheNewTag_ThereIsNothingToStrip_WhenItWasTheOnlyTag_OrWhenThereIsNone()
+    {
+        BeyniKur();
+        ClaudeCevabi();
+        var t = Kur();
+        await t.Onerici.TurAsync(Ct);
+        var duz = Assert.Single(await EylemleriAlAsync());
+        Assert.Null(GelenIslemleri.YeniEtiketsizYuk(duz));
+
+        var yalniz = new Eylem { Yuk = JsonSerializer.Serialize(new { kart = Kart1, yol = "ogrenme/x.md", baslik = "B", etiketler = new[] { "kitap-onerisi" }, yeniEtiket = Yeni() }, JsonSerializerOptions.Web) };
+        Assert.Null(GelenIslemleri.YeniEtiketsizYuk(yalniz));
+    }
+
+    [Fact]
+    public async Task ACardMarkedForTheLaptopBefore_GetsASuggestionWhenAskedAgain_AndTheMarkGoes()
+    {
+        BeyniKur();
+        YeniEtiketliOneriHazirla();
+        _vt.Db.GelenKartlari.Add(new GelenKartDurumu { Kart = Kart1, LaptoptaIslenecek = true, LaptopNotu = "Eski not", OneriAni = Baslangic });
+        await _vt.Db.SaveChangesAsync(Ct);
+        var t = Kur();
+
+        var sonuc = await t.Onerici.OnerAsync(Kart1, Ct);
+
+        Assert.Equal(OneriDurumu.Olustu, sonuc.Durum);
+        var satir = (await SatirAsync(Kart1))!;
+        Assert.False(satir.LaptoptaIslenecek);
+        Assert.Null(satir.LaptopNotu);
     }
 
     // The daily cap

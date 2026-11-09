@@ -82,11 +82,18 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
     }
 
     // A suggestion in the queue for the card, made the way the Onerici makes it.
-    private async Task<Guid> OneriAsync(WebApplicationFactory<Program> fabrika, bool disKaynak = false, double guven = 0.9, string yol = "ogrenme/simyaci.md")
+    private async Task<Guid> OneriAsync(
+        WebApplicationFactory<Program> fabrika, bool disKaynak = false, double guven = 0.9, string yol = "ogrenme/simyaci.md", bool yeniEtiket = false)
     {
         using var kapsam = fabrika.Services.CreateScope();
         var servis = kapsam.ServiceProvider.GetRequiredService<EylemServisi>();
-        var yuk = JsonSerializer.SerializeToElement(new { kart = _kart, yol, baslik = "Simyacı önerisi", etiketler = new[] { "kaynak", "okul" } });
+        var yuk = yeniEtiket
+            ? JsonSerializer.SerializeToElement(new
+            {
+                kart = _kart, yol, baslik = "Simyacı önerisi", etiketler = new[] { "kaynak", "okul", "kitap-onerisi" },
+                yeniEtiket = new { ad = "kitap-onerisi", esler = new[] { "oneri" }, bolum = "ogrenme" },
+            })
+            : JsonSerializer.SerializeToElement(new { kart = _kart, yol, baslik = "Simyacı önerisi", etiketler = new[] { "kaynak", "okul" } });
         var sonuc = await servis.OnerAsync(new EylemOnerisi("yerlestir", yuk, "Simyacı → " + yol, "gelen", disKaynak, "Kitap önerisi.", guven), Ct);
         Assert.Equal(EylemSonucuTuru.Tamam, sonuc.Tur);
         Assert.Equal(EylemDurumu.Bekliyor, sonuc.Eylem!.Durum);
@@ -203,6 +210,102 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
     }
 
     [Fact]
+    public async Task ASuggestionWithANewTag_ShowsTheTagItsSynonymsAndItsSection_AndOffersToDropIt()
+    {
+        BeyniKur();
+        var fabrika = Fabrika();
+        var id = await OneriAsync(fabrika, yeniEtiket: true);
+        var tarayici = await WebOturumu.GirisliAsync(fabrika, UygulamaFabrikasi.SahipEposta, Ct);
+
+        var yanit = await tarayici.GetAsync("/Gelen", Ct);
+
+        var ham = await WebOturumu.HamAsync(yanit, Ct);
+        var metin = await WebOturumu.MetinAsync(yanit, Ct);
+        Assert.Contains("Yeni etiket", metin);
+        Assert.Contains("kitap-onerisi", metin);
+        Assert.Contains("eş sözcükler: oneri", metin);
+        Assert.Contains("bölüm: ogrenme", metin);
+        Assert.Contains("önce etiket sözlüğüne eklenir", metin);
+        Assert.Contains("kaynak, okul", metin);
+        Assert.Contains("handler=YeniEtiketsiz", ham);
+        Assert.Contains(id.ToString(), ham);
+        Assert.Contains("Yeni etiketsiz uygula", metin);
+        Assert.Contains("Reddet", metin);
+    }
+
+    [Fact]
+    public async Task ASuggestionWithoutANewTag_ShowsNoNewTagRow_AndNoDropButton()
+    {
+        BeyniKur();
+        var fabrika = Fabrika();
+        await OneriAsync(fabrika);
+        var tarayici = await WebOturumu.GirisliAsync(fabrika, UygulamaFabrikasi.SahipEposta, Ct);
+
+        var metin = await WebOturumu.MetinAsync(await tarayici.GetAsync("/Gelen", Ct), Ct);
+
+        Assert.DoesNotContain("Yeni etiket", metin);
+        Assert.DoesNotContain("Yeni etiketsiz uygula", metin);
+    }
+
+    [Fact]
+    public async Task ApprovingANewTag_AddsItFirst_ThenPlacesTheCard()
+    {
+        BeyniKur();
+        _beyin.Cikti("etiket ekle", """{"yol": "etiketler.md", "ana": "kitap-onerisi", "es": ["oneri"], "bolum": "ogrenme", "satir": "- kitap-onerisi: oneri"}""");
+        var fabrika = Fabrika();
+        var id = await OneriAsync(fabrika, yeniEtiket: true);
+        var tarayici = await WebOturumu.GirisliAsync(fabrika, UygulamaFabrikasi.SahipEposta, Ct);
+
+        var yanit = await PostAsync(tarayici, $"/Gelen?handler=Uygula&id={id}", []);
+
+        Assert.Equal(HttpStatusCode.Redirect, yanit.StatusCode);
+        Assert.Equal(EylemDurumu.Uygulandi, (await EylemAsync(id)).Durum);
+        var komutlar = _beyin.Cagrilar().Select(SahteBeyin.Argumanlar).Where(a => a[0] == "etiket" || (a[0] == "gelen" && a[1] == "isle")).ToList();
+        Assert.Equal(["etiket", "gelen"], komutlar.Select(a => a[0]).ToArray());
+        Assert.Contains("--tags=kaynak,okul,kitap-onerisi", komutlar[1]);
+    }
+
+    [Fact]
+    public async Task ApprovingWithoutTheNewTag_PlacesTheCardAndLeavesTheDictionaryAlone()
+    {
+        BeyniKur();
+        var fabrika = Fabrika();
+        var id = await OneriAsync(fabrika, yeniEtiket: true);
+        var tarayici = await WebOturumu.GirisliAsync(fabrika, UygulamaFabrikasi.SahipEposta, Ct);
+
+        var yanit = await PostAsync(tarayici, $"/Gelen?handler=YeniEtiketsiz&id={id}", []);
+
+        Assert.Equal(HttpStatusCode.Redirect, yanit.StatusCode);
+        Assert.Equal(EylemDurumu.Uygulandi, (await EylemAsync(id)).Durum);
+        Assert.DoesNotContain(_beyin.Cagrilar().Select(SahteBeyin.Argumanlar), a => a[0] == "etiket");
+        var isle = Assert.Single(_beyin.Cagrilar().Select(SahteBeyin.Argumanlar), a => a[0] == "gelen" && a[1] == "isle");
+        Assert.Contains("--tags=kaynak,okul", isle);
+        // The stored payload is the corrected one: the tag is gone from it.
+        using var yuk = JsonDocument.Parse((await EylemAsync(id)).Yuk);
+        Assert.False(yuk.RootElement.TryGetProperty("yeniEtiket", out var kalan) && kalan.ValueKind != JsonValueKind.Null);
+        Assert.Equal(["kaynak", "okul"], yuk.RootElement.GetProperty("etiketler").EnumerateArray().Select(e => e.GetString()).ToArray());
+    }
+
+    [Fact]
+    public async Task WhenTheTagCannotBeAdded_TheCardStays_AndThePageShowsTheError()
+    {
+        BeyniKur();
+        _beyin.Cikti("etiket ekle", """{"hata": {"kod": "etiket-var", "mesaj": "sözlükte zaten var"}}""", cikis: 1);
+        var fabrika = Fabrika();
+        var id = await OneriAsync(fabrika, yeniEtiket: true);
+        var tarayici = await WebOturumu.GirisliAsync(fabrika, UygulamaFabrikasi.SahipEposta, Ct);
+
+        await PostAsync(tarayici, $"/Gelen?handler=Uygula&id={id}", []);
+
+        Assert.Equal(EylemDurumu.Hatali, (await EylemAsync(id)).Durum);
+        Assert.Equal(0, Cagri("gelen", "isle"));
+        var ham = await WebOturumu.HamAsync(await tarayici.GetAsync("/Gelen", Ct), Ct);
+        Assert.Contains("class=\"kd-alert\" role=\"alert\"", ham);
+        Assert.Contains("kart işlenmedi", WebUtility.HtmlDecode(ham));
+        Assert.Contains("Kitap önerisi: Simyacı", WebUtility.HtmlDecode(ham));
+    }
+
+    [Fact]
     public async Task Reject_KeepsTheCard_AndTheBrainIsNotAsked()
     {
         BeyniKur();
@@ -288,7 +391,7 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
         BeyniKur();
         _claude.YapiliYanit(JsonSerializer.Serialize(new
         {
-            yol = "ogrenme/simyaci.md", baslik = "Simyacı", etiketler = new[] { "kaynak" }, gerekce = "Kitap.", guven = 0.8, yeniEtiketGerekir = false,
+            yol = "ogrenme/simyaci.md", baslik = "Simyacı", etiketler = new[] { "kaynak" }, gerekce = "Kitap.", guven = 0.8, yeniEtiket = (object?)null,
         }));
         var fabrika = Fabrika(claude: true);
         var tarayici = await WebOturumu.GirisliAsync(fabrika, UygulamaFabrikasi.SahipEposta, Ct);

@@ -8,8 +8,9 @@ public record GelenKartDto(
     string Kimlik, string Ozet, bool GorselVar, string? Hedef, string? Yakalandi,
     bool LaptoptaIslenecek, string? LaptopNotu, GelenOneriDto? Oneri);
 
-// The suggestion waiting in the approval queue for a card (an Eylem of kind "yerlestir").
-public record GelenOneriDto(Guid EylemId, string Yol, string Baslik, List<string> Etiketler, string? Gerekce, double? Guven, bool DisKaynak);
+// The suggestion waiting in the approval queue for a card (an Eylem of kind "yerlestir"). `YeniEtiket` is set when `Etiketler`
+// holds a tag the dictionary lacks: approving adds it to the dictionary first.
+public record GelenOneriDto(Guid EylemId, string Yol, string Baslik, List<string> Etiketler, string? Gerekce, double? Guven, bool DisKaynak, YeniEtiket? YeniEtiket = null);
 
 // A placement a person makes by hand. The same checks as for a suggestion.
 public record GelenIsleGirdi(string? Yol, string? Baslik, List<string>? Etiketler, string? Tur = null);
@@ -25,5 +26,5 @@ public record GelenIslendiDto(string Yol, string Kart);
 
 public record GelenSilindiDto(string Kart);
 
-// The answer of "suggest again": "olustu" (in the queue, `Eylem` is set), "laptoptaIslenecek" or "atlandi".
+// The answer of "suggest again": "olustu" (in the queue, `Eylem` is set) or "atlandi".
 public record GelenOneriYaniti(string Durum, string? Mesaj, EylemDto? Eylem);

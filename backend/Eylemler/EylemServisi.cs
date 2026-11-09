@@ -280,12 +280,12 @@ public class EylemServisi(AppDbContext db, EylemTurleri turler, TimeProvider saa
                 return Catisma("Eylem aynı anda başka bir istekle değiştirildi.");
 
             hatali.Durum = EylemDurumu.Hatali;
-            hatali.HataMesaji = "Uygulanırken beklenmeyen bir hata oluştu.";
+            hatali.HataMesaji = e is EylemHatasi ? e.Message : "Uygulanırken beklenmeyen bir hata oluştu.";
             hatali.KararAni = simdi;
             hatali.KararVerenId = kullanici;
             Gunluk(hatali.Id, hatali.Tur, EylemOlayi.Hatali, $"Uygulanamadı: {hatali.Ozet}", kullanici, simdi);
             await db.SaveChangesAsync(ct);
-            return new EylemSonucu(EylemSonucuTuru.Hata, hatali, Mesaj: "Eylem uygulanamadı.");
+            return new EylemSonucu(EylemSonucuTuru.Hata, hatali, Mesaj: e is EylemHatasi ? e.Message : "Eylem uygulanamadı.");
         }
     }
 

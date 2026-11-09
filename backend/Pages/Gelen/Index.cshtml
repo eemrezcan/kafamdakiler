@@ -206,7 +206,20 @@
                             </p>
                             <p class="kd-gelen-oneri-satir"><strong>Yol:</strong> @o.Yol</p>
                             <p class="kd-gelen-oneri-satir"><strong>Başlık:</strong> @o.Baslik</p>
-                            <p class="kd-gelen-oneri-satir"><strong>Etiketler:</strong> @string.Join(", ", o.Etiketler)</p>
+                            <p class="kd-gelen-oneri-satir"><strong>Etiketler:</strong> @string.Join(", ", o.Etiketler.Where(e => e != o.YeniEtiket?.Ad))</p>
+                            @if (o.YeniEtiket is { } yeni)
+                            {
+                                <p class="kd-gelen-oneri-satir" data-kd-yeni-etiket>
+                                    <span class="kd-status is-birakildi">Yeni etiket</span>
+                                    <strong>@yeni.Ad</strong>
+                                    @if (yeni.Esler.Count > 0)
+                                    {
+                                        <span>(eş sözcükler: @string.Join(", ", yeni.Esler))</span>
+                                    }
+                                    <span>· bölüm: @yeni.Bolum</span>
+                                </p>
+                                <p class="kd-muted">Uygulayınca önce etiket sözlüğüne eklenir, sonra kart yerleşir.</p>
+                            }
                             @if (o.Gerekce is not null)
                             {
                                 <p class="kd-eylem-gerekce">@o.Gerekce</p>
@@ -217,6 +230,12 @@
                                         <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>Uygula
                                     </button>
                                 </form>
+                                @if (o.YeniEtiket is not null && o.Etiketler.Any(e => e != o.YeniEtiket.Ad))
+                                {
+                                    <form method="post" asp-page-handler="YeniEtiketsiz" asp-route-id="@o.EylemId">
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">Yeni etiketsiz uygula</button>
+                                    </form>
+                                }
                                 <a class="btn btn-outline-primary btn-sm" asp-page="/Eylemler/Detay" asp-route-id="@o.EylemId">Düzelt</a>
                                 <form method="post" asp-page-handler="Reddet" asp-route-id="@o.EylemId" class="kd-eylem-reddet">
                                     <label class="kd-eylem-bir-daha">

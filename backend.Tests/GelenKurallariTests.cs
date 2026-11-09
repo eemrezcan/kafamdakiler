@@ -171,9 +171,31 @@ public class GelenKurallariTests
 
         Assert.Equal("object", sema.GetProperty("type").GetString());
         Assert.False(sema.GetProperty("additionalProperties").GetBoolean());
-        Assert.Equal(["yol", "baslik", "etiketler", "gerekce", "guven", "yeniEtiketGerekir"], sema.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToArray());
+        Assert.Equal(["yol", "baslik", "etiketler", "gerekce", "guven", "yeniEtiket"], sema.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToArray());
         var izinli = sema.GetProperty("properties").GetProperty("etiketler").GetProperty("items").GetProperty("enum").EnumerateArray().Select(e => e.GetString()).ToArray();
         Assert.Equal(["yazılım", "test", "okul", "kaynak", "özet", "ders", "api"], izinli);
+    }
+
+    [Fact]
+    public void Schema_NewTagIsNullOrAnObject_WithItsSectionPickedFromTheDictionary()
+    {
+        var sema = JsonDocument.Parse(GelenOnerici.Sema(Sozluk)).RootElement;
+
+        var yeni = sema.GetProperty("properties").GetProperty("yeniEtiket");
+        Assert.Equal(["object", "null"], yeni.GetProperty("type").EnumerateArray().Select(e => e.GetString()).ToArray());
+        Assert.False(yeni.GetProperty("additionalProperties").GetBoolean());
+        Assert.Equal(["ad", "esler", "bolum"], yeni.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToArray());
+        Assert.Equal(["projects", "ogrenme"], yeni.GetProperty("properties").GetProperty("bolum").GetProperty("enum").EnumerateArray().Select(e => e.GetString()).ToArray());
+    }
+
+    [Fact]
+    public void Instruction_ExplainsTheNewTag_AndListsTheSections()
+    {
+        var talimat = GelenOnerici.Talimat(Sozluk, []);
+
+        Assert.Contains("yeniEtiket", talimat);
+        Assert.Contains("projects, ogrenme", talimat);
+        Assert.DoesNotContain("yeniEtiketGerekir", talimat);
     }
 
     [Fact]
@@ -202,8 +224,11 @@ public class GelenKurallariTests
     // The answer
 
     private static YerlestirmeOnerisi Oneri(string yol = "projects/kitap-kulubu/notlar/simyaci.md", string baslik = "Simyacı önerisi",
-        string[]? etiketler = null, double guven = 0.9, bool yeni = false) =>
+        string[]? etiketler = null, double guven = 0.9, YeniEtiket? yeni = null) =>
         new(yol, baslik, (etiketler ?? ["kaynak", "okul", "özet"]).ToList(), "Kitap önerisi olduğu için.", guven, yeni);
+
+    private static YeniEtiket Yeni(string ad = "mimari-karar", string[]? esler = null, string bolum = "projects") =>
+        new(ad, (esler ?? ["adr"]).ToList(), bolum);
 
     private static string? Denetle(YerlestirmeOnerisi o) => GelenOnerici.Denetle(o, Sozluk, Projeler, out _);
 
@@ -274,11 +299,71 @@ public class GelenKurallariTests
     public void Answer_WithABadTitle_IsRefused(string baslik) => Assert.NotNull(Denetle(Oneri(baslik: baslik)));
 
     [Fact]
-    public void Answer_NeedingANewTag_IsNotHeldToThePathAndTheTags()
+    public void Answer_WithANewTag_KeepsItApart_AndTheServerAddsItLast()
     {
-        // The card is not placed yet, so only the reason and the score matter.
-        Assert.Null(Denetle(Oneri("saçma yol", etiketler: ["yok"], yeni: true)));
-        Assert.NotNull(Denetle(Oneri(guven: 3, yeni: true)));
+        Assert.Null(GelenOnerici.Denetle(Oneri(etiketler: ["kaynak", "okul"], yeni: Yeni(bolum: "PROJECTS")), Sozluk, Projeler, out var etiketler, out var yeni));
+
+        Assert.Equal(["kaynak", "okul", "mimari-karar"], etiketler);
+        // The section is written as the dictionary writes it, whatever case Claude used.
+        Assert.Equal("mimari-karar", yeni!.Ad);
+        Assert.Equal(["adr"], yeni.Esler);
+        Assert.Equal("projects", yeni.Bolum);
+    }
+
+    [Fact]
+    public void Answer_WithANewTag_IsStillHeldToThePathAndTheOtherRules()
+    {
+        Assert.NotNull(Denetle(Oneri("saçma yol", yeni: Yeni())));
+        Assert.NotNull(Denetle(Oneri(guven: 3, yeni: Yeni())));
+        Assert.NotNull(Denetle(Oneri(baslik: " ", yeni: Yeni())));
+    }
+
+    [Fact]
+    public void Answer_WithOnlyTheNewTag_IsAccepted()
+    {
+        Assert.Null(GelenOnerici.Denetle(Oneri(etiketler: [], yeni: Yeni()), Sozluk, Projeler, out var etiketler));
+        Assert.Equal(["mimari-karar"], etiketler);
+    }
+
+    [Fact]
+    public void Answer_WithAnInventedTag_IsRefused_UnlessItIsMarkedAsNew()
+    {
+        Assert.NotNull(Denetle(Oneri(etiketler: ["kaynak", "mimari-karar"])));
+        Assert.NotNull(Denetle(Oneri(etiketler: ["kaynak", "mimari-karar"], yeni: Yeni())));
+        Assert.Null(Denetle(Oneri(etiketler: ["kaynak"], yeni: Yeni())));
+    }
+
+    [Theory]
+    [InlineData("okul", "adr", "projects")]
+    [InlineData("üniversite", "adr", "projects")]
+    [InlineData("mimari-karar", "kod", "projects")]
+    [InlineData("mimari-karar", "adr", "yok-bolum")]
+    [InlineData("Mimari-Karar", "adr", "projects")]
+    [InlineData("mimari karar", "adr", "projects")]
+    [InlineData("mimari,karar", "adr", "projects")]
+    [InlineData("mimari-karar", "A d r", "projects")]
+    [InlineData("mimari-karar", "mimari-karar", "projects")]
+    [InlineData("", "adr", "projects")]
+    [InlineData("mimari-karar", "adr", "")]
+    public void Answer_WithABadNewTag_IsRefused(string ad, string es, string bolum) =>
+        Assert.NotNull(Denetle(Oneri(yeni: Yeni(ad, [es], bolum))));
+
+    [Fact]
+    public void Answer_WithTooManyTags_CountsTheNewOneToo()
+    {
+        Assert.NotNull(Denetle(Oneri(etiketler: ["yazılım", "test", "okul", "kaynak", "özet", "ders"], yeni: Yeni())));
+        Assert.Null(Denetle(Oneri(etiketler: ["yazılım", "test", "okul", "kaynak", "özet"], yeni: Yeni())));
+    }
+
+    [Fact]
+    public void Dictionary_KnowsItsSections_AndIgnoresHeadingsInsideCodeFences()
+    {
+        var sozluk = EtiketSozlugu.Oku("# Etiketler\n\n## projects\n- a: b\n```\n## sahte\n```\n## Ogrenme\n- c\n### alt\n");
+
+        Assert.Equal(["projects", "Ogrenme"], sozluk.Bolumler);
+        Assert.Equal("Ogrenme", sozluk.BolumAdi(" ## ogrenme "));
+        Assert.Null(sozluk.BolumAdi("sahte"));
+        Assert.Null(sozluk.BolumAdi(null));
     }
 
     // The action
@@ -309,6 +394,15 @@ public class GelenKurallariTests
     [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul"],"fazla":1}""", false)]
     [InlineData("""{"yol":"ogrenme/x.md","baslik":"B","etiketler":["okul"]}""", false)]
     [InlineData("""[]""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":["yx"],"bolum":"ogrenme"}}""", true)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":[],"bolum":"ogrenme"}}""", true)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul"],"yeniEtiket":{"ad":"yeni-x","esler":[],"bolum":"ogrenme"}}""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","Yeni-X"],"yeniEtiket":{"ad":"Yeni-X","esler":[],"bolum":"ogrenme"}}""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":["yx","yx"],"bolum":"ogrenme"}}""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":["yeni-x"],"bolum":"ogrenme"}}""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":[],"bolum":"  "}}""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":[]}}""", false)]
+    [InlineData("""{"kart":"a","yol":"ogrenme/x.md","baslik":"B","etiketler":["okul","yeni-x"],"yeniEtiket":{"ad":"yeni-x","esler":[],"bolum":"ogrenme","fazla":1}}""", false)]
     public void Payload_ShapeIsChecked(string json, bool gecerli)
     {
         var tur = new YerlestirTuru(new BeyinIstemcisi(new BeyinAyari()), Microsoft.Extensions.Logging.Abstractions.NullLogger<YerlestirTuru>.Instance);

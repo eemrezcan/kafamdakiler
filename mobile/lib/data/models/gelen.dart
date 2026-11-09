@@ -1,8 +1,27 @@
 // The inbox (K2.2, `/api/gelen`): the cards waiting in the brain and the suggestion Claude made for each. Plain
 // hand-written JSON (camelCase, like the API); nothing here needs code generation.
 
+/// `YeniEtiket`: a tag the dictionary of the brain does not have yet. Approving the suggestion adds it to the dictionary
+/// ([bolum] is the `##` section of etiketler.md, [esler] its synonyms) before the card is placed.
+class GelenYeniEtiket {
+  const GelenYeniEtiket({required this.ad, this.esler = const [], required this.bolum});
+
+  final String ad;
+  final List<String> esler;
+  final String bolum;
+
+  factory GelenYeniEtiket.fromJson(Map<String, dynamic> json) => GelenYeniEtiket(
+        ad: json['ad'] as String,
+        esler: [for (final e in (json['esler'] as List<dynamic>? ?? const [])) e as String],
+        bolum: json['bolum'] as String,
+      );
+
+  Map<String, dynamic> toJson() => {'ad': ad, 'esler': esler, 'bolum': bolum};
+}
+
 /// `GelenOneriDto`: the placement suggestion waiting in the approval queue for a card. [eylemId] is the id of the
-/// action in that queue: approving or rejecting goes through the approval queue's own calls.
+/// action in that queue: approving or rejecting goes through the approval queue's own calls. When [yeniEtiket] is set,
+/// [etiketler] holds its name too.
 class GelenOneri {
   const GelenOneri({
     required this.eylemId,
@@ -12,6 +31,7 @@ class GelenOneri {
     this.gerekce,
     this.guven,
     this.disKaynak = false,
+    this.yeniEtiket,
   });
 
   /// Below this a suggestion is marked "not sure" (the same threshold as the approval queue).
@@ -27,7 +47,18 @@ class GelenOneri {
   /// The card's text holds an address: never applied by itself.
   final bool disKaynak;
 
+  final GelenYeniEtiket? yeniEtiket;
+
   bool get eminDegil => guven != null && guven! < guvenEsigi;
+
+  /// The tags that are in the dictionary already (the new one left out).
+  List<String> get varOlanEtiketler => [for (final e in etiketler) if (e != yeniEtiket?.ad) e];
+
+  /// The payload of "place the card with the existing tags alone" for the approval queue; null when there is no new tag
+  /// or no other tag would be left (then the tags are picked by hand).
+  Map<String, dynamic>? yeniEtiketsizYuk(String kart) => yeniEtiket == null || varOlanEtiketler.isEmpty
+      ? null
+      : {'kart': kart, 'yol': yol, 'baslik': baslik, 'etiketler': varOlanEtiketler};
 
   factory GelenOneri.fromJson(Map<String, dynamic> json) => GelenOneri(
         eylemId: json['eylemId'] as String,
@@ -37,6 +68,7 @@ class GelenOneri {
         gerekce: json['gerekce'] as String?,
         guven: (json['guven'] as num?)?.toDouble(),
         disKaynak: json['disKaynak'] as bool? ?? false,
+        yeniEtiket: json['yeniEtiket'] == null ? null : GelenYeniEtiket.fromJson(json['yeniEtiket'] as Map<String, dynamic>),
       );
 
   Map<String, dynamic> toJson() => {
@@ -47,6 +79,7 @@ class GelenOneri {
         'gerekce': gerekce,
         'guven': guven,
         'disKaynak': disKaynak,
+        'yeniEtiket': yeniEtiket?.toJson(),
       };
 }
 
@@ -70,7 +103,7 @@ class GelenKarti {
   final String? hedef;
   final String? yakalandi;
 
-  /// Claude found no fitting tag: a new tag is added to the dictionary on the laptop first.
+  /// Only on cards marked before a new tag could be suggested (K-0023): asking again replaces the mark with a suggestion.
   final bool laptoptaIslenecek;
   final String? laptopNotu;
   final GelenOneri? oneri;
@@ -162,7 +195,7 @@ class GelenKlasoru {
 /// typed tag list and the cached projects).
 typedef GelenSecenekleri = ({List<GelenEtiket> etiketler, List<GelenKlasoru> klasorler});
 
-/// The answer of "suggest again" (`GelenOneriYaniti`): `olustu` (a suggestion is waiting now), `laptoptaIslenecek` or `atlandi`.
+/// The answer of "suggest again" (`GelenOneriYaniti`): `olustu` (a suggestion is waiting now) or `atlandi`.
 class GelenOneriYaniti {
   const GelenOneriYaniti({required this.durum, this.mesaj});
 

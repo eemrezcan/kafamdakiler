@@ -56,7 +56,33 @@ public static class GelenIslemleri
         return new GelenOneriDto(
             e.Id, BeyinOkuma.Metin(yuk, "yol") ?? "", BeyinOkuma.Metin(yuk, "baslik") ?? "",
             BeyinOkuma.DiziAlani(yuk, "etiketler").Where(x => x.ValueKind == JsonValueKind.String).Select(x => x.GetString()!).ToList(),
-            e.Gerekce, e.Guven, e.DisKaynak);
+            e.Gerekce, e.Guven, e.DisKaynak, YukuOku(yuk)?.YeniEtiket);
+    }
+
+    private static readonly JsonSerializerOptions YukAyari = new(JsonSerializerDefaults.Web);
+
+    private static YerlestirYuku? YukuOku(JsonElement yuk)
+    {
+        try
+        {
+            return yuk.Deserialize<YerlestirYuku>(YukAyari);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    // The payload of a waiting suggestion without its new tag: the card is placed with the existing tags alone. Null when the
+    // suggestion has no new tag or no other tag would be left (the person then picks tags by hand).
+    public static JsonElement? YeniEtiketsizYuk(Eylem eylem)
+    {
+        using var belge = JsonDocument.Parse(eylem.Yuk);
+        if (YukuOku(belge.RootElement) is not { YeniEtiket: { } yeni } yuk)
+            return null;
+
+        var kalan = yuk.Etiketler.Where(e => e != yeni.Ad).ToList();
+        return kalan.Count == 0 ? null : JsonSerializer.SerializeToElement(yuk with { Etiketler = kalan, YeniEtiket = null }, YukAyari);
     }
 
     public static async Task<BeyinYaniti<List<GelenEtiketDto>>> EtiketleriAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
