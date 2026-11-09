@@ -413,13 +413,13 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
     public async Task Home_WithGoogleNotConnected_TellsThatTheEventsAreMissing()
     {
         await TemizleAsync();
-        // Something on the day, so the timeline shows (an empty one takes no room, warnings and all).
+        // Something with an hour on the day, so the timeline shows (the home page lists only what has an hour; an empty one takes no room, warnings and all).
         await using (var db = YeniDb())
         {
             db.Hatirlaticilar.Add(new Hatirlatici
             {
                 Baslik = "Fatura öde", Tur = HatirlaticiTuru.Gorev, Tekrar = Tekrar.Yok, Durum = HatirlaticiDurumu.Acik,
-                Gun = Bugun, SonrakiAn = IstAn(2026, 11, 7, 15).ToUniversalTime(),
+                Gun = Bugun, Saat = new TimeOnly(15, 0), SonrakiAn = IstAn(2026, 11, 7, 15).ToUniversalTime(),
             });
             await db.SaveChangesAsync(Ct);
         }

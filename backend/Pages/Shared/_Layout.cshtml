@@ -6,7 +6,8 @@
     var gelenAktif = currentPage.StartsWith("/Gelen") || currentPage.StartsWith("/Eylemler") || currentPage.StartsWith("/Yakalamalar");
     var projelerAktif = currentPage is "/Beyin/Index" or "/Beyin/Proje";
     var hatirlaticiAktif = currentPage.StartsWith("/Hatirlaticilar");
-    var dahaFazlaAktif = currentPage.StartsWith("/Aliskanliklar") || currentPage.StartsWith("/Yonetim");
+    var aliskanlikAktif = currentPage.StartsWith("/Aliskanliklar");
+    var dahaFazlaAktif = currentPage.StartsWith("/Yonetim");
     var araAktif = currentPage is "/Beyin/Ara" or "/Beyin/Not";
     // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
     var showChrome = User.Identity?.IsAuthenticated == true;
@@ -50,6 +51,7 @@
 
             <div class="kd-nav-links">
                 <a class="kd-nav-link @(bugunAktif ? "active" : "")" asp-area="" asp-page="/Index">Bugün</a>
+                <a class="kd-nav-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
                 <a class="kd-nav-link @(gelenAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
                     Gelen
                     @if (bekleyenGelen > 0)
@@ -57,15 +59,14 @@
                         <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
                     }
                 </a>
-                <a class="kd-nav-link @(projelerAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">Projeler</a>
                 <a class="kd-nav-link @(hatirlaticiAktif ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">Hatırlatıcılar</a>
+                <a class="kd-nav-link @(projelerAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">Projeler</a>
                 <div class="dropdown kd-nav-more">
                     <button class="kd-nav-link @(dahaFazlaAktif ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Daha fazla
                         <svg class="kd-icon kd-nav-caret" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>
                     </button>
                     <ul class="dropdown-menu kd-menu kd-menu--simple">
-                        <li><a class="dropdown-item @(currentPage.StartsWith("/Aliskanliklar") ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a></li>
                         <li><a class="dropdown-item @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">Yönetim</a></li>
                     </ul>
                 </div>
@@ -109,6 +110,10 @@
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#home"></use></svg>
                     Bugün
                 </a>
+                <a class="kd-drawer-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
+                    Alışkanlıklar
+                </a>
                 <a class="kd-drawer-link @(gelenAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
                     Gelen
@@ -117,17 +122,13 @@
                         <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
                     }
                 </a>
-                <a class="kd-drawer-link @(projelerAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
-                    Projeler
-                </a>
                 <a class="kd-drawer-link @(hatirlaticiAktif ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-bell"></use></svg>
                     Hatırlatıcılar
                 </a>
-                <a class="kd-drawer-link @(currentPage.StartsWith("/Aliskanliklar") ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
-                    Alışkanlıklar
+                <a class="kd-drawer-link @(projelerAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
+                    Projeler
                 </a>
                 <a class="kd-drawer-link @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>
