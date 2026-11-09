@@ -159,6 +159,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - Tek bildirim hattı (2026-11-10): `backend/Bildirimler/` (zamanlayıcı, hatırlatıcı ve görev bildirimcileri, `GorevKaniti`), `backend/Eylemler/GorevKapatTuru.cs`, `TekBildirimHatti` migration, mobilde `bildirim_izni.dart`, `bildirim_kapali_uyarisi.dart` ve push ile yerel bildirimin eşleşmesi, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - İş kartı uygulama tarafı (2026-11-10): `backend/Isler/` (uçlar, `beyin.py is` sarmalayıcısı, kart izleyici), `backend/Pages/Isler/`, bildirim düğmesi seçenekleri, mobilde `ui/asistan/`, `is_karti.dart`, `is_repository.dart`, `is_bildirim_yoneticisi.dart`, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - Web arayüz yenilemesi (2026-11-10): `Pages/Index.cshtml` (iki sütunlu Bugün, alışkanlıklar üstte), `_Brifing`, `_ZamanCizelgesi`, `_Layout` menüsü, alışkanlık kartları, `Gelen`, `site.css`, `bugun.js`: Claude'un açtığı Sonnet işçisi yazdı; simge dosyası onarımı ve kart rengi Claude.
+- Mobil arayüz yenilemesi (2026-11-10): `router.dart` ve `ana_iskele.dart` (Alışkanlıklar sekmesi), `bugun_screen.dart` sırası, katlanır brifing, `zaman_cizelgesi_karti.dart`, `widgets.dart` ortak kart başlığı ve boş durum, yüzen düğme boşluğu, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları
