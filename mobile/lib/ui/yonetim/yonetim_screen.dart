@@ -97,7 +97,7 @@ class YonetimScreen extends StatelessWidget {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 // Room for the floating "Yakala" button under the last row.
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                padding: listeKenarlari(ust: 8),
                 children: [
                   _Baslik('Asistan\'ın izinleri', ipucu: 'Yazar, okumayı da kapsar. Değişiklik Asistan\'ın bir sonraki isteğinde geçerli olur.'),
                   for (final grup in izinGruplari)

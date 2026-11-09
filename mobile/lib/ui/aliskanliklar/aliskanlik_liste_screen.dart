@@ -70,7 +70,7 @@ class AliskanlikListeScreen extends StatelessWidget {
                     child: ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
                       // Room for the floating "Yakala" button under the last card.
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                      padding: listeKenarlari(),
                       itemCount: liste.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, i) => _Satir(liste[i]),

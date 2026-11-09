@@ -30,7 +30,7 @@ void main() {
     return vm;
   }
 
-  testWidgets('timed items sit on the strip in order, the unhoured are listed under them, the capacity warning shows', (tester) async {
+  testWidgets('timed items sit on the strip in order, plan items are not repeated, the capacity warning shows', (tester) async {
     ortam.api.zamanCizelgesiYaniti = ornek();
     await goster(tester);
 
@@ -38,8 +38,9 @@ void main() {
     expect(find.text('14:00'), findsOneWidget);
     expect(tester.getTopLeft(find.text('Ekip toplantısı')).dy, lessThan(tester.getTopLeft(find.text('İlaç')).dy));
     expect(find.text('09:30 - 10:30 · 1 sa · Ofis'), findsOneWidget);
-    expect(tester.getTopLeft(find.text('İlaç')).dy, lessThan(tester.getTopLeft(find.text('Rapor')).dy));
-    expect(find.text('Saatsiz'), findsOneWidget);
+    // The plan item has no hour and is on the plan card already, so the strip does not repeat it.
+    expect(find.text('Rapor'), findsNothing);
+    expect(find.text('Saatsiz'), findsNothing);
     expect(find.byKey(const Key('zaman-kapasite')), findsOneWidget);
     expect(find.byKey(const Key('zaman-cevrimdisi')), findsNothing);
   });
@@ -85,6 +86,32 @@ void main() {
 
     expect(find.byKey(const Key('zaman-cizelgesi')), findsNothing);
     expect(find.byKey(const Key('zaman-google')), findsNothing);
+  });
+
+  testWidgets('all-day events and reminders without an hour are listed under the strip', (tester) async {
+    ortam.api.zamanCizelgesiYaniti = ZamanCizelgesi(
+      gun: '2026-10-31',
+      google: GoogleDurumu.bagli,
+      plan: 'tamam',
+      saatli: ornek().saatli,
+      saatsiz: const [
+        ZamanCizelgesiOgesi(tur: ZamanCizelgesiTuru.etkinlik, kimlik: '8', baslik: 'Tatil', tumGun: true),
+        ZamanCizelgesiOgesi(tur: ZamanCizelgesiTuru.plan, kimlik: 'm1', baslik: 'Rapor', durum: 'acik'),
+      ],
+    );
+    await goster(tester);
+
+    expect(find.text('Saatsiz'), findsOneWidget);
+    expect(find.text('Tatil'), findsOneWidget);
+    expect(find.text('Rapor'), findsNothing);
+  });
+
+  testWidgets('only hourless items: the card is not there (the plan card lists them), unless the day does not fit', (tester) async {
+    const saatsiz = [ZamanCizelgesiOgesi(tur: ZamanCizelgesiTuru.plan, kimlik: 'm1', baslik: 'Rapor', durum: 'acik')];
+    ortam.api.zamanCizelgesiYaniti = const ZamanCizelgesi(gun: '2026-10-31', google: GoogleDurumu.bagli, plan: 'tamam', saatli: [], saatsiz: saatsiz);
+    await goster(tester);
+    expect(find.byKey(const Key('zaman-cizelgesi')), findsNothing);
+    expect(find.text('Rapor'), findsNothing);
   });
 
   testWidgets('a refused read (403) hides the card', (tester) async {

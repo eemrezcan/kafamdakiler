@@ -145,7 +145,7 @@ class GelenListeScreen extends StatelessWidget {
             child: OrtaGenislik(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                padding: listeKenarlari(ust: 12),
                 children: [
                   if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
                   if (viewModel.cevrimdisi && kartlar.isNotEmpty)
@@ -166,7 +166,7 @@ class GelenListeScreen extends StatelessWidget {
                       ),
                     const SizedBox(height: 8),
                   ],
-                  _Baslik(kartlarAlinamadi ? 'YERLEŞMEYİ BEKLİYOR' : 'YERLEŞMEYİ BEKLİYOR  ${kartlar.length}'),
+                  _Baslik(kartlarAlinamadi || kartlar.isEmpty ? 'YERLEŞMEYİ BEKLİYOR' : 'YERLEŞMEYİ BEKLİYOR  ${kartlar.length}'),
                   if (kartlarAlinamadi)
                     _KartlarAlinamadi(
                       metin: viewModel.cevrimdisi ? 'Bağlantı yok; bağlantı gelince kartlar burada görünür.' : viewModel.hata ?? 'Liste alınamadı.',
@@ -178,15 +178,7 @@ class GelenListeScreen extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(viewModel.hata!, style: TextStyle(color: tema.colorScheme.error)),
                       ),
-                    if (kartlar.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                          'Gelen kutusu boş.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
-                        ),
-                      ),
+                    if (kartlar.isEmpty) const BosKart(ikon: LucideIcons.inbox, metin: 'Gelen kutusu boş.'),
                     for (final k in kartlar)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),

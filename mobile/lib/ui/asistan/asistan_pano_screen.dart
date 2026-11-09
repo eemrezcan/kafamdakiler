@@ -63,7 +63,7 @@ class _Pano extends StatelessWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       // Room for the floating button under the last row.
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      padding: listeKenarlari(ust: 8),
       children: [
         if (cevrimdisi)
           Padding(
