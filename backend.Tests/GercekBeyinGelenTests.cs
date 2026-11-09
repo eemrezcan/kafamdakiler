@@ -186,6 +186,81 @@ public sealed class GercekBeyinGelenTests : IAsyncLifetime
         Assert.False(File.Exists(Path.Combine(_vault, "gelen", Kart + ".md")));
     }
 
+    private static JsonElement YeniEtiketliYuk(string bolum = "ogrenme") => JsonSerializer.SerializeToElement(new
+    {
+        kart = Kart, yol = "projects/kitap-kulubu/notlar/simyaci-onerisi.md", baslik = "Simyacı önerisi",
+        etiketler = new[] { "kaynak", "kitap-onerisi" },
+        yeniEtiket = new { ad = "kitap-onerisi", esler = new[] { "oneri", "tavsiye" }, bolum },
+    });
+
+    private EylemServisi Servis(BeyinIstemcisi beyin) =>
+        new(_vt.Db, new EylemTurleri([new YerlestirTuru(beyin, NullLogger<YerlestirTuru>.Instance)]), TimeProvider.System, NullLogger<EylemServisi>.Instance);
+
+    [Fact]
+    public async Task ApprovingANewTag_PutsItInTheRealDictionary_ThenPlacesTheCard()
+    {
+        var beyin = Hazirla();
+        await _vt.InitializeAsync();
+        var eylemler = Servis(beyin);
+        var oneri = await eylemler.OnerAsync(new EylemOnerisi("yerlestir", YeniEtiketliYuk(), "Simyacı → kitap-kulubu", "gelen", false, "Kitap önerisi.", 0.9), Ct);
+        Assert.Equal(EylemSonucuTuru.Tamam, oneri.Tur);
+        // Suggesting writes nothing: the dictionary lacks the tag and the card is still there.
+        Assert.DoesNotContain("kitap-onerisi", File.ReadAllText(Path.Combine(_vault, "etiketler.md")));
+        Assert.Contains(await KartlarAsync(beyin), k => k.Kimlik == Kart);
+
+        var sonuc = await eylemler.UygulaAsync(oneri.Eylem!.Id, null, null, Ct);
+
+        Assert.Equal(EylemSonucuTuru.Tamam, sonuc.Tur);
+        var sozluk = File.ReadAllText(Path.Combine(_vault, "etiketler.md"));
+        Assert.Contains("- kitap-onerisi: oneri, tavsiye", sozluk);
+        // Under its own section, not at the end of the file.
+        Assert.True(sozluk.IndexOf("- kitap-onerisi", StringComparison.Ordinal) < sozluk.IndexOf("## spor", StringComparison.Ordinal));
+        Assert.True(sozluk.IndexOf("- kitap-onerisi", StringComparison.Ordinal) > sozluk.IndexOf("## ogrenme", StringComparison.Ordinal));
+        var not = File.ReadAllText(Path.Combine(_vault, "projects/kitap-kulubu/notlar/simyaci-onerisi.md"));
+        Assert.Contains("kitap-onerisi", not);
+        Assert.DoesNotContain(await KartlarAsync(beyin), k => k.Kimlik == Kart);
+        var okunan = (await GelenBeyin.SozluguAlAsync(beyin, Gunluk, Ct)).Veri!;
+        Assert.True(okunan.AnaAdMi("kitap-onerisi"));
+        Assert.Equal("tavsiye", okunan.Coz("tavsiye"));
+    }
+
+    [Fact]
+    public async Task WhenTheRealBrainRefusesTheTag_TheCardIsNotPlaced_AndTheErrorShows()
+    {
+        // The queue checks the section before it applies; the add step is asked directly here, as if the dictionary had changed
+        // between the check and the apply (another writer, the laptop).
+        var beyin = Hazirla();
+        var tur = new YerlestirTuru(beyin, NullLogger<YerlestirTuru>.Instance);
+        var sozlukOnce = File.ReadAllText(Path.Combine(_vault, "etiketler.md"));
+
+        var hata = await Assert.ThrowsAsync<EylemHatasi>(() =>
+            tur.UygulaAsync(YeniEtiketliYuk(bolum: "olmayan-bolum"), new EylemBaglami(_vt.Db, DateTimeOffset.UtcNow), Ct));
+
+        Assert.Contains("kart işlenmedi", hata.Message);
+        Assert.Equal(sozlukOnce, File.ReadAllText(Path.Combine(_vault, "etiketler.md")));
+        Assert.Contains(await KartlarAsync(beyin), k => k.Kimlik == Kart);
+        Assert.False(File.Exists(Path.Combine(_vault, "projects/kitap-kulubu/notlar/simyaci-onerisi.md")));
+    }
+
+    [Fact]
+    public async Task ANewTagThatTheDictionaryHasMeanwhile_IsNotAddedTwice_AndTheCardIsPlaced()
+    {
+        // A first try added the tag and then failed at the placement: the retry must not die on "tag exists".
+        var beyin = Hazirla();
+        var ilk = await beyin.CalistirAsync(["etiket", "ekle", "--bolum=ogrenme", "--es=oneri,tavsiye"], Ct, ["kitap-onerisi"]);
+        Assert.True(ilk.Basarili);
+        await _vt.InitializeAsync();
+        var eylemler = Servis(beyin);
+        var oneri = await eylemler.OnerAsync(new EylemOnerisi("yerlestir", YeniEtiketliYuk(), "Simyacı → kitap-kulubu", "gelen", false, "Kitap önerisi.", 0.9), Ct);
+        Assert.Equal(EylemSonucuTuru.Tamam, oneri.Tur);
+
+        var sonuc = await eylemler.UygulaAsync(oneri.Eylem!.Id, null, null, Ct);
+
+        Assert.Equal(EylemSonucuTuru.Tamam, sonuc.Tur);
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Count(File.ReadAllText(Path.Combine(_vault, "etiketler.md")), "- kitap-onerisi"));
+        Assert.DoesNotContain(await KartlarAsync(beyin), k => k.Kimlik == Kart);
+    }
+
     [Fact]
     public async Task TheWholeFlow_ASuggestionForTheCard_ApprovedInTheQueue_PlacesItInTheRealBrain()
     {
@@ -194,7 +269,7 @@ public sealed class GercekBeyinGelenTests : IAsyncLifetime
         _claude.YapiliYanit(JsonSerializer.Serialize(new
         {
             yol = "projects/kitap-kulubu/notlar/simyaci-onerisi.md", baslik = "Simyacı önerisi", etiketler = new[] { "kaynak", "okul", "özet" },
-            gerekce = "Kitap önerisi.", guven = 0.9, yeniEtiketGerekir = false,
+            gerekce = "Kitap önerisi.", guven = 0.9, yeniEtiket = (object?)null,
         }));
         var saat = TimeProvider.System;
         var turler = new EylemTurleri([new YerlestirTuru(beyin, NullLogger<YerlestirTuru>.Instance)]);

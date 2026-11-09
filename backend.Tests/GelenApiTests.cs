@@ -285,7 +285,7 @@ public sealed class GelenApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uy
     {
         public override string ToString() => JsonSerializer.Serialize(new
         {
-            yol = Yol, baslik = "Simyacı", etiketler = new[] { "kaynak", "okul", "özet" }, gerekce = "Kitap.", guven = 0.8, yeniEtiketGerekir = false,
+            yol = Yol, baslik = "Simyacı", etiketler = new[] { "kaynak", "okul", "özet" }, gerekce = "Kitap.", guven = 0.8, yeniEtiket = (object?)null,
         });
     }
 

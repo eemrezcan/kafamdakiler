@@ -798,6 +798,7 @@ GelenKarti ornekGelenKarti({
   bool laptoptaIslenecek = false,
   bool gorselVar = false,
   String? hedef,
+  GelenYeniEtiket? yeniEtiket,
 }) {
   return GelenKarti(
     kimlik: kimlik,
@@ -813,10 +814,11 @@ GelenKarti ornekGelenKarti({
             eylemId: eylemId,
             yol: 'projects/kitap-kulubu/notlar/simyaci.md',
             baslik: 'Simyacı önerisi',
-            etiketler: const ['kaynak', 'okul'],
+            etiketler: ['kaynak', 'okul', ?yeniEtiket?.ad],
             gerekce: 'Kitap önerisi.',
             guven: guven,
             disKaynak: disKaynak,
+            yeniEtiket: yeniEtiket,
           ),
   );
 }

@@ -7,7 +7,8 @@ public class GelenKartDurumu
     // The card's name in the brain without ".md" (e.g. "2026-11-03-1840-kitap-onerisi").
     public string Kart { get; set; } = "";
 
-    // Claude found no fitting tag: a new tag is first added to the dictionary on the laptop (K-0023), then the card is placed.
+    // Set only on cards marked before a new tag could be suggested (K-0023, 2026-11-09): they wait for the laptop until
+    // "suggest again" queues a suggestion, which clears it. Nothing sets it any more.
     public bool LaptoptaIslenecek { get; set; }
 
     // Why, in Claude's words (shown under the card).

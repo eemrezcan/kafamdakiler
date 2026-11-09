@@ -146,6 +146,106 @@ void main() {
     expect(bekleyen.map((b) => b.hedefId), ['e-x']);
   });
 
+  group('yeni etiket', () {
+    const yeni = GelenYeniEtiket(ad: 'kitap-onerisi', esler: ['oneri', 'tavsiye'], bolum: 'ogrenme');
+
+    setUp(() {
+      ortam.api.gelenKartlari = [
+        ornekGelenKarti(kimlik: 'n', ozet: 'Yeni etiketli kart', eylemId: 'e-n', yeniEtiket: yeni),
+        ornekGelenKarti(kimlik: 'a', ozet: 'Önerili kart', eylemId: 'e-a'),
+      ];
+      ortam.api.eylemler = [ornekEylem(id: 'e-n'), ornekEylem(id: 'e-a')];
+    });
+
+    testWidgets('the card and the preview show the new tag with its synonyms and section, apart from the existing tags', (tester) async {
+      await goster(tester);
+
+      expect(find.text('#kaynak #okul'), findsNWidgets(2), reason: 'the new tag is not among the existing ones');
+      expect(find.text('Yeni etiket: #kitap-onerisi'), findsOneWidget);
+      expect(find.text('Eş sözcükler: oneri, tavsiye · Bölüm: ogrenme'), findsOneWidget);
+      expect(find.text('Uygulayınca önce sözlüğe eklenir, sonra kart yerleşir.'), findsOneWidget);
+
+      await tester.tap(find.text('Yeni etiketli kart'));
+      await tester.pumpAndSettle();
+      expect(find.text('Yeni etiket: #kitap-onerisi'), findsNWidgets(2), reason: 'the preview shows it in full too');
+      expect(find.text('Yeni etiketsiz uygula'), findsOneWidget);
+    });
+
+    testWidgets('a suggestion without a new tag shows none of it and has no way to drop one', (tester) async {
+      await goster(tester);
+
+      await tester.tap(find.text('Önerili kart'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Yeni etiket: #kitap-onerisi'), findsOneWidget, reason: 'only the other card carries it');
+      expect(find.text('Yeni etiketsiz uygula'), findsNothing);
+    });
+
+    testWidgets('swipe right approves the suggestion as it is, new tag included', (tester) async {
+      await goster(tester);
+
+      await tester.drag(find.text('Yeni etiketli kart'), const Offset(500, 0));
+      await tester.pump(const Duration(milliseconds: 400));
+      await gercekZaman(tester);
+
+      final bekleyen = await tester.runAsync(ortam.esitleyici.bekleyenler) ?? [];
+      expect(bekleyen.single.hedefId, 'e-n');
+      expect(bekleyen.single.govde, isNot(contains('yuk')), reason: 'no corrected payload: the stored one, new tag included');
+    });
+
+    testWidgets('"Yeni etiketsiz uygula" queues the approval with a payload that has the existing tags alone', (tester) async {
+      await goster(tester);
+
+      await tester.tap(find.text('Yeni etiketli kart'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yeni etiketsiz uygula'));
+      await tester.pumpAndSettle();
+      await gercekZaman(tester);
+
+      final bekleyen = await tester.runAsync(ortam.esitleyici.bekleyenler) ?? [];
+      expect(bekleyen.single.hedefId, 'e-n');
+      expect(bekleyen.single.govde, contains('"etiketler":["kaynak","okul"]'));
+      expect(bekleyen.single.govde, contains('"kart":"n"'));
+      expect(bekleyen.single.govde, isNot(contains('yeniEtiket')));
+      expect(bekleyen.single.govde, isNot(contains('kitap-onerisi')));
+    });
+
+    testWidgets('rejecting leaves the card without a suggestion, as for any other suggestion', (tester) async {
+      await goster(tester);
+
+      await tester.tap(find.text('Yeni etiketli kart'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reddet'));
+      await tester.pumpAndSettle();
+      await gercekZaman(tester);
+
+      expect(find.text('Yeni etiketli kart'), findsOneWidget);
+      expect(find.text('Yeni etiket: #kitap-onerisi'), findsNothing);
+    });
+
+    test('the model reads the new tag from the server answer, and the payload without it needs another tag', () {
+      final oneri = GelenOneri.fromJson({
+        'eylemId': 'e',
+        'yol': 'ogrenme/x.md',
+        'baslik': 'B',
+        'etiketler': ['okul', 'yeni-x'],
+        'yeniEtiket': {'ad': 'yeni-x', 'esler': <String>[], 'bolum': 'ogrenme'},
+      });
+
+      expect(oneri.yeniEtiket!.ad, 'yeni-x');
+      expect(oneri.varOlanEtiketler, ['okul']);
+      expect(oneri.yeniEtiketsizYuk('k'), {'kart': 'k', 'yol': 'ogrenme/x.md', 'baslik': 'B', 'etiketler': ['okul']});
+      expect(GelenOneri.fromJson(oneri.toJson()).yeniEtiket!.bolum, 'ogrenme');
+
+      final yalniz = GelenOneri.fromJson({
+        'eylemId': 'e', 'yol': 'ogrenme/x.md', 'baslik': 'B', 'etiketler': ['yeni-x'],
+        'yeniEtiket': {'ad': 'yeni-x', 'esler': <String>[], 'bolum': 'ogrenme'},
+      });
+      expect(yalniz.yeniEtiketsizYuk('k'), isNull, reason: 'no tag would be left');
+      expect(GelenOneri.fromJson({'eylemId': 'e', 'yol': 'y', 'baslik': 'b', 'etiketler': ['okul']}).yeniEtiketsizYuk('k'), isNull);
+    });
+  });
+
   testWidgets('placing by hand: folder, file name, title and tags are queued as one placement', (tester) async {
     await goster(tester);
 

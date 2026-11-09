@@ -37,7 +37,6 @@ public static class GelenEndpoints
             return sonuc.Durum switch
             {
                 OneriDurumu.Olustu => Results.Ok(new GelenOneriYaniti("olustu", null, eylemler.DtoYap(sonuc.Eylem!))),
-                OneriDurumu.LaptoptaIslenecek => Results.Ok(new GelenOneriYaniti("laptoptaIslenecek", sonuc.Mesaj, null)),
                 OneriDurumu.Atlandi => Results.Ok(new GelenOneriYaniti("atlandi", sonuc.Mesaj, null)),
                 OneriDurumu.KartYok => Results.Problem(title: "Bulunamadı", detail: sonuc.Mesaj, statusCode: StatusCodes.Status404NotFound),
                 OneriDurumu.BekleyenVar => Cakisma(sonuc.Mesaj!),

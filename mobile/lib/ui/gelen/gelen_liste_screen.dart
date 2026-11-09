@@ -94,6 +94,10 @@ class GelenListeScreen extends StatelessWidget {
           Navigator.pop(sheet);
           await viewModel.uygula(kart);
         },
+        onYeniEtiketsiz: () async {
+          Navigator.pop(sheet);
+          await viewModel.yeniEtiketsizUygula(kart);
+        },
         onDuzelt: () {
           Navigator.pop(sheet);
           context.push('/eylem/${kart.oneri!.eylemId}');
@@ -361,7 +365,17 @@ class _OneriOzeti extends StatelessWidget {
         const SizedBox(height: 6),
         Text(oneri.yol, style: const TextStyle(fontWeight: FontWeight.w600)),
         Text(oneri.baslik),
-        if (oneri.etiketler.isNotEmpty) Text(oneri.etiketler.map((e) => '#$e').join(' '), style: TextStyle(fontSize: 12, color: soluk)),
+        if (oneri.varOlanEtiketler.isNotEmpty)
+          Text(oneri.varOlanEtiketler.map((e) => '#$e').join(' '), style: TextStyle(fontSize: 12, color: soluk)),
+        if (oneri.yeniEtiket case final yeni?) ...[
+          const SizedBox(height: 4),
+          _Isaret(ikon: LucideIcons.tag, metin: 'Yeni etiket: #${yeni.ad}', renk: tema.colorScheme.tertiary),
+          Text(
+            [if (yeni.esler.isNotEmpty) 'Eş sözcükler: ${yeni.esler.join(', ')}', 'Bölüm: ${yeni.bolum}'].join(' · '),
+            style: TextStyle(fontSize: 12, color: soluk),
+          ),
+          Text('Uygulayınca önce sözlüğe eklenir, sonra kart yerleşir.', style: TextStyle(fontSize: 12, color: soluk)),
+        ],
         if (oneri.gerekce != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -379,6 +393,7 @@ class _Onizleme extends StatelessWidget {
     required this.hedef,
     required this.karar,
     required this.onUygula,
+    required this.onYeniEtiketsiz,
     required this.onDuzelt,
     required this.onReddet,
     required this.onElle,
@@ -391,6 +406,7 @@ class _Onizleme extends StatelessWidget {
   final String? hedef;
   final bool karar;
   final Future<void> Function() onUygula;
+  final Future<void> Function() onYeniEtiketsiz;
   final VoidCallback onDuzelt;
   final Future<void> Function() onReddet;
   final Future<void> Function() onElle;
@@ -431,6 +447,13 @@ class _Onizleme extends StatelessWidget {
                       icon: const Icon(LucideIcons.check),
                       label: const Text('Uygula'),
                     ),
+                    if (o.yeniEtiketsizYuk(kart.kimlik) != null)
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                        onPressed: onYeniEtiketsiz,
+                        icon: const Icon(LucideIcons.tag),
+                        label: const Text('Yeni etiketsiz uygula'),
+                      ),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
                       onPressed: onDuzelt,

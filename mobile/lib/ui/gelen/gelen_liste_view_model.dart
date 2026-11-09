@@ -170,6 +170,17 @@ class GelenListeViewModel extends ChangeNotifier {
     unawaited(_esitleyici.gonder());
   }
 
+  /// Approve the suggestion without its new tag: the card is placed with the existing tags alone and the dictionary is left
+  /// alone. False when there is nothing to strip (no new tag, or no other tag would be left).
+  Future<bool> yeniEtiketsizUygula(GelenKarti kart) async {
+    final oneri = kart.oneri;
+    final yuk = oneri?.yeniEtiketsizYuk(kart.kimlik);
+    if (oneri == null || yuk == null) return false;
+    await _eylemler.uygula(oneri.eylemId, yuk: yuk);
+    unawaited(_esitleyici.gonder());
+    return true;
+  }
+
   Future<void> reddet(GelenKarti kart, {bool birDahaOnerme = false}) async {
     final oneri = kart.oneri;
     if (oneri == null) return;
@@ -200,7 +211,6 @@ class GelenListeViewModel extends ChangeNotifier {
       await yukle();
       return switch (yanit.durum) {
         'olustu' => 'Öneri hazır.',
-        'laptoptaIslenecek' => 'Yeni etiket gerekiyor: kart laptopta işlenecek olarak işaretlendi.',
         _ => yanit.mesaj ?? 'Öneri kaydedilmedi.',
       };
     } on DioException catch (e) {

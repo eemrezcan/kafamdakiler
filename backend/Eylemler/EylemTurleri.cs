@@ -35,6 +35,10 @@ public interface IEylemTuru
 
 public record EylemBaglami(AppDbContext Db, DateTimeOffset Simdi);
 
+// A failure of an effect whose message is a fixed sentence written for the person (no paths, no text of the brain). The queue
+// shows it as the action's error; any other exception is shown as the generic "unexpected error" and only logged.
+public class EylemHatasi(string mesaj) : InvalidOperationException(mesaj);
+
 // The one registry of kinds.
 public class EylemTurleri(IEnumerable<IEylemTuru> turler)
 {

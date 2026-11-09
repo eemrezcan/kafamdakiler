@@ -196,6 +196,25 @@ public class IndexModel(
     public async Task<IActionResult> OnPostUygulaAsync(Guid id, CancellationToken ct) =>
         Don(await eylemler.UygulaAsync(id, null, EylemEndpoints.KullaniciId(User), ct), "Kart yerleştirildi");
 
+    // "Yeni etiketsiz uygula": the suggestion with its new tag taken out, so the dictionary is left alone.
+    public async Task<IActionResult> OnPostYeniEtiketsizAsync(Guid id, CancellationToken ct)
+    {
+        var eylem = await db.Eylemler.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id && e.Tur == YerlestirTuru.Anahtar, ct);
+        if (eylem is null)
+        {
+            YazmaHatasi = "Öneri bulunamadı; silinmiş olabilir.";
+            return RedirectToPage();
+        }
+
+        if (GelenIslemleri.YeniEtiketsizYuk(eylem) is not { } yuk)
+        {
+            YazmaHatasi = "Yeni etiket çıkınca etiket kalmıyor ya da önerinin yeni etiketi yok; Düzelt ile etiketleri seç.";
+            return RedirectToPage();
+        }
+
+        return Don(await eylemler.UygulaAsync(id, yuk, EylemEndpoints.KullaniciId(User), ct), "Kart yeni etiketsiz yerleştirildi");
+    }
+
     public async Task<IActionResult> OnPostReddetAsync(Guid id, bool birDahaOnerme, CancellationToken ct) =>
         Don(await eylemler.ReddetAsync(id, birDahaOnerme, EylemEndpoints.KullaniciId(User), ct),
             birDahaOnerme ? "Reddedildi, bu tür bir daha önerilmeyecek" : "Reddedildi");
@@ -221,9 +240,6 @@ public class IndexModel(
         {
             case OneriDurumu.Olustu:
                 Bildirim = "Öneri hazır";
-                break;
-            case OneriDurumu.LaptoptaIslenecek:
-                Bildirim = "Yeni etiket gerekiyor: kart laptopta işlenecek olarak işaretlendi";
                 break;
             case OneriDurumu.BagliDegil:
                 YazmaHatasi = "Claude ya da beyin bu makinede bağlı değil.";
