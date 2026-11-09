@@ -25,6 +25,13 @@ public sealed class SahteClaude : IDisposable
         kayit["bitis"] = time.time()
         with open(os.path.join(d, "log.jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(kayit) + "\n")
+        if "--model" in sys.argv and "haiku" in sys.argv[sys.argv.index("--model") + 1] and "=== MAIL " in kayit["stdin"] and mod != "ham":
+            import re
+            hp = os.path.join(d, "haiku.json")
+            ayar = json.load(open(hp, encoding="utf-8")) if os.path.exists(hp) else {}
+            mailler = [{"kimlik": k, "onemli": k not in ayar.get("onemsiz", []), "gerekce": "kisa"} for k in re.findall(r"=== MAIL (\S+) ===", kayit["stdin"]) if k not in ayar.get("atla", [])]
+            print(json.dumps({"type": "result", "is_error": False, "result": "tamam", "structured_output": {"mailler": mailler}, "usage": {"input_tokens": 10, "output_tokens": 5}}))
+            sys.exit(0)
         print(open(os.path.join(d, "cikti.json"), encoding="utf-8").read())
         sys.exit(int(open(os.path.join(d, "cikis.txt")).read()) if os.path.exists(os.path.join(d, "cikis.txt")) else 0)
         """;
@@ -58,6 +65,11 @@ public sealed class SahteClaude : IDisposable
         File.WriteAllText(Path.Combine(Klasor, "cikis.txt"), cikis.ToString());
     }
 
+    // What the cheap "important?" call (a haiku call with mails in its data) answers: every mail important, except the ones named
+    // in `onemsiz`; the ones in `atla` are left out of the answer.
+    public void HaikuCevabi(string[]? onemsiz = null, string[]? atla = null) => File.WriteAllText(
+        Path.Combine(Klasor, "haiku.json"), JsonSerializer.Serialize(new { onemsiz = onemsiz ?? [], atla = atla ?? [] }));
+
     public ClaudeAyari Ayar(TimeSpan? zamanAsimi = null, int esZamanli = 1, int gunluk = 50) => new()
     {
         Komut = Komut,
@@ -78,6 +90,10 @@ public sealed class SahteClaude : IDisposable
             ? File.ReadAllLines(yol).Select(s => JsonDocument.Parse(s).RootElement.Clone()).ToList()
             : [];
     }
+
+    // The calls made with a model whose name holds `model`.
+    public List<JsonElement> Cagrilar(string model) =>
+        Cagrilar().Where(c => Argumanlar(c) is var a && a[Array.IndexOf(a, "--model") + 1].Contains(model, StringComparison.OrdinalIgnoreCase)).ToList();
 
     public static string[] Argumanlar(JsonElement cagri) =>
         cagri.GetProperty("argv").EnumerateArray().Select(a => a.GetString()!).ToArray();

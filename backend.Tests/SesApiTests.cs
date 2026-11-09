@@ -37,7 +37,7 @@ public sealed class SesApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygu
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private WebApplicationFactory<Program> Fabrika(DateTimeOffset? an = null, bool claude = true, bool beyin = true, int? gunluk = null)
+    private WebApplicationFactory<Program> Fabrika(DateTimeOffset? an = null, bool claude = true, bool beyin = true, int? gunluk = null, int? haikuSinir = null)
     {
         // UTC: the database takes no other offset.
         var saat = new ElleSaat((an ?? Cuma).ToUniversalTime());
@@ -51,6 +51,8 @@ public sealed class SesApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygu
                 b.UseSetting("Claude:Komut", _claude.Komut);
             if (gunluk is { } sayi)
                 b.UseSetting("Claude:GunlukEnCokCagri", sayi.ToString());
+            if (haikuSinir is { } haiku)
+                b.UseSetting("Claude:ModelSiniri:haiku", haiku.ToString());
             b.ConfigureTestServices(s => s.AddSingleton<TimeProvider>(saat));
         });
         _fabrikalar.Add(fabrika);
@@ -468,7 +470,8 @@ public sealed class SesApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygu
     {
         BeyniKur();
         ClaudeCevabi();
-        var sinirli = Fabrika(gunluk: 1);
+        // The cap is per model: the extraction runs on Sonnet (general cap), the rewrite on Haiku (its own cap).
+        var sinirli = Fabrika(gunluk: 1, haikuSinir: 0);
         var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, sinirli);
 
         Assert.Equal(HttpStatusCode.OK, (await CikarAsync(sahip, sinirli)).StatusCode);

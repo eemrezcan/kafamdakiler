@@ -19,8 +19,16 @@ public class ClaudeAyari
     // How many claude processes may run at once.
     public int EsZamanliEnCok { get; init; } = 1;
 
-    // A cap on the calls started per day (Europe/Istanbul), so a loop or a flood cannot drain the subscription.
+    // A cap on the calls started per day (Europe/Istanbul) for one model, so a loop or a flood cannot drain the subscription.
+    // It is the limit of every model that has no entry in `ModelSiniri`.
     public int GunlukEnCokCagri { get; init; } = 50;
+
+    // A daily cap per model, by the model family ("haiku", "sonnet", "opus"; a full model name counts as its family). The cheap
+    // model gets more calls than the dear one.
+    public IReadOnlyDictionary<string, int> ModelSiniri { get; init; } = VarsayilanModelSiniri;
+
+    public static readonly IReadOnlyDictionary<string, int> VarsayilanModelSiniri =
+        new Dictionary<string, int> { ["haiku"] = 200, ["opus"] = 10 };
 
     public bool Acik => !string.IsNullOrWhiteSpace(Komut);
 
@@ -39,6 +47,19 @@ public class ClaudeAyari
             ad = ad[..son];
         }
     }
+
+    // The key a model is counted under: its family when the name holds one ("claude-haiku-4-5" → "haiku"), else the lower-cased name.
+    public static string ModelAnahtari(string model)
+    {
+        var ad = model.Trim().ToLowerInvariant();
+        foreach (var aile in (string[])["haiku", "sonnet", "opus"])
+            if (ad.Contains(aile))
+                return aile;
+        return ad;
+    }
+
+    // The daily cap of a model, by the name as ModelSec gives it.
+    public int SinirBul(string model) => ModelSiniri.TryGetValue(ModelAnahtari(model), out var sinir) ? sinir : GunlukEnCokCagri;
 
     // A relative path with a directory part is resolved against the app folder, like Beyin:Komut.
     // A bare name ("claude") is left alone: the operating system looks it up on PATH.
@@ -59,6 +80,17 @@ public class ClaudeAyari
             ZamanAsimi = TimeSpan.FromSeconds(bolum.GetValue("ZamanAsimiSaniye", 120.0)),
             EsZamanliEnCok = Math.Max(1, bolum.GetValue("EsZamanliEnCok", 1)),
             GunlukEnCokCagri = Math.Max(0, bolum.GetValue("GunlukEnCokCagri", 50)),
+            ModelSiniri = ModelSinirlariniOku(bolum),
         };
+    }
+
+    // The defaults, overridden entry by entry by `Claude:ModelSiniri:<model>`.
+    private static IReadOnlyDictionary<string, int> ModelSinirlariniOku(IConfigurationSection bolum)
+    {
+        var sinirlar = new Dictionary<string, int>(VarsayilanModelSiniri);
+        foreach (var c in bolum.GetSection("ModelSiniri").GetChildren())
+            if (int.TryParse(c.Value, out var n))
+                sinirlar[ModelAnahtari(c.Key)] = Math.Max(0, n);
+        return sinirlar;
     }
 }
