@@ -969,6 +969,11 @@ class SahteBildirimServisi implements BildirimServisi {
   /// Every plan handed to [kur], oldest first.
   final List<List<PlanliBildirim>> planlar = [];
   int izinIstekleri = 0;
+
+  /// What the system says about the permission before and after a question: [izinli] now, [izinVerilir] once asked.
+  bool izinli = true;
+  bool izinVerilir = true;
+  int ayarAcilislari = 0;
   BildirimYaniti? acilis;
   void Function(BildirimYaniti)? yanitla;
   bool baslatildi = false;
@@ -987,8 +992,15 @@ class SahteBildirimServisi implements BildirimServisi {
   @override
   Future<bool> izinIste() async {
     izinIstekleri++;
-    return true;
+    izinli = izinVerilir;
+    return izinVerilir;
   }
+
+  @override
+  Future<bool> izinVarMi() async => izinli;
+
+  @override
+  Future<void> ayarlariAc() async => ayarAcilislari++;
 
   @override
   Future<void> kur(List<PlanliBildirim> plan) async => planlar.add(plan);

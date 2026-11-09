@@ -7,6 +7,7 @@ import '../data/models/ses.dart';
 import '../data/models/yakala_girdisi.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/beyin_repository.dart';
+import '../data/repositories/bildirim_izni.dart';
 import '../data/repositories/brifing_repository.dart';
 import '../data/repositories/zaman_cizelgesi_repository.dart';
 import '../data/repositories/esitleyici.dart';
@@ -216,6 +217,7 @@ GoRouter routerOlustur(
                     zamanCizelgesi: context.read<ZamanCizelgesiViewModel>(),
                     brifing: brifingOkuyabilir ? context.read<BrifingViewModel>() : null,
                     brifingSes: brifingOkuyabilir ? context.read<SesViewModel>() : null,
+                    bildirimIzni: context.read<BildirimIzni>(),
                   );
                 }),
               ),

@@ -16,8 +16,12 @@ public class Bildirim
 
     public string? HedefKimligi { get; set; }
 
-    // What made it: "test", later "hatirlatici", "beyin"... (F wires the real sources).
+    // What made it: "test", "hatirlatici" (a reminder's moment), "gorev" (a brain task), "dogrulama" (a task found done).
     public string KaynakTuru { get; set; } = "";
+
+    // Says which occurrence this is, so the same one is never sent twice to the same user ("hatirlatici:<id>:<moment>",
+    // "gorev:<path>:<day>"). Null for a notification that may repeat (the test send). Unique per user. The phone also reads it.
+    public string? Anahtar { get; set; }
 
     public DateTimeOffset OlusmaAni { get; set; }
 }

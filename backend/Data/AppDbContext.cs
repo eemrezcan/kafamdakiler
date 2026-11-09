@@ -246,7 +246,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Rota).HasMaxLength(200);
             e.Property(x => x.HedefKimligi).HasMaxLength(100);
             e.Property(x => x.KaynakTuru).HasMaxLength(30);
+            e.Property(x => x.Anahtar).HasMaxLength(400);
             e.HasIndex(x => x.OlusmaAni);
+            e.HasIndex(x => new { x.KullaniciId, x.Anahtar }).IsUnique().HasFilter("\"Anahtar\" IS NOT NULL");
         });
 
         builder.Entity<BildirimCihazi>(e =>

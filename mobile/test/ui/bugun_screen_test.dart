@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
@@ -25,11 +26,11 @@ void main() {
     return vm;
   }
 
-  Future<void> goster(WidgetTester tester, BugunViewModel vm, {Size boyut = const Size(360, 800)}) async {
+  Future<void> goster(WidgetTester tester, BugunViewModel vm, {Size boyut = const Size(360, 800), BildirimIzni? izin}) async {
     tester.view.physicalSize = boyut;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(home: BugunScreen(viewModel: vm)));
+    await tester.pumpWidget(MaterialApp(home: BugunScreen(viewModel: vm, bildirimIzni: izin)));
     await tester.pump();
   }
 
@@ -58,6 +59,25 @@ void main() {
     final soluk = find.ancestor(of: find.text('Pazartesi koşusu'), matching: find.byType(Opacity));
     expect(tester.widget<Opacity>(soluk.first).opacity, lessThan(1));
     expect(find.ancestor(of: find.text('Planlı su'), matching: find.byType(Opacity)), findsNothing);
+  });
+
+  testWidgets('"Bildirimler kapalı" tops the screen when the permission is off, and is not there when it is on', (tester) async {
+    final servis = SahteBildirimServisi()
+      ..izinli = false
+      ..izinVerilir = false;
+    final izin = BildirimIzni(servis: servis);
+    await tester.runAsync(izin.denetle);
+    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
+    await goster(tester, vm, izin: izin);
+
+    expect(find.text('Bildirimler kapalı'), findsOneWidget);
+    expect(find.text('Ayarlara git'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Bildirimler kapalı')).dy, lessThan(tester.getTopLeft(find.text('Su')).dy));
+
+    servis.izinli = true;
+    await tester.runAsync(izin.denetle);
+    await tester.pump();
+    expect(find.text('Bildirimler kapalı'), findsNothing);
   });
 
   testWidgets('no "not planned" heading when every habit is planned', (tester) async {

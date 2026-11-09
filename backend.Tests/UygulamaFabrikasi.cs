@@ -28,6 +28,8 @@ public sealed class UygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLi
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:Default", _veritabani.Baglanti);
         builder.UseSetting("Dosyalar:Klasor", _veritabani.Klasor);
+        // The notification timer would wake up in the middle of a test; the tests run its rounds by hand when they want one.
+        builder.UseSetting("BildirimHatti:IlkGecikmeSaniye", "3600");
         builder.UseSetting("Seed:SahipEmail", SahipEposta);
         builder.UseSetting("Seed:SahipPassword", Parola);
         builder.UseSetting("Seed:AsistanEmail", AsistanEposta);

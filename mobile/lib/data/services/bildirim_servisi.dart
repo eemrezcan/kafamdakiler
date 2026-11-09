@@ -1,3 +1,4 @@
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -34,6 +35,12 @@ abstract class BildirimServisi {
   /// Asks for the notification permission (Android 13+) and, once per run, the exact alarm permission. True when
   /// notifications are allowed.
   Future<bool> izinIste();
+
+  /// Whether notifications are allowed for the app right now (no question asked).
+  Future<bool> izinVarMi();
+
+  /// Opens the app's notification settings in the system.
+  Future<void> ayarlariAc();
 
   /// Cancels every scheduled notification and sets [plan] up again.
   Future<void> kur(List<PlanliBildirim> plan);
@@ -122,6 +129,24 @@ class YerelBildirimServisi implements BildirimServisi {
       return izin;
     } on Object {
       return false;
+    }
+  }
+
+  @override
+  Future<bool> izinVarMi() async {
+    try {
+      return await _android?.areNotificationsEnabled() ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> ayarlariAc() async {
+    try {
+      await AppSettings.openAppSettings(type: AppSettingsType.notification);
+    } on Object catch (e) {
+      debugPrint('Bildirim ayarları açılamadı: $e');
     }
   }
 

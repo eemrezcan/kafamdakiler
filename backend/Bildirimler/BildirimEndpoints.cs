@@ -24,7 +24,7 @@ public class CihazSilDto
     public string? Token { get; set; }
 }
 
-public record BildirimDto(Guid Id, string Baslik, string Metin, string? Rota, string? HedefKimligi, string KaynakTuru, DateTimeOffset OlusmaAni);
+public record BildirimDto(Guid Id, string Baslik, string Metin, string? Rota, string? HedefKimligi, string KaynakTuru, DateTimeOffset OlusmaAni, string? Anahtar);
 
 public record PushDurumDto(bool Acik, int CihazSayisi, SonGonderim? SonGonderim);
 
@@ -69,7 +69,7 @@ public static class BildirimEndpoints
             var b = await db.Bildirimler.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && x.KullaniciId == kullaniciId, ct);
             return b is null
                 ? Results.NotFound()
-                : Results.Ok(new BildirimDto(b.Id, b.Baslik, b.Metin, b.Rota, b.HedefKimligi, b.KaynakTuru, b.OlusmaAni));
+                : Results.Ok(new BildirimDto(b.Id, b.Baslik, b.Metin, b.Rota, b.HedefKimligi, b.KaynakTuru, b.OlusmaAni, b.Anahtar));
         });
 
         var sahip = app.MapGroup("/api/bildirim").WithTags("Bildirimler")
@@ -106,6 +106,7 @@ public static class BildirimEndpoints
         // A fake from a test replaces this registration; with push off the real sender is never called.
         services.AddSingleton<IPushGondericisi, FirebasePushGondericisi>();
         services.AddScoped<BildirimServisi>();
+        services.AddBildirimHatti(config);
         return services;
     }
 }

@@ -43,6 +43,18 @@ class PushMesajIsleyici {
       // Offline, timed out, a server error: the fallback text below.
     }
 
+    // A reminder's moment is the same notification as the one the phone schedules for it: the same id, so the two meet. The
+    // shower takes the scheduled one down (or, when it already rang, updates it without ringing again).
+    if (bildirim != null && bildirim.hatirlaticiZamaniMi) {
+      await _gosterici.hatirlaticiGoster(
+        id: bildirimKimligi(bildirim.hedefKimligi!),
+        baslik: bildirim.baslik,
+        govde: bildirim.metin,
+        hatirlaticiId: bildirim.hedefKimligi!,
+      );
+      return;
+    }
+
     await _gosterici.goster(
       id: bildirimKimligi('sunucu:$id'),
       baslik: bildirim?.baslik ?? yedekBaslik,

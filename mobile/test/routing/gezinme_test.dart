@@ -8,6 +8,7 @@ import 'package:kafamdakiler/data/models/brifing.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
+import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
 import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
 import 'package:kafamdakiler/data/repositories/zaman_cizelgesi_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
@@ -104,6 +105,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider.value(value: auth),
+          ChangeNotifierProvider<BildirimIzni>.value(value: BildirimIzni(servis: SahteBildirimServisi())),
           ChangeNotifierProvider.value(value: kullanici),
           Provider<ApiService>.value(value: ortam.api),
           ChangeNotifierProvider<Esitleyici>.value(value: ortam.esitleyici),

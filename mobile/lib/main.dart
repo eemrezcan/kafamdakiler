@@ -14,6 +14,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/beyin_repository.dart';
 import 'data/repositories/brifing_repository.dart';
 import 'data/repositories/esitleyici.dart';
+import 'data/repositories/bildirim_izni.dart';
 import 'data/repositories/eylem_bildirim_yoneticisi.dart';
 import 'data/repositories/eylem_repository.dart';
 import 'data/repositories/gelen_repository.dart';
@@ -64,6 +65,7 @@ Future<void> main() async {
   final gelen = GelenRepository(api: api, db: db, esitleyici: esitleyici);
   final kullanici = KullaniciRepository(api: api, db: db);
   final bildirimServisi = YerelBildirimServisi();
+  final bildirimIzni = BildirimIzni(servis: bildirimServisi);
   final eylemBildirimleri = EylemBildirimYoneticisi(
     repo: eylemler,
     esitleyici: esitleyici,
@@ -100,6 +102,7 @@ Future<void> main() async {
       await yakalamalar.yerelFotograflariSil();
       await db.hepsiniTemizle();
       await bildirimler.temizle();
+      bildirimIzni.sifirla();
       aliskanliklar.resimleriBirak();
       kullanici.temizle();
     },
@@ -116,6 +119,8 @@ Future<void> main() async {
       unawaited(beyin.projeleriYenile());
       // The phone's FCM token goes to the server for this user.
       unawaited(push.kaydet());
+      // The notification permission is asked right after sign-in when it is off (the first real run left it off without a word).
+      unawaited(bildirimIzni.denetle());
     }
     girisYapildiydi = auth.girisYapildi;
   }
@@ -136,6 +141,7 @@ Future<void> main() async {
     gelen: gelen,
     bildirimler: bildirimler,
     eylemBildirimleri: eylemBildirimleri,
+    bildirimIzni: bildirimIzni,
     push: push,
     brifing: brifing,
     zamanCizelgesi: zamanCizelgesi,
@@ -160,6 +166,7 @@ class KafamdakilerApp extends StatefulWidget {
     required this.gelen,
     required this.bildirimler,
     required this.eylemBildirimleri,
+    required this.bildirimIzni,
     required this.push,
     required this.brifing,
     required this.zamanCizelgesi,
@@ -180,6 +187,7 @@ class KafamdakilerApp extends StatefulWidget {
   final GelenRepository gelen;
   final HatirlaticiBildirimYoneticisi bildirimler;
   final EylemBildirimYoneticisi eylemBildirimleri;
+  final BildirimIzni bildirimIzni;
   final PushYoneticisi push;
   final BrifingRepository brifing;
   final ZamanCizelgesiRepository zamanCizelgesi;
@@ -213,6 +221,9 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
       // At start, on return to the foreground and when connectivity comes back.
       unawaited(widget.surum.kontrolEt());
       if (widget.auth.girisYapildi) {
+        // The notification permission: asked once after sign-in if it is off, looked at again each time the app comes back
+        // (so turning it on in the settings clears the warning on Bugün). Before the sync: it does not need the network.
+        await widget.bildirimIzni.denetle();
         await widget.esitleyici.gonder();
         // After the sync: refresh the reminders and set the notifications up again.
         await widget.bildirimler.esitleVeKur();
@@ -275,6 +286,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         ChangeNotifierProvider.value(value: widget.eylemler),
         ChangeNotifierProvider.value(value: widget.gelen),
         Provider.value(value: widget.bildirimler),
+        ChangeNotifierProvider.value(value: widget.bildirimIzni),
         Provider.value(value: widget.brifing),
         Provider.value(value: widget.zamanCizelgesi),
         Provider.value(value: widget.beyin),

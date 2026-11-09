@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/aliskanlik.dart';
+import '../../data/repositories/bildirim_izni.dart';
 import '../../utils/aliskanlik_gunu.dart';
 import '../ara/ara_dugmesi.dart';
 import '../brifing/brifing_seridi.dart';
@@ -11,6 +12,7 @@ import '../core/widgets.dart';
 import '../../utils/metin.dart';
 import '../yakalama/ses_view_model.dart';
 import 'aliskanlik_karti.dart';
+import 'bildirim_kapali_uyarisi.dart';
 import 'bugun_view_model.dart';
 import 'gun_plani_karti.dart';
 import 'gun_plani_view_model.dart';
@@ -23,9 +25,12 @@ import 'zaman_cizelgesi_karti.dart';
 import 'zaman_cizelgesi_view_model.dart';
 
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.zamanCizelgesi, this.brifing, this.brifingSes});
+  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.zamanCizelgesi, this.brifing, this.brifingSes, this.bildirimIzni});
 
   final BugunViewModel viewModel;
+
+  /// The "Bildirimler kapalı" warning at the very top; without it (tests) there is no warning.
+  final BildirimIzni? bildirimIzni;
 
   /// The morning briefing strip at the very top (K2.7); null for someone who may not read it. Needs [brifingSes] too.
   final BrifingViewModel? brifing;
@@ -163,6 +168,7 @@ class BugunScreen extends StatelessWidget {
               style: TextStyle(color: tema.colorScheme.onSurfaceVariant),
             ),
           ),
+        if (bildirimIzni != null) BildirimKapaliUyarisi(izin: bildirimIzni!),
         const _Tarih(),
         if (brifing != null && brifingSes != null) BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!),
         if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),

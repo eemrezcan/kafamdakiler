@@ -13,6 +13,7 @@ import 'package:kafamdakiler/data/services/bildirim_servisi.dart';
 import 'package:kafamdakiler/data/services/push_kaynagi.dart';
 import 'package:kafamdakiler/data/services/sunucu_bildirim_gosterici.dart';
 import 'package:kafamdakiler/data/services/token_depo.dart';
+import 'package:kafamdakiler/utils/bildirim_plani.dart';
 
 import '../test_destek.dart';
 import 'fake_adapter.dart';
@@ -44,8 +45,21 @@ class Gosterilen {
   final String yuk;
 }
 
+class HatirlaticiGosterimi {
+  HatirlaticiGosterimi(this.id, this.baslik, this.govde, this.hatirlaticiId);
+  final int id;
+  final String baslik;
+  final String govde;
+  final String hatirlaticiId;
+}
+
 class SahteGosterici implements SunucuBildirimGosterici {
   final gosterilenler = <Gosterilen>[];
+  final hatirlaticilar = <HatirlaticiGosterimi>[];
+
+  @override
+  Future<void> hatirlaticiGoster({required int id, required String baslik, required String govde, required String hatirlaticiId}) async =>
+      hatirlaticilar.add(HatirlaticiGosterimi(id, baslik, govde, hatirlaticiId));
 
   @override
   Future<void> goster({required int id, required String baslik, required String govde, required String yuk}) async =>
@@ -183,6 +197,77 @@ void main() {
       await isleyici.isle({'bildirimId': 'b1'});
 
       expect(gosterilenlerTek(gosterici).yuk, 'rota:/');
+    });
+
+    // The reminder's moment sent by the server and the phone's own scheduled one are one notification: the same id.
+    group('a reminder\'s moment', () {
+      void sunucuHatirlaticiyiVer() {
+        varsayilan = (_) => jsonYanit(200, {
+              'id': 'b1',
+              'baslik': 'İlaç al',
+              'metin': 'bugün',
+              'rota': '/hatirlatici/{id}/duzenle',
+              'hedefKimligi': 'h-1',
+              'kaynakTuru': 'hatirlatici',
+              'olusmaAni': '2026-11-09T10:00:00Z',
+            });
+      }
+
+      test('is shown through the reminder path, not as a plain server notification', () async {
+        sunucuHatirlaticiyiVer();
+
+        await isleyici.isle({'bildirimId': 'b1'});
+
+        expect(gosterici.gosterilenler, isEmpty);
+        final g = gosterici.hatirlaticilar.single;
+        expect((g.baslik, g.govde, g.hatirlaticiId), ('İlaç al', 'bugün', 'h-1'));
+      });
+
+      test('has the id of the notification the phone schedules for that reminder', () async {
+        sunucuHatirlaticiyiVer();
+        await isleyici.isle({'bildirimId': 'b1'});
+
+        final yerel = bildirimleriPlanla(
+          [ornekHatirlatici(id: 'h-1', baslik: 'İlaç al', sonrakiAn: DateTime.utc(2026, 11, 9, 12))],
+          DateTime.utc(2026, 11, 9, 8),
+        ).single;
+
+        expect(gosterici.hatirlaticilar.single.id, yerel.id);
+      });
+
+      test('the same id on every delivery of the same reminder, and another id for another reminder', () async {
+        sunucuHatirlaticiyiVer();
+        await isleyici.isle({'bildirimId': 'b1'});
+        await isleyici.isle({'bildirimId': 'b2'});
+        varsayilan = (_) => jsonYanit(200, {
+              'id': 'b3', 'baslik': 'x', 'metin': 'bugün', 'rota': '/hatirlatici/{id}/duzenle', 'hedefKimligi': 'h-2', 'kaynakTuru': 'hatirlatici',
+            });
+        await isleyici.isle({'bildirimId': 'b3'});
+
+        final idler = gosterici.hatirlaticilar.map((g) => g.id).toList();
+        expect(idler[0], idler[1]);
+        expect(idler[2], isNot(idler[0]));
+      });
+
+      test('a task notification of the server stays a plain server notification', () async {
+        varsayilan = (_) => jsonYanit(200, {
+              'id': 'b1', 'baslik': 'Görev', 'metin': 'x', 'rota': '/projeler/{id}', 'hedefKimligi': 'kitap-kulubu', 'kaynakTuru': 'gorev',
+            });
+
+        await isleyici.isle({'bildirimId': 'b1'});
+
+        expect(gosterici.hatirlaticilar, isEmpty);
+        expect(gosterilenlerTek(gosterici).yuk, 'rota:/projeler/kitap-kulubu');
+      });
+
+      test('a reminder notification without its reminder id is shown as a plain one', () async {
+        varsayilan = (_) => jsonYanit(200, {'id': 'b1', 'baslik': 'x', 'metin': 'y', 'kaynakTuru': 'hatirlatici'});
+
+        await isleyici.isle({'bildirimId': 'b1'});
+
+        expect(gosterici.hatirlaticilar, isEmpty);
+        expect(gosterici.gosterilenler, hasLength(1));
+      });
     });
   });
 

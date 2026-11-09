@@ -262,6 +262,10 @@ namespace Kafamdakiler.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Anahtar")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
                     b.Property<string>("Baslik")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -294,6 +298,10 @@ namespace Kafamdakiler.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OlusmaAni");
+
+                    b.HasIndex("KullaniciId", "Anahtar")
+                        .IsUnique()
+                        .HasFilter("\"Anahtar\" IS NOT NULL");
 
                     b.ToTable("Bildirimler");
                 });
