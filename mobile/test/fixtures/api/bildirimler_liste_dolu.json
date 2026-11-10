@@ -1,0 +1,38 @@
+{
+  "durum": 200,
+  "govde": [
+    {
+      "id": "92f6bafc-1d16-4ff3-bb91-d896668054e2",
+      "baslik": "M3 deneme hatırlatıcı",
+      "metin": "14:00 · hatırlatıcı",
+      "rota": "/takvim",
+      "hedefKimligi": "01a1c77b-a2c3-7985-968e-19e916ccd978",
+      "kaynakTuru": "hatirlatici",
+      "olusmaAni": "2026-11-10T21:02:59.567477+00:00",
+      "anahtar": "m3-deneme-1",
+      "okundu": false
+    },
+    {
+      "id": "ba6509c3-f11b-40dd-b05f-00ce1a83a78b",
+      "baslik": "M3 deneme iş kartı",
+      "metin": "Karar sende",
+      "rota": "/asistan/{id}",
+      "hedefKimligi": "takvim",
+      "kaynakTuru": "is",
+      "olusmaAni": "2026-11-09T16:02:59.567477+00:00",
+      "anahtar": "m3-deneme-2",
+      "okundu": false
+    },
+    {
+      "id": "39f004b4-a9d9-45b0-b145-25850de1c7d6",
+      "baslik": "M3 deneme okunmuş",
+      "metin": "Eski bir şey",
+      "rota": null,
+      "hedefKimligi": null,
+      "kaynakTuru": "test",
+      "olusmaAni": "2026-11-05T22:02:59.567477+00:00",
+      "anahtar": "m3-deneme-3",
+      "okundu": true
+    }
+  ]
+}

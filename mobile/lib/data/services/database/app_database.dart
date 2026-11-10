@@ -201,28 +201,6 @@ class ProjeOnbellek extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// The last `GET /api/beyin/gunler/{tarih}` answer per day (`BeyinGunDto` JSON), so the plan card shows a day offline and
-/// the queued plan writes have something to be laid on. Only the days read lately are kept.
-class GunPlaniOnbellek extends Table {
-  /// "2026-11-03".
-  TextColumn get tarih => text()();
-  TextColumn get govde => text()();
-  DateTimeColumn get okunma => dateTime()();
-
-  @override
-  Set<Column> get primaryKey => {tarih};
-}
-
-/// Morning card items the user let go ("Bırak"). Nothing is written to the brain for these; the phone only stops
-/// offering them. [tarih] is the plan day the item was left open on.
-class SabahBirakilanlar extends Table {
-  TextColumn get id => text()();
-  TextColumn get tarih => text()();
-
-  @override
-  Set<Column> get primaryKey => {id, tarih};
-}
-
 /// The briefing the phone read (`BrifingDto` JSON per day, K2.7), so the briefing screen shows the last one offline. Only the
 /// days read lately are kept.
 class BrifingOnbellek extends Table {
@@ -343,8 +321,6 @@ class BekleyenIslemler extends Table {
     ProjeOnbellek,
     HatirlaticiOnbellek,
     EylemOnbellek,
-    GunPlaniOnbellek,
-    SabahBirakilanlar,
     GelenOnbellek,
     BrifingOnbellek,
     AyarKayitlari,
@@ -358,7 +334,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -381,8 +357,6 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(eylemOnbellek);
           }
           if (from < 7) {
-            await m.createTable(gunPlaniOnbellek);
-            await m.createTable(sabahBirakilanlar);
             await m.addColumn(bekleyenIslemler, bekleyenIslemler.uyari);
           }
           if (from < 8) {
@@ -404,6 +378,11 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(asistanAkisOnbellek);
             await m.createTable(bildirimOnbellek);
           }
+          if (from >= 7 && from < 13) {
+            // The day plan cache and the "let go" list of the old plan card: the day view replaced them.
+            await m.database.customStatement('DROP TABLE IF EXISTS gun_plani_onbellek');
+            await m.database.customStatement('DROP TABLE IF EXISTS sabah_birakilanlar');
+          }
         },
       );
 
@@ -418,8 +397,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(projeOnbellek).go();
         await delete(hatirlaticiOnbellek).go();
         await delete(eylemOnbellek).go();
-        await delete(gunPlaniOnbellek).go();
-        await delete(sabahBirakilanlar).go();
         await delete(gelenOnbellek).go();
         await delete(brifingOnbellek).go();
         await delete(ayarKayitlari).go();

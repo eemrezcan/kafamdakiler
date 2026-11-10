@@ -67,8 +67,6 @@ class BeyinRepository {
   /// The project's repository card; null when none is linked. Needs the network, errors are thrown.
   Future<ProjeRepoOzeti?> projeRepo(String kimlik) => _api.beyinProjeRepo(kimlik);
 
-  Future<BeyinGun> gun(DateTime tarih) => _api.beyinGun(tarih);
-
   Future<List<AramaSonucu>> ara(String q, {String? proje}) => _api.beyinAra(q, proje: proje);
 
   Future<BeyinNotu> notuOku(String yol) => _api.beyinNot(yol);

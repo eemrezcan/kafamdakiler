@@ -354,12 +354,11 @@ class ApiService {
 
   /// `POST /api/is-cikar/uygula`: applies the suggestions the person picked, one by one. 200 when all went through, 207
   /// when some did not; both are answers (the results tell them apart), the applied ones stay applied.
-  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler, {String? kaynak}) async {
+  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler) async {
     final yanit = await _dio.post<Map<String, dynamic>>(
       '/api/is-cikar/uygula',
       data: {
         'secilenler': [for (final s in secilenler) s.toJson()],
-        'kaynak': ?kaynak,
       },
     );
     return IsCikarUygulaYaniti.fromJson(yanit.data!);
@@ -427,11 +426,6 @@ class ApiService {
       if (e.response?.statusCode == 404) return null;
       rethrow;
     }
-  }
-
-  Future<BeyinGun> beyinGun(DateTime tarih) async {
-    final yanit = await _dio.get<Map<String, dynamic>>('/api/beyin/gunler/${tarihMetni(tarih)}');
-    return BeyinGun.fromJson(yanit.data!);
   }
 
   Future<List<AramaSonucu>> beyinAra(String q, {String? proje, int? limit}) async {

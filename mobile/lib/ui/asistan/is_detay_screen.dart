@@ -8,9 +8,10 @@ import '../core/beyin_hata.dart';
 import '../core/widgets.dart';
 import 'is_detay_view_model.dart';
 
-/// One work card: request, plan, questions (answered with one tap on an option), history, and the stage buttons. At a gate
-/// "Onayla" moves the card on (the server adds the approval); "Plana dön" and "İptal" (with a reason) are there while the card
-/// allows them. With no connection, or for someone who may not write, the buttons are shut.
+/// One work card: request, plan, questions (answered with one tap on an option, or with the person's own words: the "Kendi
+/// cevabım" box is always under the options), history, and the stage buttons. At a gate "Onayla" moves the card on (the server
+/// adds the approval); "Plana geri gönder" (a revision, which asks for a short note and is never sent without one) and "İptal"
+/// (with a reason) are there while the card allows them. With no connection, or for someone who may not write, the buttons are shut.
 class IsDetayScreen extends StatelessWidget {
   const IsDetayScreen({super.key, required this.viewModel});
 
@@ -137,6 +138,13 @@ class _Dugmeler extends StatelessWidget {
     await viewModel.asamaDegistir(sonraki);
   }
 
+  /// A revision: the card goes back to the plan with a note for whoever works on it. The server refuses it without one, so the
+  /// window does not close on an empty note.
+  Future<void> _revizyon(BuildContext context) async {
+    final not = await showDialog<String>(context: context, builder: (context) => const _NotDialogu());
+    if (not != null) await viewModel.asamaDegistir('plan', not: not);
+  }
+
   Future<void> _iptal(BuildContext context) async {
     final gerekce = await showDialog<String>(context: context, builder: (context) => const _GerekceDialogu());
     if (gerekce != null) await viewModel.asamaDegistir('iptal', gerekce: gerekce);
@@ -160,11 +168,20 @@ class _Dugmeler extends StatelessWidget {
               icon: const Icon(LucideIcons.check),
               label: Text(onayEtiketi(kart.asama)),
             ),
-          if (kart.gecisler.contains('plan'))
+          // From the request stage the plan is the next step, not a revision: no note.
+          if (kart.gecisler.contains('plan') && kart.asama == 'talep')
             OutlinedButton.icon(
+              key: const ValueKey('is-plana-al'),
               onPressed: acik ? () => viewModel.asamaDegistir('plan') : null,
+              icon: const Icon(LucideIcons.arrowRight),
+              label: const Text('Plana al'),
+            )
+          else if (kart.gecisler.contains('plan'))
+            OutlinedButton.icon(
+              key: const ValueKey('is-plana-geri'),
+              onPressed: acik ? () => _revizyon(context) : null,
               icon: const Icon(LucideIcons.undo2),
-              label: const Text('Plana dön'),
+              label: const Text('Plana geri gönder'),
             ),
           if (kart.gecisler.contains('iptal'))
             TextButton.icon(
@@ -175,6 +192,57 @@ class _Dugmeler extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// The note of a revision: required, short. The window owns its controller.
+class _NotDialogu extends StatefulWidget {
+  const _NotDialogu();
+
+  @override
+  State<_NotDialogu> createState() => _NotDialoguState();
+}
+
+class _NotDialoguState extends State<_NotDialogu> {
+  final _kontrol = TextEditingController();
+  String? _hata;
+
+  @override
+  void dispose() {
+    _kontrol.dispose();
+    super.dispose();
+  }
+
+  void _tamam() {
+    final metin = _kontrol.text.trim();
+    if (metin.isEmpty) {
+      setState(() => _hata = 'Revizyon için kısa bir not yaz.');
+      return;
+    }
+    Navigator.pop(context, metin);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Plana geri gönderilsin mi?'),
+      content: TextField(
+        key: const ValueKey('revizyon-not'),
+        controller: _kontrol,
+        autofocus: true,
+        maxLength: 300,
+        maxLines: 3,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: InputDecoration(labelText: 'Ne değişsin? (kısa not)', errorText: _hata),
+        onChanged: (_) {
+          if (_hata != null) setState(() => _hata = null);
+        },
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Vazgeç')),
+        FilledButton(key: const ValueKey('revizyon-gonder'), onPressed: _tamam, child: const Text('Gönder')),
+      ],
     );
   }
 }
@@ -270,41 +338,48 @@ class _SoruState extends State<_Soru> {
                   Expanded(child: Text('Cevap: ${soru.cevap}')),
                 ],
               )
-            else if (soru.secenekler.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final s in soru.secenekler)
-                    ActionChip(
-                      avatar: s == soru.onerilen ? const Icon(LucideIcons.star, size: 16) : null,
-                      label: Text(s == soru.onerilen ? '$s (önerilen)' : s),
-                      onPressed: acik ? () => widget.viewModel.cevapla(soru, s) : null,
+            else ...[
+              if (soru.secenekler.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in soru.secenekler)
+                      ActionChip(
+                        avatar: s == soru.onerilen ? const Icon(LucideIcons.star, size: 16) : null,
+                        label: Text(s == soru.onerilen ? '$s (önerilen)' : s),
+                        onPressed: acik ? () => widget.viewModel.cevapla(soru, s) : null,
+                      ),
+                  ],
+                ),
+              // The options are suggestions: the person's own words are always accepted (the server takes any text).
+              Padding(
+                padding: EdgeInsets.only(top: soru.secenekler.isNotEmpty ? 12 : 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: ValueKey('soru-kendi-${soru.no}'),
+                        controller: _kontrol,
+                        enabled: acik,
+                        maxLength: 500,
+                        decoration: const InputDecoration(labelText: 'Kendi cevabım'),
+                      ),
                     ),
-                ],
-              )
-            else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _kontrol,
-                      enabled: acik,
-                      maxLength: 500,
-                      decoration: const InputDecoration(labelText: 'Cevabın'),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: FilledButton(
+                        key: ValueKey('soru-kendi-gonder-${soru.no}'),
+                        onPressed: acik ? () => widget.viewModel.cevapla(soru, _kontrol.text) : null,
+                        child: const Text('Gönder'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: FilledButton(
-                      onPressed: acik ? () => widget.viewModel.cevapla(soru, _kontrol.text) : null,
-                      child: const Text('Gönder'),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
             if (soru.neden != null && soru.neden!.trim().isNotEmpty)
               Theme(
                 data: tema.copyWith(dividerColor: Colors.transparent),

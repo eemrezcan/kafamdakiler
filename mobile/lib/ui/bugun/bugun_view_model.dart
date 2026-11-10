@@ -29,9 +29,6 @@ class BugunViewModel extends ChangeNotifier {
   /// Habits planned for today, in the server's order.
   List<Aliskanlik> get planli => [for (final a in _liste ?? const <Aliskanlik>[]) if (a.bugunPlanli) a];
 
-  /// Habits not planned today; shown faded at the bottom.
-  List<Aliskanlik> get plansiz => [for (final a in _liste ?? const <Aliskanlik>[]) if (!a.bugunPlanli) a];
-
   bool _yukleniyor = false;
   bool get yukleniyor => _yukleniyor;
 
@@ -82,9 +79,6 @@ class BugunViewModel extends ChangeNotifier {
     await _yerelYenile();
     unawaited(_esitleyici.gonder());
   }
-
-  /// Adds minutes from the stopwatch to the day of a minute-based counter.
-  Future<void> dakikaEkle(Aliskanlik a, int dakika) => miktarYaz(a, (a.bugun?.miktar ?? 0) + dakika);
 
   Future<void> _yerelYenile() async {
     _liste = await _repo.yerelListe();

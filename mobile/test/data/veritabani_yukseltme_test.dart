@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kafamdakiler/data/services/database/app_database.dart';
 
 void main() {
-  test('schema 3 -> 12: the project, reminder, action and day view cache tables are added; the capture cache and the queue survive', () async {
+  test('schema 3 -> 13: the project, reminder, action and day view cache tables are added; the capture cache and the queue survive', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme3');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski3.sqlite');
@@ -40,10 +40,10 @@ void main() {
     expect((await db.select(db.bekleyenIslemler).get()).single.id, 'y1');
     expect((await db.select(db.yakalamaOnbellek).get()).single.id, 'y2');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
   });
 
-  test('schema 2 -> 12: all the new cache tables are added and the queue survives', () async {
+  test('schema 2 -> 13: all the new cache tables are added and the queue survives', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski.sqlite');
@@ -75,10 +75,10 @@ void main() {
     expect(kuyruk.single.id, 'b1');
     expect(kuyruk.single.tur, BekleyenTur.gunYaz);
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
   });
 
-  test('schema 4 -> 12:the reminder and action cache tables are added and can be written; the queue survives', () async {
+  test('schema 4 -> 13:the reminder and action cache tables are added and can be written; the queue survives', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme4');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski4.sqlite');
@@ -111,10 +111,10 @@ void main() {
     expect((await db.select(db.bekleyenIslemler).get()).single.id, 'y1');
     expect((await db.select(db.projeOnbellek).get()).single.id, 'kitap-kulubu');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
   });
 
-  test('schema 5 -> 12:the action cache table is added with its "announced" flag; the reminder cache and the queue survive', () async {
+  test('schema 5 -> 13:the action cache table is added with its "announced" flag; the reminder cache and the queue survive', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme5');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski5.sqlite');
@@ -148,7 +148,7 @@ void main() {
     expect((await db.select(db.bekleyenIslemler).get()).single.tur, BekleyenTur.hatirlaticiYaptim);
     expect((await db.select(db.hatirlaticiOnbellek).get()).single.id, 'h2');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
   });
 
   test('the new queue kinds are appended after the old ones (the column stores the index)', () {
@@ -189,7 +189,7 @@ void main() {
     expect(BekleyenTur.values, hasLength(34));
   });
 
-  test('schema 7 -> 12:the inbox cache table is added and can be written; the queue and the day plan cache survive', () async {
+  test('schema 7 -> 13: the inbox cache table is added and can be written; the queue survives; the day plan cache is dropped', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme7');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski7.sqlite');
@@ -221,9 +221,10 @@ void main() {
     await db.into(db.gelenOnbellek).insert(GelenOnbellekCompanion.insert(id: '2026-11-03-1840-kitap-onerisi', sira: 0, govde: '{}'));
     expect(await db.select(db.gelenOnbellek).get(), hasLength(1), reason: 'and can be written');
     expect((await db.select(db.bekleyenIslemler).get()).single.tur, BekleyenTur.beyinMaddeEkle);
-    expect((await db.select(db.gunPlaniOnbellek).get()).single.tarih, '2026-11-07');
+    final eskiTablo = await db.customSelect("SELECT name FROM sqlite_master WHERE name IN ('gun_plani_onbellek', 'sabah_birakilanlar')").get();
+    expect(eskiTablo, isEmpty, reason: 'the day plan cache of the old plan card is gone: the day view replaced it');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
 
     // The new queue kinds can be stored and read back.
     await db.into(db.bekleyenIslemler).insert(BekleyenIslemlerCompanion.insert(
@@ -232,7 +233,7 @@ void main() {
     expect(g.tur, BekleyenTur.gelenIsle);
   });
 
-  test('schema 8 -> 12: the briefing cache and settings tables are added and can be written; the inbox cache and the queue survive', () async {
+  test('schema 8 -> 13: the briefing cache and settings tables are added and can be written; the inbox cache and the queue survive', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme8');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski8.sqlite');
@@ -269,10 +270,10 @@ void main() {
     expect((await db.select(db.bekleyenIslemler).get()).single.tur, BekleyenTur.gelenIsle);
     expect((await db.select(db.gelenOnbellek).get()).single.id, 'kart');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
   });
 
-  test('schema 6 -> 12:the day plan cache, the let-go table and the "uyari" column are added; queued writes and the action cache survive', () async {
+  test('schema 6 -> 13: the "uyari" column is added; queued writes and the action cache survive', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme6');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski6.sqlite');
@@ -305,19 +306,15 @@ void main() {
     expect(eski.uyari, isNull);
     expect((await db.select(db.eylemOnbellek).get()).single.bildirildi, isTrue);
 
-    // The new tables exist and can be written; the new column can be set.
-    expect(await db.select(db.gunPlaniOnbellek).get(), isEmpty);
-    await db.into(db.gunPlaniOnbellek).insert(GunPlaniOnbellekCompanion.insert(tarih: '2026-11-07', govde: '{}', okunma: DateTime.utc(2026, 11, 7)));
-    expect((await db.select(db.gunPlaniOnbellek).get()).single.tarih, '2026-11-07');
-    await db.into(db.sabahBirakilanlar).insert(SabahBirakilanlarCompanion.insert(id: 'a3f09c', tarih: '2026-11-06'));
-    expect(await db.select(db.sabahBirakilanlar).get(), hasLength(1));
+    // The new column can be set; the day plan tables of version 7 are not made for a database that never had them.
+    expect(await db.customSelect("SELECT name FROM sqlite_master WHERE name IN ('gun_plani_onbellek', 'sabah_birakilanlar')").get(), isEmpty);
     await (db.update(db.bekleyenIslemler)..where((t) => t.id.equals('e1'))).write(const BekleyenIslemlerCompanion(uyari: Value('not')));
     expect((await db.select(db.bekleyenIslemler).get()).single.uyari, 'not');
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
   });
 
-  test('schema 10 -> 12: the day view, calendar, feed and notification caches are added and can be written; the timeline cache is dropped; the queue survives', () async {
+  test('schema 10 -> 13: the day view, calendar, feed and notification caches are added and can be written; the timeline cache is dropped; the queue survives', () async {
     final klasor = Directory.systemTemp.createTempSync('yukseltme10');
     addTearDown(() => klasor.deleteSync(recursive: true));
     final dosya = File('${klasor.path}/eski10.sqlite');
@@ -373,6 +370,45 @@ void main() {
         ));
     expect((await db.select(db.bekleyenIslemler).get()).map((b) => b.tur), [BekleyenTur.beyinMaddeIsaretle, BekleyenTur.gunYaptim]);
     final surum = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(surum.data.values.first, 12);
+    expect(surum.data.values.first, 13);
+  });
+
+  test('schema 12 -> 13: the day plan cache and the let-go list of the old plan card are dropped; everything else survives', () async {
+    final klasor = Directory.systemTemp.createTempSync('yukseltme12');
+    addTearDown(() => klasor.deleteSync(recursive: true));
+    final dosya = File('${klasor.path}/eski12.sqlite');
+
+    // A database as version 12 left it: the two old tables with a row each, a queued reminder, a cached notification page.
+    final db = AppDatabase(NativeDatabase(dosya, setup: (raw) {
+      if (raw.select('PRAGMA user_version').first.values.first != 0) return;
+      raw.execute('''
+        CREATE TABLE bekleyen_islemler (
+          id TEXT NOT NULL PRIMARY KEY,
+          tur INTEGER NOT NULL,
+          hedef_id TEXT NOT NULL,
+          tarih TEXT NULL,
+          govde TEXT NOT NULL,
+          olusturulma INTEGER NOT NULL,
+          gonderildi INTEGER NOT NULL DEFAULT 0 CHECK (gonderildi IN (0, 1)),
+          hata TEXT NULL,
+          uyari TEXT NULL
+        )
+      ''');
+      raw.execute('CREATE TABLE gun_plani_onbellek (tarih TEXT NOT NULL PRIMARY KEY, govde TEXT NOT NULL, okunma INTEGER NOT NULL)');
+      raw.execute('CREATE TABLE sabah_birakilanlar (id TEXT NOT NULL, tarih TEXT NOT NULL, PRIMARY KEY (id, tarih))');
+      raw.execute('CREATE TABLE bildirim_onbellek (id TEXT NOT NULL PRIMARY KEY, sira INTEGER NOT NULL, govde TEXT NOT NULL)');
+      raw.execute("INSERT INTO bekleyen_islemler VALUES ('b1', 25, 'm:aa11bb', '2026-11-10', '{}', 1793000000, 0, NULL, NULL)");
+      raw.execute("INSERT INTO gun_plani_onbellek VALUES ('2026-11-09', '{}', 1793000000)");
+      raw.execute("INSERT INTO sabah_birakilanlar VALUES ('a3f09c', '2026-11-09')");
+      raw.execute("INSERT INTO bildirim_onbellek VALUES ('n1', 0, '{}')");
+      raw.execute('PRAGMA user_version = 12');
+    }));
+    addTearDown(db.close);
+
+    expect((await db.select(db.bekleyenIslemler).get()).single.tur, BekleyenTur.ogeHatirlaticiYaz);
+    expect((await db.select(db.bildirimOnbellek).get()).single.id, 'n1');
+    expect(await db.customSelect("SELECT name FROM sqlite_master WHERE name IN ('gun_plani_onbellek', 'sabah_birakilanlar')").get(), isEmpty);
+    final surum = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(surum.data.values.first, 13);
   });
 }

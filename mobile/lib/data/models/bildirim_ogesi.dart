@@ -19,7 +19,7 @@ class BildirimOgesi {
   final String baslik;
   final String metin;
 
-  /// When it was made; null when the server sent none (the list then has no day headings for it).
+  /// When it was made: the server's `olusmaAni`. Null only for a row kept by an older version of the phone.
   final DateTime? zaman;
   final String? rota;
   final String? hedefKimligi;
@@ -46,7 +46,7 @@ class BildirimOgesi {
 
   factory BildirimOgesi.fromJson(Map<String, dynamic> j) {
     // The contract does not name the time field; the usual names are read.
-    final an = (j['zaman'] ?? j['olusturulma'] ?? j['olusturma'] ?? j['createdAt']) as String?;
+    final an = j['olusmaAni'] as String?;
     return BildirimOgesi(
       id: j['id'] as String,
       baslik: (j['baslik'] as String?) ?? '',
@@ -66,7 +66,7 @@ class BildirimOgesi {
         'id': id,
         'baslik': baslik,
         'metin': metin,
-        'zaman': zaman?.toIso8601String(),
+        'olusmaAni': zaman?.toIso8601String(),
         'rota': rota,
         'hedefKimligi': hedefKimligi,
         'kaynakTuru': kaynakTuru,

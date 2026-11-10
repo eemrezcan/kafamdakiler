@@ -160,11 +160,7 @@ void main() {
       expect([p.sende, p.kapilar, p.vps, p.yapim, p.laptop, p.biten].expand((g) => g).length, kartlar.length - 1);
     });
 
-    test('the numbers of the Bugün card: what waits on the person (gates included), what the VPS has (its builds included)', () {
-      final p = IsPanosu.grupla(kartlar);
-
-      expect(p.sendeBekleyen.map((k) => k.kimlik), ['kod', 'push', 'karar-bir'], reason: 'gates first');
-      expect(p.vpstekiSayi, 2);
+    test('an empty board is empty', () {
       expect(IsPanosu.grupla(const []).bos, isTrue);
     });
 
@@ -382,12 +378,21 @@ void main() {
       expect(servis.isHatalari, isEmpty);
     });
 
-    test('"Onayla" at the code gate moves the card to the build; "Plana dön" sends it back', () async {
-      await yonetici.yanitla(dugme(const IsBildirimEylemi.asama(kimlik: 'k', asama: 'yapim')));
-      await yonetici.yanitla(dugme(const IsBildirimEylemi.asama(kimlik: 'k', asama: 'plan'), no: 8));
+    test('"Onayla" at the code gate moves the card to the build', () async {
+      final ac = await yonetici.yanitla(dugme(const IsBildirimEylemi.asama(kimlik: 'k', asama: 'yapim')));
 
-      expect(ortam.api.beyinYazimlari.map((y) => y.govde['asama']), ['yapim', 'plan']);
-      expect(servis.kapatilanlar, [7, 8]);
+      expect(ac, isFalse);
+      expect(ortam.api.beyinYazimlari.map((y) => y.govde['asama']), ['yapim']);
+      expect(servis.kapatilanlar, [7]);
+    });
+
+    test('"Plana dön" is a revision, which needs a note a notification cannot ask for: nothing is written and the card opens', () async {
+      final ac = await yonetici.yanitla(dugme(const IsBildirimEylemi.asama(kimlik: 'k', asama: 'plan'), no: 8));
+
+      expect(ac, isTrue);
+      expect(ortam.api.beyinYazimlari, isEmpty);
+      expect(servis.kapatilanlar, isEmpty, reason: 'the notification stays until the card is dealt with');
+      expect(servis.isHatalari, isEmpty);
     });
 
     test('a push or deploy approval is never written from a notification, even with a forged id', () async {

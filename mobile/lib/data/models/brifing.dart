@@ -57,9 +57,6 @@ class Brifing {
     this.kalanYenileme = 0,
   });
 
-  static const claudeYontemi = 'claude';
-  static const hesapYontemi = 'hesap';
-
   /// `yyyy-MM-dd`.
   final String gun;
   final DateTime uretimAni;

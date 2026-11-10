@@ -33,7 +33,7 @@ String sesHataMetni(Object hata, {String islem = 'İşlem tamamlanamadı'}) {
 /// Dictation, "İşe çevir" and "Özetle / Maddele" of the capture screen (K2.4). The text itself stays in the screen's field;
 /// this holds what surrounds it. Dictation works on the phone. The rest needs the server, so it is off without a connection.
 class SesViewModel extends ChangeNotifier {
-  SesViewModel({required this._api, required this._dikte, required this._baglanti, this.kaynak}) {
+  SesViewModel({required this._api, required this._dikte, required this._baglanti}) {
     _baglanti.varMi().then(_baglantiDegisti, onError: (Object _) {});
     _abonelik = _baglanti.degisim.listen(_baglantiDegisti, onError: (Object _) {});
     _asistanDurumunuAl();
@@ -41,10 +41,6 @@ class SesViewModel extends ChangeNotifier {
 
   /// The server's limit for the text of "İşe çevir" (the field itself takes more).
   static const isCikarSiniri = 4000;
-
-  /// Where the text was written, sent along when the chosen ones are applied (`brifing` for the briefing box); null is the
-  /// capture screen's default.
-  final String? kaynak;
 
   final ApiService _api;
   final DikteServisi _dikte;
@@ -89,10 +85,6 @@ class SesViewModel extends ChangeNotifier {
   String? _dikteMesaji;
   String? get dikteMesaji => _dikteMesaji;
 
-  /// The microphone permission was refused: the screen offers the phone's settings instead of a retry.
-  bool _izinReddedildi = false;
-  bool get izinReddedildi => _izinReddedildi;
-
   String _temel = '';
   String _gecerli = '';
   void Function(String)? _metinDegisti;
@@ -109,14 +101,12 @@ class SesViewModel extends ChangeNotifier {
     if (_dinliyor || _hazirlaniyor) return;
     _hazirlaniyor = true;
     _dikteMesaji = null;
-    _izinReddedildi = false;
     notifyListeners();
     try {
       final hazirlik = await _dikte.hazirla();
       if (_atildi) return;
       switch (hazirlik) {
         case DikteHazirlik.izinYok:
-          _izinReddedildi = true;
           _dikteMesaji = 'Mikrofon izni verilmedi. Dikte için telefonun ayarlarından Kafamdakiler\'e mikrofon izni ver.';
           return;
         case DikteHazirlik.turkceYok:
@@ -163,7 +153,6 @@ class SesViewModel extends ChangeNotifier {
     // Nothing was said: the listening just ends, nothing to report.
     if (kod == 'error_no_match' || kod == 'error_speech_timeout') return;
     if (kod == 'error_permission') {
-      _izinReddedildi = true;
       _dikteMesaji = 'Mikrofon izni verilmedi. Dikte için telefonun ayarlarından Kafamdakiler\'e mikrofon izni ver.';
     } else {
       _dikteMesaji = 'Ses tanıma durdu ($kod). Tekrar dene.';
@@ -274,7 +263,7 @@ class SesViewModel extends ChangeNotifier {
     _akis = IsAkisi.uygulaniyor;
     notifyListeners();
     try {
-      final yanit = await _api.isCikarUygula(_gonderilen, kaynak: kaynak);
+      final yanit = await _api.isCikarUygula(_gonderilen);
       _sonuclar = yanit.sonuclar;
     } on Object catch (e) {
       if (_atildi) return;

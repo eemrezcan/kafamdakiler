@@ -239,12 +239,12 @@ void main() {
       expect(ortam.api.beyinYazimlari.single.govde, {'soruNo': 1, 'cevap': 'Bu hafta'});
     });
 
-    testWidgets('the code gate: "Kodu onayla", "Plana dön" and "İptal et"; one tap on the first moves the card to the build', (tester) async {
+    testWidgets('the code gate: "Kodu onayla", "Plana geri gönder" and "İptal et"; one tap on the first moves the card to the build', (tester) async {
       await goster(tester, ayrinti('k', asama: 'kod-onayi'));
       ortam.api.beyinYazmaGovdesi = kart('k', asama: 'yapim').toJson();
 
       expect(find.text('Kodu onayla'), findsOneWidget);
-      expect(find.text('Plana dön'), findsOneWidget);
+      expect(find.text('Plana geri gönder'), findsOneWidget);
       expect(find.text('İptal et'), findsOneWidget);
 
       await tester.tap(find.text('Kodu onayla'));
@@ -284,15 +284,117 @@ void main() {
       expect(ortam.api.beyinYazimlari.single.govde, {'asama': 'bitti'});
     });
 
-    testWidgets('a card that is not at a gate has no approve button, but can go back to the plan', (tester) async {
+    testWidgets('a card that is not at a gate has no approve button, but can be sent back to the plan with a note', (tester) async {
       await goster(tester, ayrinti('k', asama: 'karar'));
       ortam.api.beyinYazmaGovdesi = kart('k').toJson();
 
       expect(find.textContaining('onayla'), findsNothing);
-      await tester.tap(find.text('Plana dön'));
+      await tester.tap(find.text('Plana geri gönder'));
+      await tester.pumpAndSettle();
+      expect(find.text('Plana geri gönderilsin mi?'), findsOneWidget);
+      expect(ortam.api.beyinYazimlari, isEmpty, reason: 'the window asks first');
+
+      await tester.enterText(find.byKey(const ValueKey('revizyon-not')), '  Ay görünümünü de ekle  ');
+      await tester.tap(find.byKey(const ValueKey('revizyon-gonder')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      expect(ortam.api.beyinYazimlari.single.yol, '/api/isler/k/asama');
+      expect(ortam.api.beyinYazimlari.single.govde, {'asama': 'plan', 'not': 'Ay görünümünü de ekle'});
+    });
+
+    testWidgets('a revision with an empty note is not sent: the window stays open and says what to write', (tester) async {
+      await goster(tester, ayrinti('k', asama: 'karar'));
+
+      await tester.tap(find.text('Plana geri gönder'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('revizyon-gonder')));
+      await tester.pump();
+      expect(find.text('Revizyon için kısa bir not yaz.'), findsOneWidget);
+      expect(find.text('Plana geri gönderilsin mi?'), findsOneWidget, reason: 'still open');
+
+      await tester.enterText(find.byKey(const ValueKey('revizyon-not')), '    ');
+      await tester.tap(find.byKey(const ValueKey('revizyon-gonder')));
+      await tester.pump();
+      expect(find.text('Plana geri gönderilsin mi?'), findsOneWidget, reason: 'spaces are no note either');
+      expect(ortam.api.beyinYazimlari, isEmpty);
+
+      await tester.tap(find.text('Vazgeç'));
+      await tester.pumpAndSettle();
+      expect(ortam.api.beyinYazimlari, isEmpty);
+    });
+
+    testWidgets('the server\'s "not-gerekli" (errors keyed by the rule) is shown as its sentence, not as a generic failure', (tester) async {
+      await goster(tester, ayrinti('k', asama: 'karar'));
+      ortam.api.beyinYazmaKodlari = [400];
+      ortam.api.beyinYazmaProblemi = {
+        'title': 'One or more validation errors occurred.',
+        'status': 400,
+        'errors': {
+          'not-gerekli': ['Revizyon için kısa bir not yaz.'],
+        },
+      };
+
+      await tester.tap(find.text('Plana geri gönder'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('revizyon-not')), 'bir not');
+      await tester.tap(find.byKey(const ValueKey('revizyon-gonder')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      expect(find.text('Revizyon için kısa bir not yaz.'), findsOneWidget);
+      expect(find.textContaining('gönderilen bilgiler geçersiz'), findsNothing);
+    });
+
+    testWidgets('at the request stage the plan is the next step, not a revision: "Plana al" needs no note', (tester) async {
+      await goster(tester, ayrinti('k', asama: 'talep'));
+      ortam.api.beyinYazmaGovdesi = kart('k', asama: 'plan').toJson();
+
+      expect(find.text('Plana geri gönder'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('is-plana-al')));
       await bekle(tester);
 
       expect(ortam.api.beyinYazimlari.single.govde, {'asama': 'plan'});
+    });
+
+    testWidgets('"Kendi cevabım" is always under the options; its text is sent as the answer as it is', (tester) async {
+      await goster(tester, ayrinti('k', sorular: [hangisi]));
+      ortam.api.beyinYazmaGovdesi = kart('k').toJson();
+
+      expect(find.text('a (önerilen)'), findsOneWidget);
+      expect(find.byKey(const ValueKey('soru-kendi-1')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('soru-kendi-gonder-1')));
+      await bekle(tester);
+      expect(find.text('Cevap boş olamaz.'), findsOneWidget);
+      expect(ortam.api.beyinYazimlari, isEmpty);
+
+      await tester.enterText(find.byKey(const ValueKey('soru-kendi-1')), '  ikisi de değil, c olsun ');
+      await tester.tap(find.byKey(const ValueKey('soru-kendi-gonder-1')));
+      await bekle(tester);
+
+      expect(ortam.api.beyinYazimlari.single.govde, {'soruNo': 1, 'cevap': 'ikisi de değil, c olsun'});
+    });
+
+    testWidgets('an answered question has no "Kendi cevabım"; a question with no options has only it', (tester) async {
+      await goster(
+        tester,
+        ayrinti('k', sorular: [
+          const IsSorusu(no: 1, soru: 'Cevaplanmış?', secenekler: ['a', 'b'], cevap: 'a'),
+          const IsSorusu(no: 2, soru: 'Seçeneksiz?'),
+        ]),
+      );
+
+      expect(find.byKey(const ValueKey('soru-kendi-1')), findsNothing);
+      expect(find.byKey(const ValueKey('soru-kendi-2')), findsOneWidget);
+      expect(find.byType(ActionChip), findsNothing);
+    });
+
+    testWidgets('someone who may not write sees "Kendi cevabım" shut', (tester) async {
+      await goster(tester, ayrinti('k', sorular: [hangisi]), yazabilir: false);
+
+      expect(tester.widget<TextField>(find.byKey(const ValueKey('soru-kendi-1'))).enabled, isFalse);
+      expect(tester.widget<FilledButton>(find.byKey(const ValueKey('soru-kendi-gonder-1'))).onPressed, isNull);
     });
 
     testWidgets('cancelling asks for a reason: empty is refused, a reason is sent with it', (tester) async {
@@ -338,7 +440,7 @@ void main() {
       expect(find.textContaining('Çevrimdışısın'), findsWidgets);
       expect(dugmeAcik(tester, 'b'), isFalse);
       expect(dugmeAcik(tester, 'Kodu onayla'), isFalse);
-      expect(dugmeAcik(tester, 'Plana dön'), isFalse);
+      expect(dugmeAcik(tester, 'Plana geri gönder'), isFalse);
     });
 
     testWidgets('someone who may not write sees the card with every write shut', (tester) async {
@@ -352,7 +454,7 @@ void main() {
     testWidgets('a finished card has no stage buttons', (tester) async {
       await goster(tester, ayrinti('k', asama: 'bitti', acik: false));
 
-      expect(find.text('Plana dön'), findsNothing);
+      expect(find.text('Plana geri gönder'), findsNothing);
       expect(find.text('İptal et'), findsNothing);
     });
 

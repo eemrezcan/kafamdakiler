@@ -7,10 +7,8 @@ import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
 import '../../data/models/aliskanlik.dart';
 import '../../data/models/enums.dart';
-import '../../data/models/gun.dart';
 import '../../data/models/oge.dart';
 import '../../data/repositories/kullanici_repository.dart';
-import '../../utils/aliskanlik_gunu.dart';
 import '../../utils/dogrulama.dart';
 import '../core/ikonlar.dart';
 import '../core/renkler.dart';
@@ -29,16 +27,12 @@ class AliskanlikKarti extends StatelessWidget {
     required this.onTik,
     required this.onMiktar,
     required this.onSayiGir,
-    this.sonGunler,
   });
 
   final Aliskanlik aliskanlik;
   final VoidCallback onTik;
   final MiktarDegisti onMiktar;
   final VoidCallback onSayiGir;
-
-  /// The last 7 days, oldest first, for the strip at the bottom; null hides it.
-  final List<Gun>? sonGunler;
 
   @override
   Widget build(BuildContext context) {
@@ -62,104 +56,8 @@ class AliskanlikKarti extends StatelessWidget {
               Aliskanlik(olcu: Olcu.evetHayir) => _TikIcerik(aliskanlik: a, onTik: onTik),
               _ => _SayiIcerik(aliskanlik: a, onMiktar: onMiktar, onSayiGir: onSayiGir),
             },
-            if (sonGunler case final gunler? when gunler.isNotEmpty) _GunSeridi(aliskanlik: a, gunler: gunler, renk: renk),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// The last 7 days as dots with short day names, like the web card's footer
-/// (`.kd-strip`): full = goal reached, half = partly, ring = missed, faint ring
-/// = not planned or before the habit existed. Today comes from the card's own
-/// value, so a tap shows at once, before the server answers.
-class _GunSeridi extends StatelessWidget {
-  const _GunSeridi({required this.aliskanlik, required this.gunler, required this.renk});
-
-  final Aliskanlik aliskanlik;
-  final List<Gun> gunler;
-  final Color renk;
-
-  static const _kisaAdlar = ['PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT', 'PAZ'];
-
-  @override
-  Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final ilkGun = aliskanlikGunu(aliskanlik.olusturulma);
-    final bugun = aliskanlik.bugun;
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.only(top: 10),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: tema.colorScheme.outlineVariant))),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          for (final g in gunler.take(7))
-            Builder(builder: (context) {
-              final bugunMu = bugun != null && DateUtils.isSameDay(g.tarih, bugun.tarih);
-              final deger = bugunMu ? bugun.deger : g.deger;
-              final planli = bugunMu ? bugun.planli : g.planli;
-              final durum = g.tarih.isBefore(ilkGun) || !planli
-                  ? _Nokta.yok
-                  : deger >= 1
-                      ? _Nokta.tamam
-                      : deger > 0
-                          ? _Nokta.kismen
-                          : _Nokta.yapilmadi;
-              return Tooltip(
-                message: '${DateFormat('d MMMM', 'tr').format(g.tarih)}: ${sayiMetni(bugunMu ? bugun.miktar : g.miktar)} ${aliskanlik.birim ?? ''}',
-                child: Column(
-                  children: [
-                    _NoktaCiz(durum: durum, renk: renk),
-                    const SizedBox(height: 4),
-                    Text(
-                      _kisaAdlar[g.tarih.weekday - 1],
-                      style: tema.textTheme.labelSmall?.copyWith(
-                        fontSize: 10,
-                        letterSpacing: 0.5,
-                        fontWeight: bugunMu ? FontWeight.w700 : FontWeight.w500,
-                        color: bugunMu ? tema.colorScheme.onSurface : tema.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-        ],
-      ),
-    );
-  }
-}
-
-enum _Nokta { tamam, kismen, yapilmadi, yok }
-
-class _NoktaCiz extends StatelessWidget {
-  const _NoktaCiz({required this.durum, required this.renk});
-
-  final _Nokta durum;
-  final Color renk;
-
-  @override
-  Widget build(BuildContext context) {
-    final tema = Theme.of(context).colorScheme;
-    final (dolgu, cerceve) = switch (durum) {
-      _Nokta.tamam => (renk, renk),
-      _Nokta.kismen => (null, renk),
-      _Nokta.yapilmadi => (null, tema.outline),
-      _Nokta.yok => (null, tema.outlineVariant),
-    };
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: dolgu,
-        border: Border.all(color: cerceve, width: 1.5),
-        // Half-filled from the left for a partly done day.
-        gradient: durum == _Nokta.kismen
-            ? LinearGradient(colors: [renk, renk, Colors.transparent, Colors.transparent], stops: const [0, 0.5, 0.5, 1])
-            : null,
       ),
     );
   }

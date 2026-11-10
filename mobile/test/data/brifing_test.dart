@@ -11,7 +11,7 @@ import '../test_destek.dart';
 Brifing ornek({String gun = '2026-11-08', int kart = 3}) => Brifing(
       gun: gun,
       uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
-      yontem: Brifing.claudeYontemi,
+      yontem: 'claude',
       kartlar: [for (var i = 0; i < kart; i++) BrifingKarti(sira: i, tur: BrifingTuru.plan, baslik: 'Kart $i', metin: 'Metin $i')],
     );
 

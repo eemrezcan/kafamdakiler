@@ -137,9 +137,11 @@ class ProfilSayfasi extends StatelessWidget {
               leading: const Icon(LucideIcons.cloudUpload),
               title: const Text('Gönderim kuyruğu'),
               subtitle: Text(
-                viewModel.gonderilemeyenler.isNotEmpty
-                    ? '${viewModel.bekleyen} bekleyen, ${viewModel.gonderilemeyenler.length} gönderilemedi'
-                    : '${viewModel.bekleyen} bekleyen',
+                [
+                  '${viewModel.bekleyen} bekleyen',
+                  if (viewModel.gonderilemeyenler.isNotEmpty) '${viewModel.gonderilemeyenler.length} gönderilemedi',
+                  if (viewModel.uyarilar.isNotEmpty) '${viewModel.uyarilar.length} uyarı',
+                ].join(', '),
               ),
               trailing: const Icon(LucideIcons.chevronRight),
               onTap: () => _kuyruk(context),
@@ -221,6 +223,24 @@ class ProfilSayfasi extends StatelessWidget {
                   title: Text(viewModel.bekleyen == 0 ? 'Gönderilmeyi bekleyen kayıt yok' : '${viewModel.bekleyen} kayıt gönderilmeyi bekliyor'),
                   trailing: viewModel.bekleyen == 0 ? null : TextButton(onPressed: viewModel.simdiGonder, child: const Text('Şimdi gönder')),
                 ),
+                if (viewModel.uyarilar.isNotEmpty) ...[
+                  Text('Dikkat: ${viewModel.uyarilar.length} kayıt', style: tema.textTheme.titleSmall),
+                  for (final u in viewModel.uyarilar)
+                    ListTile(
+                      key: ValueKey('uyari-${u.id}'),
+                      contentPadding: EdgeInsets.zero,
+                      minTileHeight: 56,
+                      title: Text(u.baslik),
+                      subtitle: Text(u.metin, maxLines: 4, overflow: TextOverflow.ellipsis),
+                      trailing: TextButton(
+                        key: ValueKey('uyari-tamam-${u.id}'),
+                        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                        onPressed: () => viewModel.kaydiSil(u.id),
+                        child: const Text('Tamam'),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                ],
                 if (viewModel.gonderilemeyenler.isNotEmpty) ...[
                   Text(
                     'Gönderilemeyen ${viewModel.gonderilemeyenler.length} kayıt',

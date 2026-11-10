@@ -615,7 +615,6 @@ class SahteApi extends ApiService {
   /// The texts `isCikar` and `metniYenidenYaz` were sent, and the suggestions `isCikarUygula` was sent, per call.
   final List<String> isCikarMetinleri = [];
   final List<List<IsOnerisi>> uygulananIstekler = [];
-  final List<String?> uygulamaKaynaklari = [];
   final List<(String, YenidenYazKipi)> yenidenYazIstekleri = [];
 
   /// What `metniYenidenYaz` answers.
@@ -643,10 +642,9 @@ class SahteApi extends ApiService {
   }
 
   @override
-  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler, {String? kaynak}) async {
+  Future<IsCikarUygulaYaniti> isCikarUygula(List<IsOnerisi> secilenler) async {
     _sesKontrol('isCikarUygula');
     uygulananIstekler.add(secilenler);
-    uygulamaKaynaklari.add(kaynak);
     return uygulaYaniti ??
         IsCikarUygulaYaniti(
           uygulanan: secilenler.length,
@@ -667,8 +665,6 @@ class SahteApi extends ApiService {
   List<ProjeOzet> projeler = [];
   Map<String, ProjeDetay> projeDetaylari = {};
 
-  /// Day plans by "2026-11-03".
-  Map<String, BeyinGun> gunPlanlari = {};
   List<AramaSonucu> aramaSonuclari = [];
   Map<String, BeyinNotu> notlar = {};
 
@@ -766,12 +762,6 @@ class SahteApi extends ApiService {
       throw DioException.badResponse(statusCode: projeRepoHatasi!, requestOptions: istek, response: Response(requestOptions: istek, statusCode: projeRepoHatasi));
     }
     return projeRepolari[kimlik];
-  }
-
-  @override
-  Future<BeyinGun> beyinGun(DateTime tarih) async {
-    _beyinKontrol('beyinGun');
-    return gunPlanlari[tarihMetni(tarih)] ?? BeyinGun(tarih: tarih);
   }
 
   @override
@@ -1279,7 +1269,7 @@ class TestOrtami {
     );
     beyin = BeyinRepository(api: this.api, db: db);
     isler = IsRepository(api: this.api, db: db);
-    gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici, simdi: () => sabitAn);
+    gunPlani = GunPlaniRepository(beyin: beyin, esitleyici: esitleyici, simdi: () => sabitAn);
     hatirlaticilar = HatirlaticiRepository(api: this.api, db: db, esitleyici: esitleyici);
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
     gelen = GelenRepository(api: this.api, db: db, esitleyici: esitleyici);

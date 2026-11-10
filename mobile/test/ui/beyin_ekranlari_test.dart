@@ -295,7 +295,6 @@ void main() {
       ortam.api.projeRepoHatasi = 500;
       final vm = await goster(tester, boy: 2400);
 
-      expect(vm.repoHatasi, isTrue);
       expect(vm.repoOzeti, isNull);
       expect(find.text('DEPO'), findsNothing);
       expect(find.text('Okuma listesi sayfası bitti.'), findsOneWidget, reason: 'the project itself is still shown');

@@ -18,7 +18,7 @@ void main() {
     final b = Brifing(
       gun: '2026-11-10',
       uretimAni: DateTime.utc(2026, 11, 10, 4),
-      yontem: Brifing.hesapYontemi,
+      yontem: 'hesap',
       kartlar: const [
         BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Plan', metin: 'a'),
         BrifingKarti(sira: 1, tur: BrifingTuru.kalan, baslik: 'Kalanlar', metin: 'b'),

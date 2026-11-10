@@ -87,10 +87,6 @@ class ProjeDetayViewModel extends BeyinYukleyici<ProjeDetay> {
   bool _repoYuklendi = false;
   bool get repoYuklendi => _repoYuklendi;
 
-  /// The card could not be read (offline, no permission, server error).
-  bool _repoHatasi = false;
-  bool get repoHatasi => _repoHatasi;
-
   bool _atildi = false;
 
   @override
@@ -103,11 +99,9 @@ class ProjeDetayViewModel extends BeyinYukleyici<ProjeDetay> {
       final ozet = await _repo.projeRepo(kimlik);
       if (_atildi) return;
       _repoOzeti = ozet;
-      _repoHatasi = false;
     } on Object {
       if (_atildi) return;
       _repoOzeti = null;
-      _repoHatasi = true;
     }
     _repoYuklendi = true;
     notifyListeners();

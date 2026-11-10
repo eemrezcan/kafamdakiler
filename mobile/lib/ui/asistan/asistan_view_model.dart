@@ -44,7 +44,6 @@ class AsistanViewModel extends ChangeNotifier {
 
   int get bekleyenSayisi => _tum.where((o) => o.bekleyenMi).length;
   int get islerSayisi => _tum.where((o) => o.tur == AkisTuru.isKarti).length;
-  int get notlarSayisi => _tum.where((o) => o.tur == AkisTuru.not).length;
 
   bool _yukleniyor = false;
   bool get yukleniyor => _yukleniyor;

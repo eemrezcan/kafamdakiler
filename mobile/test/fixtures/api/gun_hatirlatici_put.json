@@ -1,0 +1,30 @@
+{
+  "durum": 200,
+  "govde": {
+    "id": "01a1c77b-6eca-7bd8-af48-15ecebf41e51",
+    "baslik": "M3 deneme işi",
+    "not": null,
+    "tur": "gorev",
+    "kime": null,
+    "gun": "2026-11-10",
+    "saat": "16:00:00",
+    "tekrar": "gunluk",
+    "onceGun": 0,
+    "durum": "acik",
+    "sonrakiAn": "2026-11-11T13:00:00+00:00",
+    "erteleAn": null,
+    "etkinAn": "2026-11-11T13:00:00+00:00",
+    "onceAn": null,
+    "kalanGun": 0,
+    "createdAt": "2026-11-10T22:01:57.706849+00:00",
+    "israrli": false,
+    "israrAraligiDakika": 15,
+    "israrEnCok": 3,
+    "acil": true,
+    "maddeId": "be3fb6",
+    "maddeTarihi": "2026-11-10",
+    "gorevKimligi": null,
+    "gunler": [],
+    "zincirHatasi": null
+  }
+}

@@ -3,18 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/aliskanlik.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
-import 'package:kafamdakiler/data/models/gun.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
 import 'package:kafamdakiler/ui/bugun/aliskanlik_karti.dart';
 
 import '../test_destek.dart';
 
-/// The habit card (the habits list of the next phase builds on it): progress, strength, the tick, the shelf card and the
-/// last 7 days strip. It used to be tested through the old Bugün screen.
+/// The habit card of the Alışkanlıklar list: progress, strength, the tick and the shelf card.
 void main() {
   setUpAll(() => initializeDateFormatting('tr'));
 
-  Future<void> goster(WidgetTester tester, Aliskanlik a, {List<Gun>? gunler, Size boyut = const Size(360, 800)}) async {
+  Future<void> goster(WidgetTester tester, Aliskanlik a, {Size boyut = const Size(360, 800)}) async {
     tester.view.physicalSize = boyut;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -22,7 +20,7 @@ void main() {
       home: Scaffold(
         body: ListView(
           padding: const EdgeInsets.all(16),
-          children: [AliskanlikKarti(aliskanlik: a, sonGunler: gunler, onTik: () {}, onMiktar: (_, _) {}, onSayiGir: () {})],
+          children: [AliskanlikKarti(aliskanlik: a, onTik: () {}, onMiktar: (_, _) {}, onSayiGir: () {})],
         ),
       ),
     ));
@@ -62,22 +60,5 @@ void main() {
     expect(find.text('Okudum'), findsOneWidget);
     expect(find.text('Kronometre'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('last 7 days strip: day names under the card, none without the days', (tester) async {
-    // 25-31 October 2026, ending on the fixed "today" (a Saturday).
-    final gunler = [
-      for (var i = 6; i >= 0; i--)
-        Gun(tarih: sabitBugun.subtract(Duration(days: i)), miktar: i.isEven ? 8 : 0, deger: i.isEven ? 1 : 0, planli: true, guc: 0.5),
-    ];
-    await goster(tester, ornekAliskanlik(id: 'a', ad: 'Su', miktar: 3), gunler: gunler);
-
-    for (final ad in ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT']) {
-      expect(find.text(ad), findsOneWidget, reason: ad);
-    }
-    expect(tester.takeException(), isNull);
-
-    await goster(tester, ornekAliskanlik(id: 'a', ad: 'Su', miktar: 3));
-    expect(find.text('CMT'), findsNothing);
   });
 }

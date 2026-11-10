@@ -1,0 +1,27 @@
+{
+  "durum": 200,
+  "govde": {
+    "oge": {
+      "kimlik": "m:be3fb6",
+      "tur": "plan",
+      "baslik": "M3 deneme işi",
+      "saat": null,
+      "bitisSaati": null,
+      "tumGun": false,
+      "tahminDk": 30,
+      "sureDk": null,
+      "durum": "acik",
+      "proje": null,
+      "bolum": "Yapılacaklar",
+      "gecikmeGun": null,
+      "bolunmus": null,
+      "hatirlatici": null,
+      "maddeId": "be3fb6",
+      "gorevKimligi": null,
+      "hatirlaticiId": null,
+      "etkinlikId": null,
+      "yer": null,
+      "tarih": "2026-11-11"
+    }
+  }
+}
