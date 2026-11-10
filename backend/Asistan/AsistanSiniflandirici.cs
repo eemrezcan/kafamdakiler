@@ -54,7 +54,7 @@ public class AsistanSiniflandirici(
     // `claudeMetni` is what Claude reads (the person's text, or the three parts of a second round); `orijinal` is the person's own text, the
     // only thing a note or a card is ever made of. `soruSorabilir` is false in the second round: it must decide.
     public async Task<SiniflandirmaSonucu> SiniflandirAsync(
-        string orijinal, string claudeMetni, DateOnly bugun, bool soruSorabilir, bool baglamli, CancellationToken ct)
+        string orijinal, string claudeMetni, DateOnly bugun, bool soruSorabilir, bool baglamli, string gerekceOnEki, CancellationToken ct)
     {
         if (!claude.Bagli)
             return Kullanilamiyor("Asistan şu an bağlı değil.");
@@ -90,7 +90,7 @@ public class AsistanSiniflandirici(
                 continue;
             }
 
-            var (hazir, neden) = Cevir(o, orijinal, sunucuBugun, projeKimlikleri);
+            var (hazir, neden) = Cevir(o, orijinal, sunucuBugun, projeKimlikleri, gerekceOnEki);
             if (hazir is null)
                 atlananlar.Add(new AtlananOneri(o?.Tur, o?.Baslik, o?.KaynakParca, neden!));
             else
@@ -101,7 +101,7 @@ public class AsistanSiniflandirici(
     }
 
     // The rules for one suggestion: the voice module's for its four kinds, the same sort for a note and a card. Nothing is written here.
-    public (HazirOneri? Sonuc, string? Neden) Cevir(AsistanOnerisi? o, string orijinal, DateOnly bugun, IReadOnlySet<string> projeler)
+    public (HazirOneri? Sonuc, string? Neden) Cevir(AsistanOnerisi? o, string orijinal, DateOnly bugun, IReadOnlySet<string> projeler, string gerekceOnEki = "Asistan")
     {
         if (o is null)
             return (null, "Boş öneri.");
@@ -112,7 +112,7 @@ public class AsistanSiniflandirici(
         {
             var (cevrilmis, neden) = isCikar.Cevir(
                 new IsOnerisi(o.Tur, o.Baslik, o.Gun, o.Saat, o.Tekrar, o.Bolum, o.TahminDk, o.Proje, o.Alan, o.Bitis, o.KaynakParca, o.Guven, o.BitisSaati, o.Yer),
-                bugun, projeler, "Asistan");
+                bugun, projeler, gerekceOnEki);
             return cevrilmis is null
                 ? (null, neden)
                 : (new HazirOneri(o.Tur, cevrilmis.Oneri.Baslik, cevrilmis.Oneri.Guven, cevrilmis.Ozet, Kuyruk: cevrilmis), null);

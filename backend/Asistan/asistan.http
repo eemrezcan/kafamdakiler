@@ -36,6 +36,14 @@ Content-Type: application/json
   "kaynak": "yazi"
 }
 
+### 2a. From the share menu (`paylas`): the text may be another app's, so only a note is made at once. Every other kind waits in the approval queue
+### (`durum: "onayda"`, `eylemId` set; approve it with POST /api/eylemler/{eylemId}/uygula, and the feed shows it as an approval card).
+POST {{host}}/api/asistan/girdi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": "019e3000-0000-7000-8000-000000000004", "metin": "Cuma 15:00'te Ayşe ile toplantı. Ayrıca bir not: ...", "kaynak": "paylas" }
+
 ### 2b. Not sure what the text is: nothing is applied, `soru` has one question with at most three options (answer it in 3)
 POST {{host}}/api/asistan/girdi
 Authorization: Bearer {{token}}

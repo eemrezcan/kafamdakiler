@@ -23,6 +23,9 @@ public class GunIslemleri(
         {
             case 'm':
             {
+                if (await MaddeDenetleAsync(gun, kimlik, kullaniciId, ct) is { } yok)
+                    return yok;
+
                 var yanit = await BeyinYazma.MaddeIsaretle($"{gun:yyyy-MM-dd}", new MaddeIsaretleGirdi(deger, geri), beyin, log, ct);
                 if (!yanit.Basarili)
                     return yanit;
@@ -99,13 +102,20 @@ public class GunIslemleri(
         {
             case 'm':
             {
+                if (await MaddeDenetleAsync(gun, kimlik, kullaniciId, ct) is { } yok)
+                    return yok;
+
                 var yanit = await BeyinYazma.MaddeDevret($"{gun:yyyy-MM-dd}", new MaddeDevretGirdi(deger), beyin, log, ct);
                 if (!yanit.Basarili)
                     return yanit;
 
+                // The answer of `gun devret` describes the item it left behind, with that item's id; the one on the new day has an id of its own
+                // (E10). The answer is built from the new day as the list shows it: the open item with the same title, the last one (it was added last).
                 var dto = (MaddeDevredildiDto)yanit.Veri!;
-                var yeniKimlik = $"m:{dto.Madde.Id}";
-                var oge = await OgeAlAsync(dto.DevredilenGun, yeniKimlik, kullaniciId, () => MaddedenOge(dto.Madde, yeniKimlik, dto.DevredilenGun), ct);
+                var baslik = YapilacakYardimcisi.BaslikAyir(dto.Madde.Baslik).Baslik;
+                var oge = await OgeAlAsync(
+                    dto.DevredilenGun, $"m:{dto.Madde.Id}", kullaniciId, () => MaddedenOge(dto.Madde, $"m:{dto.Madde.Id}", dto.DevredilenGun), ct,
+                    esle: o => o is { Tur: YapilacakTuru.Plan, Durum: YapilacakDurumu.Acik } && o.Baslik == baslik);
                 return YazmaYaniti.Tamam(new DevretYanitiDto(oge));
             }
 
@@ -278,6 +288,23 @@ public class GunIslemleri(
             : db.Hatirlaticilar.Where(h => h.Durum != HatirlaticiDurumu.Arsiv && h.GorevKimligi == deger && h.MaddeId == null);
     }
 
+    // A plan item may be written to only when the day lists it: the list leaves out what links to a hidden task or one in a closed folder (E9), and
+    // the brain would tick or carry it (and close the task with it) all the same. 404 when the day does not list it, 503 / 502 when the day cannot be read.
+    private async Task<YazmaYaniti?> MaddeDenetleAsync(DateOnly gun, string kimlik, Guid? kullaniciId, CancellationToken ct)
+    {
+        // A text that is not the id of an item at all is the write's own 400 (it never reaches the brain); the list is only asked about real ids.
+        if (!BeyinYazma.MaddeKimligiGecerli(kimlik[2..]))
+            return null;
+
+        var gorunum = await gunServisi.GetirAsync(gun, kullaniciId, ct);
+        return gorunum.Kaynaklar.Plan switch
+        {
+            "yok" => YazmaYaniti.Red(StatusCodes.Status503ServiceUnavailable, "Beyin bağlı değil", "Bu makinede beyin ayarlı değil ya da komutu bulunamadı."),
+            "okunamadi" => YazmaYaniti.Red(StatusCodes.Status502BadGateway, "Beyin cevabı anlaşılamadı", "Günün planı okunamadı, biraz sonra tekrar dene."),
+            _ => gorunum.Ogeler.Any(o => o.Kimlik == kimlik) ? null : YazmaYaniti.Red(StatusCodes.Status404NotFound, "Bulunamadı", "Madde o günün listesinde yok."),
+        };
+    }
+
     // The item as the day shows it, or the answer to give when it cannot be found: 503 without a brain, 502 when it cannot be read, 404.
     private async Task<(YapilacakDto? Oge, IResult? Hata)> OgeBulAsync(DateOnly gun, string kimlik, Guid? kullaniciId, CancellationToken ct)
     {
@@ -293,13 +320,16 @@ public class GunIslemleri(
     }
 
     // The item as the day shows it after the write; `yedek` builds it from what the write answered when the day cannot be read or no longer lists it.
-    private async Task<YapilacakDto> OgeAlAsync(DateOnly gun, string kimlik, Guid? kullaniciId, Func<YapilacakDto?> yedek, CancellationToken ct)
+    private async Task<YapilacakDto> OgeAlAsync(
+        DateOnly gun, string kimlik, Guid? kullaniciId, Func<YapilacakDto?> yedek, CancellationToken ct, Func<YapilacakDto, bool>? esle = null)
     {
         try
         {
             var gorunum = await gunServisi.GetirAsync(gun, kullaniciId, ct);
             if (gorunum.Ogeler.FirstOrDefault(o => o.Kimlik == kimlik) is { } oge)
                 return oge;
+            if (esle is not null && gorunum.Ogeler.LastOrDefault(esle) is { } eslesen)
+                return eslesen;
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

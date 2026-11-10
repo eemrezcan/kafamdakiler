@@ -16,9 +16,16 @@ public sealed class GunGorunumuApiTests(UygulamaFabrikasi uygulama) : GunTestTab
     private async Task<(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> Fabrika, string Sahip)> HazirlaAsync(string? kapasiteSaat = null)
     {
         await GunTemizleAsync();
+        // The tasks the API may show (the day leaves out plan items that name any other).
+        Beyin.Cikti("gorev liste", Gorevler);
         var fabrika = GunFabrikasi(kapasiteSaat: kapasiteSaat);
         return (fabrika, await GirisAsync(UygulamaFabrikasi.SahipEposta, fabrika));
     }
+
+    // The tasks the API may show (the day leaves out plan items and late tasks that name any other).
+    private const string Gorevler =
+        """[{"kimlik": "uye-girisi", "baslik": "Üye girişi", "durum": "aktif", "proje": "kitap-kulubu", "yol": "projects/kitap-kulubu/gorevler/uye-girisi.md", "gizli": false},""" +
+        """ {"kimlik": "eski-is", "baslik": "Eski iş", "durum": "aktif", "proje": "kitap-kulubu", "yol": "projects/kitap-kulubu/gorevler/eski-is.md", "gizli": false}]""";
 
     private static JsonElement Oge(JsonElement gun, string kimlik) =>
         gun.GetProperty("ogeler").EnumerateArray().Single(o => o.GetProperty("kimlik").GetString() == kimlik);

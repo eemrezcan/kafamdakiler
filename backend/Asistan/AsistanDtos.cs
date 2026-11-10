@@ -50,8 +50,9 @@ public class AsistanCevabiDto
 }
 
 // `Uygulandi`: done. `IzinYok`: the person (or the kind's mode) does not allow it. `Hata`: tried and failed. `Gecersiz`: broke a rule
-// (a date in the past, a project that does not exist...), nothing was tried.
-public enum AsistanDurumu { Uygulandi, IzinYok, Hata, Gecersiz }
+// (a date in the past, a project that does not exist...), nothing was tried. `Onayda`: the input came from the share menu (another app's text
+// may be in it), so it is not done yet: it waits in the approval queue (`EylemId`) for the person to approve it.
+public enum AsistanDurumu { Uygulandi, IzinYok, Hata, Gecersiz, Onayda }
 
 // Where a tap on the result goes: the id of what was made as the day list knows it ("m:", "g:", "h:"; a capture's or a card's own id) and a
 // route of the app. Either may be null.

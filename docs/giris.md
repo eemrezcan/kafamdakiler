@@ -201,6 +201,11 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Gerçek API uyumu: backend yerelde çalıştırılıp alınan gerçek yanıtlar `mobile/test/fixtures/api/` altında, `mobile/test/data/gercek_api_test.dart` modelleri bu dosyalarla sınar; `bildirim_ogesi.dart` zamanı `olusmaAni`'dan okur.
   - Kullanılmayan kodun silinmesi: `gun_plani_repository.dart` yalnız görev yazmalarına indi (gün planı okuma, sabah kartı, bildirimler, `BeyinGun` ve ilgili modeller, `gunPlaninaBekleyenleriUygula`, `tahminAyir` gitti), `app_database.dart` şema 13 (`GunPlaniOnbellek` ve `SabahBirakilanlar` düşer), kullanılmayan getter ve fonksiyonlar, `AliskanlikKarti`'ndaki 7 gün şeridi; profil sayfasındaki gönderim kuyruğu 202 ve 207 uyarılarını gösterir.
   - Süzgeç çipleri 360 dp'de sarılır. Testler: `gercek_api_test.dart`, `gorev_kuyruk_test.dart` (eski `gun_plani_kuyruk_test.dart` yerine), `asistan_test.dart`, `asistan_screen_test.dart`, `gezinme_test.dart`, `veritabani_yukseltme_test.dart`.
+- UI revizyonu, Faz A4 (backend; 2026-11-11, K-0024, aynı düzen): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Paylaş menüsü kaynağı (E7): `backend/Asistan/AsistanServisi.cs` (`paylas` girdisinde yalnız not hemen, diğerleri `DisKaynak` ile onay kuyruğuna; `onayda` durumu), `backend/Eylemler/IsAcTuru.cs` (iş kartı açma için kuyruk türü), `IsKartlari.AcDenetle`.
+  - Gizlilik süzgeci (E9): `BeyinOkuma.IzinliGorevlerAl` ve `GunAl` / `SabahAl` içindeki `izinliGorevler` süzgeci; `Yapilacaklar/` servisleri ve `GunIslemleri` içindeki madde denetimi.
+  - Devret yanıtı (E10): `GunIslemleri.DevretAsync` yeni günün gerçek öğesini kurar. `appsettings.json`: `Claude:Modeller:asistan-girdi`.
+  - Testler: `backend.Tests/GizlilikApiTests.cs`, `AsistanPaylasApiTests.cs`, `GunYaptimApiTests` (devret kimliği) ve güncellenen gün testleri.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

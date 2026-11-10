@@ -108,8 +108,8 @@ public sealed class TakvimAraligiApiTests(UygulamaFabrikasi uygulama) : GunTestT
         Assert.Equal(0, Sayi(aralik, "2026-11-17", "plan"));
         Assert.Equal(0, Sayi(aralik, "2026-11-30", "plan"));
         Assert.Equal(9, BeyinCagrisi("gun", "goster"));
-        // One call for all the tasks, whatever the range.
-        Assert.Equal(1, BeyinCagrisi("gorev", "liste"));
+        // Two calls for the tasks, whatever the range: the open ones with a due date, and the list of the ones the API may show.
+        Assert.Equal(2, BeyinCagrisi("gorev", "liste"));
     }
 
     [Fact]
