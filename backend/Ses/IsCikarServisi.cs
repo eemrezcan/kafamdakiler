@@ -55,6 +55,11 @@ public class IsCikarServisi(
         [TakvimEkleTuru.Anahtar] = TakvimPolicies.Yaz,
     };
 
+    // The permission a queue kind needs (null for anything that is not one of the four): the assistant's own entry asks it too.
+    public static string? TurIzni(string? tur) => tur is not null && TurIzinleri.TryGetValue(tur, out var izin) ? izin : null;
+
+    public static IEnumerable<string> KuyrukTurleri => TurIzinleri.Keys;
+
     private static readonly string[] Tekrarlar = Enum.GetNames<Tekrar>().Select(CamelCase).ToArray();
 
     // "9:00" is as good as "09:00": the person may have corrected it by hand.

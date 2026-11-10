@@ -1,0 +1,85 @@
+### Assistant scenario (K-0024, §7): one entry for everything the person says, one feed, one badge.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+### Claude and the brain must be configured (README); without Claude every input is kept as a note in the capture line and the result says so.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+# Made by the client: the same id again is the same answer (nothing runs twice).
+@girdiId = 019e3000-0000-7000-8000-000000000001
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. The one entry. `kaynak`: yazi | ses | paylas | widget. Text or `fotografId` (or both). `bugun` (yyyy-MM-dd) is optional: what "today" means for the dates in the text.
+### The person's own input is applied at once: a reminder, a plan item, a task, a calendar event, a note (the capture line) or a work card.
+### Each result says what was done (`durum`: uygulandi | izinYok | hata | gecersiz), where it went (`hedef`) and whether it can be undone (`geriAlinabilir`).
+# @name girdi
+POST {{host}}/api/asistan/girdi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "id": "{{girdiId}}",
+  "metin": "Yarın 9'da Ali'yi ara. Raporu bugün bitir. Kitap kulübü için bir fikir: aylık tema seçelim.",
+  "kaynak": "yazi"
+}
+
+### 2b. Not sure what the text is: nothing is applied, `soru` has one question with at most three options (answer it in 3)
+POST {{host}}/api/asistan/girdi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": "019e3000-0000-7000-8000-000000000002", "metin": "Yarın Ali", "kaynak": "ses" }
+
+### 2c. A photo alone is a note (it never goes to Claude)
+POST {{host}}/api/asistan/girdi
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": "019e3000-0000-7000-8000-000000000003", "fotografId": "019e2000-0000-7000-8000-0000000000aa", "kaynak": "paylas" }
+
+### 3. The answer to the question (the question's id is in the answer of 2b). It does not ask again: it applies the most likely reading.
+POST {{host}}/api/asistan/sorular/{{girdi.response.body.$.soru.id}}/cevap
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "cevap": "Hatırlatıcı" }
+
+### 4. Undo: an action with the queue's endpoint (`eylemId`); a note by deleting the capture while it waits (`hedef.kimlik`); a card cannot be undone
+POST {{host}}/api/eylemler/{{girdi.response.body.$.sonuclar[0].eylemId}}/geri-al
+Authorization: Bearer {{token}}
+
+### 5. The feed, newest first: `once` (the time to continue from), `limit` (1 to 100, 40), `suzgec`: hepsi | bekleyen | isler | notlar
+GET {{host}}/api/asistan/akis?suzgec=hepsi&limit=40
+Authorization: Bearer {{token}}
+
+### 5b. Only what waits for the person: an unanswered question, an action to approve, a card with a question open
+GET {{host}}/api/asistan/akis?suzgec=bekleyen
+Authorization: Bearer {{token}}
+
+### 6. The badge: how many things wait (the same rule as 5b) -> { "bekleyen": 2 }
+GET {{host}}/api/asistan/sayi
+Authorization: Bearer {{token}}
+
+### 7. The Asistan without the asistan.kullan permission -> 403 (with it, each result is still checked against the permission of its own kind: izinYok)
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+GET {{host}}/api/asistan/sayi
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}

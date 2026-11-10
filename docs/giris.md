@@ -172,6 +172,9 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Sözleşme ekleri: `YapilacakDto.Tarih` (E1), tek devret ucu `POST /api/gun/{tarih}/devret` (`GunIslemleri.DevretAsync`, `GunEndpoints`; E2), iş kartında revizyon notu zorunluluğu ve `not-gerekli` hatası (`Isler/IsKartlari.cs`, `OpenApi/HataAnahtarlari.cs`; E6), serbest cevabın testle sabitlenmesi (`IsApiTests`).
   - Zincir kuralı değişikliği: biten görev, bağlı tekrarlı hatırlatıcıyı da kapatır (`HatirlaticiZinciri`, `HatirlaticiIslemleri.Kapat`).
   - `GercekBeyinIsTests` beynin 2026-11-11 kuralına göre güncellendi (son cevap kartı plana döndürür, revizyonda not şart).
+- UI revizyonu, Faz A3 (backend; 2026-11-11, K-0024, aynı düzen): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Asistanın tek girişi: `backend/Asistan/` (`AsistanMesaji` tablosu, `AsistanSiniflandirici`: Claude çağrısı ve öneri denetimi, `IsCikarServisi.Cevir` üstüne; `AsistanServisi`: girdi, soru cevabı, kendi girdisini sormadan uygulama, yakalamaya düşme, tekrarlı id; `AsistanAkisi`: akış ve rozet sayısı; `AsistanEndpoints`, `AsistanDtos`, `asistan.http`), migration `AsistanMesajlari`, `IsCikarServisi` içindeki `TurIzni` ve `KuyrukTurleri`, `Program.cs` kaydı.
+  - Testler: `backend.Tests/AsistanTestTabani.cs`, `AsistanGirdiApiTests`, `AsistanAkisApiTests`, `SahteClaude.cs` eklemesi (`YapiliSirali`), `OpenApiUclariTests` güncellemesi.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

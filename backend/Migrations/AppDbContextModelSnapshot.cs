@@ -221,6 +221,59 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Oturumlar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Asistan.AsistanMesaji", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CevaplandiAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FotografId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GirdiId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kaynak")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Metin")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<string>("SonuclarJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("SoruJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("Zaman")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KullaniciId", "GirdiId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AsistanMesajlari_GirdiTalebi")
+                        .HasFilter("\"Tur\" = 'Kullanici' AND \"Kaynak\" <> 'cevap'");
+
+                    b.HasIndex("KullaniciId", "Zaman");
+
+                    b.ToTable("AsistanMesajlari");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Ayarlar.GunAyarlari", b =>
                 {
                     b.Property<int>("Id")

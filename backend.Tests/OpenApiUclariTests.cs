@@ -38,6 +38,10 @@ public sealed class OpenApiUclariTests(UygulamaFabrikasi uygulama) : IClassFixtu
             ("/api/bildirimler/sayi", ["get"]),
             ("/api/bildirimler/{id}/okundu", ["post"]),
             ("/api/bildirimler/okundu", ["post"]),
+            ("/api/asistan/girdi", ["post"]),
+            ("/api/asistan/sorular/{id}/cevap", ["post"]),
+            ("/api/asistan/akis", ["get"]),
+            ("/api/asistan/sayi", ["get"]),
         };
         foreach (var (yol, yontemler) in beklenen)
         {
