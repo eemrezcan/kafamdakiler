@@ -1,5 +1,6 @@
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
+using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.ProjeRepolari;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kafamdakiler.Pages.Beyin;
 
 // One project: status, next step, open tasks, last journal lines, and adding or finishing a task (K2.3a), and the repository card (K2.5).
-public class ProjeModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, TimeProvider saat, AppDbContext db, RepoOzetServisi repolar)
+public class ProjeModel(
+    BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, TimeProvider saat, AppDbContext db, RepoOzetServisi repolar, HatirlaticiAyari hatirlaticiAyari)
     : BeyinSayfasi(beyin, gunluk)
 {
     public ProjeDto? Proje { get; private set; }
@@ -31,6 +33,20 @@ public class ProjeModel(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, Ti
     public async Task<IActionResult> OnPostGorevEkleAsync(string kimlik, string? baslik, string? bitis) =>
         Don(await BeyinYazma.GorevEkle(new(baslik, kimlik, null, bitis, null, null), Istemci, Gunluk, CancellationToken.None), "Görev eklendi");
 
-    public async Task<IActionResult> OnPostGorevBitirAsync(string? gorev) =>
-        Don(await BeyinYazma.GorevBitir(gorev ?? "", Istemci, Gunluk, saat, CancellationToken.None), "Görev bitti");
+    // Finishing a task closes the reminder tied to it too (HatirlaticiZinciri, the chain of K-0024); a step of it that fails is said, the task stays finished.
+    public async Task<IActionResult> OnPostGorevBitirAsync(string? gorev)
+    {
+        var yanit = await BeyinYazma.GorevBitir(gorev ?? "", Istemci, Gunluk, saat, CancellationToken.None);
+        var sonuc = Don(yanit, "Görev bitti");
+        if (yanit.Basarili)
+        {
+            var zincir = await HatirlaticiZinciri.GorevBitirildiAsync(db, gorev!, hatirlaticiAyari.VarsayilanSaat, saat.GetUtcNow(), Gunluk, CancellationToken.None);
+            if (zincir.Hata is { } hata)
+                YazmaHatasi = hata;
+            else if (zincir.Kimlikler.Count > 0)
+                Bildirim = "Görev bitti; bağlı hatırlatıcı da kapandı";
+        }
+
+        return sonuc;
+    }
 }

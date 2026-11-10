@@ -1,0 +1,155 @@
+@using Kafamdakiler.Beyin
+@using Kafamdakiler.Yapilacaklar
+@model Kafamdakiler.Pages.GunSatiriModeli
+@* One row of the day list: plan item, task, reminder or event, with its one "yaptım" and its detail (reminder, carry over, split, note).
+   The forms post to the page that shows the row and come back to `donus`. *@
+@{
+    var oge = Model.Oge;
+    var t = Model.Gun.ToString("yyyy-MM-dd");
+    var yapildi = oge.Durum == YapilacakDurumu.Yapildi;
+    var etkinlik = oge.Tur == YapilacakTuru.Etkinlik;
+    var gorev = oge.Tur == YapilacakTuru.Gorev;
+    // A finished task cannot be opened again from here (the brain has no such step); a finished reminder or item can.
+    var yaptimVar = Model.Yazilabilir && !etkinlik && !(gorev && yapildi);
+    var plan = oge.Tur == YapilacakTuru.Plan;
+    var hatirlaticiKurulabilir = Model.Yazilabilir && (plan || gorev) && !yapildi;
+    var devretVar = Model.Yazilabilir && !etkinlik && !yapildi && (plan || gorev || oge.Tur == YapilacakTuru.Hatirlatici);
+    var bolVar = Model.Yazilabilir && gorev && !yapildi && oge.GorevKimligi is not null && oge.MaddeId is null;
+    var notVar = Model.Yazilabilir && plan && !yapildi && oge.MaddeId is not null && BeyinYazma.MaddeKimligiGecerli(oge.MaddeId);
+    var ayrintiVar = hatirlaticiKurulabilir || devretVar || bolVar || notVar || oge.Tur == YapilacakTuru.Hatirlatici || oge.Yer is not null;
+    var saatMetni = Kafamdakiler.Pages.GunMetinleri.SaatAraligi(oge);
+}
+<article class="kd-satir kd-oge @Kafamdakiler.Pages.GunMetinleri.TurRengi(oge.Tur) @(yapildi ? "is-yapildi" : "")" data-kd-oge="@oge.Kimlik">
+    @if (yaptimVar)
+    {
+        <form method="post" asp-page-handler="Yaptim" asp-route-tarih="@t" class="kd-satir-islem">
+            <input type="hidden" name="kimlik" value="@oge.Kimlik" />
+            <input type="hidden" name="geri" value="@(yapildi ? "true" : "false")" />
+            <input type="hidden" name="donus" value="@Model.Donus" />
+            <button type="submit" class="kd-yaptim @(yapildi ? "is-yapildi" : "")" aria-label="@(yapildi ? "Geri al" : "Yaptım"): @oge.Baslik" title="@(yapildi ? "Geri al" : "Yaptım")">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
+            </button>
+        </form>
+    }
+    else
+    {
+        <span class="kd-yaptim kd-yaptim--pasif @(yapildi ? "is-yapildi" : "")" title="@(etkinlik ? "Takvim etkinliği" : "Biten görev buradan yeniden açılamaz")" aria-hidden="true">
+            @if (yapildi)
+            {
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
+            }
+        </span>
+    }
+
+    <div class="kd-satir-govde">
+        <p class="kd-satir-baslik">
+            @if (saatMetni is not null)
+            {
+                <span class="kd-oge-saat">@saatMetni</span>
+            }
+            <span class="@(yapildi ? "kd-beyin-yapildi" : "")">@oge.Baslik</span>
+        </p>
+        <div class="kd-satir-meta">
+            <span class="kd-oge-tur">@Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)</span>
+            @if (yapildi)
+            {
+                <span class="kd-status is-bitti">Yapıldı</span>
+            }
+            @if (oge.GecikmeGun is { } kac)
+            {
+                <span class="kd-status is-hata">@(kac > 0 ? $"{kac} gün gecikti" : "Gecikti")</span>
+            }
+            @if (oge.Bolunmus is { } b)
+            {
+                <span>@b.Toplam günden @b.Sira.</span>
+            }
+            @if (oge.Proje is not null)
+            {
+                <span>@Model.ProjeAdi(oge.Proje)</span>
+            }
+            @if (oge.TahminDk is { } dk && !etkinlik)
+            {
+                <span>@BeyinGorunum.Dakika(dk)</span>
+            }
+            @if (oge.Yer is not null)
+            {
+                <span>@oge.Yer</span>
+            }
+            @if (oge.Hatirlatici is { } hat)
+            {
+                <span class="kd-oge-hat" title="Hatırlatıcı">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-bell"></use></svg>
+                    @Kafamdakiler.Pages.GunMetinleri.HatirlaticiMetni(hat)
+                </span>
+            }
+        </div>
+
+        @if (ayrintiVar)
+        {
+            <details class="kd-satir-ac kd-oge-ayrinti">
+                <summary>Ayrıntı</summary>
+                <div class="kd-oge-ayrinti-govde">
+                    @if (hatirlaticiKurulabilir)
+                    {
+                        var adres = oge.Hatirlatici is null ? "HatirlaticiKur" : "HatirlaticiDegistir";
+                        <form method="post" asp-page-handler="@adres" asp-route-tarih="@t" class="kd-oge-form">
+                            <input type="hidden" name="kimlik" value="@oge.Kimlik" />
+                            <input type="hidden" name="donus" value="@Model.Donus" />
+                            <h3 class="kd-eyebrow">Hatırlatıcı</h3>
+                            <partial name="_HatirlaticiAlanlari" model="new Kafamdakiler.Pages.HatirlaticiAlanlari(oge.Hatirlatici)" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">@(oge.Hatirlatici is null ? "Hatırlatıcı kur" : "Güncelle")</button>
+                        </form>
+                        @if (oge.Hatirlatici is not null)
+                        {
+                            <form method="post" asp-page-handler="HatirlaticiKaldir" asp-route-tarih="@t" class="kd-oge-form">
+                                <input type="hidden" name="kimlik" value="@oge.Kimlik" />
+                                <input type="hidden" name="donus" value="@Model.Donus" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Hatırlatıcıyı kaldır</button>
+                            </form>
+                        }
+                    }
+
+                    @if (oge.Tur == YapilacakTuru.Hatirlatici && oge.HatirlaticiId is { } hid)
+                    {
+                        <a class="btn btn-outline-primary btn-sm" asp-page="/Hatirlaticilar/Duzenle" asp-route-id="@hid">Hatırlatıcıyı düzenle</a>
+                    }
+
+                    @if (devretVar)
+                    {
+                        <form method="post" asp-page-handler="Devret" asp-route-tarih="@t" class="kd-oge-form">
+                            <input type="hidden" name="kimlik" value="@oge.Kimlik" />
+                            <input type="hidden" name="donus" value="@Model.Donus" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Devret</button>
+                            <small class="kd-muted">@(oge.Tur == YapilacakTuru.Hatirlatici ? "Hatırlatıcı yarına ertelenir." : "Yarının planına geçer.")</small>
+                        </form>
+                    }
+
+                    @if (bolVar)
+                    {
+                        <form method="post" asp-page-handler="Bol" class="kd-gun-form">
+                            <input type="hidden" name="kimlik" value="@oge.GorevKimligi" />
+                            <input type="hidden" name="donus" value="@Model.Donus" />
+                            <label class="visually-hidden">Kaç güne</label>
+                            <input class="form-control" type="number" name="gunSayisi" min="1" max="@BeyinYazma.EnCokBolmeGunu" value="2" required />
+                            <label class="visually-hidden">Başlangıç günü</label>
+                            <input class="form-control" type="date" name="baslangic" value="@t" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Günlere böl</button>
+                        </form>
+                        <small class="kd-muted">Her güne bir madde yazılır; görev yalnız son günün maddesine bağlanır, o madde yapılınca görev biter.</small>
+                    }
+
+                    @if (notVar)
+                    {
+                        <form method="post" asp-page-handler="Not" asp-route-tarih="@t" class="kd-gun-form">
+                            <input type="hidden" name="madde" value="@oge.MaddeId" />
+                            <input type="hidden" name="donus" value="@Model.Donus" />
+                            <label class="visually-hidden">Not</label>
+                            <input class="form-control" name="metin" maxlength="@BeyinYazma.EnUzunNot" placeholder="Not ekle" required />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Kaydet</button>
+                        </form>
+                    }
+                </div>
+            </details>
+        }
+    </div>
+</article>

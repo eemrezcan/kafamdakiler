@@ -233,7 +233,8 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
         Assert.Contains("Kitap listesi", metin);
         Assert.Contains("Yapıldı", metin);
         Assert.Contains("Geciken iş", metin);
-        Assert.Contains("1 / 2 tamam", metin);
+        // The late task is a row of the one list too, so the count is of three rows (the hidden line is not one).
+        Assert.Contains("1 / 3 tamam", metin);
         Assert.DoesNotContain("Gizli madde", metin);
     }
 
@@ -259,7 +260,7 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
         var (durum, _, metin) = await AlAsync(tarayici, "/2026-13-45");
 
         Assert.Equal(HttpStatusCode.BadRequest, durum);
-        Assert.Contains("Tarih yyyy-MM-dd biçiminde olmalı.", metin);
+        Assert.Contains("gerçek bir gün olmalı", metin);
         Assert.Empty(_beyin.Cagrilar());
     }
 

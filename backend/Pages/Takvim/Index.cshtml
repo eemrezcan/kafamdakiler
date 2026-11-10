@@ -1,0 +1,194 @@
+@page
+@using System.Globalization
+@using Kafamdakiler.Beyin
+@using Kafamdakiler.Hatirlaticilar
+@using Kafamdakiler.Yapilacaklar
+@model Kafamdakiler.Pages.Takvim.IndexModel
+@{
+    ViewData["Title"] = "Takvim";
+    var tr = new CultureInfo("tr-TR");
+    var donus = Model.SeciliAdres;
+    var onceki = Model.AyBasi.AddMonths(-1);
+    var sonraki = Model.AyBasi.AddMonths(1);
+    var gunler = Model.Gunler.ToDictionary(g => g.Tarih);
+    var haftaGunleri = new[] { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" };
+    var haftaSayisi = (Model.AralikVar ? Model.Gunler.Count : 0) / 7;
+    var seciliGorunum = Model.SeciliGun;
+}
+
+<div class="kd-page-head kd-rise kd-c-teal">
+    <div>
+        <p class="kd-eyebrow">Planla</p>
+        <h1 class="kd-page-title">Takvim</h1>
+    </div>
+    <nav class="kd-gun-nav" aria-label="Ay gezinmesi">
+        <a class="kd-icon-btn" href="@Model.Adres(onceki, onceki)" aria-label="Önceki ay" title="Önceki ay">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>
+        </a>
+        <span class="kd-gun-nav-etiket">@Kafamdakiler.Pages.GunMetinleri.AyBasligi(Model.AyBasi)</span>
+        <a class="kd-icon-btn" href="@Model.Adres(sonraki, sonraki)" aria-label="Sonraki ay" title="Sonraki ay">
+            <svg class="kd-icon kd-icon--sag" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>
+        </a>
+        @if (Model.Secili != Model.Bugun)
+        {
+            <a class="kd-filter-chip" href="@Model.Adres(new DateOnly(Model.Bugun.Year, Model.Bugun.Month, 1), Model.Bugun)">Bugün</a>
+        }
+    </nav>
+</div>
+
+@if (Model.YazmaHatasi is not null)
+{
+    <div class="kd-alert" role="alert">@Model.YazmaHatasi</div>
+}
+
+<div class="kd-takvim">
+    <div class="kd-takvim-ana">
+        <section class="kd-blok kd-ay" aria-label="@Kafamdakiler.Pages.GunMetinleri.AyBasligi(Model.AyBasi)">
+            @if (!Model.AralikVar)
+            {
+                <p class="kd-muted">Ayın özeti şu an hazırlanamadı; seçili günün listesi aşağıda.</p>
+            }
+            else
+            {
+                <div class="kd-ay-izgara" role="grid">
+                    @foreach (var ad in haftaGunleri)
+                    {
+                        <span class="kd-ay-baslik" role="columnheader">@ad</span>
+                    }
+                    @for (var i = 0; i < haftaSayisi * 7; i++)
+                    {
+                        var gun = Model.IlkGun.AddDays(i);
+                        gunler.TryGetValue(gun, out var kayit);
+                        var disinda = gun.Month != Model.AyBasi.Month;
+                        var sayilar = kayit?.Sayilar;
+                        var toplam = sayilar is null ? 0 : sayilar.Plan + sayilar.Gorev + sayilar.Hatirlatici + sayilar.Etkinlik;
+                        var siniflar = "kd-ay-gun" + (disinda ? " is-disinda" : "") + (gun == Model.Bugun ? " is-bugun" : "") + (gun == Model.Secili ? " is-secili" : "");
+                        var etiket = $"{Kafamdakiler.Pages.GunMetinleri.GunEtiketi(gun)}" + (toplam > 0
+                            ? $": {sayilar!.Plan} plan, {sayilar.Gorev} görev, {sayilar.Hatirlatici} hatırlatıcı, {sayilar.Etkinlik} etkinlik"
+                            : "") + (kayit?.YukAsimi == true ? ", gün sığmıyor" : "");
+                        <a class="@siniflar" href="@Model.Adres(new DateOnly(gun.Year, gun.Month, 1), gun)" role="gridcell" aria-label="@etiket"
+                           aria-current="@(gun == Model.Secili ? "date" : null)">
+                            <span class="kd-ay-sayi">@gun.Day</span>
+                            <span class="kd-ay-noktalar" aria-hidden="true">
+                                @if (sayilar is { Plan: > 0 }) { <i class="kd-nokta kd-nokta--plan"></i> }
+                                @if (sayilar is { Gorev: > 0 }) { <i class="kd-nokta kd-nokta--gorev"></i> }
+                                @if (sayilar is { Hatirlatici: > 0 }) { <i class="kd-nokta kd-nokta--hatirlatici"></i> }
+                                @if (sayilar is { Etkinlik: > 0 }) { <i class="kd-nokta kd-nokta--etkinlik"></i> }
+                                @if (kayit?.YukAsimi == true) { <i class="kd-nokta kd-nokta--asim"></i> }
+                            </span>
+                        </a>
+                    }
+                </div>
+                <p class="kd-footnote kd-ay-aciklama">
+                    <span><i class="kd-nokta kd-nokta--plan"></i> plan</span>
+                    <span><i class="kd-nokta kd-nokta--gorev"></i> görev</span>
+                    <span><i class="kd-nokta kd-nokta--hatirlatici"></i> hatırlatıcı</span>
+                    <span><i class="kd-nokta kd-nokta--etkinlik"></i> etkinlik</span>
+                    <span><i class="kd-nokta kd-nokta--asim"></i> gün sığmıyor</span>
+                </p>
+            }
+        </section>
+
+        <section class="kd-blok" aria-labelledby="secili-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="secili-baslik">
+                @BeyinGorunum.GunBasligi(Model.Secili)
+                @if (seciliGorunum is not null)
+                {
+                    <span>@seciliGorunum.Ogeler.Count</span>
+                }
+            </h2>
+            <p class="kd-footnote"><a asp-page="/Index" asp-route-tarih="@(Model.Secili == Model.Bugun ? null : Model.Secili.ToString("yyyy-MM-dd"))">Günün sayfasını aç</a></p>
+            @if (seciliGorunum is null)
+            {
+                <div class="kd-empty kd-empty--small" role="status">
+                    <p class="kd-empty-title">Gün şu an hazırlanamadı.</p>
+                </div>
+            }
+            else
+            {
+                @if (seciliGorunum.Kaynaklar.Plan == "yok")
+                {
+                    <div class="kd-gun-uyari" role="status">Bu makinede beyin ayarlı değil; planı gösterilemiyor. Hatırlatıcılar ve etkinlikler yine burada.</div>
+                }
+                else if (seciliGorunum.Kaynaklar.Plan == "okunamadi")
+                {
+                    <div class="kd-gun-uyari" role="status">Günün planı beyinden okunamadı; liste eksik olabilir.</div>
+                }
+
+                @if (Kafamdakiler.Pages.GunMetinleri.GoogleNotu(seciliGorunum.Kaynaklar.Google) is { } googleNotu)
+                {
+                    <p class="kd-muted">@googleNotu <a asp-page="/Yonetim/Index">Yönetim</a></p>
+                }
+
+                @if (seciliGorunum.Ogeler.Count == 0)
+                {
+                    <div class="kd-empty kd-empty--small">
+                        <p class="kd-empty-title">Bu gün için bir şey yok.</p>
+                    </div>
+                }
+                @foreach (var oge in seciliGorunum.Ogeler)
+                {
+                    <partial name="_GunSatiri" model="new GunSatiriModeli(oge, Model.Secili, donus, !seciliGorunum.Kapandi, Model.ProjeAdlari)" />
+                }
+
+                @if (seciliGorunum.Kapandi)
+                {
+                    <p class="kd-muted">Bu gün kapandı; kapanmış güne yazılmaz.</p>
+                }
+            }
+        </section>
+    </div>
+
+    <div class="kd-takvim-yan">
+        @if (seciliGorunum is null or { Kapandi: false })
+        {
+            <section class="kd-blok" aria-labelledby="yeni-baslik">
+                <h2 class="kd-eyebrow kd-section-title" id="yeni-baslik">+ Yeni yapılacak <span>@Model.Secili.ToString("d MMM", tr)</span></h2>
+                <partial name="_YeniOge" model="new YeniOgeModeli(Model.Secili, donus)" />
+            </section>
+        }
+
+        <section class="kd-blok" aria-labelledby="yaklasan-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="yaklasan-baslik">Yaklaşan @if (Model.Yaklasan.Count > 0) { <span>@Model.Yaklasan.Count</span> }</h2>
+            @if (!Model.AralikVar)
+            {
+                <p class="kd-muted">Yaklaşanlar şu an hazırlanamadı.</p>
+            }
+            else if (Model.Yaklasan.Count == 0)
+            {
+                <p class="kd-muted">Önümüzdeki 30 günde hatırlatıcı, bitişli görev ya da tüm gün etkinlik yok.</p>
+            }
+            else
+            {
+                <div class="kd-bugun-liste">
+                    @foreach (var oge in Model.Yaklasan)
+                    {
+                        var gunu = Model.YaklasanGunleri.TryGetValue(oge.Kimlik, out var yg) ? (DateOnly?)yg : null;
+                        if (gunu is { } hedef)
+                        {
+                            <a class="kd-bugun-satir" href="@Model.Adres(new DateOnly(hedef.Year, hedef.Month, 1), hedef)">
+                                <span>@oge.Baslik</span>
+                                <small>@hedef.ToString("d MMM ddd", tr)@(oge.Saat is { } sa ? " · " + sa : "") · @Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)</small>
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="kd-bugun-satir">
+                                <span>@oge.Baslik</span>
+                                <small>@Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)@(oge.Saat is { } sa2 ? " · " + sa2 : "")</small>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            <p class="kd-footnote">
+                <a asp-page="/Hatirlaticilar/Index">Tüm hatırlatıcılar</a> ·
+                <a asp-page="/Hatirlaticilar/Duzenle">Bağsız hatırlatıcı kur</a>
+            </p>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/gun.js" asp-append-version="true"></script>
+}

@@ -1,15 +1,22 @@
 @page
 @model Kafamdakiler.Pages.Beyin.IndexModel
 @{
-    ViewData["Title"] = "Projeler";
+    ViewData["Title"] = "Beyin";
 }
 
 <div class="kd-page-head kd-rise kd-c-violet">
     <div>
         <p class="kd-eyebrow">İkinci beyin</p>
-        <h1 class="kd-page-title">Projeler</h1>
+        <h1 class="kd-page-title">Beyin</h1>
     </div>
 </div>
+
+@* Search is on top, and only here (K-0024): it opens the same results page as before. *@
+<form method="get" asp-page="/Beyin/Ara" class="kd-beyin-ara-form" role="search">
+    <label class="visually-hidden" for="beyin-ara">Beyinde ara</label>
+    <input class="form-control" id="beyin-ara" type="search" name="q" maxlength="200" placeholder="Beyinde ara" autocomplete="off" required />
+    <button type="submit" class="btn btn-primary">Ara</button>
+</form>
 
 <partial name="_BeyinHata" model="Model" />
 
@@ -23,6 +30,7 @@
     }
     else
     {
+        <h2 class="kd-eyebrow kd-section-title">Projeler <span>@Model.Projeler.Count</span></h2>
         <section class="kd-beyin-liste" aria-label="Projeler">
             @foreach (var p in Model.Projeler)
             {

@@ -167,6 +167,12 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Gün kapasitesi ayarı: `backend/Ayarlar/` (`GunAyarlari`, `GunKapasitesi`, uçlar, `ayarlar.http`); `BeyinOkuma`, `ZamanCizelgesi` ve `BrifingGirdiOkuyucu` bu ayarı okur.
   - `Program.cs` kayıtları, `AppDbContext` ayarları.
   - Testler: `backend.Tests/GunTestTabani.cs`, `GunGorunumuApiTests`, `GunYaptimApiTests`, `GunOgeApiTests`, `TakvimAraligiApiTests`, `HatirlaticiCokGunluTests`, `HatirlaticiZinciriTests`, `HatirlaticiBagiApiTests`, `OpenApiUclariTests`, `SahteBeyin.cs` eklemesi (`CiktiTarihli`).
+- UI revizyonu, Faz W1 (web; 2026-11-11, K-0024, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek. Bildirimler sayfası ve menüdeki 🔔 sayısı A2 birleşince eklenecek.
+  - Menü: `backend/Pages/Shared/_Layout.cshtml` (Bugün · Takvim · Asistan · Alışkanlıklar · Beyin, profil menüsü, çekmece), `site.css` sonuna "K-0024" bölümü, `Pages/Ayarlar/Gun.cshtml(.cs)` (gün kapasitesi).
+  - Bugün ve Takvim: `Pages/GunSayfasi.cs` (iki sayfanın ortak yazmaları: yaptım, devret, not, böl, öğenin hatırlatıcısı, yeni öğe), `Pages/GunMetinleri.cs`, `Pages/Index.cshtml(.cs)`, `Pages/Takvim/Index.cshtml(.cs)`, `Pages/Shared/_GunSatiri.cshtml`, `_YeniOge.cshtml`, `_HatirlaticiAlanlari.cshtml`, `wwwroot/js/gun.js`, `bugun.js` sadeleşti.
+  - Zincir: `Pages/Beyin/Proje.cshtml.cs` ve `Pages/Hatirlaticilar/Index.cshtml.cs` artık `HatirlaticiZinciri` üzerinden geçer.
+  - Alışkanlıklar ve Beyin: `Pages/Aliskanliklar/Detay.cshtml(.cs)`, `RafVerisi.cs`, `_Raflar.cshtml` (raf aynı sayfada, okuma kaydı modalı), `Raf.cshtml(.cs)` yönlendirmeye döndü; `Pages/Beyin/Index.cshtml` (arama üstte), `Pages/Gelen/Index.cshtml` (Asistan işleri bağlantısı).
+  - Testler: `backend.Tests/GunSayfalariTests.cs` (yeni), `BugunSayfasiTests`, `BeyinGunYazmaSayfalariTests`, `BeyinSayfalariTests`, `KatIkiWebSayfalariTests`, `EylemSayfalariTests` yeni yapıya uyarlandı.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

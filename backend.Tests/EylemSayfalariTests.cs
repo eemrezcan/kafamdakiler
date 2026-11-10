@@ -101,11 +101,11 @@ public sealed partial class EylemSayfalariTests(UygulamaFabrikasi uygulama) : IC
         Assert.Contains("Bir daha önerme", metin);
         Assert.DoesNotContain("<script>alert", ham);
         Assert.Contains("Onay kuyruğu", metin);
-        // The queue has no menu entry of its own (and so no badge): the inbox entry is the lit one, and the badge on it
+        // The queue has no menu entry of its own (and so no badge): the Asistan entry is the lit one, and the badge on it
         // counts placement suggestions only, which this "reminder" action is not.
         var etkinMenu = Regex.Match(ham, "class=\"kd-nav-link active\"[^>]*>\\s*([^<\\s]+)");
         Assert.True(etkinMenu.Success);
-        Assert.Equal("Gelen", etkinMenu.Groups[1].Value);
+        Assert.Equal("Asistan", etkinMenu.Groups[1].Value);
         Assert.DoesNotContain("href=\"/Eylemler\" class=\"kd-nav-link", ham);
         Assert.DoesNotContain("class=\"kd-badge\"", ham);
     }

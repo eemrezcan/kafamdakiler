@@ -9,8 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kafamdakiler.Tests;
 
-// The menu and the home page "Bugün" of the web (simplification wave 2, G), in a browser's shoes: cookies and no automatic
-// redirects. The fixture has no brain, so the day plan says so; everything else on the page must stand without it.
+// The menu and the home page "Bugün" of the web (K-0024), in a browser's shoes: cookies and no automatic redirects. The fixture has
+// no brain, so the day plan says so; everything else on the page must stand without it. The list, the weight of the day and the
+// writes are in GunSayfalariTests (a fake brain and a clock the test owns).
 public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixture<UygulamaFabrikasi>
 {
     private CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -27,12 +28,20 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     // The text a person reads (Razor writes Ş as &#x15E;); never used to look for markup.
     private static string Metin(string ham) => WebUtility.HtmlDecode(ham);
 
-    // The visible texts of the top bar's links, in order.
+    private static string Duz(string html) => Regex.Replace(Regex.Replace(html, "<[^>]+>", " "), "\\s+", " ").Trim();
+
+    // The visible texts of the top bar's five links, in order.
     private static List<string> UstMenu(string ham)
     {
-        var bar = Regex.Match(ham, "<div (?:b-[a-z0-9]+ )?class=\"kd-nav-links\"[^>]*>(.*?)<a class=\"kd-icon-btn kd-search-btn", RegexOptions.Singleline).Groups[1].Value;
-        var metinler = Regex.Matches(bar, "<(?:a|button) (?:b-[a-z0-9]+ )?class=\"(?:kd-nav-link|dropdown-item)[^\"]*\"[^>]*>(.*?)</(?:a|button)>", RegexOptions.Singleline);
-        return metinler.Select(m => Regex.Replace(Regex.Replace(m.Groups[1].Value, "<[^>]+>", " "), "\\s+", " ").Trim()).ToList();
+        var bar = Regex.Match(ham, "<div (?:b-[a-z0-9]+ )?class=\"kd-nav-links\"[^>]*>(.*?)</div>", RegexOptions.Singleline).Groups[1].Value;
+        return Regex.Matches(bar, "<a (?:b-[a-z0-9]+ )?class=\"kd-nav-link[^\"]*\"[^>]*>(.*?)</a>", RegexOptions.Singleline).Select(m => Duz(m.Groups[1].Value)).ToList();
+    }
+
+    // The profile menu's entries, in order (the account name line is not an entry).
+    private static List<string> ProfilMenusu(string ham)
+    {
+        var menu = Regex.Match(ham, "class=\"dropdown kd-profil[^\"]*\".*?</ul>", RegexOptions.Singleline).Value;
+        return Regex.Matches(menu, "<(?:a|button) [^>]*class=\"dropdown-item[^\"]*\"[^>]*>(.*?)</(?:a|button)>", RegexOptions.Singleline).Select(m => Duz(m.Groups[1].Value)).ToList();
     }
 
     private async Task BekleyenEylemAsync(string baslik)
@@ -47,22 +56,23 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     }
 
     [Fact]
-    public async Task TheTopMenu_HasTheFiveEntriesInOrder_WithTheRestUnderDahaFazla()
+    public async Task TheTopMenu_HasTheFiveEntriesInOrder_AndTheProfileMenuTheRest()
     {
         var tarayici = await SahipAsync();
 
         var ham = await HamAsync(tarayici, "/");
 
-        Assert.Equal(["Bugün", "Alışkanlıklar", "Gelen", "Hatırlatıcılar", "Projeler", "Daha fazla", "Asistan işleri", "Yönetim"], UstMenu(ham));
-        // The magnifier opens the search page.
-        Assert.Matches("<a class=\"kd-icon-btn kd-search-btn[^\"]*\"[^>]*href=\"/Beyin/Ara\"|href=\"/Beyin/Ara\"[^>]*class=\"kd-icon-btn kd-search-btn", ham);
-        // The approval queue and the old brain sub-menu have no entry any more.
+        Assert.Equal(["Bugün", "Takvim", "Asistan", "Alışkanlıklar", "Beyin"], UstMenu(ham));
+        Assert.Equal(["Yönetim", "Gün kapasitesi", "Şifremi değiştir", "Görünüm", "Çıkış yap"], ProfilMenusu(ham));
+        // Search lives in Beyin only; the reminders, the inbox and the old "Daha fazla" menu have no entry any more.
+        Assert.DoesNotContain("kd-search-btn", ham);
+        Assert.DoesNotContain("Daha fazla", ham);
+        Assert.DoesNotContain("Hatırlatıcılar</a>", ham);
         Assert.DoesNotContain("Beyin bölümleri", ham);
-        Assert.DoesNotContain("Gelen kutusu</a>", ham);
     }
 
     [Fact]
-    public async Task PasswordAndSignOut_AreOnlyInTheSettingsDrawer_NotInTheTopBar()
+    public async Task PasswordAndSignOut_AreInTheProfileMenuAndTheDrawer_NotLooseInTheTopBar()
     {
         var tarayici = await SahipAsync();
 
@@ -70,8 +80,11 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
 
         Assert.DoesNotContain("class=\"kd-account\"", ham);
         var ustBar = ham[..ham.IndexOf("id=\"kd-settings\"", StringComparison.Ordinal)];
-        Assert.DoesNotContain("Şifremi değiştir", ustBar);
-        Assert.DoesNotContain("/Hesap/Cikis", ustBar);
+        // In the bar they are only inside the profile dropdown.
+        var profilDisi = Regex.Replace(ustBar, "class=\"dropdown kd-profil.*?</ul>", "", RegexOptions.Singleline);
+        Assert.DoesNotContain("Şifremi değiştir", profilDisi);
+        Assert.DoesNotContain("/Hesap/Cikis", profilDisi);
+        Assert.Contains("Şifremi değiştir", ustBar);
         var cekmece = ham[ham.IndexOf("id=\"kd-settings\"", StringComparison.Ordinal)..];
         Assert.Contains("Şifremi değiştir", cekmece);
         Assert.Contains("Çıkış yap", cekmece);
@@ -87,20 +100,22 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var cekmece = ham[ham.IndexOf("kd-drawer-pages", StringComparison.Ordinal)..];
         cekmece = cekmece[..cekmece.IndexOf("</section>", StringComparison.Ordinal)];
         var adlar = Regex.Matches(cekmece, "<a (?:b-[a-z0-9]+ )?class=\"kd-drawer-link[^\"]*\"[^>]*>(.*?)</a>", RegexOptions.Singleline)
-            .Select(m => Regex.Replace(Regex.Replace(m.Groups[1].Value, "<[^>]+>", " "), "\\s+", " ").Trim()).ToList();
-        Assert.Equal(["Bugün", "Alışkanlıklar", "Gelen", "Hatırlatıcılar", "Projeler", "Asistan işleri", "Yönetim"], adlar);
+            .Select(m => Duz(m.Groups[1].Value)).ToList();
+        Assert.Equal(["Bugün", "Takvim", "Asistan", "Alışkanlıklar", "Beyin", "Yönetim", "Gün kapasitesi"], adlar);
     }
 
     [Theory]
     [InlineData("/", "Bugün")]
     [InlineData("/2026-11-03", "Bugün")]
-    [InlineData("/Gelen", "Gelen")]
-    [InlineData("/Eylemler", "Gelen")]
-    [InlineData("/Yakalamalar/Duzenle", "Gelen")]
-    [InlineData("/Beyin", "Projeler")]
-    [InlineData("/Hatirlaticilar", "Hatırlatıcılar")]
+    [InlineData("/Takvim", "Takvim")]
+    [InlineData("/Hatirlaticilar", "Takvim")]
+    [InlineData("/Gelen", "Asistan")]
+    [InlineData("/Eylemler", "Asistan")]
+    [InlineData("/Yakalamalar/Duzenle", "Asistan")]
+    [InlineData("/Isler", "Asistan")]
     [InlineData("/Aliskanliklar", "Alışkanlıklar")]
-    [InlineData("/Yonetim", "Daha fazla")]
+    [InlineData("/Beyin", "Beyin")]
+    [InlineData("/Beyin/Ara", "Beyin")]
     public async Task TheEntryOfThePageYouAreOn_IsTheActiveOne(string yol, string beklenen)
     {
         var tarayici = await SahipAsync();
@@ -108,7 +123,22 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var ham = await HamAsync(tarayici, yol);
 
         var etkin = Regex.Match(ham, "class=\"kd-nav-link active\"[^>]*>(.*?)</(?:a|button)>", RegexOptions.Singleline).Groups[1].Value;
-        Assert.Equal(beklenen, Regex.Replace(Regex.Replace(etkin, "<[^>]+>", " "), "\\s+", " ").Trim());
+        Assert.Equal(beklenen, Duz(etkin));
+    }
+
+    [Theory]
+    [InlineData("/Yonetim", "Yönetim")]
+    [InlineData("/Ayarlar/Gun", "Gün kapasitesi")]
+    public async Task ThePagesOfTheProfileMenu_LightNoTopEntry_ButTheirOwnMenuItem(string yol, string beklenen)
+    {
+        var tarayici = await SahipAsync();
+
+        var ham = await HamAsync(tarayici, yol);
+
+        Assert.DoesNotContain("class=\"kd-nav-link active\"", ham);
+        var menu = Regex.Match(ham, "class=\"dropdown kd-profil[^\"]*\".*?</ul>", RegexOptions.Singleline).Value;
+        var etkin = Regex.Match(menu, "class=\"dropdown-item active\"[^>]*>(.*?)</a>", RegexOptions.Singleline).Groups[1].Value;
+        Assert.Equal(beklenen, Duz(etkin));
     }
 
     [Fact]
@@ -122,8 +152,8 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var metin = await WebOturumu.MetinAsync(yanit, Ct);
         Assert.Contains("<title>Bugün - Kafamdakiler", metin);
         Assert.Contains("Bugünün brifingi", metin);
-        // An empty timeline takes no room on Bugün.
-        Assert.DoesNotContain("Bu gün için bir şey yok", metin);
+        // No brain on this machine: the page says so and still stands (reminders, events, habits).
+        Assert.Contains("Beyin bağlı değil", metin);
     }
 
     [Fact]
@@ -151,17 +181,17 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     }
 
     [Fact]
-    public async Task Home_ListsTheComingReminders_AndTodaysHabits_ButAnotherDayDoesNot()
+    public async Task Home_ListsALateReminderInTheOneList_AndTodaysHabits_ButAnotherDayDoesNot()
     {
         var tarayici = await SahipAsync();
-        var hatirlatici = "Yaklaşan " + Guid.NewGuid().ToString("N");
+        var hatirlatici = "Geciken " + Guid.NewGuid().ToString("N");
         var aliskanlik = "Bugünkü " + Guid.NewGuid().ToString("N");
         await using (var db = uygulama.YeniDb())
         {
             db.Hatirlaticilar.Add(new Hatirlatici
             {
                 Baslik = hatirlatici, Tur = HatirlaticiTuru.Gorev, Tekrar = Tekrar.Yok, Durum = HatirlaticiDurumu.Acik,
-                Gun = DateOnly.FromDateTime(DateTime.UtcNow), SonrakiAn = DateTimeOffset.UtcNow.AddHours(3),
+                Gun = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)), SonrakiAn = DateTimeOffset.UtcNow.AddDays(-2),
             });
             db.Aliskanliklar.Add(new Aliskanlik
             {
@@ -174,8 +204,10 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var ham = await HamAsync(tarayici, "/");
         var metin = Metin(ham);
 
-        Assert.Contains("Yaklaşan hatırlatıcılar", metin);
+        // The reminder is a row of the one list (there is no separate "coming reminders" card any more), marked late.
+        Assert.DoesNotContain("Yaklaşan hatırlatıcılar", metin);
         Assert.Contains(hatirlatici, metin);
+        Assert.Contains("gün gecikti", metin);
         Assert.Contains("Bugünün alışkanlıkları", metin);
         Assert.Contains(aliskanlik, metin);
         // The habit is the full card, usable here: its forms post to the habits page and come back to Bugün.
@@ -183,7 +215,6 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         Assert.Contains("name=\"donus\" value=\"bugun\"", ham);
 
         var baskaGun = Metin(await HamAsync(tarayici, "/2026-11-03"));
-        Assert.DoesNotContain("Yaklaşan hatırlatıcılar", baskaGun);
         Assert.DoesNotContain(aliskanlik, baskaGun);
         Assert.DoesNotContain("Bugünün brifingi", baskaGun);
     }

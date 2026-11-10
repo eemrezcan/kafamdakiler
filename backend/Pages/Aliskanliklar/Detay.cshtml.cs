@@ -2,6 +2,7 @@ using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kafamdakiler.Pages.Aliskanliklar;
 
@@ -24,6 +25,16 @@ public class DetayModel(AppDbContext db) : PageModel
     public bool KayitVar { get; private set; }
 
     public object Grafik { get; private set; } = null!;
+
+    // A shelf habit's shelf, on the page itself; empty for the other kinds.
+    public RafVerisi Raf { get; private set; } = RafVerisi.Bos;
+
+    [TempData]
+    public string? Hata { get; set; }
+
+    // Short success message, shown once as a toast by the layout.
+    [TempData]
+    public string? Bildirim { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
     {
@@ -62,6 +73,31 @@ public class DetayModel(AppDbContext db) : PageModel
             gucEtiketleri = gucGunleri.Select(g => Gorunum.GunAy(g.Tarih)).ToArray(),
             guc = gucGunleri.Select(g => Math.Round(g.Guc * 100, 1)).ToArray(),
         };
+
+        if (a.Tur == AliskanlikTuru.Raf)
+            Raf = await RafVerisi.YukleAsync(db, a.Id, ct);
         return Page();
+    }
+
+    // The reading log of the modal: which book, where the person got to, and how long it took. The same rules as the item page's progress form.
+    public async Task<IActionResult> OnPostOkumaAsync(Guid id, Guid ogeId, decimal? bitisKonum, int? dakika, CancellationToken ct)
+    {
+        var oge = await AliskanlikIslemleri.OgeSorgu(db).FirstOrDefaultAsync(o => o.Id == ogeId && o.AliskanlikId == id, ct);
+        if (oge is null)
+            return NotFound();
+
+        if (bitisKonum is null)
+        {
+            Hata = "Nereye kadar geldiğini yaz.";
+            return RedirectToPage(null, null, new { id }, "raf");
+        }
+
+        var (sonuc, _) = await AliskanlikIslemleri.OturumEkleAsync(db, oge, new OturumEkleDto { BitisKonum = bitisKonum.Value, Dakika = dakika }, ct);
+        if (sonuc.Basarili)
+            Bildirim = "Okuma kaydedildi";
+        else
+            Hata = sonuc.Mesaj;
+
+        return RedirectToPage(null, null, new { id }, "raf");
     }
 }

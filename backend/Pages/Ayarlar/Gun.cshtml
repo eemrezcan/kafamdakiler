@@ -1,0 +1,44 @@
+@page
+@using Kafamdakiler.Beyin
+@model Kafamdakiler.Pages.Ayarlar.GunModel
+@{
+    ViewData["Title"] = "Gün kapasitesi";
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Ayarlar</p>
+        <h1 class="kd-page-title">Gün kapasitesi</h1>
+    </div>
+</div>
+
+<section class="kd-panel" aria-labelledby="kapasite-baslik">
+    <h2 class="kd-eyebrow" id="kapasite-baslik">Bir güne kaç dakikalık iş sığar?</h2>
+    <p class="kd-muted">
+        Bugün sayfasındaki yük çubuğu, günün "sığmıyor" uyarısı ve sabah brifingi bu sayıya bakar: açık işlerin süre tahmini ile takvim
+        etkinliklerinin toplamı kapasiteyi aşarsa gün taşıyor demektir.
+        @if (Model.Varsayilan)
+        {
+            <span>Henüz bir değer kaydetmedin; şimdilik yapılandırmadaki varsayılan kullanılıyor.</span>
+        }
+    </p>
+
+    <form method="post" class="kd-kapasite-form" novalidate>
+        <div asp-validation-summary="ModelOnly" class="kd-alert" role="alert"></div>
+        <label class="kd-hat-alan">
+            <span>Hafta içi (dakika)</span>
+            <input class="form-control" type="number" min="1" max="1440" asp-for="Input.HaftaIciDk" />
+            <span asp-validation-for="Input.HaftaIciDk" class="kd-field-error"></span>
+        </label>
+        <label class="kd-hat-alan">
+            <span>Hafta sonu (dakika)</span>
+            <input class="form-control" type="number" min="1" max="1440" asp-for="Input.HaftaSonuDk" />
+            <span asp-validation-for="Input.HaftaSonuDk" class="kd-field-error"></span>
+        </label>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+    </form>
+    @if (Model.Input.HaftaIciDk is { } hi and > 0)
+    {
+        <p class="kd-footnote">Şu an hafta içi @BeyinGorunum.Dakika(hi), hafta sonu @BeyinGorunum.Dakika(Model.Input.HaftaSonuDk ?? 0).</p>
+    }
+</section>

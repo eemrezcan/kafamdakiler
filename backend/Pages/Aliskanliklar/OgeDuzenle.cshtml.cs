@@ -115,7 +115,7 @@ public class OgeDuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
         var aliskanlikId = oge.AliskanlikId;
         await AliskanlikIslemleri.OgeSilAsync(db, depo, oge, ct);
         Bildirim = "Silindi";
-        return RedirectToPage("Raf", new { aliskanlikId });
+        return RedirectToPage("Detay", null, new { id = aliskanlikId }, "raf");
     }
 
     // Loads the habit (and the item when editing). Found is false when either does not exist.

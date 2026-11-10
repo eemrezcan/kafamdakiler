@@ -1,0 +1,46 @@
+@using Kafamdakiler.Aliskanliklar
+@using Kafamdakiler.Hatirlaticilar
+@using Kafamdakiler.Yapilacaklar
+@model Kafamdakiler.Pages.HatirlaticiAlanlari
+@* The reminder fields of the day pages (a new item, the reminder of a row): the same words as the reminder itself. Weekly days show
+   only while "Her hafta" is chosen (gun.js); without JavaScript they stay visible and are ignored for the other repeats. *@
+@{
+    var h = Model.Ozet;
+    var secili = h?.Gunler ?? [];
+}
+<div class="kd-hat-alanlar" data-kd-hat-alanlar>
+    <label class="kd-hat-alan">
+        <span>Saat</span>
+        <input class="form-control" type="time" name="h.Saat" value="@h?.Saat" />
+    </label>
+    <label class="kd-hat-alan">
+        <span>Tekrar</span>
+        <select class="form-select" name="h.Tekrar" data-kd-hat-tekrar>
+            @foreach (var t in Enum.GetValues<Tekrar>())
+            {
+                <option value="@t.ToString().ToLowerInvariant()" selected="@((h?.Tekrar ?? Tekrar.Yok) == t)">@HatirlaticiGorunum.TekrarAdi(t)</option>
+            }
+        </select>
+    </label>
+    <label class="kd-hat-alan">
+        <span>Ne zaman uyar</span>
+        <select class="form-select" name="h.OnceGun">
+            <option value="0" selected="@((h?.OnceGun ?? 0) == 0)">Saatinde</option>
+            <option value="1" selected="@(h?.OnceGun == 1)">1 gün önce</option>
+            <option value="2" selected="@(h?.OnceGun == 2)">2 gün önce</option>
+        </select>
+    </label>
+    <div class="kd-hat-gunler" data-kd-hat-gunler role="group" aria-label="Haftanın günleri">
+        @foreach (var gun in new[] { Gunler.Pzt, Gunler.Sal, Gunler.Car, Gunler.Per, Gunler.Cum, Gunler.Cmt, Gunler.Paz })
+        {
+            <label class="kd-hat-gun">
+                <input type="checkbox" name="h.Gunler" value="@gun.ToString().ToLowerInvariant()" checked="@secili.Contains(gun)" />
+                <span>@Kafamdakiler.Pages.GunMetinleri.GunKisaltmasi(gun)</span>
+            </label>
+        }
+    </div>
+    <div class="kd-hat-secenekler">
+        <label class="kd-hat-onay"><input type="checkbox" name="h.Acil" value="true" checked="@(h?.Acil == true)" /> Acil</label>
+        <label class="kd-hat-onay"><input type="checkbox" name="h.Israrli" value="true" checked="@(h?.Israrli == true)" /> Yapana kadar ısrar et</label>
+    </div>
+</div>

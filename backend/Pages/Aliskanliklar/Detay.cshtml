@@ -29,13 +29,22 @@
     <div class="kd-head-actions">
         @if (a.Tur == AliskanlikTuru.Raf)
         {
-            <a class="btn btn-outline-primary" asp-page="Raf" asp-route-aliskanlikId="@a.Id">Raf</a>
+            @if (Model.Raf.Devam.Count > 0)
+            {
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#okuma-modal">Okudum</button>
+            }
+            <a class="btn btn-outline-primary" href="#raf">Raf</a>
         }
         <a class="btn btn-outline-primary" asp-page="Duzenle" asp-route-id="@a.Id">
             <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-pencil"></use></svg> Düzenle
         </a>
     </div>
 </div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
 
 <section class="kd-stats" aria-label="Özet">
     <div class="kd-stat">
@@ -46,6 +55,11 @@
     <div class="kd-stat"><span class="kd-stat-label">En uzun seri</span><span class="kd-stat-value">@a.EnUzunSeri</span></div>
     <div class="kd-stat"><span class="kd-stat-label">Bugün</span><span class="kd-stat-value kd-stat-value--small">@Gorunum.BugunMetni(a)</span></div>
 </section>
+
+@if (a.Tur == AliskanlikTuru.Raf)
+{
+    <partial name="_Raflar" model="(a, Model.Raf)" />
+}
 
 @if (!Model.KayitVar)
 {
@@ -96,6 +110,44 @@
     <h2 class="kd-eyebrow" id="kd-power-title">Güç eğrisi (%)</h2>
     <div class="kd-chart"><canvas id="kd-chart-guc" role="img" aria-label="Alışkanlık gücü grafiği"></canvas></div>
 </section>
+
+@if (a.Tur == AliskanlikTuru.Raf && Model.Raf.Devam.Count > 0)
+{
+    @* The reading log: which book, where you got to, how long. Opens from "Okudum"; posts to this page's own handler. *@
+    <div class="modal fade kd-modal" id="okuma-modal" tabindex="-1" aria-labelledby="okuma-baslik" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="post" asp-page-handler="Okuma" asp-route-id="@a.Id">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="okuma-baslik">Okuma kaydı</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body kd-okuma-form">
+                    <label class="kd-hat-alan">
+                        <span>@(a.OgeEtiketi ?? "Kitap")</span>
+                        <select class="form-select" name="ogeId" required>
+                            @foreach (var o in Model.Raf.Devam)
+                            {
+                                <option value="@o.Id">@o.Ad (şu an @Gorunum.Sayi(o.GuncelKonum)@(string.IsNullOrWhiteSpace(a.Birim) ? "" : " " + a.Birim))</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="kd-hat-alan">
+                        <span>Nereye kadar geldin? (@(string.IsNullOrWhiteSpace(a.Birim) ? "konum" : a.Birim))</span>
+                        <input class="form-control" name="bitisKonum" type="number" step="any" inputmode="decimal" required />
+                    </label>
+                    <label class="kd-hat-alan">
+                        <span>Süre (dakika, isteğe bağlı)</span>
+                        <input class="form-control" name="dakika" type="number" min="0" max="1440" inputmode="numeric" />
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
 
 @section Scripts {
     <script src="~/lib/chart.js/chart.umd.min.js"></script>

@@ -1,17 +1,18 @@
 ﻿@inject Kafamdakiler.Eylemler.EylemServisi EylemServisi
 @{
     var currentPage = ViewContext.RouteData.Values["page"] as string ?? "";
-    // Which menu entry a page belongs to. The approval queue is reached from the inbox and the day page, so it lights the inbox.
+    // Which menu entry a page belongs to (K-0024: Bugün · Takvim · Asistan · Alışkanlıklar · Beyin). The old assistant pages (inbox,
+    // approval queue, captures, jobs) light "Asistan"; the reminder pages light "Takvim", where reminders live now.
     var bugunAktif = currentPage is "/Index" or "/Beyin/Gun";
-    var gelenAktif = currentPage.StartsWith("/Gelen") || currentPage.StartsWith("/Eylemler") || currentPage.StartsWith("/Yakalamalar");
-    var projelerAktif = currentPage is "/Beyin/Index" or "/Beyin/Proje";
-    var hatirlaticiAktif = currentPage.StartsWith("/Hatirlaticilar");
+    var takvimAktif = currentPage.StartsWith("/Takvim") || currentPage.StartsWith("/Hatirlaticilar");
+    var asistanAktif = currentPage.StartsWith("/Gelen") || currentPage.StartsWith("/Eylemler") || currentPage.StartsWith("/Yakalamalar") || currentPage.StartsWith("/Isler") || currentPage.StartsWith("/Asistan");
     var aliskanlikAktif = currentPage.StartsWith("/Aliskanliklar");
-    var dahaFazlaAktif = currentPage.StartsWith("/Yonetim") || currentPage.StartsWith("/Isler");
-    var araAktif = currentPage is "/Beyin/Ara" or "/Beyin/Not";
+    var beyinAktif = currentPage.StartsWith("/Beyin") && currentPage != "/Beyin/Gun";
+    var yonetimAktif = currentPage.StartsWith("/Yonetim");
+    var ayarAktif = currentPage.StartsWith("/Ayarlar");
     // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
     var showChrome = User.Identity?.IsAuthenticated == true;
-    // The inbox badge: placement suggestions waiting in that queue (counting the cards would start the brain on every page).
+    // The assistant badge: placement suggestions waiting in the inbox (counting the cards would start the brain on every page).
     var bekleyenGelen = 0;
     if (showChrome)
     {
@@ -23,6 +24,8 @@
         {
         }
     }
+    var kullaniciAdi = User.Identity?.Name ?? "";
+    var bas = kullaniciAdi.Length > 0 ? char.ToUpperInvariant(kullaniciAdi[0]).ToString() : "?";
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -51,33 +54,39 @@
 
             <div class="kd-nav-links">
                 <a class="kd-nav-link @(bugunAktif ? "active" : "")" asp-area="" asp-page="/Index">Bugün</a>
-                <a class="kd-nav-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
-                <a class="kd-nav-link @(gelenAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
-                    Gelen
+                <a class="kd-nav-link @(takvimAktif ? "active" : "")" asp-area="" asp-page="/Takvim/Index">Takvim</a>
+                @* The Asistan stream is the next phase (W2); until then this entry opens the inbox, where the assistant's old pages are reached. *@
+                <a class="kd-nav-link @(asistanAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
+                    Asistan
                     @if (bekleyenGelen > 0)
                     {
                         <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
                     }
                 </a>
-                <a class="kd-nav-link @(hatirlaticiAktif ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">Hatırlatıcılar</a>
-                <a class="kd-nav-link @(projelerAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">Projeler</a>
-                <div class="dropdown kd-nav-more">
-                    <button class="kd-nav-link @(dahaFazlaAktif ? "active" : "")" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Daha fazla
-                        <svg class="kd-icon kd-nav-caret" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>
-                    </button>
-                    <ul class="dropdown-menu kd-menu kd-menu--simple">
-                        <li><a class="dropdown-item @(currentPage.StartsWith("/Isler") ? "active" : "")" asp-area="" asp-page="/Isler/Index">Asistan işleri</a></li>
-                        <li><a class="dropdown-item @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">Yönetim</a></li>
-                    </ul>
-                </div>
+                <a class="kd-nav-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
+                <a class="kd-nav-link @(beyinAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">Beyin</a>
             </div>
 
-            <a class="kd-icon-btn kd-search-btn @(araAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Ara" aria-label="Ara" title="Ara">
-                <svg class="kd-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-            </a>
+            @* Wide screens: the profile menu. Narrow screens: the gear opens the drawer, which carries the same items. *@
+            <div class="dropdown kd-profil d-none d-sm-block">
+                <button class="kd-icon-btn kd-profil-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Profil" title="@kullaniciAdi">
+                    <span class="kd-avatar" aria-hidden="true">@bas</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end kd-menu kd-menu--simple">
+                    <li><span class="dropdown-item-text kd-drawer-account">@kullaniciAdi</span></li>
+                    <li><a class="dropdown-item @(yonetimAktif ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">Yönetim</a></li>
+                    <li><a class="dropdown-item @(ayarAktif ? "active" : "")" asp-area="" asp-page="/Ayarlar/Gun">Gün kapasitesi</a></li>
+                    <li><a class="dropdown-item" asp-area="" asp-page="/Hesap/Sifre">Şifremi değiştir</a></li>
+                    <li><button class="dropdown-item" type="button" data-bs-toggle="offcanvas" data-bs-target="#kd-settings" aria-controls="kd-settings">Görünüm</button></li>
+                    <li>
+                        <form method="post" asp-page="/Hesap/Cikis">
+                            <button type="submit" class="dropdown-item">Çıkış yap</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
 
-            <button class="kd-icon-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#kd-settings"
+            <button class="kd-icon-btn d-sm-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#kd-settings"
                     aria-controls="kd-settings" aria-label="Ayarlar">
                 <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>
             </button>
@@ -111,33 +120,33 @@
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#home"></use></svg>
                     Bugün
                 </a>
-                <a class="kd-drawer-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
-                    Alışkanlıklar
+                <a class="kd-drawer-link @(takvimAktif ? "active" : "")" asp-area="" asp-page="/Takvim/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-calendar"></use></svg>
+                    Takvim
                 </a>
-                <a class="kd-drawer-link @(gelenAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
+                <a class="kd-drawer-link @(asistanAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
-                    Gelen
+                    Asistan
                     @if (bekleyenGelen > 0)
                     {
                         <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
                     }
                 </a>
-                <a class="kd-drawer-link @(hatirlaticiAktif ? "active" : "")" asp-area="" asp-page="/Hatirlaticilar/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-bell"></use></svg>
-                    Hatırlatıcılar
+                <a class="kd-drawer-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-target"></use></svg>
+                    Alışkanlıklar
                 </a>
-                <a class="kd-drawer-link @(projelerAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">
+                <a class="kd-drawer-link @(beyinAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
-                    Projeler
+                    Beyin
                 </a>
-                <a class="kd-drawer-link @(currentPage.StartsWith("/Isler") ? "active" : "")" asp-area="" asp-page="/Isler/Index">
-                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#brain"></use></svg>
-                    Asistan işleri
-                </a>
-                <a class="kd-drawer-link @(currentPage.StartsWith("/Yonetim") ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">
+                <a class="kd-drawer-link @(yonetimAktif ? "active" : "")" asp-area="" asp-page="/Yonetim/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#settings"></use></svg>
                     Yönetim
+                </a>
+                <a class="kd-drawer-link @(ayarAktif ? "active" : "")" asp-area="" asp-page="/Ayarlar/Gun">
+                    <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-clock"></use></svg>
+                    Gün kapasitesi
                 </a>
             </section>
 

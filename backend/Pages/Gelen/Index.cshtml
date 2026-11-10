@@ -12,7 +12,11 @@
         <p class="kd-eyebrow">Yakaladıkların beyne yerleşmeyi bekliyor</p>
         <h1 class="kd-page-title">Gelen</h1>
     </div>
-    <a class="btn btn-outline-primary" asp-page="/Eylemler/Index">Onay kuyruğu</a>
+    <div class="kd-head-actions">
+        @* The assistant's pages are reached from here until the Asistan stream replaces them (W2). *@
+        <a class="btn btn-outline-primary" asp-page="/Isler/Index">Asistan işleri</a>
+        <a class="btn btn-outline-primary" asp-page="/Eylemler/Index">Onay kuyruğu</a>
+    </div>
 </div>
 
 <partial name="_OnayKarti" />

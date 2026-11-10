@@ -71,7 +71,7 @@
                     }
                     @if (kalan > 0)
                     {
-                        <a class="kd-shelf-pick-more" asp-page="/Aliskanliklar/Raf" asp-route-aliskanlikId="@a.Id" aria-label="@kalan tane daha, rafa git">+@kalan</a>
+                        <a class="kd-shelf-pick-more" asp-page="/Aliskanliklar/Detay" asp-route-id="@a.Id" asp-fragment="raf" aria-label="@kalan tane daha, rafa git">+@kalan</a>
                     }
                 </div>
                 <div class="kd-shelf-pick-panels">

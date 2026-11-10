@@ -64,7 +64,7 @@ public class DuzenleModel(AppDbContext db, DosyaDeposu depo) : PageModel
 
             // A new shelf habit starts with an empty shelf: go and fill it.
             return a.Tur == AliskanlikTuru.Raf
-                ? RedirectToPage("Raf", new { aliskanlikId = a.Id })
+                ? RedirectToPage("Detay", null, new { id = a.Id }, "raf")
                 : RedirectToPage("Index", null, null, "h-" + a.Id);
         }
 

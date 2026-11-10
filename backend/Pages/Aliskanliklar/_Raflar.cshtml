@@ -1,0 +1,81 @@
+@using Kafamdakiler.Aliskanliklar
+@model (AliskanlikDto Aliskanlik, Kafamdakiler.Pages.Aliskanliklar.RafVerisi Raf)
+@* The shelf of a shelf habit, inside the habit's page: items by shelf as covers, and the yearly summary. *@
+@{
+    var a = Model.Aliskanlik;
+    var etiket = a.OgeEtiketi ?? "Öğe";
+    var kucuk = etiket.ToLower(new System.Globalization.CultureInfo("tr-TR"));
+}
+<section class="kd-panel kd-raf @Gorunum.RenkSinifi(a.Renk)" id="raf" aria-labelledby="kd-raf-title">
+    <div class="kd-raf-ust">
+        <h2 class="kd-eyebrow" id="kd-raf-title">Raf</h2>
+        <a class="btn btn-outline-primary btn-sm" asp-page="OgeDuzenle" asp-route-aliskanlikId="@a.Id">
+            <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-plus"></use></svg>
+            @etiket ekle
+        </a>
+    </div>
+
+    @if (Model.Raf.BosMu)
+    {
+        <div class="kd-empty kd-empty--small">
+            <p class="kd-empty-title">Raf boş.</p>
+            <p>İlk @kucuk ekle; nereye kadar geldiğini "Okudum" ile kaydedersin.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var (durum, ogeler) in Model.Raf.Raflar)
+        {
+            if (ogeler.Count == 0)
+            {
+                continue;
+            }
+
+            <div class="kd-shelf-section" aria-labelledby="raf-@durum">
+                <h3 class="kd-eyebrow" id="raf-@durum">@Gorunum.DurumAdi(durum) · @ogeler.Count</h3>
+                <div class="kd-covers">
+                    @foreach (var o in ogeler)
+                    {
+                        <a class="kd-book" asp-page="Oge" asp-route-id="@o.Id">
+                            @if (o.FotografUrl is not null)
+                            {
+                                <img class="kd-cover" src="@o.FotografUrl" alt="" loading="lazy" />
+                            }
+                            else
+                            {
+                                <span class="kd-cover kd-cover--empty"><svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg></span>
+                            }
+                            <span class="kd-book-title">@o.Ad</span>
+                            @if (!string.IsNullOrEmpty(o.AltBaslik))
+                            {
+                                <span class="kd-muted">@o.AltBaslik</span>
+                            }
+                            @if (durum == OgeDurumu.Devam && o.Ilerleme is { } ilerleme)
+                            {
+                                <span class="kd-bar kd-bar--thin"><span style="width:@Gorunum.Genislik(ilerleme)"></span></span>
+                            }
+                            @if (durum == OgeDurumu.Bitti && o.Puan is { } puan)
+                            {
+                                <span class="kd-muted">@puan / 5</span>
+                            }
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (Model.Raf.YilOzeti.Count > 0)
+        {
+            <h3 class="kd-eyebrow" id="kd-year-title">Yıl özeti</h3>
+            <table class="kd-table" aria-labelledby="kd-year-title">
+                <thead><tr><th>Yıl</th><th>Biten @kucuk</th><th>Toplam @a.Birim</th></tr></thead>
+                <tbody>
+                    @foreach (var (yil, adet, miktar) in Model.Raf.YilOzeti)
+                    {
+                        <tr><td>@yil</td><td>@adet</td><td>@Gorunum.Sayi(miktar)</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+</section>

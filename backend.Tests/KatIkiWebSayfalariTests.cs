@@ -386,10 +386,10 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         Assert.Empty(await db.Brifingler.ToListAsync(Ct));
     }
 
-    // The timeline (home page and day page)
+    // The day's list (home page and day page): events, reminders and the plan are rows of one list (K-0024)
 
     [Fact]
-    public async Task Home_ShowsTheTimeline_InTheOrderOfTheClock_WithTheAllDayEventApart()
+    public async Task Home_ShowsTheEventsInTheOneList_InTheOrderOfTheClock_WithTheAllDayEventAfterThem()
     {
         await TemizleAsync();
         await EtkinlikEkleAsync("Dişçi randevusu", IstAn(2026, 11, 7, 10), IstAn(2026, 11, 7, 11), yer: "Kadıköy");
@@ -399,31 +399,22 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
 
         var sayfa = await MetinAsync(tarayici, "/");
 
-        // The briefing above names the same events; the timeline's own section is what is read.
-        Assert.Contains("Zaman çizelgesi", sayfa);
-        var cizelge = sayfa[sayfa.IndexOf("id=\"zaman-cizelgesi\"", StringComparison.Ordinal)..];
-        Assert.Contains("10:00–11:00", cizelge);
-        Assert.Contains("Kadıköy", cizelge);
-        Assert.True(cizelge.IndexOf("Sabah toplantısı", StringComparison.Ordinal) < cizelge.IndexOf("Dişçi randevusu", StringComparison.Ordinal));
-        Assert.True(cizelge.IndexOf("Dişçi randevusu", StringComparison.Ordinal) < cizelge.IndexOf("Tüm gün konferans", StringComparison.Ordinal));
-        Assert.Contains("Saati olmayanlar", cizelge);
+        // The timeline card is gone; its rows are in "Yapılacaklar". The briefing above names the same events, so the list is what is read.
+        Assert.DoesNotContain("Zaman çizelgesi", sayfa);
+        var liste = sayfa[sayfa.IndexOf("id=\"liste-baslik\"", StringComparison.Ordinal)..];
+        Assert.Contains("10:00–11:00", liste);
+        Assert.Contains("Kadıköy", liste);
+        Assert.True(liste.IndexOf("Sabah toplantısı", StringComparison.Ordinal) < liste.IndexOf("Dişçi randevusu", StringComparison.Ordinal));
+        Assert.True(liste.IndexOf("Dişçi randevusu", StringComparison.Ordinal) < liste.IndexOf("Tüm gün konferans", StringComparison.Ordinal));
+        Assert.Contains("Tüm gün", liste);
+        // An event cannot be "done": it has no "Yaptım" form.
+        Assert.DoesNotContain("handler=Yaptim", liste.Split("Dişçi randevusu")[0].Split("Sabah toplantısı")[1]);
     }
 
     [Fact]
     public async Task Home_WithGoogleNotConnected_TellsThatTheEventsAreMissing()
     {
         await TemizleAsync();
-        // Something with an hour on the day, so the timeline shows (the home page lists only what has an hour; an empty one takes no room, warnings and all).
-        await using (var db = YeniDb())
-        {
-            db.Hatirlaticilar.Add(new Hatirlatici
-            {
-                Baslik = "Fatura öde", Tur = HatirlaticiTuru.Gorev, Tekrar = Tekrar.Yok, Durum = HatirlaticiDurumu.Acik,
-                Gun = Bugun, Saat = new TimeOnly(15, 0), SonrakiAn = IstAn(2026, 11, 7, 15).ToUniversalTime(),
-            });
-            await db.SaveChangesAsync(Ct);
-        }
-
         var tarayici = await SahipAsync(WebFabrika());
 
         var sayfa = await MetinAsync(tarayici, "/");
@@ -432,7 +423,7 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
     }
 
     [Fact]
-    public async Task DayPage_ShowsTheTimeline_ButNotThePlanTwice()
+    public async Task DayPage_ShowsTheEventAndThePlan_InOneList()
     {
         await TemizleAsync();
         await EtkinlikEkleAsync("Dişçi randevusu", IstAn(2026, 11, 7, 10), IstAn(2026, 11, 7, 11));
@@ -441,13 +432,12 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
 
         var sayfa = await MetinAsync(tarayici, "/2026-11-07");
 
-        Assert.Contains("Zaman çizelgesi", sayfa);
-        Assert.Contains("Dişçi randevusu", sayfa);
-        // The plan is in its own sections below; the timeline leaves it out. (The fake brain answers yesterday's card with the same plan.)
-        var cizelge = sayfa[sayfa.IndexOf("id=\"zaman-cizelgesi\"", StringComparison.Ordinal)..];
-        cizelge = cizelge[..cizelge.IndexOf("</section>", StringComparison.Ordinal)];
-        Assert.DoesNotContain("Benzersiz plan işi", cizelge);
-        Assert.Contains("Benzersiz plan işi", sayfa);
+        Assert.DoesNotContain("Zaman çizelgesi", sayfa);
+        var liste = sayfa[sayfa.IndexOf("id=\"liste-baslik\"", StringComparison.Ordinal)..];
+        Assert.Contains("Dişçi randevusu", liste);
+        // The plan is not listed twice: the item is one row of the list (the fake brain also answers yesterday's card with it).
+        Assert.Contains("Benzersiz plan işi", liste);
+        Assert.Single(Regex.Matches(liste, "data-kd-oge=\"m:a1\""));
     }
 
     [Fact]

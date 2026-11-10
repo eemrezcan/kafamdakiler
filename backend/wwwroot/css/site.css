@@ -3291,12 +3291,13 @@ textarea.form-control {
 }
 
 @media (max-width: 991.98px) {
-  .kd-bugun-aliskanlik { order: 1; }
+  /* The summary and the weight of the day first, then what yesterday left, the habits, the briefing, and the list last. */
+  .kd-bugun-ozet { order: 0; }
+  .kd-bugun-kalan { order: 1; }
+  .kd-bugun-aliskanlik { order: 2; }
   .kd-bugun-yan > .kd-brifing,
-  .kd-bugun-yan > .kd-onay-karti { order: 2; }
-  .kd-bugun-yan > .kd-cizelge { order: 3; }
+  .kd-bugun-yan > .kd-onay-karti { order: 3; }
   .kd-bugun-plan { order: 4; }
-  .kd-bugun-yan > .kd-bugun-yaklasan { order: 5; }
 
   /* display: contents drops the box, so the plan's children carry the order. */
   .kd-bugun-plan > * { order: 4; }
@@ -3588,4 +3589,365 @@ textarea.form-control {
 
 .kd-bugun-satir {
   flex-wrap: wrap;
+}
+
+
+/* ---------- K-0024: day list, weight of the day, calendar, profile menu (W1) ---------- */
+
+.kd-icon--sag {
+  transform: scaleX(-1);
+}
+
+/* Profile menu (wide screens): the avatar button and its list. */
+.kd-profil .dropdown-menu {
+  min-width: 13rem;
+}
+
+.kd-profil .dropdown-item-text {
+  color: var(--kd-text-muted);
+  font-size: 0.85rem;
+}
+
+.kd-profil form {
+  margin: 0;
+}
+
+.kd-profil .dropdown-item {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+
+.kd-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--kd-ink);
+  color: var(--kd-ink-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* The profile menu takes the "push right" role of the removed search icon; the drawer's gear (narrow) keeps its own. */
+.kd-topbar-inner > .kd-profil {
+  margin-left: auto;
+}
+
+@media (max-width: 575.98px) {
+  .kd-topbar-inner > .kd-icon-btn.d-sm-none {
+    margin-left: auto;
+  }
+}
+
+/* Summary and weight of the day. */
+.kd-ozet-metin {
+  margin: 0 0 0.75rem;
+  line-height: 1.45;
+}
+
+.kd-yuk-ust {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-yuk-cubuk {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--kd-line);
+  overflow: hidden;
+}
+
+.kd-yuk-cubuk > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--kd-violet);
+}
+
+.kd-yuk-cubuk.is-asim > span {
+  background: var(--kd-danger);
+}
+
+.kd-yuk-not {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+}
+
+.kd-yuk-not.is-asim {
+  color: var(--kd-danger);
+}
+
+/* A row of the day list: the round "yaptım" on the left, the hour in front of the title. */
+.kd-oge .kd-satir-islem {
+  flex: 0 0 auto;
+}
+
+.kd-yaptim {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1.5px solid var(--kd-line-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+}
+
+button.kd-yaptim:hover {
+  border-color: var(--kd-ok);
+  color: var(--kd-ok);
+}
+
+.kd-yaptim.is-yapildi {
+  border-color: var(--kd-ok);
+  background: var(--kd-ok);
+  color: var(--kd-bg);
+}
+
+.kd-yaptim--pasif {
+  border-style: dashed;
+}
+
+.kd-yaptim--pasif.is-yapildi {
+  border-style: solid;
+}
+
+.kd-oge.is-yapildi {
+  opacity: 0.7;
+}
+
+.kd-oge-saat {
+  margin-right: 0.5rem;
+  color: var(--kd-text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-oge-tur {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+}
+
+.kd-oge-hat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.kd-oge-hat .kd-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.kd-oge-ayrinti-govde {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.kd-oge-form {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+/* Reminder fields: a small grid of labelled fields, the weekly days as chips. */
+.kd-hat-alanlar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.kd-hat-alan {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-hat-gunler,
+.kd-hat-secenekler {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.kd-hat-gunler[hidden] {
+  display: none;
+}
+
+.kd-hat-gun {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.kd-hat-onay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.kd-yeni-oge {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.kd-yeni-oge .kd-gun-form {
+  margin: 0;
+}
+
+.kd-yeni-oge .kd-yeni-kisa {
+  flex: 0 1 8rem;
+}
+
+.kd-yeni-hat[hidden] {
+  display: none;
+}
+
+.kd-yeni-kutu > summary {
+  cursor: pointer;
+  margin-bottom: 0.6rem;
+}
+
+.kd-kapasite-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 22rem;
+}
+
+/* Takvim: month grid, the chosen day and what is coming. */
+.kd-takvim {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .kd-takvim {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+    column-gap: 2rem;
+  }
+}
+
+.kd-takvim-ana,
+.kd-takvim-yan {
+  min-width: 0;
+}
+
+.kd-ay-izgara {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.kd-ay-baslik {
+  padding: 0.25rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-ay-gun {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 3.25rem;
+  padding: 0.4rem 0.2rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--kd-text);
+  text-decoration: none;
+}
+
+.kd-ay-gun:hover {
+  border-color: var(--kd-line-strong);
+  color: var(--kd-text);
+}
+
+.kd-ay-gun.is-disinda {
+  color: var(--kd-text-muted);
+  opacity: 0.55;
+}
+
+.kd-ay-gun.is-bugun .kd-ay-sayi {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.kd-ay-gun.is-secili {
+  border-color: var(--kd-violet);
+  background: rgba(var(--kd-violet-rgb), 0.1);
+}
+
+.kd-ay-sayi {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-ay-noktalar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem;
+  min-height: 0.4rem;
+}
+
+.kd-nokta {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--kd-text-muted);
+}
+
+.kd-nokta--plan { background: var(--kd-violet); }
+.kd-nokta--gorev { background: var(--kd-hue-blue); }
+.kd-nokta--hatirlatici { background: var(--kd-hue-amber); }
+.kd-nokta--etkinlik { background: var(--kd-hue-teal); }
+.kd-nokta--asim { background: var(--kd-danger); }
+
+.kd-ay-aciklama {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+}
+
+.kd-ay-aciklama .kd-nokta {
+  margin-right: 0.25rem;
+}
+
+/* Habit page: the shelf inside it and the reading-log modal. */
+.kd-raf-ust {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.kd-raf .kd-shelf-section {
+  margin-bottom: 1.25rem;
+}
+
+.kd-okuma-form {
+  display: grid;
+  gap: 0.75rem;
 }

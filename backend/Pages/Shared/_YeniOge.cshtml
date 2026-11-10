@@ -1,0 +1,24 @@
+@using Kafamdakiler.Beyin
+@model Kafamdakiler.Pages.YeniOgeModeli
+@* The new-item form (K-0024, §4): a title, an estimate, an hour, and a reminder when asked. It posts the "Ekle" handler of the page it is on. *@
+@{
+    var t = Model.Gun.ToString("yyyy-MM-dd");
+}
+<form method="post" asp-page-handler="Ekle" asp-route-tarih="@t" class="kd-yeni-oge" data-kd-yeni-oge>
+    <input type="hidden" name="donus" value="@Model.Donus" />
+    <div class="kd-gun-form">
+        <label class="visually-hidden" for="yeni-baslik">Ne yapacaksın?</label>
+        <input class="form-control" id="yeni-baslik" name="yeni.Baslik" maxlength="200" placeholder="Ne yapacaksın?" required />
+        <label class="visually-hidden" for="yeni-tahmin">Tahmini süre (dakika)</label>
+        <input class="form-control kd-yeni-kisa" id="yeni-tahmin" type="number" name="yeni.TahminDk" min="1" max="720" placeholder="Süre (dk)" />
+        <label class="visually-hidden" for="yeni-saat">Saat</label>
+        <input class="form-control kd-yeni-kisa" id="yeni-saat" type="time" name="yeni.Saat" title="Saat (hatırlatıcı için)" />
+    </div>
+    <label class="kd-hat-onay">
+        <input type="checkbox" name="h.Var" value="true" data-kd-hat-ac /> Hatırlatıcı kur
+    </label>
+    <div class="kd-yeni-hat" data-kd-hat-kutu>
+        <partial name="_HatirlaticiAlanlari" model="new Kafamdakiler.Pages.HatirlaticiAlanlari(null)" />
+    </div>
+    <button type="submit" class="btn btn-primary">Ekle</button>
+</form>

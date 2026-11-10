@@ -11,7 +11,7 @@
 
 <div class="kd-page-head kd-rise @Gorunum.RenkSinifi(a.Renk)">
     <div>
-        <p class="kd-eyebrow"><a class="kd-back" asp-page="Raf" asp-route-aliskanlikId="@a.Id"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Raf · @a.Ad</a></p>
+        <p class="kd-eyebrow"><a class="kd-back" asp-page="Detay" asp-route-id="@a.Id" asp-fragment="raf"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-chevron-left"></use></svg>Raf · @a.Ad</a></p>
         <h1 class="kd-page-title">@o.Ad</h1>
         @if (!string.IsNullOrEmpty(o.AltBaslik))
         {

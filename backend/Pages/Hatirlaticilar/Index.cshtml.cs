@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kafamdakiler.Pages.Hatirlaticilar;
 
-public class IndexModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider saat) : PageModel
+public class IndexModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider saat, HatirlaticiZinciriServisi zincir) : PageModel
 {
     public List<HatirlaticiDto> Hatirlaticilar { get; private set; } = [];
 
@@ -50,11 +50,19 @@ public class IndexModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider saa
         if (h is null)
             return NotFound();
 
-        var sonuc = HatirlaticiIslemleri.Yaptim(db, h,ayar.VarsayilanSaat, saat.GetUtcNow());
+        // The turn that is being done, read before the reminder moves on: it names the day of a repeating reminder's turn.
+        var hedefAn = h.EtkinAn;
+        var sonuc = HatirlaticiIslemleri.Yaptim(db, h, ayar.VarsayilanSaat, saat.GetUtcNow());
         if (sonuc.Basarili)
         {
             await db.SaveChangesAsync(ct);
             Bildirim = h.Durum == HatirlaticiDurumu.Tamam ? "Tamamlandı" : "Sıradaki tekrara geçti";
+            // The item or task tied to the reminder is done with it (the chain of K-0024); a failed step is said, the reminder stays done.
+            var bagli = await zincir.HatirlaticiYapildiAsync(h, hedefAn, CancellationToken.None);
+            if (bagli.Hata is { } zincirHatasi)
+                Hata = zincirHatasi;
+            else if (bagli.Kimlikler.Count > 0)
+                Bildirim += "; bağlı iş de işaretlendi";
         }
         else
         {

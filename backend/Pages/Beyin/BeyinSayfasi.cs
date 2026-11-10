@@ -56,8 +56,11 @@ public abstract class BeyinSayfasi(BeyinIstemcisi beyin, ILogger<BeyinIstemcisi>
                 break;
         }
 
-        return RedirectToPage();
+        return DonusSonucu();
     }
+
+    // Where a write goes back to; a page whose forms post from several views overrides it.
+    protected virtual IActionResult DonusSonucu() => RedirectToPage();
 
     // The data of a successful read, or null after writing the reason into the page. A missing or hidden record keeps
     // its 404 and a bad input its 400; any other trouble of the brain is a message on a normal page.
