@@ -1,0 +1,51 @@
+### Day capacity setting (K-0024): how many minutes of planned work fit in a weekday and in a weekend day.
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. Read it (takvim.oku): without a saved value it is `Gun:KapasiteSaat` for both kinds of day
+GET {{host}}/api/ayarlar/gun
+Authorization: Bearer {{token}}
+
+### 3. Set it (the Sahip only): 4 hours on weekdays, 2 on weekends -> 200
+PUT {{host}}/api/ayarlar/gun
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "haftaIciDk": 240, "haftaSonuDk": 120 }
+
+### 3b. Refused: out of 1..1440 -> 400 { errors: { haftaIciDk } }
+PUT {{host}}/api/ayarlar/gun
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "haftaIciDk": 0, "haftaSonuDk": 120 }
+
+### 4. The Asistan may read it, not change it -> 403
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+PUT {{host}}/api/ayarlar/gun
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}
+Content-Type: application/json
+
+{ "haftaIciDk": 240, "haftaSonuDk": 120 }

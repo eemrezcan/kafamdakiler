@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.Hatirlaticilar;
 
 namespace Kafamdakiler.Eylemler;
 
@@ -13,7 +14,7 @@ public record GorevKapatYuku(string Yol, string Kanit);
 // person's form: a strong proof closes it at once and says so, a weak one waits here as a question. Undo opens the task again
 // (`gorev guncelle --durum aktif`), and only while it is still as this action closed it: a task the user has since reopened,
 // or closed with a proof of their own, is left as it is.
-public partial class GorevKapatTuru(BeyinIstemcisi beyin, ILogger<GorevKapatTuru> gunluk) : IEylemTuru
+public partial class GorevKapatTuru(BeyinIstemcisi beyin, ILogger<GorevKapatTuru> gunluk, HatirlaticiAyari? hatirlaticiAyari = null) : IEylemTuru
 {
     public const string Anahtar = "gorev-kapat";
 
@@ -45,6 +46,11 @@ public partial class GorevKapatTuru(BeyinIstemcisi beyin, ILogger<GorevKapatTuru
             gunluk.LogWarning("Closing a task did not succeed ({Durum}, {Kod}): {Mesaj}", yanit.Durum, yanit.HataKodu, yanit.Mesaj);
             throw new EylemHatasi($"Beyin görevi kapatmadı ({yanit.Durum}).");
         }
+
+        // The reminders tied to the task close with it (K-0024). They are changed in the context; the queue saves it with the action.
+        // The task's slug is its file name.
+        await HatirlaticiZinciri.YapildiAsync(
+            baglam.Db, null, null, Path.GetFileNameWithoutExtension(y.Yol), (hatirlaticiAyari ?? new HatirlaticiAyari()).VarsayilanSaat, baglam.Simdi, ct);
 
         return JsonSerializer.SerializeToElement(y, JsonSerializerOptions.Web);
     }

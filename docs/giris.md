@@ -161,6 +161,12 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - Web arayüz yenilemesi (2026-11-10): `Pages/Index.cshtml` (iki sütunlu Bugün, alışkanlıklar üstte), `_Brifing`, `_ZamanCizelgesi`, `_Layout` menüsü, alışkanlık kartları, `Gelen`, `site.css`, `bugun.js`: Claude'un açtığı Sonnet işçisi yazdı; simge dosyası onarımı ve kart rengi Claude.
 - Mobil arayüz yenilemesi (2026-11-10): `router.dart` ve `ana_iskele.dart` (Alışkanlıklar sekmesi), `bugun_screen.dart` sırası, katlanır brifing, `zaman_cizelgesi_karti.dart`, `widgets.dart` ortak kart başlığı ve boş durum, yüzen düğme boşluğu, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - Mobil brifing başlığı düzeltmesi (2026-11-10): `brifing_seridi.dart` ("Onay bekleyen" çipi başlığın altına) ve dar ekran testi: Claude yazdı.
+- UI revizyonu, Faz A1 (backend; 2026-11-10, K-0024, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Gün görünümü ve yazmaları: `backend/Yapilacaklar/` (`GunGorunumuServisi`: plan maddesi, görev, hatırlatıcı ve etkinliğin tek listesi; `TakvimAraligiServisi`: takvim aralığı ve yaklaşanlar; `GunIslemleri` ve `GunEndpoints`: tek "yaptım", dünden kalanı bırak, yeni öğe, öğenin hatırlatıcısı; `BirakilanMadde`, `YapilacakDtos`, `gun.http`).
+  - Görev ile hatırlatıcı zinciri: `backend/Hatirlaticilar/HatirlaticiZinciri.cs` (iki yön), hatırlatıcıya madde ve görev bağı ile çok günlü haftalık (`Hatirlatici`, `Dtos`, `HatirlaticiHesap`, `HatirlaticiIslemleri`, `HatirlaticiEndpoints`), `BeyinYazmaEndpoints` ve `GorevKapatTuru` içindeki zincir çağrıları, migration `GunGorunumuVeHatirlaticiBagi`.
+  - Gün kapasitesi ayarı: `backend/Ayarlar/` (`GunAyarlari`, `GunKapasitesi`, uçlar, `ayarlar.http`); `BeyinOkuma`, `ZamanCizelgesi` ve `BrifingGirdiOkuyucu` bu ayarı okur.
+  - `Program.cs` kayıtları, `AppDbContext` ayarları.
+  - Testler: `backend.Tests/GunTestTabani.cs`, `GunGorunumuApiTests`, `GunYaptimApiTests`, `GunOgeApiTests`, `TakvimAraligiApiTests`, `HatirlaticiCokGunluTests`, `HatirlaticiZinciriTests`, `HatirlaticiBagiApiTests`, `OpenApiUclariTests`, `SahteBeyin.cs` eklemesi (`CiktiTarihli`).
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

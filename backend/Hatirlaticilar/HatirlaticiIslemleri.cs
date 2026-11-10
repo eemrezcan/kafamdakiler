@@ -24,8 +24,24 @@ public static class HatirlaticiIslemleri
         h.IsrarAraligiDakika = dto.IsrarAraligiDakika;
         h.IsrarEnCok = dto.IsrarEnCok;
         h.Acil = dto.Acil;
+        // The link fields: absent (null) keeps what the reminder has, so a form or an older client that does not know them cannot cut the
+        // link by editing the title; an empty text takes the link away.
+        if (dto.MaddeId is not null || dto.MaddeTarihi is not null)
+        {
+            h.MaddeId = string.IsNullOrWhiteSpace(dto.MaddeId) ? null : dto.MaddeId.Trim();
+            h.MaddeTarihi = h.MaddeId is null ? null : dto.MaddeTarihi;
+        }
+
+        if (dto.GorevKimligi is not null)
+            h.GorevKimligi = string.IsNullOrWhiteSpace(dto.GorevKimligi) ? null : dto.GorevKimligi.Trim();
+
+        // The days only mean something to a weekly rule: anywhere else they are dropped; a weekly one without any given keeps its days.
+        if (dto.Tekrar != Tekrar.Haftalik)
+            h.Gunler = Gunler.Yok;
+        else if (dto.Gunler is { } secilenler)
+            h.Gunler = secilenler.Aggregate(Gunler.Yok, (toplam, gun) => toplam | gun);
         h.ErteleAn = null;
-        h.SonrakiAn = HatirlaticiHesap.Sonraki(h.Tekrar, h.Gun, KuralSaati(h, varsayilan), simdi);
+        h.SonrakiAn = HatirlaticiHesap.Sonraki(h.Tekrar, h.Gun, KuralSaati(h, varsayilan), simdi, h.Gunler);
     }
 
     // Done: a repeating reminder moves to its next turn (after the current one, even if marked early), a one-off is closed.
@@ -39,7 +55,7 @@ public static class HatirlaticiIslemleri
             h.Durum = HatirlaticiDurumu.Tamam;
         else
             h.SonrakiAn = HatirlaticiHesap.Sonraki(h.Tekrar, h.Gun, KuralSaati(h, varsayilan),
-                simdi > h.SonrakiAn ? simdi : h.SonrakiAn);
+                simdi > h.SonrakiAn ? simdi : h.SonrakiAn, h.Gunler);
 
         return Sonuc.Tamam;
     }
@@ -75,8 +91,15 @@ public static class HatirlaticiIslemleri
         return sonuc;
     }
 
-    public static HatirlaticiDto DtoYap(Hatirlatici h, DateTimeOffset simdi) => new(
+    // The chosen days as the API shows them ("pzt", "cum"), Monday first; empty for anything but a weekly rule with days.
+    public static List<Gunler> GunListesi(Hatirlatici h) =>
+        h.Tekrar == Tekrar.Haftalik
+            ? Enum.GetValues<Gunler>().Where(g => g != Gunler.Yok && h.Gunler.HasFlag(g)).ToList()
+            : [];
+
+    public static HatirlaticiDto DtoYap(Hatirlatici h, DateTimeOffset simdi, string? zincirHatasi = null) => new(
         h.Id, h.Baslik, h.Not, h.Tur, h.Kime, h.Gun, h.Saat, h.Tekrar, h.OnceGun, h.Durum, h.SonrakiAn, h.ErteleAn, h.EtkinAn,
         HatirlaticiHesap.OnceAni(h.SonrakiAn, h.OnceGun), HatirlaticiHesap.KalanGun(h.EtkinAn, simdi), h.CreatedAt,
-        h.Israrli, h.IsrarAraligiDakika, h.IsrarEnCok, h.Acil);
+        h.Israrli, h.IsrarAraligiDakika, h.IsrarEnCok, h.Acil,
+        h.MaddeId, h.MaddeTarihi, h.GorevKimligi, GunListesi(h), zincirHatasi);
 }

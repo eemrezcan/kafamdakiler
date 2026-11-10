@@ -1,3 +1,4 @@
+using Kafamdakiler.Ayarlar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Hatirlaticilar;
@@ -86,7 +87,7 @@ public class ZamanCizelgesiServisi(
         saatli = saatli.OrderBy(o => o.Baslangic).ThenBy(o => o.Tur == "etkinlik" ? 0 : 1).ThenBy(o => o.Baslik, StringComparer.Ordinal).ThenBy(o => o.Kimlik, StringComparer.Ordinal).ToList();
 
         var toplam = planAcikDk + etkinlikDk;
-        var kapasiteDk = gunAyari.KapasiteDk;
+        var kapasiteDk = await GunKapasitesi.DkAsync(db, gunAyari, gun, ct);
         var kapasite = toplam > kapasiteDk ? new ZamanCizelgesiKapasitesi(planAcikDk, etkinlikDk, toplam, kapasiteDk, toplam - kapasiteDk) : null;
 
         return new ZamanCizelgesiDto(gun, await GoogleDurumuAsync(ct), planDurumu, saatli, saatsiz, kapasite,
@@ -103,7 +104,7 @@ public class ZamanCizelgesiServisi(
         var plan = hazirPlan;
         if (plan is null)
         {
-            var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari);
+            var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun, ct));
             if (!yanit.Basarili)
                 return ("okunamadi", [], 0);
             plan = yanit.Veri!;
@@ -117,7 +118,8 @@ public class ZamanCizelgesiServisi(
         return ("tamam", ogeler, acikDk);
     }
 
-    private async Task<string> GoogleDurumuAsync(CancellationToken ct)
+    // kapali, bagliDegil, bagli or yenidenBaglan. The day view shows the same word.
+    public async Task<string> GoogleDurumuAsync(CancellationToken ct)
     {
         if (!ayar.Acik)
             return "kapali";

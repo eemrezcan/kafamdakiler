@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Beyin;
 
 namespace Kafamdakiler.Hatirlaticilar;
 
-public class HatirlaticiYazDto
+public class HatirlaticiYazDto : IValidatableObject
 {
     public Guid? Id { get; set; }
 
@@ -39,6 +41,39 @@ public class HatirlaticiYazDto
     public int IsrarEnCok { get; set; } = Hatirlatici.VarsayilanIsrarEnCok;
 
     public bool Acil { get; set; }
+
+    // The link to the plan (K-0024). A plan item is named by its permanent id and the day of its plan file; a task by its slug.
+    [StringLength(120, ErrorMessage = "Madde kimliği en çok 120 karakter olabilir.")]
+    public string? MaddeId { get; set; }
+
+    public DateOnly? MaddeTarihi { get; set; }
+
+    [StringLength(100, ErrorMessage = "Görev kimliği en çok 100 karakter olabilir.")]
+    public string? GorevKimligi { get; set; }
+
+    // The days of a weekly reminder ("pzt", "cum"...). Read only when Tekrar is haftalik; empty means the weekday of Gun.
+    public List<Gunler>? Gunler { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!string.IsNullOrWhiteSpace(MaddeId))
+        {
+            if (MaddeTarihi is null)
+                yield return new("Madde bağlanırsa madde tarihi de verilmeli.", ["maddeTarihi"]);
+            if (!BeyinYazma.MaddeKimligiGecerli(MaddeId))
+                yield return new("Madde, kalıcı kimliğiyle (ör. a3f09c) verilmeli.", ["maddeId"]);
+        }
+        else if (MaddeTarihi is not null)
+        {
+            yield return new("Madde tarihi yalnız madde kimliğiyle birlikte verilir.", ["maddeTarihi"]);
+        }
+
+        if (!string.IsNullOrWhiteSpace(GorevKimligi) && !BeyinYazma.GorevKimligiGecerli(GorevKimligi.Trim()))
+            yield return new("Görev kimliği küçük harf, rakam ve tire olmalı.", ["gorevKimligi"]);
+
+        if (Gunler is not null && Gunler.Any(g => g == Aliskanliklar.Gunler.Yok || !Enum.IsDefined(g)))
+            yield return new("Gün listesi yalnız pzt, sal, car, per, cum, cmt, paz içerebilir.", ["gunler"]);
+    }
 }
 
 public class ErteleDto
@@ -52,4 +87,7 @@ public record HatirlaticiDto(
     Guid Id, string Baslik, string? Not, HatirlaticiTuru Tur, string? Kime, DateOnly Gun, TimeOnly? Saat, Tekrar Tekrar,
     int OnceGun, HatirlaticiDurumu Durum, DateTimeOffset SonrakiAn, DateTimeOffset? ErteleAn, DateTimeOffset EtkinAn,
     DateTimeOffset? OnceAn, int KalanGun, DateTimeOffset CreatedAt,
-    bool Israrli, int IsrarAraligiDakika, int IsrarEnCok, bool Acil);
+    bool Israrli, int IsrarAraligiDakika, int IsrarEnCok, bool Acil,
+    string? MaddeId, DateOnly? MaddeTarihi, string? GorevKimligi, List<Gunler> Gunler,
+    // Only an answer of "yaptım" sets this: the step of the chain (the plan item or task) that did not go through. The reminder itself was done.
+    string? ZincirHatasi = null);

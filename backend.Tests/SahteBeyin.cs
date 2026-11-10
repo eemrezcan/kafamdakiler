@@ -44,6 +44,12 @@ public sealed class SahteBeyin : IDisposable
                 adim = adimlar[min(n, len(adimlar)) - 1]
                 print(adim["cikti"])
                 sys.exit(adim["cikis"])
+            tarih = next((a.split("=", 1)[1] for a in argv if a.startswith("--tarih=")), None)
+            if tarih:
+                tarihli = os.path.join(d, "cikti-" + onek + "#" + tarih + ".json")
+                if os.path.exists(tarihli):
+                    print(open(tarihli, encoding="utf-8").read())
+                    sys.exit(0)
             konum = argv[argv.index("--") + 1:] if "--" in argv else []
             if konum:
                 konumlu = os.path.join(d, "cikti-" + onek + "@" + konum[0].replace("/", "_") + ".json")
@@ -97,6 +103,13 @@ public sealed class SahteBeyin : IDisposable
         var onek = komut.Replace(' ', '-');
         File.WriteAllText(Path.Combine(Klasor, $"cikti-{onek}.json"), json);
         File.WriteAllText(Path.Combine(Klasor, $"cikis-{onek}.txt"), cikis.ToString());
+        Mod = "cikti";
+    }
+
+    // From now on this command prints this JSON when it is called with this `--tarih` (the others keep printing what Cikti says).
+    public void CiktiTarihli(string komut, string tarih, string json)
+    {
+        File.WriteAllText(Path.Combine(Klasor, $"cikti-{komut.Replace(' ', '-')}#{tarih}.json"), json);
         Mod = "cikti";
     }
 

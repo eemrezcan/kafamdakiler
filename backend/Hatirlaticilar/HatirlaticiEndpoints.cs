@@ -91,19 +91,24 @@ public static class HatirlaticiEndpoints
             return Results.NoContent();
         });
 
-        yaz.MapPost("/{id:guid}/yaptim", async (Guid id, AppDbContext db, HatirlaticiAyari ayar, TimeProvider saat, CancellationToken ct) =>
+        // Done. A reminder tied to a plan item or a task takes it along (HatirlaticiZinciri): the reminder is saved first, and a failed step
+        // of the chain is reported in `zincirHatasi` without undoing it.
+        yaz.MapPost("/{id:guid}/yaptim", async (Guid id, AppDbContext db, HatirlaticiAyari ayar, HatirlaticiZinciriServisi zincir, TimeProvider saat, CancellationToken ct) =>
         {
             var h = await db.Hatirlaticilar.FindAsync([id], ct);
             if (h is null)
                 return Results.NotFound();
 
             var simdi = saat.GetUtcNow();
+            // The turn that is being done, read before the reminder moves on to the next one.
+            var hedefAn = h.EtkinAn;
             var sonuc = Yaptim(db, h, ayar.VarsayilanSaat, simdi);
             if (!sonuc.Basarili)
                 return Yanit(sonuc);
 
             await db.SaveChangesAsync(ct);
-            return Results.Ok(DtoYap(h, simdi));
+            var zincirSonucu = await zincir.HatirlaticiYapildiAsync(h, hedefAn, ct);
+            return Results.Ok(DtoYap(h, simdi, zincirSonucu.Hata));
         });
 
         yaz.MapPost("/{id:guid}/ertele", async (Guid id, ErteleDto dto, AppDbContext db, HatirlaticiAyari ayar, TimeProvider saat, CancellationToken ct) =>

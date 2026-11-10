@@ -99,8 +99,8 @@ public static partial class BeyinOkuma
     public static async Task<IResult> Proje(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         (await ProjeAl(kimlik, beyin, log, ct)).Sonuc();
 
-    public static async Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null) =>
-        (await GunAl(tarih, beyin, log, ct, ayar)).Sonuc();
+    public static async Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null, int? kapasiteDk = null) =>
+        (await GunAl(tarih, beyin, log, ct, ayar, kapasiteDk)).Sonuc();
 
     public static async Task<IResult> Sabah(BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct) =>
         (await SabahAl(beyin, log, saat, ct)).Sonuc();
@@ -129,13 +129,15 @@ public static partial class BeyinOkuma
         return CalistirAsync(beyin, log, ["proje", "goster"], [kimlik], ProjeAyrintisi, ct);
     }
 
-    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null)
+    // `kapasiteDk` is the capacity of that very day when the caller knows it (the person's weekday and weekend setting, GunKapasitesi);
+    // without it the `Gun:KapasiteSaat` setting in `ayar` decides.
+    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null, int? kapasiteDk = null)
     {
         if (!DateOnly.TryParseExact(tarih, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var gun))
             return Task.FromResult(Sorun<BeyinGunDto>("tarih", "Tarih yyyy-MM-dd biçiminde olmalı."));
 
-        var kapasiteDk = (ayar ?? new GunAyari()).KapasiteDk;
-        return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, g => GunAyrintisi(g, kapasiteDk), ct);
+        var kapasite = kapasiteDk ?? (ayar ?? new GunAyari()).KapasiteDk;
+        return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, g => GunAyrintisi(g, kapasite), ct);
     }
 
     // Yesterday's plan, by the day-turn rule (05:00): only what is still open. "Taşı" is `gun devret` on that date;

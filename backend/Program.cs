@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Ayarlar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Bildirimler;
 using Kafamdakiler.Brifing;
@@ -21,6 +22,7 @@ using Kafamdakiler.Ses;
 using Kafamdakiler.Takvim;
 using Kafamdakiler.Uretim;
 using Kafamdakiler.Yakalamalar;
+using Kafamdakiler.Yapilacaklar;
 using Kafamdakiler.Yonetim;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -120,6 +122,11 @@ builder.Services.AddGmail(builder.Configuration);
 builder.Services.AddProjeRepolari(builder.Configuration);
 builder.Services.AddSingleton(MobilAyari.Oku(builder.Configuration));
 builder.Services.AddSingleton(HatirlaticiAyari.Oku(builder.Configuration));
+builder.Services.AddScoped<HatirlaticiZinciriServisi>();
+// The day and calendar views of K-0024: one list of what a day holds, one "yaptım" for all of it.
+builder.Services.AddScoped<GunGorunumuServisi>();
+builder.Services.AddScoped<TakvimAraligiServisi>();
+builder.Services.AddScoped<GunIslemleri>();
 builder.Services.AddSingleton(TimeProvider.System);
 // Server to phone push (FCM): off while Firebase:AnahtarDosyasi is empty.
 builder.Services.AddBildirimler(builder.Configuration);
@@ -247,6 +254,8 @@ app.MapTakvimEndpoints();
 app.MapYonetimEndpoints();
 app.MapMobilEndpoints();
 app.MapBildirimEndpoints();
+app.MapGunEndpoints();
+app.MapAyarEndpoints();
 
 app.Run();
 

@@ -1,3 +1,4 @@
+using Kafamdakiler.Ayarlar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Data;
 using Kafamdakiler.Eylemler;
@@ -33,10 +34,10 @@ public class BrifingGirdiOkuyucu(AppDbContext db, BeyinIstemcisi beyin, GunAyari
 
         if (beyin.Bagli)
         {
-            var bugunYaniti = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari);
+            var bugunYaniti = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun, ct));
             if (!bugunYaniti.Basarili)
                 return new GirdiSonucu(null, "Bugünün planı beyinden okunamadı.");
-            var dunYaniti = await BeyinOkuma.GunAl($"{gun.AddDays(-1):yyyy-MM-dd}", beyin, gunluk, ct, gunAyari);
+            var dunYaniti = await BeyinOkuma.GunAl($"{gun.AddDays(-1):yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun.AddDays(-1), ct));
             if (!dunYaniti.Basarili)
                 return new GirdiSonucu(null, "Dünün planı beyinden okunamadı.");
 

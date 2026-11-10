@@ -127,6 +127,28 @@ Content-Type: application/json
 
 { "baslik": "Olmaz", "gun": "2026-11-10", "israrli": true, "israrAraligiDakika": 10, "israrEnCok": 5 }
 
+### 10c. A weekly reminder on several days (Monday and Friday); `gunler` is read only when `tekrar` is haftalik -> 201
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "Spor", "gun": "2026-11-09", "saat": "19:00:00", "tekrar": "haftalik", "gunler": ["pzt", "cum"] }
+
+### 10d. A reminder tied to a plan item (its permanent id and the day of its plan file) and to a task -> 201
+### Ticking the item (or finishing the task) closes it; "yaptım" on it ticks the item (see ../Yapilacaklar/gun.http)
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "Rapor yaz", "gun": "2026-11-10", "saat": "14:00:00", "maddeId": "a3f09c", "maddeTarihi": "2026-11-10", "gorevKimligi": "uye-girisi" }
+
+### 10e. Refused: an item without its day, an id that is not an item's, a weekday that is not one of the seven -> 400
+POST {{host}}/api/hatirlaticilar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "baslik": "Olmaz", "gun": "2026-11-10", "maddeId": "a3f09c", "tekrar": "haftalik", "gunler": ["pazartesi"] }
+
 ### 11. Delete -> 204
 DELETE {{host}}/api/hatirlaticilar/{{gorevId}}
 Authorization: Bearer {{token}}

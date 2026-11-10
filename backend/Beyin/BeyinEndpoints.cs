@@ -1,3 +1,5 @@
+using Kafamdakiler.Ayarlar;
+using Kafamdakiler.Data;
 using Kafamdakiler.ProjeRepolari;
 
 namespace Kafamdakiler.Beyin;
@@ -19,8 +21,9 @@ public static class BeyinEndpoints
         beyin.MapGet("/projeler/{kimlik}", (string kimlik, BeyinIstemcisi b, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
             BeyinOkuma.Proje(kimlik, b, log, ct));
 
-        beyin.MapGet("/gunler/{tarih}", (string tarih, BeyinIstemcisi b, GunAyari ayar, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
-            BeyinOkuma.Gun(tarih, b, log, ct, ayar));
+        // The day's warning counts against the person's capacity for that kind of day (weekday or weekend, Ayarlar/GunAyarlari).
+        beyin.MapGet("/gunler/{tarih}", async (string tarih, BeyinIstemcisi b, AppDbContext db, GunAyari ayar, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
+            await BeyinOkuma.Gun(tarih, b, log, ct, ayar, await GunKapasitesi.DkAsync(db, ayar, tarih, ct)));
 
         // The morning card: yesterday's plan, what is still open (yesterday by the 05:00 day-turn rule, worked out here).
         beyin.MapGet("/sabah", (BeyinIstemcisi b, TimeProvider saat, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>

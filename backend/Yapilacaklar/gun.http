@@ -1,0 +1,101 @@
+### Day and calendar view scenario (K-0024): one list for plan items, tasks, reminders and events, one "yaptım" for all of it.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword
+### (and Seed:AsistanEmail / Seed:AsistanPassword for the 403 example). Do not commit real values.
+### The brain must be configured (README, "Brain"); without it the day shows `kaynaklar.plan: "yok"` and the writes answer 503.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+@asistanEmail = <Seed:AsistanEmail>
+@asistanSifre = <Seed:AsistanPassword>
+@gun = 2026-11-10
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. The day: `bugun` or yyyy-MM-dd (the day turns at 05:00). Items are typed ("m:", "g:", "h:", "e:"), a reminder tied to an item is in its `hatirlatici`.
+GET {{host}}/api/gun/bugun
+Authorization: Bearer {{token}}
+
+### 3. A new item with a reminder (the estimate goes into the plan line as `~30dk`) -> 200 with the item
+# @name yeni
+POST {{host}}/api/gun/{{gun}}/ogeler
+Authorization: Bearer {{token}}
+Idempotency-Key: gun-yeni-001
+Content-Type: application/json
+
+{
+  "baslik": "Rapor yaz",
+  "tahminDk": 30,
+  "bolum": "Yapılacaklar",
+  "hatirlatici": { "saat": "14:00", "tekrar": "yok", "acil": false, "israrli": false, "onceGun": 0 }
+}
+
+###
+@oge = {{yeni.response.body.kimlik}}
+
+### 4. One "yaptım" for anything on the list: m: (plan item), g: (task), h: (reminder); an event (e:) has none -> 400
+### The answer has the item and `zincir`: what closed with it (the item's reminder, the task the brain closed, ...). `zincirHatasi` is set
+### when a step of the chain did not go through (what was done stays done).
+POST {{host}}/api/gun/{{gun}}/yaptim
+Authorization: Bearer {{token}}
+Idempotency-Key: gun-yaptim-001
+Content-Type: application/json
+
+{ "kimlik": "{{oge}}" }
+
+### 4b. Take it back (a plan item or a closed one-off reminder; a task cannot be reopened -> 409 `gorev-geri-alinamaz`)
+POST {{host}}/api/gun/{{gun}}/yaptim
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "kimlik": "{{oge}}", "geri": true }
+
+### 5. A leftover of yesterday: carry it to today with the existing devret, or drop it from today's list (nothing goes to the brain)
+POST {{host}}/api/gun/bugun/dunden/d1d1d1/birak
+Authorization: Bearer {{token}}
+
+### 6. The reminder of an item: set up (201), change (200), take away (204); one per item
+POST {{host}}/api/gun/{{gun}}/ogeler/{{oge}}/hatirlatici
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "saat": "15:00", "tekrar": "haftalik", "gunler": ["pzt", "cum"], "acil": true, "israrli": false, "onceGun": 1 }
+
+###
+PUT {{host}}/api/gun/{{gun}}/ogeler/{{oge}}/hatirlatici
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "saat": "16:00", "tekrar": "yok" }
+
+###
+DELETE {{host}}/api/gun/{{gun}}/ogeler/{{oge}}/hatirlatici
+Authorization: Bearer {{token}}
+
+### 7. The calendar range: a count per day (at most 42 days) and what is coming in the next 30 days
+GET {{host}}/api/takvim?baslangic=2026-11-01&bitis=2026-11-30
+Authorization: Bearer {{token}}
+
+### 7b. Refused: more than 42 days -> 400 { errors: { bitis } }
+GET {{host}}/api/takvim?baslangic=2026-11-01&bitis=2026-12-31
+Authorization: Bearer {{token}}
+
+### 8. The Asistan without the takvim.oku permission -> 403
+# @name asistanLogin
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{asistanEmail}}", "password": "{{asistanSifre}}" }
+
+###
+GET {{host}}/api/gun/bugun
+Authorization: Bearer {{asistanLogin.response.body.accessToken}}

@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Kafamdakiler.Data;
+using Kafamdakiler.Hatirlaticilar;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Kafamdakiler.Beyin;
@@ -19,9 +21,17 @@ public static class BeyinYazmaEndpoints
                 TekrarGuvenligi tekrar, BeyinIstemcisi b, ILogger<BeyinIstemcisi> log) =>
             tekrar.CalistirAsync(kullanici, anahtar, "madde-ekle", new { tarih, girdi }, () => BeyinYazma.MaddeEkle(tarih, girdi, b, log, CancellationToken.None), CancellationToken.None));
 
+        // A tick (not an undo) also closes the reminder tied to the item, or to the task the brain closed with it (HatirlaticiZinciri).
+        // It runs inside the guarded call, so a repeated request does not run the chain again.
         plan.MapPost("/isaretle", (string tarih, MaddeIsaretleGirdi girdi, [FromHeader(Name = Anahtar)] string? anahtar, ClaimsPrincipal kullanici,
-                TekrarGuvenligi tekrar, BeyinIstemcisi b, ILogger<BeyinIstemcisi> log) =>
-            tekrar.CalistirAsync(kullanici, anahtar, "madde-isaretle", new { tarih, girdi }, () => BeyinYazma.MaddeIsaretle(tarih, girdi, b, log, CancellationToken.None), CancellationToken.None));
+                TekrarGuvenligi tekrar, BeyinIstemcisi b, AppDbContext db, HatirlaticiAyari hatirlaticiAyari, TimeProvider saat, ILogger<BeyinIstemcisi> log) =>
+            tekrar.CalistirAsync(kullanici, anahtar, "madde-isaretle", new { tarih, girdi }, async () =>
+            {
+                var yanit = await BeyinYazma.MaddeIsaretle(tarih, girdi, b, log, CancellationToken.None);
+                if (yanit.Basarili && !girdi.Geri && yanit.Veri is MaddeIsaretlendiDto dto)
+                    await HatirlaticiZinciri.MaddeIsaretlendiAsync(db, dto.Tarih, girdi.Madde!.Trim(), dto, hatirlaticiAyari.VarsayilanSaat, saat.GetUtcNow(), log, CancellationToken.None);
+                return yanit;
+            }, CancellationToken.None));
 
         plan.MapPost("/devret", (string tarih, MaddeDevretGirdi girdi, [FromHeader(Name = Anahtar)] string? anahtar, ClaimsPrincipal kullanici,
                 TekrarGuvenligi tekrar, BeyinIstemcisi b, ILogger<BeyinIstemcisi> log) =>
@@ -47,7 +57,13 @@ public static class BeyinYazmaEndpoints
             tekrar.CalistirAsync(kullanici, anahtar, "gorev-ekle", new { girdi }, () => BeyinYazma.GorevEkle(girdi, b, log, CancellationToken.None), CancellationToken.None));
 
         gorev.MapPost("/{kimlik}/bitir", (string kimlik, [FromHeader(Name = Anahtar)] string? anahtar, ClaimsPrincipal kullanici,
-                TekrarGuvenligi tekrar, BeyinIstemcisi b, TimeProvider saat, ILogger<BeyinIstemcisi> log) =>
-            tekrar.CalistirAsync(kullanici, anahtar, "gorev-bitir", new { kimlik }, () => BeyinYazma.GorevBitir(kimlik, b, log, saat, CancellationToken.None), CancellationToken.None));
+                TekrarGuvenligi tekrar, BeyinIstemcisi b, AppDbContext db, HatirlaticiAyari hatirlaticiAyari, TimeProvider saat, ILogger<BeyinIstemcisi> log) =>
+            tekrar.CalistirAsync(kullanici, anahtar, "gorev-bitir", new { kimlik }, async () =>
+            {
+                var yanit = await BeyinYazma.GorevBitir(kimlik, b, log, saat, CancellationToken.None);
+                if (yanit.Basarili)
+                    await HatirlaticiZinciri.GorevBitirildiAsync(db, kimlik, hatirlaticiAyari.VarsayilanSaat, saat.GetUtcNow(), log, CancellationToken.None);
+                return yanit;
+            }, CancellationToken.None));
     }
 }

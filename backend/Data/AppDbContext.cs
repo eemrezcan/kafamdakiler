@@ -1,4 +1,5 @@
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Ayarlar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Bildirimler;
 using Kafamdakiler.Brifing;
@@ -10,6 +11,7 @@ using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Ozet;
 using Kafamdakiler.ProjeRepolari;
 using Kafamdakiler.Takvim;
+using Kafamdakiler.Yapilacaklar;
 using Kafamdakiler.Yakalamalar;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -44,6 +46,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<GmailMesaji> GmailMesajlari => Set<GmailMesaji>();
     public DbSet<Bildirim> Bildirimler => Set<Bildirim>();
     public DbSet<BildirimCihazi> BildirimCihazlari => Set<BildirimCihazi>();
+    public DbSet<BirakilanMadde> BirakilanMaddeler => Set<BirakilanMadde>();
+    public DbSet<GunAyarlari> GunAyarlari => Set<GunAyarlari>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -117,8 +121,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Durum).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.IsrarAraligiDakika).HasDefaultValue(Hatirlatici.VarsayilanIsrarAraligi);
             e.Property(x => x.IsrarEnCok).HasDefaultValue(Hatirlatici.VarsayilanIsrarEnCok);
+            e.Property(x => x.MaddeId).HasMaxLength(120);
+            e.Property(x => x.GorevKimligi).HasMaxLength(100);
+            // Gunler is a [Flags] enum; EF stores it as one int bit field.
             e.Ignore(x => x.EtkinAn);
             e.HasIndex(x => new { x.Durum, x.SonrakiAn });
+            e.HasIndex(x => x.GorevKimligi);
+            e.HasIndex(x => new { x.MaddeTarihi, x.MaddeId });
         });
 
         builder.Entity<HatirlaticiOlayi>(e =>
@@ -257,6 +266,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.CihazAdi).HasMaxLength(100);
             e.HasIndex(x => x.Token).IsUnique();
             e.HasIndex(x => x.KullaniciId);
+        });
+
+        builder.Entity<BirakilanMadde>(e =>
+        {
+            e.HasKey(x => new { x.Tarih, x.MaddeId, x.KullaniciId });
+            e.Property(x => x.MaddeId).HasMaxLength(120);
+        });
+
+        builder.Entity<GunAyarlari>(e =>
+        {
+            // One row for the whole app, always row 1.
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
         });
 
         builder.Entity<Dosya>(e =>

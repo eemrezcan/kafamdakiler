@@ -221,6 +221,22 @@ namespace Kafamdakiler.Migrations
                     b.ToTable("Oturumlar");
                 });
 
+            modelBuilder.Entity("Kafamdakiler.Ayarlar.GunAyarlari", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HaftaIciDk")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HaftaSonuDk")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GunAyarlari");
+                });
+
             modelBuilder.Entity("Kafamdakiler.Beyin.BeyinIslemi", b =>
                 {
                     b.Property<Guid>("KullaniciId")
@@ -647,8 +663,15 @@ namespace Kafamdakiler.Migrations
                     b.Property<DateTimeOffset?>("ErteleAn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GorevKimligi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateOnly>("Gun")
                         .HasColumnType("date");
+
+                    b.Property<int>("Gunler")
+                        .HasColumnType("integer");
 
                     b.Property<int>("IsrarAraligiDakika")
                         .ValueGeneratedOnAdd()
@@ -666,6 +689,13 @@ namespace Kafamdakiler.Migrations
                     b.Property<string>("Kime")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("MaddeId")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateOnly?>("MaddeTarihi")
+                        .HasColumnType("date");
 
                     b.Property<string>("Not")
                         .HasMaxLength(2000)
@@ -692,7 +722,11 @@ namespace Kafamdakiler.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GorevKimligi");
+
                     b.HasIndex("Durum", "SonrakiAn");
+
+                    b.HasIndex("MaddeTarihi", "MaddeId");
 
                     b.ToTable("Hatirlaticilar");
                 });
@@ -943,6 +977,26 @@ namespace Kafamdakiler.Migrations
                     b.HasIndex("Durum", "YakalandiAt");
 
                     b.ToTable("Yakalamalar");
+                });
+
+            modelBuilder.Entity("Kafamdakiler.Yapilacaklar.BirakilanMadde", b =>
+                {
+                    b.Property<DateOnly>("Tarih")
+                        .HasColumnType("date");
+
+                    b.Property<string>("MaddeId")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid>("KullaniciId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("BirakmaAni")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Tarih", "MaddeId", "KullaniciId");
+
+                    b.ToTable("BirakilanMaddeler");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
