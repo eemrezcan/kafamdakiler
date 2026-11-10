@@ -13,6 +13,7 @@ Future<void> isOnizlemesiniGoster(BuildContext context, SesViewModel viewModel) 
     context: context,
     // Opened from Bugün too: above the shell's "Yakala" button.
     useRootNavigator: true,
+    useSafeArea: true,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => _OnizlemeSheet(viewModel: viewModel),

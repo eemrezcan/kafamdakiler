@@ -240,7 +240,7 @@ void main() {
       expect(find.byKey(const ValueKey('sonuc-duzelt-e1')), findsNothing);
     });
 
-    testWidgets('a result that went to approval (E7): "Onayını bekliyor", not red, no "Geri al"/"Düzelt"; "Ekle" queues the approval and shows it done', (tester) async {
+    testWidgets('a result that went to approval (E7): "Onayını bekliyor", not red, no buttons of its own, it points to the approval card', (tester) async {
       ortam.api.akisOgeleri = [
         ornekAkis('r', AkisTuru.sonuc, sonuclar: [
           ornekSonuc(baslik: 'Dışarıdan gelen plan', ozet: 'onay bekliyor', eylemId: 'e7', durum: SonucDurumu.onayda, geriAlinabilir: false, hedefRota: '/asistan'),
@@ -249,33 +249,27 @@ void main() {
       await goster(tester);
 
       expect(find.text('ONAYINI BEKLİYOR'), findsOneWidget);
+      expect(find.text('Onayını bekliyor · aşağıdaki onay kartında'), findsOneWidget);
       expect(find.text('YAPAMADIM'), findsNothing);
+      expect(find.byType(OutlinedButton), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
       expect(find.byKey(const ValueKey('sonuc-geri-al-e7')), findsNothing);
       expect(find.byKey(const ValueKey('sonuc-duzelt-e7')), findsNothing);
+    });
 
-      await tester.tap(find.byKey(const ValueKey('sonuc-onay-uygula-e7')));
+    testWidgets('the approval card of the same action is the one place to decide: "Ekle" queues the approval', (tester) async {
+      ortam.api.akisOgeleri = [
+        ornekAkis('o', AkisTuru.onay, zaman: bugun.add(const Duration(minutes: 1)), eylem: ornekEylem(id: 'e7', ozet: 'Dışarıdan gelen plan', disKaynak: true)),
+        ornekAkis('r', AkisTuru.sonuc, sonuclar: [ornekSonuc(baslik: 'Dışarıdan gelen plan', eylemId: 'e7', durum: SonucDurumu.onayda, geriAlinabilir: false)]),
+      ];
+      await goster(tester);
+
+      expect(find.byType(FilledButton), findsOneWidget, reason: 'one decision place: no second pair of buttons');
+      await tester.tap(find.byKey(const ValueKey('onay-uygula-e7')));
       await bekle(tester);
 
       final satir = (await kuyruk(tester)).single;
       expect((satir.tur, satir.hedefId), (BekleyenTur.eylemUygula, 'e7'));
-      expect(find.text('✓ YAPTIM'), findsOneWidget);
-      expect(find.byKey(const ValueKey('sonuc-onay-uygula-e7')), findsNothing);
-    });
-
-    testWidgets('a result that went to approval: "Geç" queues the refusal and the row leaves the card', (tester) async {
-      ortam.api.akisOgeleri = [
-        ornekAkis('r', AkisTuru.sonuc, sonuclar: [
-          ornekSonuc(baslik: 'Dışarıdan gelen plan', eylemId: 'e7', durum: SonucDurumu.onayda, geriAlinabilir: false),
-        ]),
-      ];
-      await goster(tester);
-
-      await tester.tap(find.byKey(const ValueKey('sonuc-onay-gec-e7')));
-      await bekle(tester);
-
-      final satir = (await kuyruk(tester)).single;
-      expect((satir.tur, satir.hedefId), (BekleyenTur.eylemReddet, 'e7'));
-      expect(find.text('Dışarıdan gelen plan'), findsNothing);
     });
 
     testWidgets('a result row that waits for approval next to one that failed: the card says it could not do', (tester) async {
@@ -288,7 +282,7 @@ void main() {
       await goster(tester);
 
       expect(find.text('YAPAMADIM'), findsOneWidget);
-      expect(find.byKey(const ValueKey('sonuc-onay-uygula-e7')), findsOneWidget);
+      expect(find.text('Onayını bekliyor · aşağıdaki onay kartında'), findsOneWidget);
     });
 
     testWidgets('a question: its answers are buttons; one is sent through the queue and the question leaves, the answer shows', (tester) async {
@@ -428,6 +422,46 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('brifing-oy-up-0')));
       await bekle(tester);
       expect(ortam.api.brifingOylari.last, ('2026-10-31', 0, 0), reason: 'the same thumb again takes it back');
+    });
+
+    testWidgets('the thumbs are small icon buttons at the end of each card\'s row, not a block of their own under it', (tester) async {
+      final brifing = Brifing(
+        gun: '2026-10-31',
+        uretimAni: bugun,
+        yontem: 'hesap',
+        kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Plan başlığı', metin: 'Plan metni')],
+      );
+      ortam.api.akisOgeleri = [ornekAkis('br', AkisTuru.brifing, brifing: brifing)];
+      await goster(tester);
+
+      final metin = tester.getRect(find.text('Plan metni'));
+      final yukari = tester.getRect(find.byKey(const ValueKey('brifing-oy-up-0')));
+      final asagi = tester.getRect(find.byKey(const ValueKey('brifing-oy-down-0')));
+      expect(yukari.left, greaterThanOrEqualTo(metin.right - 1), reason: 'on the right of the text');
+      expect(yukari.top, lessThan(metin.bottom), reason: 'same row, not below');
+      expect(asagi.left, greaterThanOrEqualTo(yukari.right));
+      expect(yukari.height, lessThanOrEqualTo(40));
+    });
+
+    testWidgets('the colours: question is the primary colour, approval amber, result green, a failure red', (tester) async {
+      ortam.api.akisOgeleri = [
+        ornekAkis('o', AkisTuru.onay, zaman: bugun.add(const Duration(minutes: 3)), eylem: ornekEylem(id: 'e1', ozet: 'Onay')),
+        ornekAkis('q', AkisTuru.soru, zaman: bugun.add(const Duration(minutes: 2)), soru: const AsistanSorusu(id: 'q1', metin: 'Bir soru', secenekler: ['Evet'])),
+        ornekAkis('h', AkisTuru.sonuc, zaman: bugun.add(const Duration(minutes: 1)), sonuclar: [ornekSonuc(baslik: 'Hata', eylemId: null, durum: SonucDurumu.hata, geriAlinabilir: false)]),
+        ornekAkis('r', AkisTuru.sonuc, zaman: bugun, sonuclar: [ornekSonuc(baslik: 'Tamam')]),
+      ];
+      await goster(tester);
+      final tema = Theme.of(tester.element(find.byType(AsistanScreen)));
+
+      Color kenar(String metin) {
+        final kap = find.ancestor(of: find.text(metin), matching: find.byWidgetPredicate((w) => w is Container && w.decoration is BoxDecoration && (w.decoration! as BoxDecoration).border is Border && ((w.decoration! as BoxDecoration).border! as Border).left.width == 4)).first;
+        return (((tester.widget<Container>(kap).decoration! as BoxDecoration).border!) as Border).left.color;
+      }
+
+      expect(kenar('Bir soru'), tema.colorScheme.primary);
+      expect(kenar('Onay'), const Color(0xFFA8681A));
+      expect(kenar('Hata'), tema.colorScheme.error);
+      expect(kenar('Tamam'), const Color(0xFF2F7D4F));
     });
 
     testWidgets('a vote without a connection says so and changes nothing', (tester) async {
@@ -729,7 +763,6 @@ void main() {
       await goster(tester, rol: 'Asistan');
 
       expect(find.text('ONAYINI BEKLİYOR'), findsNWidgets(2));
-      expect(find.byKey(const ValueKey('sonuc-onay-uygula-e8')), findsNothing);
 
       expect(find.text('Bir soru'), findsOneWidget);
       expect(find.text('Bir onay'), findsOneWidget);
@@ -762,7 +795,13 @@ void main() {
       await goster(tester, boyut: const Size(360, 2000));
 
       expect(tester.takeException(), isNull);
-      for (final k in ['onay-uygula-e1', 'onay-reddet-e1', 'soru-cevap-0', 'sonuc-geri-al-e1', 'sonuc-duzelt-e1', 'sonuc-onay-uygula-e9', 'sonuc-onay-gec-e9', 'asistan-gonder', 'asistan-foto']) {
+      // The compact buttons inside the cards are 36+ dp tall (the theme pads their touch area to 48); the input's are full size.
+      for (final k in ['onay-uygula-e1', 'onay-reddet-e1', 'soru-cevap-0', 'sonuc-geri-al-e1', 'sonuc-duzelt-e1']) {
+        final boy = tester.getSize(find.byKey(ValueKey(k)));
+        expect(boy.width, greaterThanOrEqualTo(48), reason: k);
+        expect(boy.height, greaterThanOrEqualTo(36), reason: k);
+      }
+      for (final k in ['asistan-gonder', 'asistan-foto']) {
         final boy = tester.getSize(find.byKey(ValueKey(k)));
         expect(boy.width, greaterThanOrEqualTo(48), reason: k);
         expect(boy.height, greaterThanOrEqualTo(48), reason: k);

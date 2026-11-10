@@ -53,3 +53,6 @@ Color kartCercevesi(BuildContext context, Color renk) =>
 /// "Goal reached" green of the web theme (`--kd-ok`).
 Color tamamRengi(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark ? const Color(0xFF7FD0A0) : const Color(0xFF2F7D4F);
+
+/// The amber of "this waits on you" (approval cards): the habit palette's amber of the current theme.
+Color uyariRengi(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? _koyuRenkler['amber']! : _acikRenkler['amber']!;

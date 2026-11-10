@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -31,7 +32,21 @@ class OkumaKaydiViewModel extends ChangeNotifier {
   }) : _simdi = simdi ?? DateTime.now {
     final kitaplar = aliskanlik.devamEdenler;
     _secili = kitaplar.where((o) => o.id == ogeId).firstOrNull ?? kitaplar.firstOrNull;
-    _konum = _secili?.guncelKonum ?? 0;
+    _konum = _baslangicKonumu(_secili);
+  }
+
+  /// How many pages the sheet adds to the position when there is no daily goal.
+  static const varsayilanAdim = 10;
+
+  /// The sheet opens with the field filled in: the position plus what is left of today's goal (plus [varsayilanAdim] when
+  /// there is no goal), so one tap on "Kaydet" records the day's reading. The total of the item is the ceiling.
+  double _baslangicKonumu(OgeOzet? o) {
+    if (o == null) return 0;
+    final hedef = aliskanlik.gunlukHedef;
+    final ekle = hedef == null ? varsayilanAdim.toDouble() : math.max(0.0, hedef - (aliskanlik.bugun?.miktar ?? 0));
+    final konum = o.guncelKonum + ekle;
+    final tavan = o.toplam;
+    return tavan != null && konum > tavan ? math.max(tavan, o.guncelKonum) : konum;
   }
 
   final AliskanlikRepository _repo;
@@ -82,19 +97,35 @@ class OkumaKaydiViewModel extends ChangeNotifier {
     return konumDogrula(sayiMetni(_konum), baslangic: o.guncelKonum, toplam: o.toplam);
   }
 
-  bool get kaydedilebilir => hata == null && !_kaydediliyor;
+  /// Saving is offered as soon as there is something to save; a wrong position is told when "Kaydet" is pressed.
+  bool get kaydedilebilir => _secili != null && !_kaydediliyor;
+
+  bool _hataGoster = false;
+
+  /// [hata] once the person has changed the field or pressed "Kaydet"; null before that, so the sheet opens without a complaint.
+  String? get gorunenHata => _hataGoster ? hata : null;
+
+  /// "Kaydet" with a wrong position: show why instead of saving. True when the entry is fine.
+  bool kaydetmeyeHazir() {
+    if (hata == null) return true;
+    _hataGoster = true;
+    notifyListeners();
+    return false;
+  }
 
   void sec(String ogeId) {
     final o = kitaplar.where((k) => k.id == ogeId).firstOrNull;
     if (o == null || o.id == _secili?.id) return;
     _secili = o;
-    _konum = o.guncelKonum;
+    _konum = _baslangicKonumu(o);
+    _hataGoster = false;
     _bitti = false;
     notifyListeners();
   }
 
   void konumYaz(double yeni) {
     _konum = yeni < 0 ? 0 : yeni;
+    _hataGoster = true;
     notifyListeners();
   }
 

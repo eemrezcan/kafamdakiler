@@ -156,6 +156,16 @@ class AppTheme {
         style: TextButton.styleFrom(foregroundColor: mor, minimumSize: dugmeBoyu, shape: kontrolSekli, textStyle: dugmeYazisi),
       ),
       iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(shape: kontrolSekli)),
+      // Flat like the cards and buttons: no elevation shadow (which also shows as a hard black frame in screenshot tests).
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: mor,
+        foregroundColor: scheme.onPrimary,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+      ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           shape: const WidgetStatePropertyAll(kontrolSekli),

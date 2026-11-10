@@ -40,10 +40,10 @@ class GunOzetiKarti extends StatelessWidget {
                 Text('Asistan', style: tema.textTheme.labelMedium?.copyWith(color: tema.colorScheme.primary, fontWeight: FontWeight.w600)),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(ozet, key: const ValueKey('gun-ozet'), style: tema.textTheme.bodyLarge),
+            const SizedBox(height: 4),
+            Text(ozet, key: const ValueKey('gun-ozet'), style: tema.textTheme.bodyMedium),
             if (yuk.kapasiteDk > 0) ...[
-              const Divider(height: 28),
+              const Divider(height: 20),
               _Yuk(yuk: yuk, onDevret: onDevret, onYarinaBak: onYarinaBak),
             ],
             if (gun.kaynaklar.planOkunamadi)
@@ -82,31 +82,36 @@ class _Yuk extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Gün yükü', style: tema.textTheme.bodyMedium),
+            Text('Gün yükü', style: tema.textTheme.bodySmall),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 '${sureMetni(yuk.toplamDk)} / ${sureMetni(yuk.kapasiteDk)}',
                 key: const ValueKey('gun-yuku'),
                 textAlign: TextAlign.end,
-                style: tema.textTheme.titleSmall,
+                style: tema.textTheme.labelLarge,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         _Cubuk(yuk: yuk, asiyor: asiyor),
-        const SizedBox(height: 4),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
+        const SizedBox(height: 2),
+        // The sentence on the left, the one action at the end of the same line.
+        Row(
           children: [
-            Text(mesaj, key: const ValueKey('gun-yuk-mesaj'), style: tema.textTheme.bodyMedium?.copyWith(color: renk)),
+            Expanded(child: Text(mesaj, key: const ValueKey('gun-yuk-mesaj'), style: tema.textTheme.bodyMedium?.copyWith(color: renk))),
             if (eylem != null && eylem.$2 != null)
               TextButton(
                 key: const ValueKey('gun-yuk-eylem'),
                 onPressed: eylem.$2,
-                style: TextButton.styleFrom(minimumSize: const Size(48, 48), foregroundColor: renk),
-                child: Text(eylem.$1, style: const TextStyle(fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 40),
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  foregroundColor: renk,
+                ),
+                child: Text(eylem.$1, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               ),
           ],
         ),
@@ -133,7 +138,7 @@ class _Cubuk extends StatelessWidget {
     return Semantics(
       label: 'Gün yükü ${sureMetni(yuk.toplamDk)}, kapasite ${sureMetni(yuk.kapasiteDk)}',
       child: SizedBox(
-        height: 12,
+        height: 8,
         child: LayoutBuilder(
           builder: (context, kisit) {
             final g = kisit.maxWidth;
@@ -147,22 +152,22 @@ class _Cubuk extends StatelessWidget {
                 ),
                 Positioned(
                   left: 0,
-                  top: 2,
-                  bottom: 2,
+                  top: 0,
+                  bottom: 0,
                   width: g * dolu,
                   child: DecoratedBox(decoration: BoxDecoration(color: tema.colorScheme.primary, borderRadius: BorderRadius.circular(99))),
                 ),
                 if (asiyor)
                   Positioned(
                     left: g * kapasite,
-                    top: 2,
-                    bottom: 2,
+                    top: 0,
+                    bottom: 0,
                     right: 0,
                     child: DecoratedBox(
                       decoration: BoxDecoration(color: tema.colorScheme.error, borderRadius: const BorderRadius.horizontal(right: Radius.circular(99))),
                     ),
                   ),
-                Positioned(left: g * kapasite - 1, top: 0, bottom: 0, width: 2, child: ColoredBox(color: tema.colorScheme.onSurface)),
+                Positioned(left: g * kapasite - 0.5, top: -1, bottom: -1, width: 1.5, child: ColoredBox(color: tema.colorScheme.onSurface)),
               ],
             );
           },

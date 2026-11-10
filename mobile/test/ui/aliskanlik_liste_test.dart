@@ -151,6 +151,18 @@ void main() {
           devamEdenler: kitaplar,
         );
 
+    testWidgets('"Okudum" and "Kronometre" sit side by side at the same width, also at 360 dp', (tester) async {
+      ortam.api.aliskanliklar = [kitap(const [sapiens])];
+      await goster(tester);
+
+      final okudum = tester.getRect(find.byKey(const ValueKey('okudum-k1')));
+      final kronometre = tester.getRect(find.byKey(const ValueKey('kronometre-k1')));
+      expect(okudum.width, closeTo(kronometre.width, 0.5));
+      expect(okudum.top, closeTo(kronometre.top, 0.5), reason: 'one row');
+      expect(okudum.right, lessThan(kronometre.left));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('the book in progress with "Okudum" and "Kronometre"; "Okudum" opens the reading entry on that book', (tester) async {
       ortam.api.aliskanliklar = [kitap(const [sapiens])];
       await goster(tester);

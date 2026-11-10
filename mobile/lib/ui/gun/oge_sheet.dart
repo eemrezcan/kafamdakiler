@@ -15,6 +15,7 @@ import 'yapilacak_satiri.dart';
 Future<void> ogeAc(BuildContext context, {required GunViewModel viewModel, required Yapilacak oge, required bool yazabilir}) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,

@@ -17,6 +17,7 @@ import 'okuma_kaydi_view_model.dart';
 Future<void> okumaKaydiAc(BuildContext context, {required Aliskanlik aliskanlik, String? ogeId}) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
@@ -80,6 +81,7 @@ class _OkumaKaydiSayfasiState extends State<OkumaKaydiSayfasi> {
   }
 
   Future<void> _kaydet() async {
+    if (!_vm.kaydetmeyeHazir()) return;
     final nav = Navigator.of(context);
     final mesaj = ScaffoldMessenger.of(widget.kok);
     final sonuc = await _vm.kaydet();
@@ -104,7 +106,7 @@ class _OkumaKaydiSayfasiState extends State<OkumaKaydiSayfasi> {
         listenable: _vm,
         builder: (context, _) {
           final secili = _vm.secili;
-          final hata = _vm.hata;
+          final hata = _vm.gorunenHata;
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Column(

@@ -88,22 +88,23 @@ void main() {
     expect(find.byKey(const ValueKey('okuma-kitap-k1')), findsOneWidget);
     expect(find.byKey(const ValueKey('okuma-kitap-k2')), findsOneWidget);
     expect(find.byKey(const ValueKey('okuma-raf')), findsOneWidget);
-    expect(tester.widget<TextField>(find.byKey(const ValueKey('okuma-konum'))).controller!.text, '212');
-    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('okuma-kaydet'))).onPressed, isNull, reason: 'no progress yet');
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('okuma-konum'))).controller!.text, '230', reason: '212 + what is left of the goal (30 - 12)');
+    expect(find.text('bu kayıtta +18 sayfa → günün hedefine ulaştın'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('okuma-kaydet'))).onPressed, isNotNull, reason: 'ready to save at once');
   });
 
   testWidgets('a given book is selected when the sheet opens from that book\'s button', (tester) async {
     await ac(tester, kitapAliskanligi(), ogeId: 'k2');
 
     expect(find.text('Nereye kadar geldin? (48 / 320)'), findsOneWidget);
-    expect(tester.widget<TextField>(find.byKey(const ValueKey('okuma-konum'))).controller!.text, '48');
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('okuma-konum'))).controller!.text, '66');
   });
 
   testWidgets('the steps change the position and say what is left of the day\'s goal; at the goal it says so', (tester) async {
     await ac(tester, kitapAliskanligi());
 
-    for (var i = 0; i < 10; i++) {
-      await tester.tap(find.byKey(const ValueKey('okuma-arti')));
+    for (var i = 0; i < 8; i++) {
+      await tester.tap(find.byKey(const ValueKey('okuma-eksi')));
     }
     await tester.pump();
     expect(find.text('bu kayıtta +10 sayfa → hedefe 8 sayfa kaldı'), findsOneWidget);
@@ -118,18 +119,35 @@ void main() {
     expect(tester.widget<TextField>(find.byKey(const ValueKey('okuma-konum'))).controller!.text, '229');
   });
 
-  testWidgets('a position that is not above the current one, or above the total, is refused and cannot be saved', (tester) async {
+  testWidgets('a wrong position is told only after the field was changed, and "Kaydet" does not save it', (tester) async {
     await ac(tester, kitapAliskanligi());
+    expect(find.text('212 değerinden büyük olmalı.'), findsNothing);
 
     await tester.enterText(find.byKey(const ValueKey('okuma-konum')), '200');
     await tester.pump();
     expect(find.text('212 değerinden büyük olmalı.'), findsOneWidget);
-    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('okuma-kaydet'))).onPressed, isNull);
+    await tester.tap(find.byKey(const ValueKey('okuma-kaydet')));
+    await tester.pump();
+    expect(await kuyruk(tester), isEmpty);
+    expect(find.byKey(const ValueKey('okuma-konum')), findsOneWidget, reason: 'the sheet stays open');
 
     await tester.enterText(find.byKey(const ValueKey('okuma-konum')), '500');
     await tester.pump();
     expect(find.text('Toplamdan (412) büyük olamaz.'), findsOneWidget);
-    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('okuma-kaydet'))).onPressed, isNull);
+  });
+
+  testWidgets('with the day\'s goal already reached the field opens on the current position with no complaint; "Kaydet" then tells why', (tester) async {
+    await ac(tester, kitapAliskanligi(bugun: 30));
+
+    expect(tester.widget<TextField>(find.byKey(const ValueKey('okuma-konum'))).controller!.text, '212');
+    expect(find.text('212 değerinden büyük olmalı.'), findsNothing);
+    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('okuma-kaydet'))).onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const ValueKey('okuma-kaydet')));
+    await tester.pump();
+
+    expect(find.text('212 değerinden büyük olmalı.'), findsOneWidget);
+    expect(await kuyruk(tester), isEmpty);
   });
 
   testWidgets('saving queues the session with the start position and the minutes, closes the sheet and says so', (tester) async {
@@ -271,11 +289,49 @@ void main() {
     );
     addTearDown(vm.dispose);
 
-    expect(vm.fark, 0);
-    expect(vm.hedefKalan, 18);
+    expect(vm.fark, 18, reason: 'opens on the rest of the goal');
+    expect(vm.hedefKalan, 0);
+    vm.konumYaz(222);
+    expect(vm.fark, 10);
+    expect(vm.hedefKalan, 8);
     vm.konumYaz(250);
     expect(vm.fark, 38);
     expect(vm.bugunToplam, 50);
     expect(vm.hedefKalan, 0, reason: 'past the goal is zero left, not a negative');
+  });
+
+  group('the position the sheet opens with', () {
+    double konum(Aliskanlik a, {String? ogeId}) {
+      final vm = OkumaKaydiViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici, aliskanlik: a, ogeId: ogeId);
+      addTearDown(vm.dispose);
+      return vm.konum;
+    }
+
+    test('the position plus what is left of the goal; nothing left adds nothing', () {
+      expect(konum(kitapAliskanligi(bugun: 12)), 230);
+      expect(konum(kitapAliskanligi(bugun: 30)), 212);
+      expect(konum(kitapAliskanligi(bugun: 45)), 212, reason: 'past the goal is not a negative step');
+    });
+
+    test('without a goal it adds ten', () {
+      final hedefsiz = ornekAliskanlik(id: 'r', ad: 'Kitap okuma', tur: AliskanlikTuru.raf, birim: 'sayfa', hedef: null, devamEdenler: const [sapiens]);
+      expect(konum(hedefsiz), 222);
+    });
+
+    test('the total of the book is the ceiling', () {
+      const sonlarda = OgeOzet(id: 'k3', ad: 'Bitmek üzere', guncelKonum: 400, toplam: 412, ilerleme: 0.97);
+      expect(konum(kitapAliskanligi(kitaplar: const [sonlarda])), 412);
+    });
+
+    test('a bad entry is told only after a change or a save attempt', () {
+      final vm = OkumaKaydiViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici, aliskanlik: kitapAliskanligi(bugun: 30));
+      addTearDown(vm.dispose);
+
+      expect(vm.hata, isNotNull);
+      expect(vm.gorunenHata, isNull);
+      expect(vm.kaydedilebilir, isTrue);
+      expect(vm.kaydetmeyeHazir(), isFalse);
+      expect(vm.gorunenHata, isNotNull);
+    });
   });
 }

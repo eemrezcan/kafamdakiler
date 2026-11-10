@@ -13,6 +13,7 @@ import '../../utils/hatirlatici_hesap.dart';
 import '../../utils/is_gorunum.dart';
 import '../../utils/metin.dart';
 import '../brifing/brifing_gorunum.dart';
+import '../core/dugme_stilleri.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
 import 'asistan_view_model.dart';
@@ -158,7 +159,7 @@ class KullaniciBalonu extends StatelessWidget {
                     if (onSil != null)
                       TextButton(
                         key: const ValueKey('akis-girdi-sil'),
-                        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                        style: kompaktDugme(context),
                         onPressed: onSil,
                         child: const Text('Sil'),
                       ),
@@ -176,13 +177,10 @@ class KullaniciBalonu extends StatelessWidget {
 
 /// What the assistant did for an input: one row per result, each with its own "Geri al" and "Düzelt".
 class SonucKarti extends StatelessWidget {
-  const SonucKarti({super.key, required this.oge, required this.viewModel, this.yazabilir = true});
+  const SonucKarti({super.key, required this.oge, required this.viewModel});
 
   final AkisOgesi oge;
   final AsistanViewModel viewModel;
-
-  /// False hides the approval buttons of a result that waits (the account may not decide).
-  final bool yazabilir;
 
   /// Where "Düzelt" goes: the route the result names; a capture opens its edit page.
   static String? duzeltRotasi(AsistanSonucu s) {
@@ -199,7 +197,7 @@ class SonucKarti extends StatelessWidget {
     final sorunlu = oge.sonuclar.any((s) => s.sorunlu);
     // What waits for approval is not a failure: the label says so and the card is not red.
     final onayda = !sorunlu && oge.sonuclar.any((s) => s.onayda);
-    final renk = sorunlu ? tema.colorScheme.error : (onayda ? tema.colorScheme.secondary : tamam);
+    final renk = sorunlu ? tema.colorScheme.error : (onayda ? uyariRengi(context) : tamam);
     return _Kart(
       renk: renk,
       child: Column(
@@ -215,24 +213,7 @@ class SonucKarti extends StatelessWidget {
                   Text(s.baslik, style: const TextStyle(fontWeight: FontWeight.w600)),
                   if (s.ozet.isNotEmpty) Text(s.ozet, style: TextStyle(color: tema.colorScheme.onSurfaceVariant)),
                   if (s.mesaj != null) Text(s.mesaj!, style: TextStyle(color: s.sorunlu ? tema.colorScheme.error : tema.colorScheme.onSurfaceVariant)),
-                  if (yazabilir && s.onayda && s.eylemId != null)
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        FilledButton(
-                          key: ValueKey('sonuc-onay-uygula-${s.eylemId}'),
-                          style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-                          onPressed: () => viewModel.sonucuOnayla(s),
-                          child: const Text('Ekle'),
-                        ),
-                        OutlinedButton(
-                          key: ValueKey('sonuc-onay-gec-${s.eylemId}'),
-                          style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-                          onPressed: () => viewModel.sonucuGec(s),
-                          child: const Text('Geç'),
-                        ),
-                      ],
-                    ),
+                  if (s.onayda) Text('Onayını bekliyor · aşağıdaki onay kartında', style: TextStyle(color: tema.colorScheme.onSurfaceVariant)),
                   if (s.durum == SonucDurumu.izinYok) Text('Bu işe iznin yok.', style: TextStyle(color: tema.colorScheme.error)),
                   if (s.geriAlinabilir || duzeltRotasi(s) != null)
                     Wrap(
@@ -241,14 +222,14 @@ class SonucKarti extends StatelessWidget {
                         if (s.geriAlinabilir)
                           OutlinedButton(
                             key: ValueKey('sonuc-geri-al-${s.eylemId ?? s.hedefKimlik}'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                            style: kompaktDugme(context),
                             onPressed: () => viewModel.geriAl(s),
                             child: const Text('Geri al'),
                           ),
                         if (duzeltRotasi(s) case final rota?)
                           OutlinedButton(
                             key: ValueKey('sonuc-duzelt-${s.eylemId ?? s.hedefKimlik}'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                            style: kompaktDugme(context),
                             onPressed: () => rotayaGitAkis(context, rota),
                             child: const Text('Düzelt'),
                           ),
@@ -287,11 +268,11 @@ class SoruKarti extends StatelessWidget {
     final tema = Theme.of(context);
     final soru = oge.soru!;
     return _Kart(
-      renk: tema.colorScheme.secondary,
+      renk: tema.colorScheme.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Etiket('Bir soru', tema.colorScheme.secondary),
+          _Etiket('Bir soru', tema.colorScheme.primary),
           Text(soru.metin),
           if (yazabilir && soru.secenekler.isNotEmpty)
             Padding(
@@ -302,15 +283,15 @@ class SoruKarti extends StatelessWidget {
                 children: [
                   for (var i = 0; i < soru.secenekler.length; i++)
                     i == 0
-                        ? FilledButton(
+                        ? FilledButton.tonal(
                             key: ValueKey('soru-cevap-$i'),
-                            style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                            style: kompaktTonalDugme(context),
                             onPressed: () => viewModel.cevapla(soru, soru.secenekler[i]),
                             child: Text(soru.secenekler[i]),
                           )
                         : OutlinedButton(
                             key: ValueKey('soru-cevap-$i'),
-                            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                            style: kompaktDugme(context),
                             onPressed: () => viewModel.cevapla(soru, soru.secenekler[i]),
                             child: Text(soru.secenekler[i]),
                           ),
@@ -337,12 +318,12 @@ class OnayKarti extends StatelessWidget {
     final tema = Theme.of(context);
     final Eylem e = oge.eylem!;
     return _Kart(
-      renk: tema.colorScheme.secondary,
+      renk: uyariRengi(context),
       onTap: () => context.push('/eylem/${Uri.encodeComponent(e.id)}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Etiket(e.disKaynak ? 'Onayını bekliyor · dış kaynak' : 'Onayını bekliyor', tema.colorScheme.secondary),
+          _Etiket(e.disKaynak ? 'Onayını bekliyor · dış kaynak' : 'Onayını bekliyor', uyariRengi(context)),
           Text(e.ozet),
           if (e.gerekce != null && e.gerekce!.isNotEmpty)
             Text(e.gerekce!, style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onSurfaceVariant)),
@@ -353,15 +334,15 @@ class OnayKarti extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  FilledButton(
+                  FilledButton.tonal(
                     key: ValueKey('onay-uygula-${e.id}'),
-                    style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                    style: kompaktTonalDugme(context),
                     onPressed: () => viewModel.onayla(e),
                     child: const Text('Ekle'),
                   ),
                   OutlinedButton(
                     key: ValueKey('onay-reddet-${e.id}'),
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                    style: kompaktDugme(context),
                     onPressed: () => viewModel.reddet(e),
                     child: const Text('Geç'),
                   ),
@@ -445,13 +426,13 @@ class NotKarti extends StatelessWidget {
                 children: [
                   OutlinedButton(
                     key: ValueKey('not-geri-al-${y.id}'),
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                    style: kompaktDugme(context),
                     onPressed: () => viewModel.geriAl(AsistanSonucu(tur: sonucTuruNot, baslik: y.metin ?? '', hedefKimlik: y.id, geriAlinabilir: true)),
                     child: const Text('Geri al'),
                   ),
                   OutlinedButton(
                     key: ValueKey('not-baska-${y.id}'),
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                    style: kompaktDugme(context),
                     onPressed: () => context.push('/yakalama/${Uri.encodeComponent(y.id)}/duzenle'),
                     child: const Text('Başka yere'),
                   ),
@@ -502,40 +483,40 @@ class BrifingOgesi extends StatelessWidget {
               for (final k in kartlar)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(brifingTurIkonu(k.tur), size: 16, color: tema.colorScheme.primary),
-                          const SizedBox(width: 6),
-                          Expanded(child: Text(k.baslik, style: const TextStyle(fontWeight: FontWeight.w600))),
-                        ],
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(brifingTurIkonu(k.tur), size: 16, color: tema.colorScheme.primary),
                       ),
-                      Text(k.metin),
-                      if (yazabilir)
-                        Row(
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            IconButton(
-                              key: ValueKey('brifing-oy-up-${k.sira}'),
-                              tooltip: 'Beğendim',
-                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                              isSelected: k.oy == 1,
-                              icon: const Icon(LucideIcons.thumbsUp, size: 18),
-                              selectedIcon: Icon(LucideIcons.thumbsUp, size: 18, color: tema.colorScheme.primary),
-                              onPressed: () => viewModel.oyVer(oge, k, 1),
-                            ),
-                            IconButton(
-                              key: ValueKey('brifing-oy-down-${k.sira}'),
-                              tooltip: 'Beğenmedim',
-                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                              isSelected: k.oy == -1,
-                              icon: const Icon(LucideIcons.thumbsDown, size: 18),
-                              selectedIcon: Icon(LucideIcons.thumbsDown, size: 18, color: tema.colorScheme.primary),
-                              onPressed: () => viewModel.oyVer(oge, k, -1),
-                            ),
+                            Text(k.baslik, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(k.metin),
                           ],
                         ),
+                      ),
+                      // The thumbs sit at the end of the card's own row, small.
+                      if (yazabilir) ...[
+                        _OyDugmesi(
+                          key: ValueKey('brifing-oy-up-${k.sira}'),
+                          tooltip: 'Beğendim',
+                          ikon: LucideIcons.thumbsUp,
+                          secili: k.oy == 1,
+                          onPressed: () => viewModel.oyVer(oge, k, 1),
+                        ),
+                        _OyDugmesi(
+                          key: ValueKey('brifing-oy-down-${k.sira}'),
+                          tooltip: 'Beğenmedim',
+                          ikon: LucideIcons.thumbsDown,
+                          secili: k.oy == -1,
+                          onPressed: () => viewModel.oyVer(oge, k, -1),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -544,6 +525,32 @@ class BrifingOgesi extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A small thumb at the end of a briefing card's row.
+class _OyDugmesi extends StatelessWidget {
+  const _OyDugmesi({super.key, required this.tooltip, required this.ikon, required this.secili, required this.onPressed});
+
+  final String tooltip;
+  final IconData ikon;
+  final bool secili;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      iconSize: 16,
+      isSelected: secili,
+      icon: Icon(ikon, size: 16, color: tema.colorScheme.onSurfaceVariant),
+      selectedIcon: Icon(ikon, size: 16, color: tema.colorScheme.primary),
+      onPressed: onPressed,
     );
   }
 }

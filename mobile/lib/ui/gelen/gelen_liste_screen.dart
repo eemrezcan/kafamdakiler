@@ -77,10 +77,11 @@ class GelenListeScreen extends StatelessWidget {
   Future<void> _onizle(BuildContext context, GelenKarti kart, {required bool karar}) {
     return showModalBottomSheet<void>(
       context: context,
+      // Above the shell's bottom bar, which otherwise covers the sheet's buttons.
+      useRootNavigator: true,
+      useSafeArea: true,
       isScrollControlled: true,
       showDragHandle: true,
-      // Above the shell's "Yakala" button, which otherwise covers the sheet's buttons.
-      useRootNavigator: true,
       builder: (sheet) => _Onizleme(
         kart: kart,
         hedef: kart.hedef == null ? null : viewModel.hedefMetni(kart.hedef!),

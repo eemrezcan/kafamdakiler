@@ -8,6 +8,7 @@ import '../gun/gun_view_model.dart';
 Future<void> devretAc(BuildContext context, {required GunViewModel viewModel}) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,

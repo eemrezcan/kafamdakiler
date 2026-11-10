@@ -94,18 +94,6 @@ class AsistanSonucu {
   /// Could not be done: not allowed, failed or refused. Waiting for approval is not a problem.
   bool get sorunlu => !uygulandi && !onayda;
 
-  AsistanSonucu kopya({String? durum, String? mesaj}) => AsistanSonucu(
-        tur: tur,
-        baslik: baslik,
-        ozet: ozet,
-        durum: durum ?? this.durum,
-        eylemId: eylemId,
-        hedefKimlik: hedefKimlik,
-        hedefRota: hedefRota,
-        geriAlinabilir: geriAlinabilir,
-        mesaj: mesaj ?? this.mesaj,
-      );
-
   AsistanSonucu geriAlindi() => AsistanSonucu(
         tur: tur,
         baslik: baslik,

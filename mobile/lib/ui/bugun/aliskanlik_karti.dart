@@ -493,23 +493,27 @@ class _DevamEdenOge extends StatelessWidget {
                 const SizedBox(height: 8),
                 // Reading is written by the Sahip, like the other writes; without the user repository (a bare card) it shows.
                 if (context.watch<KullaniciRepository?>()?.sahip ?? true)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  // Side by side, the same width.
+                  Row(
                     children: [
-                      FilledButton.icon(
-                        key: ValueKey('okudum-${oge.id}'),
-                        style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-                        onPressed: () => okumaKaydiAc(context, aliskanlik: aliskanlik, ogeId: oge.id),
-                        icon: const Icon(LucideIcons.check, size: 18),
-                        label: const Text('Okudum'),
+                      Expanded(
+                        child: FilledButton.icon(
+                          key: ValueKey('okudum-${oge.id}'),
+                          style: FilledButton.styleFrom(minimumSize: const Size(48, 48), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                          onPressed: () => okumaKaydiAc(context, aliskanlik: aliskanlik, ogeId: oge.id),
+                          icon: const Icon(LucideIcons.check, size: 18),
+                          label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Okudum', maxLines: 1)),
+                        ),
                       ),
-                      OutlinedButton.icon(
-                        key: ValueKey('kronometre-${oge.id}'),
-                        style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-                        onPressed: () => context.push('/oge/${oge.id}/oturum'),
-                        icon: const Icon(LucideIcons.timer, size: 18),
-                        label: const Text('Kronometre'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          key: ValueKey('kronometre-${oge.id}'),
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                          onPressed: () => context.push('/oge/${oge.id}/oturum'),
+                          icon: const Icon(LucideIcons.timer, size: 18),
+                          label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Kronometre', maxLines: 1)),
+                        ),
                       ),
                     ],
                   ),

@@ -122,6 +122,9 @@ class _AsistanScreenState extends State<AsistanScreen> {
   Future<void> _fotografMenusu() async {
     final kaynak = await showModalBottomSheet<ImageSource>(
       context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(
@@ -457,7 +460,7 @@ class _Akis extends StatelessWidget {
             oge: o,
             onSil: o.gonderilemedi != null ? () => viewModel.girdiyiSil(o) : null,
           ),
-        AkisTuru.sonuc => SonucKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel, yazabilir: yazabilir),
+        AkisTuru.sonuc => SonucKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel),
         AkisTuru.soru when o.soru != null => SoruKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel, yazabilir: yazabilir),
         AkisTuru.onay when o.eylem != null => OnayKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel, yazabilir: yazabilir),
         AkisTuru.isKarti when o.isKarti != null => IsKartiOgesi(key: ValueKey('akis-${o.id}'), oge: o),

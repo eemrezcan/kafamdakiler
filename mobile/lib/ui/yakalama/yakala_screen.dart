@@ -438,6 +438,8 @@ class _ProjeSecici extends StatelessWidget {
   Future<void> _ac(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
+      useSafeArea: true,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) => _ProjeListesi(

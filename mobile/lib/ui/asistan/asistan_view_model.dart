@@ -174,16 +174,6 @@ class AsistanViewModel extends ChangeNotifier {
     unawaited(_esitleyici.gonder());
   }
 
-  Future<void> sonucuOnayla(AsistanSonucu sonuc) async {
-    await _repo.sonucuOnayla(sonuc);
-    unawaited(_esitleyici.gonder());
-  }
-
-  Future<void> sonucuGec(AsistanSonucu sonuc) async {
-    await _repo.sonucuGec(sonuc);
-    unawaited(_esitleyici.gonder());
-  }
-
   Future<void> geriAl(AsistanSonucu sonuc) async {
     await _repo.geriAl(sonuc);
     unawaited(_esitleyici.gonder());

@@ -19,6 +19,7 @@ import 'profil_view_model.dart';
 Future<void> profilAc(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
@@ -165,6 +166,7 @@ class ProfilSayfasi extends StatelessWidget {
   void _bildirimAyarlari(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
@@ -203,6 +205,7 @@ class ProfilSayfasi extends StatelessWidget {
   void _kuyruk(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,

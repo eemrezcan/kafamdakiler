@@ -15,6 +15,23 @@ String seritEtiketi(Aliskanlik a) {
   return a.gunlukHedef == null ? miktar : '$miktar / ${sayiMetni(a.gunlukHedef!)}';
 }
 
+/// What a habit's ring shows: [oran] is the filled share (0..1), [asildi] a limit habit (`enCok`) that went past its limit.
+typedef HalkaDurumu = ({double oran, bool asildi, bool tamam});
+
+/// The one calculation behind a ring: a yes/no habit by `deger`; a counter and a shelf (today's reading) by `miktar` against the
+/// daily goal (`deger` when there is no goal); a limit habit fills up towards its limit and turns red once past it.
+HalkaDurumu halkaDurumu(Aliskanlik a) {
+  final b = a.bugun;
+  final deger = (b?.deger ?? 0).clamp(0.0, 1.0).toDouble();
+  if (a.olcu == Olcu.evetHayir && a.tur != AliskanlikTuru.raf) return (oran: deger, asildi: false, tamam: deger >= 1);
+  final hedef = a.gunlukHedef;
+  if (hedef == null || hedef <= 0) return (oran: deger, asildi: false, tamam: deger >= 1);
+  final miktar = b?.miktar ?? 0;
+  final oran = (miktar / hedef).clamp(0.0, 1.0).toDouble();
+  if (a.hedefYonu == HedefYonu.enCok) return (oran: oran, asildi: miktar > hedef, tamam: false);
+  return (oran: oran, asildi: false, tamam: miktar >= hedef);
+}
+
 /// Today's habits as a row of rings (K-0024): a tap ticks a yes/no habit, adds one to a counter, and for a shelf habit opens
 /// the reading entry; a long press on a counter types the total. [yazabilir] false (the Asistan) makes the rings plain.
 class AliskanlikSeridi extends StatelessWidget {
@@ -38,7 +55,7 @@ class AliskanlikSeridi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 104,
+      height: 120,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -77,9 +94,10 @@ class _Halka extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final renk = aliskanlikRengi(context, aliskanlik.renk);
-    final oran = (aliskanlik.bugun?.deger ?? 0).clamp(0, 1).toDouble();
-    final tamam = oran >= 1;
+    final halka = halkaDurumu(aliskanlik);
+    final renk = halka.asildi ? tema.colorScheme.error : aliskanlikRengi(context, aliskanlik.renk);
+    final oran = halka.oran;
+    final tamam = halka.tamam;
     final etiket = seritEtiketi(aliskanlik);
     return Semantics(
       button: onTap != null,
@@ -91,7 +109,7 @@ class _Halka extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         child: SizedBox(
-          width: 72,
+          width: 76,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -120,9 +138,10 @@ class _Halka extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(aliskanlik.ad, maxLines: 1, overflow: TextOverflow.ellipsis, style: tema.textTheme.labelMedium),
+                Text(aliskanlik.ad, maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: tema.textTheme.labelMedium?.copyWith(height: 1.15)),
                 Text(
                   etiket,
+                  textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: tema.textTheme.labelSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant),

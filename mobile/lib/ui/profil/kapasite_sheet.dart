@@ -11,6 +11,7 @@ import '../../data/repositories/gun_repository.dart';
 Future<void> kapasiteAc(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,

@@ -238,6 +238,18 @@ void main() {
     expect(find.byKey(const ValueKey('takvim-gorunum')), findsOneWidget);
   });
 
+  testWidgets('a bottom sheet covers the bottom bar: the sheets open on the root navigator', (tester) async {
+    await uygulamayiAc(tester);
+    await sekme(tester, 'Takvim');
+    expect(find.byType(NavigationBar).hitTestable(), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('takvim-yeni')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Yeni yapılacak'), findsWidgets);
+    expect(find.byType(NavigationBar).hitTestable(), findsNothing, reason: 'the sheet and its barrier are over the bar');
+  });
+
   group('a day\'s address (E8)', () {
     testWidgets('/gun/{tarih} opens Takvim on that day and shows that day\'s list', (tester) async {
       ortam.api.gunGorunumleri['2026-11-11'] = ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Yarının işi', saat: '09:00')]);

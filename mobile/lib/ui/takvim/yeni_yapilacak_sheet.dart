@@ -15,6 +15,7 @@ import '../gun/hatirlatici_alanlari.dart';
 Future<void> yeniYapilacakAc(BuildContext context, {required GunViewModel viewModel, required DateTime tarih, required DateTime bugun}) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,

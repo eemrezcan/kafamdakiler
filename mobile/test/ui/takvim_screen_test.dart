@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kafamdakiler/config/app_theme.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/gun_gorunum.dart';
@@ -393,6 +394,21 @@ void main() {
       final kart = tester.getRect(find.byType(SegmentedButton<TakvimGorunumu>));
       expect(kart.width, lessThanOrEqualTo(640));
       expect(kart.center.dx, closeTo(600, 1));
+    });
+
+    testWidgets('the ＋ button is the theme\'s flat FAB (no shadow frame) and the list ends a FAB\'s height above the bottom', (tester) async {
+      ortam.api.gunGorunumleri['2026-10-31'] = ornekGun(ogeler: bugunIsleri);
+      await goster(tester);
+
+      final fab = tester.widget<FloatingActionButton>(find.byKey(const ValueKey('takvim-yeni')));
+      expect(fab.elevation, isNull, reason: 'it takes the elevation of the theme');
+      for (final tema in [AppTheme.light, AppTheme.dark]) {
+        expect(tema.floatingActionButtonTheme.elevation, 0);
+        expect(tema.floatingActionButtonTheme.highlightElevation, 0);
+        expect(tema.floatingActionButtonTheme.backgroundColor, tema.colorScheme.primary);
+      }
+      final liste = tester.widget<ListView>(find.byType(ListView).first);
+      expect((liste.padding! as EdgeInsets).bottom, greaterThanOrEqualTo(72), reason: '56 dp FAB + its 16 dp margin');
     });
 
     testWidgets('the day cells and the arrows are at least 48 dp', (tester) async {

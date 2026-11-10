@@ -226,6 +226,20 @@ void main() {
       expect(find.byKey(const ValueKey('gun-yuku')), findsNothing);
     });
 
+    testWidgets('the card is compact: the summary one step below bodyLarge, the bar thin, the action at the end of the load line', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler.skip(1).toList(), kapasiteDk: 180));
+
+      final tema = Theme.of(tester.element(find.byKey(const ValueKey('gun-ozet'))));
+      final stil = tester.widget<Text>(find.byKey(const ValueKey('gun-ozet'))).style!;
+      expect(stil.fontSize, tema.textTheme.bodyMedium!.fontSize);
+      expect(stil.fontSize, lessThan(tema.textTheme.bodyLarge!.fontSize!));
+      expect(tester.getSize(find.byWidgetPredicate((w) => w is Semantics && (w.properties.label ?? '').startsWith('Gün yükü '))).height, lessThanOrEqualTo(10), reason: 'a thin bar');
+      final mesaj = tester.getRect(find.byKey(const ValueKey('gun-yuk-mesaj')));
+      final eylem = tester.getRect(find.byKey(const ValueKey('gun-yuk-eylem')));
+      expect(eylem.left, greaterThanOrEqualTo(mesaj.right - 1), reason: 'on the same line, after the sentence');
+      expect((eylem.center.dy - mesaj.center.dy).abs(), lessThan(12));
+    });
+
     testWidgets('rows without an estimate are counted aside', (tester) async {
       await goster(tester, gun: ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Tahminsiz')]));
       expect(find.text('1 işin süre tahmini yok.'), findsOneWidget);
@@ -234,6 +248,22 @@ void main() {
 
   group('left over from yesterday', () {
     final market = [const DundenKalan(maddeId: 'ab12cd', baslik: 'Market', tahminDk: 45)];
+
+    testWidgets('the strip is one compact line: the title on the left, a small "Bırak" and a tonal "Bugüne al" on the right', (tester) async {
+      await goster(tester, gun: ornekGun(dunden: market));
+
+      final bant = find.ancestor(of: find.textContaining('Dünden kaldı: '), matching: find.byType(Card));
+      expect(tester.getSize(bant).height, lessThanOrEqualTo(48), reason: 'one line, not a block');
+      final baslik = tester.getRect(find.textContaining('Dünden kaldı: '));
+      final birak = tester.getRect(find.byKey(const ValueKey('dunden-birak-ab12cd')));
+      final al = tester.getRect(find.byKey(const ValueKey('dunden-al-ab12cd')));
+      expect(baslik.right, lessThanOrEqualTo(birak.left));
+      expect(birak.right, lessThanOrEqualTo(al.left));
+      expect(al.height, lessThanOrEqualTo(40));
+      expect(find.descendant(of: bant, matching: find.byType(TextButton)), findsOneWidget);
+      final stil = tester.widget<FilledButton>(find.byKey(const ValueKey('dunden-al-ab12cd'))).style!;
+      expect(stil.backgroundColor!.resolve({}), isNot(Theme.of(tester.element(bant)).colorScheme.onSurface), reason: 'not the solid ink button');
+    });
 
     testWidgets('"Bugüne al" carries it with a plan write dated yesterday and it joins the list', (tester) async {
       await goster(tester, gun: ornekGun(dunden: market));
@@ -576,10 +606,16 @@ void main() {
       ortam.api.aliskanliklar = [ornekAliskanlik(id: 'y', ad: 'Spor', olcu: Olcu.evetHayir)];
       await goster(tester, gun: ornekGun(ogeler: yedekIsler, dunden: [const DundenKalan(maddeId: 'ab12cd', baslik: 'Market')]));
 
-      for (final anahtar in ['yaptim-m:aa11bb', 'serit-y', 'dunden-al-ab12cd', 'dunden-birak-ab12cd']) {
+      for (final anahtar in ['yaptim-m:aa11bb', 'serit-y']) {
         final boy = tester.getSize(find.byKey(ValueKey(anahtar)));
         expect(boy.width, greaterThanOrEqualTo(48), reason: anahtar);
         expect(boy.height, greaterThanOrEqualTo(48), reason: anahtar);
+      }
+      // The compact buttons of the "Dünden kaldı" strip are 36+ dp tall; the theme pads their touch area to 48.
+      for (final anahtar in ['dunden-al-ab12cd', 'dunden-birak-ab12cd']) {
+        final boy = tester.getSize(find.byKey(ValueKey(anahtar)));
+        expect(boy.width, greaterThanOrEqualTo(48), reason: anahtar);
+        expect(boy.height, greaterThanOrEqualTo(36), reason: anahtar);
       }
     });
   });
