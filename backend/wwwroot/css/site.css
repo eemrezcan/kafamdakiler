@@ -3951,3 +3951,70 @@ button.kd-yaptim:hover {
   display: grid;
   gap: 0.75rem;
 }
+
+/* ---------- K-0024: bell in the top bar and the notification center (W1b) ---------- */
+
+.kd-zil {
+  position: relative;
+  text-decoration: none;
+}
+
+.kd-zil.active {
+  color: var(--kd-text);
+}
+
+.kd-zil-sayi {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.25rem;
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--kd-danger);
+  color: var(--kd-bg);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bell takes the "push right" role; what follows it must not push too. */
+.kd-topbar-inner > .kd-zil {
+  margin-left: auto;
+}
+
+.kd-topbar-inner > .kd-zil ~ .kd-profil,
+.kd-topbar-inner > .kd-zil ~ .kd-icon-btn {
+  margin-left: 0;
+}
+
+.kd-bildirimler {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.kd-bildirim .kd-satir-meta {
+  flex-wrap: wrap;
+}
+
+.kd-bildirim-nokta {
+  flex: 0 0 auto;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--kd-line-strong);
+}
+
+.kd-bildirim.is-okunmamis .kd-bildirim-nokta {
+  border-color: var(--kd-violet);
+  background: var(--kd-violet);
+}
+
+.kd-bildirim.is-okunmamis .kd-satir-baslik {
+  font-weight: 600;
+}
+
+.kd-bildirim-islem {
+  margin-top: 0.4rem;
+}

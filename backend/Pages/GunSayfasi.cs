@@ -129,39 +129,12 @@ public abstract class GunSayfasi(
         if (GunEndpoints.Ayir(kimlik?.Trim() ?? "") is not { } parca || parca.Onek == 'e')
             return Reddet("Bu öğe devredilemez.");
 
-        var gunMetni = $"{gun:yyyy-MM-dd}";
-        switch (parca.Onek)
-        {
-            case 'm':
-                return Don(await BeyinYazma.MaddeDevret(gunMetni, new MaddeDevretGirdi(parca.Deger), Istemci, Gunluk, CancellationToken.None),
-                    "Ertesi güne devredildi");
+        if (parca.Onek == 'h' && !Guid.TryParse(parca.Deger, out _))
+            return Reddet("Hatırlatıcı kimliği geçerli değil.");
 
-            case 'g':
-            {
-                // The task keeps its own file; tomorrow gets an item that points at it.
-                var gorunum = await gunServisi.GetirAsync(gun, KullaniciId, CancellationToken.None);
-                var baslik = gorunum.Ogeler.FirstOrDefault(o => o.Kimlik == kimlik!.Trim())?.Baslik;
-                if (baslik is null)
-                    return Reddet("Görev o günün listesinde yok.");
-
-                return Don(await BeyinYazma.MaddeEkle($"{gun.AddDays(1):yyyy-MM-dd}", new MaddeEkleGirdi(baslik, null, parca.Deger), Istemci, Gunluk, CancellationToken.None),
-                    "Ertesi güne devredildi");
-            }
-
-            default:
-            {
-                if (!Guid.TryParse(parca.Deger, out var id) || await db.Hatirlaticilar.FindAsync([id]) is not { } h)
-                    return Reddet("Hatırlatıcı bulunamadı.");
-
-                var sonuc = HatirlaticiIslemleri.Ertele(db, h, "yarin", hatirlaticiAyari.VarsayilanSaat, saat.GetUtcNow());
-                if (!sonuc.Basarili)
-                    return Reddet(sonuc.Mesaj ?? "Hatırlatıcı ertelenemedi.");
-
-                await db.SaveChangesAsync();
-                Bildirim = "Yarına ertelendi";
-                return DonusSonucu();
-            }
-        }
+        // One rule for the three kinds (m:, g:, h:), the same call as POST /api/gun/{tarih}/devret.
+        var yanit = await islemler.DevretAsync(gun, parca.Onek, parca.Deger, kimlik!.Trim(), KullaniciId, CancellationToken.None);
+        return Don(yanit, parca.Onek == 'h' ? "Yarına ertelendi" : "Ertesi güne devredildi");
     }
 
     public async Task<IActionResult> OnPostNotAsync(string? tarih, string? madde, string? metin)

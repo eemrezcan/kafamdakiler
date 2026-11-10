@@ -31,9 +31,6 @@ public class IndexModel(
 
     public List<YapilacakDto> Yaklasan { get; private set; } = [];
 
-    // The day of a coming row, where the database knows it (reminders and events). A task's due day is not in the row.
-    public Dictionary<string, DateOnly> YaklasanGunleri { get; private set; } = [];
-
     public GunGorunumuDto? SeciliGun { get; private set; }
 
     public Dictionary<string, string> ProjeAdlari { get; private set; } = [];
@@ -82,34 +79,7 @@ public class IndexModel(
         if (SeciliGun?.Kaynaklar.Plan == "tamam")
             ProjeAdlari = ((await BeyinOkuma.ProjelerAl(Istemci, Gunluk, ct)).Veri ?? []).ToDictionary(p => p.Kimlik, p => p.Baslik);
 
-        await YaklasanGunleriniBulAsync(ct);
         return Page();
-    }
-
-    private async Task YaklasanGunleriniBulAsync(CancellationToken ct)
-    {
-        try
-        {
-            var hatirlaticilar = Yaklasan.Where(o => o.HatirlaticiId is not null && o.Tur == YapilacakTuru.Hatirlatici).Select(o => o.HatirlaticiId!.Value).ToList();
-            if (hatirlaticilar.Count > 0)
-            {
-                var liste = await Db.Hatirlaticilar.AsNoTracking().Where(h => hatirlaticilar.Contains(h.Id)).ToListAsync(ct);
-                foreach (var h in liste)
-                    YaklasanGunleri[$"h:{h.Id}"] = GunSiniri.Bugun(h.ErteleAn ?? h.SonrakiAn);
-            }
-
-            var etkinlikler = Yaklasan.Where(o => o.EtkinlikId is not null).Select(o => o.EtkinlikId!.Value).ToList();
-            if (etkinlikler.Count > 0)
-            {
-                var liste = await Db.TakvimEtkinlikleri.AsNoTracking().Where(e => etkinlikler.Contains(e.Id)).Select(e => new { e.Id, e.BaslangicGunu }).ToListAsync(ct);
-                foreach (var e in liste)
-                    YaklasanGunleri[$"e:{e.Id}"] = e.BaslangicGunu;
-            }
-        }
-        catch (Exception e) when (e is not OperationCanceledException)
-        {
-            Gunluk.LogError(e, "The days of the coming rows could not be read.");
-        }
     }
 
     // A form's way back: the month and the day it was on.

@@ -167,12 +167,16 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Gün kapasitesi ayarı: `backend/Ayarlar/` (`GunAyarlari`, `GunKapasitesi`, uçlar, `ayarlar.http`); `BeyinOkuma`, `ZamanCizelgesi` ve `BrifingGirdiOkuyucu` bu ayarı okur.
   - `Program.cs` kayıtları, `AppDbContext` ayarları.
   - Testler: `backend.Tests/GunTestTabani.cs`, `GunGorunumuApiTests`, `GunYaptimApiTests`, `GunOgeApiTests`, `TakvimAraligiApiTests`, `HatirlaticiCokGunluTests`, `HatirlaticiZinciriTests`, `HatirlaticiBagiApiTests`, `OpenApiUclariTests`, `SahteBeyin.cs` eklemesi (`CiktiTarihli`).
-- UI revizyonu, Faz W1 (web; 2026-11-11, K-0024, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek. Bildirimler sayfası ve menüdeki 🔔 sayısı A2 birleşince eklenecek.
+- UI revizyonu, Faz W1 (web; 2026-11-11, K-0024, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
   - Menü: `backend/Pages/Shared/_Layout.cshtml` (Bugün · Takvim · Asistan · Alışkanlıklar · Beyin, profil menüsü, çekmece), `site.css` sonuna "K-0024" bölümü, `Pages/Ayarlar/Gun.cshtml(.cs)` (gün kapasitesi).
   - Bugün ve Takvim: `Pages/GunSayfasi.cs` (iki sayfanın ortak yazmaları: yaptım, devret, not, böl, öğenin hatırlatıcısı, yeni öğe), `Pages/GunMetinleri.cs`, `Pages/Index.cshtml(.cs)`, `Pages/Takvim/Index.cshtml(.cs)`, `Pages/Shared/_GunSatiri.cshtml`, `_YeniOge.cshtml`, `_HatirlaticiAlanlari.cshtml`, `wwwroot/js/gun.js`, `bugun.js` sadeleşti.
   - Zincir: `Pages/Beyin/Proje.cshtml.cs` ve `Pages/Hatirlaticilar/Index.cshtml.cs` artık `HatirlaticiZinciri` üzerinden geçer.
   - Alışkanlıklar ve Beyin: `Pages/Aliskanliklar/Detay.cshtml(.cs)`, `RafVerisi.cs`, `_Raflar.cshtml` (raf aynı sayfada, okuma kaydı modalı), `Raf.cshtml(.cs)` yönlendirmeye döndü; `Pages/Beyin/Index.cshtml` (arama üstte), `Pages/Gelen/Index.cshtml` (Asistan işleri bağlantısı).
   - Testler: `backend.Tests/GunSayfalariTests.cs` (yeni), `BugunSayfasiTests`, `BeyinGunYazmaSayfalariTests`, `BeyinSayfalariTests`, `KatIkiWebSayfalariTests`, `EylemSayfalariTests` yeni yapıya uyarlandı.
+- UI revizyonu, Faz W1b (web; 2026-11-11, K-0024, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Bildirimler: `backend/Pages/Bildirimler/Index.cshtml(.cs)` (liste, okundu, tümü okundu, sayfalama, hatırlatıcı bildiriminde Yaptım/Ertele), `_Layout.cshtml` içindeki 🔔 ve okunmamış sayısı, `site.css` sonu.
+  - `GunSayfasi.cs` devreti A2'nin `GunIslemleri.DevretAsync` servisine geçti; Takvim yaklaşanları `YapilacakDto.Tarih`'i kullanır (veritabanından gün bulan geçici kod kalktı).
+  - Testler: `GunSayfalariTests` içine bildirim ve zil testleri eklendi.
 - UI revizyonu, Faz A2 (backend; 2026-11-11, K-0024, aynı düzen): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
   - Bildirim merkezi: `backend/Bildirimler/` (`Bildirim.OkunmaAni`, `BildirimEndpoints` içindeki liste, sayı, okundu uçları, `bildirimler.http`), migration `BildirimOkunma`, `backend.Tests/BildirimMerkeziApiTests.cs`.
   - Sözleşme ekleri: `YapilacakDto.Tarih` (E1), tek devret ucu `POST /api/gun/{tarih}/devret` (`GunIslemleri.DevretAsync`, `GunEndpoints`; E2), iş kartında revizyon notu zorunluluğu ve `not-gerekli` hatası (`Isler/IsKartlari.cs`, `OpenApi/HataAnahtarlari.cs`; E6), serbest cevabın testle sabitlenmesi (`IsApiTests`).

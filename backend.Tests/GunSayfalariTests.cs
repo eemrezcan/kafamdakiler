@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Bildirimler;
 using Kafamdakiler.Hatirlaticilar;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
         await GunTemizleAsync();
         await using (var db = YeniDb())
         {
+            await db.Bildirimler.ExecuteDeleteAsync(Ct);
             await db.Oturumlar.ExecuteDeleteAsync(Ct);
             await db.Ogeler.ExecuteDeleteAsync(Ct);
             await db.Aliskanliklar.ExecuteDeleteAsync(Ct);
@@ -403,6 +405,7 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
 
     [Theory]
     [InlineData("/Takvim")]
+    [InlineData("/Bildirimler")]
     [InlineData("/Ayarlar/Gun")]
     public async Task TheNewPages_AreClosedToVisitorsAndToTheAsistan(string yol)
     {
@@ -617,5 +620,229 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
         // The search comes before the projects.
         Assert.True(ham.IndexOf("name=\"q\"", StringComparison.Ordinal) < ham.IndexOf("href=\"/Beyin/Proje/kitap-kulubu\"", StringComparison.Ordinal));
         Assert.Contains("href=\"/Beyin/Proje/kitap-kulubu\"", ham);
+    }
+
+    // The notification center and the bell
+
+    private async Task<Bildirim> BildirimEkleAsync(
+        WebApplicationFactory<Program> fabrika, string baslik, int dakikaOnce, bool okundu = false, string kaynak = "asistan", string? hedef = null, Guid? kullanici = null)
+    {
+        var b = new Bildirim
+        {
+            KullaniciId = kullanici ?? await SahipKimligiAsync(fabrika), Baslik = baslik, Metin = baslik + " metni", KaynakTuru = kaynak, HedefKimligi = hedef,
+            OlusmaAni = Pazartesi.ToUniversalTime().AddMinutes(-dakikaOnce), OkunmaAni = okundu ? Pazartesi.ToUniversalTime() : null,
+        };
+        await using var db = YeniDb();
+        db.Bildirimler.Add(b);
+        await db.SaveChangesAsync(Ct);
+        return b;
+    }
+
+    private async Task<Bildirim> BildirimOkuAsync(Guid id)
+    {
+        await using var db = YeniDb();
+        return await db.Bildirimler.AsNoTracking().SingleAsync(b => b.Id == id, Ct);
+    }
+
+    [Fact]
+    public async Task TheBell_CountsTheUnreadOnesOfThisPerson_AndIsQuietAtZero()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+
+        var bos = await HamAsync(tarayici, "/");
+        Assert.Contains("class=\"kd-icon-btn kd-zil", bos);
+        Assert.DoesNotContain("data-kd-zil-sayi", bos);
+
+        await BildirimEkleAsync(fabrika, "Bir", 5);
+        await BildirimEkleAsync(fabrika, "İki", 4);
+        await BildirimEkleAsync(fabrika, "Okunmuş", 3, okundu: true);
+        await BildirimEkleAsync(fabrika, "Başkasının", 2, kullanici: Guid.NewGuid());
+
+        var ham = await HamAsync(tarayici, "/");
+        Assert.Matches("data-kd-zil-sayi>2<", ham);
+        Assert.Contains("2 okunmamış", Metin(ham));
+        // The bell is not one of the five entries.
+        Assert.DoesNotContain("Bildirimler</a>", Regex.Match(ham, "<div (?:b-[a-z0-9]+ )?class=\"kd-nav-links\"[^>]*>.*?</div>", RegexOptions.Singleline).Value);
+    }
+
+    [Fact]
+    public async Task Bildirimler_ListsOwnRowsNewestFirst_WithTheUnreadMarked_AndNeverSomeoneElses()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        await BildirimEkleAsync(fabrika, "Eski olan", 30, okundu: true);
+        await BildirimEkleAsync(fabrika, "Yeni olan", 1);
+        await BildirimEkleAsync(fabrika, "Başkasının bildirimi", 2, kullanici: Guid.NewGuid());
+
+        var ham = await HamAsync(tarayici, "/Bildirimler");
+        var metin = Metin(ham);
+
+        Assert.Contains("<title>Bildirimler - Kafamdakiler", metin);
+        Assert.True(metin.IndexOf("Yeni olan", StringComparison.Ordinal) < metin.IndexOf("Eski olan", StringComparison.Ordinal));
+        Assert.DoesNotContain("Başkasının", metin);
+        // Only the unread row has the marker and the "Okundu" button.
+        Assert.Single(Regex.Matches(ham, "kd-bildirim is-okunmamis"));
+        Assert.Single(Regex.Matches(ham, "handler=Okundu"));
+        Assert.Contains("handler=TumuOkundu", ham);
+    }
+
+    [Fact]
+    public async Task Bildirimler_MarksOneAsRead_OrAllOfThem_AndDeletesNothing()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var bir = await BildirimEkleAsync(fabrika, "Bir", 3);
+        var iki = await BildirimEkleAsync(fabrika, "İki", 2);
+        var baskasi = await BildirimEkleAsync(fabrika, "Başkasının", 1, kullanici: Guid.NewGuid());
+
+        await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={bir.Id}", "Okundu", new()));
+        Assert.NotNull((await BildirimOkuAsync(bir.Id)).OkunmaAni);
+        Assert.Null((await BildirimOkuAsync(iki.Id)).OkunmaAni);
+
+        var hepsi = await SonrakiAsync(tarayici, await PostAsync(tarayici, "/Bildirimler", "TumuOkundu", new()));
+        Assert.Contains("Hepsi okundu", hepsi);
+        Assert.NotNull((await BildirimOkuAsync(iki.Id)).OkunmaAni);
+        // Somebody else's row is not touched, and no row is gone.
+        Assert.Null((await BildirimOkuAsync(baskasi.Id)).OkunmaAni);
+        await using var db = YeniDb();
+        Assert.Equal(3, await db.Bildirimler.CountAsync(Ct));
+        Assert.DoesNotContain("handler=TumuOkundu", await HamAsync(tarayici, "/Bildirimler"));
+    }
+
+    [Fact]
+    public async Task Bildirimler_PagesBackwardsInThirties_FromTheOldestRowShown()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var sahip = await SahipKimligiAsync(fabrika);
+        await using (var db = YeniDb())
+        {
+            for (var i = 0; i < 35; i++)
+                db.Bildirimler.Add(new Bildirim
+                {
+                    KullaniciId = sahip, Baslik = $"Sıra {i:00}", Metin = "m", KaynakTuru = "asistan", OlusmaAni = Pazartesi.ToUniversalTime().AddMinutes(-i), OkunmaAni = Pazartesi.ToUniversalTime(),
+                });
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var ilk = await HamAsync(tarayici, "/Bildirimler");
+        Assert.Equal(30, Regex.Matches(ilk, "data-kd-bildirim=").Count);
+        Assert.Contains("Sıra 00", Metin(ilk));
+        Assert.DoesNotContain("Sıra 30", Metin(ilk));
+        var baglanti = Regex.Match(ilk, "href=\"([^\"]*once=[^\"]*)\"").Groups[1].Value;
+        Assert.NotEmpty(baglanti);
+
+        var ikinci = await HamAsync(tarayici, WebUtility.HtmlDecode(baglanti));
+        Assert.Equal(5, Regex.Matches(ikinci, "data-kd-bildirim=").Count);
+        Assert.Contains("Sıra 30", Metin(ikinci));
+        Assert.Contains("Sıra 34", Metin(ikinci));
+        Assert.DoesNotContain("once=", ikinci);
+    }
+
+    [Fact]
+    public async Task Bildirimler_AReminderNotification_OffersYaptimAndErtele_UntilTheReminderIsClosed()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var acik = await HatirlaticiEkleAsync("Eczaneye uğra", BugunGunu, new TimeOnly(16, 30));
+        var kapali = await HatirlaticiEkleAsync("Kapanmış", BugunGunu, new TimeOnly(17, 0), durum: HatirlaticiDurumu.Tamam);
+        await BildirimEkleAsync(fabrika, "Eczaneye uğra", 5, kaynak: "hatirlatici", hedef: acik.Id.ToString());
+        await BildirimEkleAsync(fabrika, "Kapanmış", 6, kaynak: "hatirlatici", hedef: kapali.Id.ToString());
+        await BildirimEkleAsync(fabrika, "Sormadan yaptı", 7);
+
+        var ham = await HamAsync(tarayici, "/Bildirimler");
+
+        // Buttons only for the open reminder; the closed one says so; other kinds have none.
+        Assert.Single(Regex.Matches(ham, "handler=Yaptim"));
+        Assert.Equal(2, Regex.Matches(ham, "handler=Ertele").Count);
+        Assert.Contains("Tamam", Metin(ham));
+        Assert.Contains($"href=\"/Hatirlaticilar/Duzenle/{acik.Id}\"", ham);
+    }
+
+    [Fact]
+    public async Task Bildirimler_Yaptim_ClosesTheReminderWithItsChain_AndMarksTheNotificationRead()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([Madde("a3f09c", "Rapor yaz")]);
+        Beyin.Cikti("gun isaretle", IsaretlendiJson(BugunMetni, MaddeSonucu));
+        var h = await HatirlaticiEkleAsync("Rapor için hatırlat", BugunGunu, new TimeOnly(14, 0), maddeId: "a3f09c", maddeTarihi: BugunGunu);
+        var b = await BildirimEkleAsync(fabrika, "Rapor için hatırlat", 5, kaynak: "hatirlatici", hedef: h.Id.ToString());
+
+        var sonraki = await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={b.Id}", "Yaptim", new()));
+
+        Assert.Equal(HatirlaticiDurumu.Tamam, (await HatirlaticiOkuAsync(h.Id)).Durum);
+        Assert.Equal(["gun", "isaretle", $"--tarih={BugunMetni}", "--json", "--vault", Beyin.Vault, "--", "a3f09c"], Cagrilar("gun", "isaretle").Single());
+        Assert.NotNull((await BildirimOkuAsync(b.Id)).OkunmaAni);
+        Assert.Contains("Yapıldı", sonraki);
+    }
+
+    [Fact]
+    public async Task Bildirimler_Yaptim_SaysAFailedChainStep_AndTheReminderStaysDone()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        Beyin.Cikti("gun isaretle", """{"hata": {"kod": "gun-kapali", "mesaj": "kapandı"}}""", cikis: 1);
+        var h = await HatirlaticiEkleAsync("Rapor için hatırlat", BugunGunu, new TimeOnly(14, 0), maddeId: "a3f09c", maddeTarihi: BugunGunu);
+        var b = await BildirimEkleAsync(fabrika, "Rapor için hatırlat", 5, kaynak: "hatirlatici", hedef: h.Id.ToString());
+
+        var sonraki = await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={b.Id}", "Yaptim", new()));
+
+        Assert.Equal(HatirlaticiDurumu.Tamam, (await HatirlaticiOkuAsync(h.Id)).Durum);
+        Assert.Contains("Bağlı madde işaretlenemedi", sonraki);
+    }
+
+    [Fact]
+    public async Task Bildirimler_Ertele_SnoozesTheReminder_AndABadDurationIsSaid()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var h = await HatirlaticiEkleAsync("Eczaneye uğra", BugunGunu, new TimeOnly(16, 30));
+        var b = await BildirimEkleAsync(fabrika, "Eczaneye uğra", 5, kaynak: "hatirlatici", hedef: h.Id.ToString());
+
+        var kotu = await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={b.Id}", "Ertele", new() { ["sure"] = "ikigun" }));
+        Assert.Contains("Süre 1s ya da yarin olmalı", kotu);
+        Assert.Null((await HatirlaticiOkuAsync(h.Id)).ErteleAn);
+        Assert.Null((await BildirimOkuAsync(b.Id)).OkunmaAni);
+
+        var iyi = await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={b.Id}", "Ertele", new() { ["sure"] = "1s" }));
+        Assert.Contains("Ertelendi", iyi);
+        Assert.NotNull((await HatirlaticiOkuAsync(h.Id)).ErteleAn);
+        Assert.NotNull((await BildirimOkuAsync(b.Id)).OkunmaAni);
+    }
+
+    [Fact]
+    public async Task Bildirimler_AGuessedNotificationOrReminderId_ChangesNothing()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var h = await HatirlaticiEkleAsync("Eczaneye uğra", BugunGunu, new TimeOnly(16, 30));
+        // Somebody else's notification for the reminder, and one of the Sahip's that is not a reminder's.
+        var baskasi = await BildirimEkleAsync(fabrika, "Başkasının", 5, kaynak: "hatirlatici", hedef: h.Id.ToString(), kullanici: Guid.NewGuid());
+        var duz = await BildirimEkleAsync(fabrika, "Sormadan yaptı", 4, hedef: h.Id.ToString());
+
+        var biri = await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={baskasi.Id}", "Yaptim", new()));
+        var digeri = await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={duz.Id}", "Ertele", new() { ["sure"] = "1s" }));
+        await SonrakiAsync(tarayici, await PostAsync(tarayici, $"/Bildirimler?id={baskasi.Id}", "Okundu", new()));
+
+        Assert.Contains("hatırlatıcısı artık yok", biri);
+        Assert.Contains("hatırlatıcısı artık yok", digeri);
+        var okunan = await HatirlaticiOkuAsync(h.Id);
+        Assert.Equal((HatirlaticiDurumu.Acik, null), (okunan.Durum, okunan.ErteleAn));
+        Assert.Null((await BildirimOkuAsync(baskasi.Id)).OkunmaAni);
+    }
+
+    [Fact]
+    public async Task Bildirimler_APostWithAForeignReturnAddress_GoesBackToThePageItself()
+    {
+        var (fabrika, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var b = await BildirimEkleAsync(fabrika, "Bir", 3);
+
+        var yerel = await PostAsync(tarayici, $"/Bildirimler?id={b.Id}", "Okundu", new() { ["donus"] = "/Takvim" });
+        var yabanci = await PostAsync(tarayici, $"/Bildirimler?id={b.Id}", "Okundu", new() { ["donus"] = "https://kotu.example/x" });
+
+        Assert.Equal("/Takvim", yerel.Headers.Location!.OriginalString);
+        Assert.Equal("/Bildirimler", yabanci.Headers.Location!.OriginalString);
     }
 }

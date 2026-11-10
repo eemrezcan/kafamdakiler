@@ -1,4 +1,5 @@
 ﻿@inject Kafamdakiler.Eylemler.EylemServisi EylemServisi
+@inject Kafamdakiler.Data.AppDbContext KayitDb
 @{
     var currentPage = ViewContext.RouteData.Values["page"] as string ?? "";
     // Which menu entry a page belongs to (K-0024: Bugün · Takvim · Asistan · Alışkanlıklar · Beyin). The old assistant pages (inbox,
@@ -19,6 +20,20 @@
         try
         {
             bekleyenGelen = await EylemServisi.BekleyenSayisiAsync(Kafamdakiler.Eylemler.YerlestirTuru.Anahtar, Context.RequestAborted);
+        }
+        catch (Exception)
+        {
+        }
+    }
+    var bildirimAktif = currentPage.StartsWith("/Bildirimler");
+    // The bell: this person's unread notifications. A failing count only leaves the number out.
+    var okunmamis = 0;
+    if (showChrome && Kafamdakiler.Bildirimler.BildirimEndpoints.KullaniciId(User) is { } kullaniciKimligi)
+    {
+        try
+        {
+            okunmamis = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+                KayitDb.Bildirimler, b => b.KullaniciId == kullaniciKimligi && b.OkunmaAni == null, Context.RequestAborted);
         }
         catch (Exception)
         {
@@ -66,6 +81,14 @@
                 <a class="kd-nav-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
                 <a class="kd-nav-link @(beyinAktif ? "active" : "")" asp-area="" asp-page="/Beyin/Index">Beyin</a>
             </div>
+
+            <a class="kd-icon-btn kd-zil @(bildirimAktif ? "active" : "")" asp-area="" asp-page="/Bildirimler/Index" aria-label="Bildirimler@(okunmamis > 0 ? $", {okunmamis} okunmamış" : "")" title="Bildirimler">
+                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-bell"></use></svg>
+                @if (okunmamis > 0)
+                {
+                    <span class="kd-zil-sayi" data-kd-zil-sayi>@(okunmamis > 99 ? "99+" : okunmamis.ToString())</span>
+                }
+            </a>
 
             @* Wide screens: the profile menu. Narrow screens: the gear opens the drawer, which carries the same items. *@
             <div class="dropdown kd-profil d-none d-sm-block">

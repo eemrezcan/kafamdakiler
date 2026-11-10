@@ -163,21 +163,11 @@
                 <div class="kd-bugun-liste">
                     @foreach (var oge in Model.Yaklasan)
                     {
-                        var gunu = Model.YaklasanGunleri.TryGetValue(oge.Kimlik, out var yg) ? (DateOnly?)yg : null;
-                        if (gunu is { } hedef)
-                        {
-                            <a class="kd-bugun-satir" href="@Model.Adres(new DateOnly(hedef.Year, hedef.Month, 1), hedef)">
-                                <span>@oge.Baslik</span>
-                                <small>@hedef.ToString("d MMM ddd", tr)@(oge.Saat is { } sa ? " · " + sa : "") · @Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)</small>
-                            </a>
-                        }
-                        else
-                        {
-                            <div class="kd-bugun-satir">
-                                <span>@oge.Baslik</span>
-                                <small>@Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)@(oge.Saat is { } sa2 ? " · " + sa2 : "")</small>
-                            </div>
-                        }
+                        var hedef = oge.Tarih;
+                        <a class="kd-bugun-satir" href="@Model.Adres(new DateOnly(hedef.Year, hedef.Month, 1), hedef)">
+                            <span>@oge.Baslik</span>
+                            <small>@hedef.ToString("d MMM ddd", tr)@(oge.Saat is { } sa ? " · " + sa : "") · @Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)</small>
+                        </a>
                     }
                 </div>
             }

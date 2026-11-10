@@ -1,0 +1,100 @@
+@page
+@using Kafamdakiler.Hatirlaticilar
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.Bildirimler.IndexModel
+@{
+    ViewData["Title"] = "Bildirimler";
+    var donus = Url.Page("/Bildirimler/Index");
+}
+
+<div class="kd-page-head kd-rise kd-c-amber">
+    <div>
+        <p class="kd-eyebrow">Sana ne haber verildi</p>
+        <h1 class="kd-page-title">Bildirimler @if (Model.Okunmamis > 0) { <span class="kd-badge" aria-label="@Model.Okunmamis okunmamış">@Model.Okunmamis</span> }</h1>
+    </div>
+    @if (Model.Okunmamis > 0)
+    {
+        <form method="post" asp-page-handler="TumuOkundu">
+            <input type="hidden" name="donus" value="@donus" />
+            <button type="submit" class="btn btn-outline-primary">Tümü okundu</button>
+        </form>
+    }
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+@if (Model.Satirlar.Count == 0)
+{
+    <div class="kd-empty kd-empty--small">
+        <p class="kd-empty-title">Henüz bildirim yok.</p>
+    </div>
+}
+else
+{
+    <section class="kd-bildirimler" aria-label="Bildirimler">
+        @foreach (var satir in Model.Satirlar)
+        {
+            var b = satir.Bildirim;
+            <article class="kd-satir kd-bildirim @(b.Okundu ? "" : "is-okunmamis")" data-kd-bildirim="@b.Id">
+                <span class="kd-bildirim-nokta" aria-label="@(b.Okundu ? "Okundu" : "Okunmadı")" title="@(b.Okundu ? "Okundu" : "Okunmadı")"></span>
+                <div class="kd-satir-govde">
+                    <p class="kd-satir-baslik">
+                        @if (satir.Adres is not null)
+                        {
+                            <a href="@satir.Adres">@b.Baslik</a>
+                        }
+                        else
+                        {
+                            @b.Baslik
+                        }
+                    </p>
+                    <div class="kd-satir-meta">
+                        <span>@b.Metin</span>
+                    </div>
+                    <div class="kd-satir-meta">
+                        <span>@YakalamaGorunum.Zaman(b.OlusmaAni)</span>
+                        <span class="kd-oge-tur">@b.KaynakTuru</span>
+                    </div>
+                    @if (satir.HatirlaticiDurumu == HatirlaticiDurumu.Acik)
+                    {
+                        <div class="kd-gun-actions kd-bildirim-islem">
+                            <form method="post" asp-page-handler="Yaptim" asp-route-id="@b.Id">
+                                <input type="hidden" name="donus" value="@donus" />
+                                <button type="submit" class="btn btn-primary btn-sm">Yaptım</button>
+                            </form>
+                            <form method="post" asp-page-handler="Ertele" asp-route-id="@b.Id">
+                                <input type="hidden" name="donus" value="@donus" />
+                                <input type="hidden" name="sure" value="1s" />
+                                <button type="submit" class="btn btn-outline-primary btn-sm">1 saat sonra</button>
+                            </form>
+                            <form method="post" asp-page-handler="Ertele" asp-route-id="@b.Id">
+                                <input type="hidden" name="donus" value="@donus" />
+                                <input type="hidden" name="sure" value="yarin" />
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Yarın</button>
+                            </form>
+                        </div>
+                    }
+                    else if (satir.HatirlaticiDurumu is { } durum)
+                    {
+                        <p class="kd-muted">@HatirlaticiGorunum.DurumAdi(durum)</p>
+                    }
+                </div>
+                @if (!b.Okundu)
+                {
+                    <form method="post" asp-page-handler="Okundu" asp-route-id="@b.Id" class="kd-satir-islem">
+                        <input type="hidden" name="donus" value="@donus" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Okundu</button>
+                    </form>
+                }
+            </article>
+        }
+    </section>
+
+    @if (Model.Sonraki is { } sonraki)
+    {
+        <p class="kd-footnote"><a asp-page="/Bildirimler/Index" asp-route-once="@sonraki.ToString("o")">Daha eski bildirimler</a></p>
+    }
+}
