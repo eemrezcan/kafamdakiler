@@ -543,4 +543,27 @@ public sealed class GunYaptimApiTests(UygulamaFabrikasi uygulama) : GunTestTaban
         Assert.Equal(HttpStatusCode.OK, tekrar.StatusCode);
         Assert.False(tekrar.Headers.Contains("Idempotent-Replayed"));
     }
+
+    [Fact]
+    public async Task Devret_TheAnswerIsTheRealItemOfTheNewDay_NotTheOneThatWasLeftBehind()
+    {
+        var (fabrika, sahip) = await DevretHazirlaAsync();
+        // The brain's answer describes the item it left behind (its id is `be3fb6`); the one on the new day has an id of its own.
+        Beyin.Cikti("gun devret", $$"""{"tarih": "{{BugunMetni}}", "devredilen_gun": "{{Yarin}}", "madde": {{Madde("be3fb6", "Rapor yaz ~30dk", tahmin: 30)}}}""");
+        Beyin.CiktiTarihli("gun goster", Yarin, GunJson(Yarin, [Madde("cc1122", "Başka iş"), Madde("9bb5b2", "Rapor yaz ~30dk", tahmin: 30)]));
+
+        var yanit = await GonderAsync(HttpMethod.Post, DevretYolu(), sahip, fabrika, new { kimlik = $"m:{Rapor}" });
+
+        Assert.Equal(HttpStatusCode.OK, yanit.StatusCode);
+        var oge = (await OkuAsync(yanit)).GetProperty("oge");
+        // The same id as the item has in the new day's list, which is what the screens look for.
+        Assert.Equal(("m:9bb5b2", Yarin, "Rapor yaz"), (oge.GetProperty("kimlik").GetString(), oge.GetProperty("tarih").GetString(), oge.GetProperty("baslik").GetString()));
+        var liste = await OkuAsync(await GonderAsync(HttpMethod.Get, $"/api/gun/{Yarin}", sahip, fabrika));
+        Assert.Contains(liste.GetProperty("ogeler").EnumerateArray(), o => o.GetProperty("kimlik").GetString() == oge.GetProperty("kimlik").GetString());
+
+        // The same title twice on the new day (it was carried before): the one added last is the one that was just carried.
+        Beyin.CiktiTarihli("gun goster", Yarin, GunJson(Yarin, [Madde("9bb5b2", "Rapor yaz ~30dk", tahmin: 30), Madde("cc1122", "Başka iş"), Madde("9bb5b3", "Rapor yaz ~30dk", tahmin: 30)]));
+        var ikinci = (await OkuAsync(await GonderAsync(HttpMethod.Post, DevretYolu(), sahip, fabrika, new { kimlik = $"m:{Rapor}" }))).GetProperty("oge");
+        Assert.Equal("m:9bb5b3", ikinci.GetProperty("kimlik").GetString());
+    }
 }

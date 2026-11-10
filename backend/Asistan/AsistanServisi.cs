@@ -37,6 +37,9 @@ public class AsistanServisi(
 
     public const string Kaynak = "asistan";
 
+    // The source of an input from the share menu (E7).
+    public const string PaylasKaynagi = "paylas";
+
     internal static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
@@ -90,7 +93,8 @@ public class AsistanServisi(
         }
 
         // From the claim on, the work is not tied to the request: a phone that drops the connection must not leave an input half known.
-        var sonuc = await IsleAsync(kullanici, kullaniciId, girdiId, satir.Id, metin, girdi.FotografId, kaynak, bugun, claudeMetni: null, ikinciTur: false, simdi, CancellationToken.None);
+        var sonuc = await IsleAsync(
+            kullanici, kullaniciId, girdiId, satir.Id, metin, girdi.FotografId, kaynak, bugun, claudeMetni: null, ikinciTur: false, simdi, CancellationToken.None);
         return new(new AsistanYanitiDto(girdiId, satir.Id, sonuc.Sonuclar, sonuc.Soru));
     }
 
@@ -131,7 +135,8 @@ public class AsistanServisi(
             $"SİSTEMİN SORUSU:\n{kayit.Metin}\nSeçenekler: {string.Join(" | ", kayit.Secenekler)}\n\n" +
             $"KULLANICININ CEVABI:\n{metin}";
         var sonuc = await IsleAsync(
-            kullanici, kullaniciId, soruSatiri.GirdiId, cevapSatiri.Id, ilk.Metin, ilk.FotografId, AsistanMesaji.CevapKaynagi, bugun, claudeMetni, ikinciTur: true, cevapSatiri.Zaman, CancellationToken.None);
+            kullanici, kullaniciId, soruSatiri.GirdiId, cevapSatiri.Id, ilk.Metin, ilk.FotografId, AsistanMesaji.CevapKaynagi, bugun, claudeMetni, ikinciTur: true, cevapSatiri.Zaman, CancellationToken.None,
+            ilkKaynak: ilk.Kaynak);
         return new(new AsistanYanitiDto(soruSatiri.GirdiId, cevapSatiri.Id, sonuc.Sonuclar, sonuc.Soru));
     }
 
@@ -139,8 +144,10 @@ public class AsistanServisi(
 
     private async Task<IsSonucu> IsleAsync(
         ClaimsPrincipal kullanici, Guid kullaniciId, Guid girdiId, Guid mesajId, string? metin, Guid? fotografId, string kaynak, DateOnly bugun,
-        string? claudeMetni, bool ikinciTur, DateTimeOffset simdi, CancellationToken ct)
+        string? claudeMetni, bool ikinciTur, DateTimeOffset simdi, CancellationToken ct, string? ilkKaynak = null)
     {
+        // Words that came through the share menu may be another app's: only a note is made of them at once, the rest waits for approval (E7).
+        var disKaynak = (ilkKaynak ?? kaynak) == PaylasKaynagi;
         var sonuclar = new List<AsistanSonucuDto>();
         var anahtarOnEki = ikinciTur ? "c" : "";
         try
@@ -156,7 +163,7 @@ public class AsistanServisi(
             }
             else
             {
-                var s = await siniflandirici.SiniflandirAsync(metin, claudeMetni ?? metin, bugun, soruSorabilir: !ikinciTur, baglamli: ikinciTur, ct);
+                var s = await siniflandirici.SiniflandirAsync(metin, claudeMetni ?? metin, bugun, soruSorabilir: !ikinciTur, baglamli: ikinciTur, disKaynak ? "Paylaşım" : "Asistan", ct);
                 if (s.Durum == SiniflandirmaDurumu.Kullanilamiyor)
                 {
                     gunluk.LogWarning("The assistant could not use Claude for input {GirdiId}: {Neden}", girdiId, s.Neden);
@@ -191,6 +198,7 @@ public class AsistanServisi(
                 var sonuc = o.Tur switch
                 {
                     AsistanSiniflandirici.Not => await NotUygulaAsync(o, metin, fotografKullanildi ? null : fotografId, yedekMesaji, kullanici, kullaniciId, bugun, simdi, ct),
+                    _ when disKaynak => await KuyrugaOnerAsync(o, kullanici, bugun, ct),
                     AsistanSiniflandirici.Is => await IsKartiAcAsync(o, kullanici, bugun, ct),
                     _ => await KuyrukUygulaAsync(o, kullanici, kullaniciId, bugun, ct),
                 };
@@ -216,7 +224,7 @@ public class AsistanServisi(
 
             // The person's words must not end up nowhere: when nothing came of the suggestions (a rule broken, a failure), the text is kept as a note.
             // A refusal of permission is the person's own setting and is respected as it is.
-            if (metin is not null && !sonuclar.Any(s => s.Durum is AsistanDurumu.Uygulandi or AsistanDurumu.IzinYok) && !oneriler.Any(o => o.Tur == AsistanSiniflandirici.Not))
+            if (metin is not null && !sonuclar.Any(s => s.Durum is AsistanDurumu.Uygulandi or AsistanDurumu.IzinYok or AsistanDurumu.Onayda) && !oneriler.Any(o => o.Tur == AsistanSiniflandirici.Not))
             {
                 var yedek = await NotUygulaAsync(TumuNot(metin), metin, null, "Önerilerin hiçbiri uygulanamadı; mesajın not olarak kaydedildi.", kullanici, kullaniciId, bugun, simdi, ct);
                 sonuclar.Add(yedek);
@@ -297,6 +305,46 @@ public class AsistanServisi(
             default:
                 return Sonuc(AsistanDurumu.Hata, sonuc.Mesaj ?? "Eylem uygulanamadı.", sonuc.Eylem?.Id);
         }
+    }
+
+    // Text from the share menu (E7): everything but a note waits in the approval queue as an action from an outside source (`DisKaynak`), which no mode
+    // ever applies by itself. The person's own permission for the kind and the kind's `Yasak` mode are still asked, so nothing is queued that could
+    // not be done. The result is `onayda` with the action's id; it is approved or rejected in the queue (the feed shows it as an approval card).
+    private async Task<AsistanSonucuDto> KuyrugaOnerAsync(HazirOneri o, ClaimsPrincipal kullanici, DateOnly bugun, CancellationToken ct)
+    {
+        var ozet = OzetMetni(o, bugun);
+        var isKarti = o.Tur == AsistanSiniflandirici.Is;
+        AsistanSonucuDto Sonuc(AsistanDurumu durum, string? mesaj, Guid? eylemId = null) =>
+            new(o.Tur, o.Baslik, ozet, durum, eylemId, new AsistanHedefiDto(null, "/asistan"), false, mesaj);
+
+        var izin = isKarti ? IsPolicies.Yaz : IsCikarServisi.TurIzni(o.Tur)!;
+        if (!await IzinliMi(kullanici, izin))
+            return Sonuc(AsistanDurumu.IzinYok, "Bu işlem için izniniz yok.");
+
+        var turAdi = isKarti ? IsAcTuru.Anahtar : o.Tur;
+        if ((await db.EylemIzinleri.AsNoTracking().FirstOrDefaultAsync(i => i.Tur == turAdi, ct))?.Kip == EylemKipi.Yasak)
+            return Sonuc(AsistanDurumu.IzinYok, "Bu tür asistan için yasak olarak ayarlı.");
+
+        EylemOnerisi oneri;
+        if (isKarti)
+        {
+            var g = o.IsGirdisi!;
+            var yuk = JsonSerializer.SerializeToElement(new IsAcYuku(g.Baslik!, g.Talep, g.Proje, g.Alan, g.Tip), JsonSerializerOptions.Web);
+            oneri = new EylemOnerisi(IsAcTuru.Anahtar, yuk, $"İş kartı: {o.Baslik}"[..Math.Min(200, $"İş kartı: {o.Baslik}".Length)], PaylasKaynagi, DisKaynak: true, "Paylaşımdan", o.Guven);
+        }
+        else
+        {
+            oneri = new EylemOnerisi(o.Tur, o.Kuyruk!.Yuk, o.Kuyruk.Ozet, PaylasKaynagi, DisKaynak: true, o.Kuyruk.Gerekce, o.Kuyruk.Oneri.Guven);
+        }
+
+        var sonuc = await eylemler.OnerAsync(oneri, ct);
+        return sonuc.Tur switch
+        {
+            EylemSonucuTuru.Tamam => Sonuc(AsistanDurumu.Onayda, "Paylaşımdan geldiği için onayını bekliyor.", sonuc.Eylem!.Id),
+            EylemSonucuTuru.Atlandi => Sonuc(AsistanDurumu.IzinYok, "Bu tür asistan için yasak olarak ayarlı."),
+            EylemSonucuTuru.Gecersiz => Sonuc(AsistanDurumu.Gecersiz, sonuc.Mesaj),
+            _ => Sonuc(AsistanDurumu.Hata, sonuc.Mesaj ?? "Öneri kuyruğa alınamadı."),
+        };
     }
 
     // The note: the person's own words (the whole text, or the part Claude quoted exactly) and the photo go into the capture line.

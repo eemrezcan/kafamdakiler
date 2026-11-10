@@ -215,6 +215,7 @@ public sealed class GunOgeApiTests(UygulamaFabrikasi uygulama) : GunTestTabani(u
         await GunTemizleAsync();
         var fabrika = GunFabrikasi();
         var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, fabrika);
+        Beyin.Cikti("gorev liste", GorevListesi);
         Beyin.Cikti("gun goster", GunJson(BugunMetni, [Madde("g:uye-girisi", "Üye girişi", gorev: "uye-girisi")]));
 
         var kur = await GonderAsync(HttpMethod.Post, $"/api/gun/{BugunMetni}/ogeler/g:uye-girisi/hatirlatici", sahip, fabrika, new { saat = "17:00", tekrar = "yok" });

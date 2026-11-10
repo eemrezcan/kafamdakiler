@@ -131,23 +131,30 @@ public static partial class BeyinOkuma
 
     // `kapasiteDk` is the capacity of that very day when the caller knows it (the person's weekday and weekend setting, GunKapasitesi);
     // without it the `Gun:KapasiteSaat` setting in `ayar` decides.
-    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null, int? kapasiteDk = null)
+    //
+    // `izinliGorevler` (from IzinliGorevlerAl) keeps out of the answer every plan item that names a task the API may not show (K-0024, E9):
+    // the plan file does not say where a task lives, so a hidden task, or one in a closed folder (`kisisel/`, `finans/`), would show up in the day by
+    // its link. Left null the day is as the brain printed it (the old endpoints and the web pages).
+    public static Task<BeyinYaniti<BeyinGunDto>> GunAl(
+        string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null, int? kapasiteDk = null,
+        IReadOnlySet<string>? izinliGorevler = null)
     {
         if (!DateOnly.TryParseExact(tarih, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var gun))
             return Task.FromResult(Sorun<BeyinGunDto>("tarih", "Tarih yyyy-MM-dd biçiminde olmalı."));
 
         var kapasite = kapasiteDk ?? (ayar ?? new GunAyari()).KapasiteDk;
-        return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, g => GunAyrintisi(g, kapasite), ct);
+        return CalistirAsync(beyin, log, ["gun", "goster", $"--tarih={gun:yyyy-MM-dd}"], null, g => GunAyrintisi(g, kapasite, izinliGorevler), ct);
     }
 
     // Yesterday's plan, by the day-turn rule (05:00): only what is still open. "Taşı" is `gun devret` on that date;
     // "bırak" writes nothing to the brain (closing yesterday is the closing job's work).
-    public static async Task<BeyinYaniti<SabahKartiDto>> SabahAl(BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct)
+    public static async Task<BeyinYaniti<SabahKartiDto>> SabahAl(
+        BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct, IReadOnlySet<string>? izinliGorevler = null)
     {
         var an = saat.GetUtcNow();
         var bugun = GunSiniri.Bugun(an);
         var dun = GunSiniri.Dun(an);
-        var yanit = await GunAl($"{dun:yyyy-MM-dd}", beyin, log, ct);
+        var yanit = await GunAl($"{dun:yyyy-MM-dd}", beyin, log, ct, izinliGorevler: izinliGorevler);
         if (!yanit.Basarili)
             return new BeyinYaniti<SabahKartiDto>(yanit.Durum, Baslik: yanit.Baslik, Ayrinti: yanit.Ayrinti, Alanlar: yanit.Alanlar);
 
@@ -207,11 +214,36 @@ public static partial class BeyinOkuma
             DiziAlani(p, "son_gunluk").Select(s => new GunlukSatiriDto(Metin(s, "zaman"), Metin(s, "baslik"), Metin(s, "metin"))).ToList());
     }
 
-    private static BeyinGunDto GunAyrintisi(JsonElement g, int kapasiteDk)
+    // The tasks the API may show, by their ids: not hidden, not in a closed folder. Read with `gorev liste --durum=hepsi` (the brain leaves hidden ones
+    // out itself, and never gets `--gizli-dahil` from here), so a finished task is in it too. An id that two tasks share counts only when both
+    // may be shown. When the brain cannot be read the set is empty: what cannot be checked is not shown.
+    public static async Task<HashSet<string>> IzinliGorevlerAl(BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    {
+        var sonuc = await beyin.CalistirAsync(["gorev", "liste", "--durum=hepsi"], ct);
+        if (!sonuc.Basarili)
+        {
+            log.LogWarning("The list of tasks the API may show could not be read ({Durum}); plan items linked to a task are left out", sonuc.Durum);
+            return [];
+        }
+
+        try
+        {
+            var gorevler = Dizi(sonuc.Veri!.Value).Select(g => (Kimlik: Metin(g, "kimlik"), Izinli: Gorunur(g) && AcikYol(g))).Where(g => g.Kimlik is not null).ToList();
+            var yasak = gorevler.Where(g => !g.Izinli).Select(g => g.Kimlik!).ToHashSet(StringComparer.Ordinal);
+            return gorevler.Where(g => g.Izinli && !yasak.Contains(g.Kimlik!)).Select(g => g.Kimlik!).ToHashSet(StringComparer.Ordinal);
+        }
+        catch (InvalidDataException e)
+        {
+            log.LogWarning("The list of tasks the API may show was not in the known shape: {Mesaj}", e.Message);
+            return [];
+        }
+    }
+
+    private static BeyinGunDto GunAyrintisi(JsonElement g, int kapasiteDk, IReadOnlySet<string>? izinliGorevler = null)
     {
         var bolumler = DiziAlani(g, "bolumler").Select(b => new BeyinGunBolumuDto(
             Gerekli(b, "ad"),
-            DiziAlani(b, "maddeler").Where(Gorunur).Select(m => new BeyinGunMaddesiDto(
+            DiziAlani(b, "maddeler").Where(Gorunur).Where(m => izinliGorevler is null || Metin(m, "gorev") is not { } gorev || izinliGorevler.Contains(gorev)).Select(m => new BeyinGunMaddesiDto(
                 Gerekli(m, "id"), Gerekli(m, "baslik"), Metin(m, "durum"), Sayi(m, "tahmin_dk"), Sayi(m, "sure_dk"),
                 Metin(m, "proje"), Metin(m, "gorev"))).ToList())).ToList();
 
@@ -222,11 +254,15 @@ public static partial class BeyinOkuma
             Tarih(g, "tarih") ?? throw new InvalidDataException("tarih yok"), Metin(g, "gun_adi"), Metin(g, "hafta_gunu"),
             Bool(g, "bugun"), Bool(g, "plan_var"), Bool(g, "kapandi"),
             bolumler,
-            DiziAlani(g, "geciken").Where(Gorunur).Where(AcikYol).Select(x => new GecikenGorevDto(
+            DiziAlani(g, "geciken").Where(Gorunur).Where(AcikYol).Where(x => izinliGorevler is null || Metin(x, "kimlik") is { } k && izinliGorevler.Contains(k)).Select(x => new GecikenGorevDto(
                 Gerekli(x, "kimlik"), Gerekli(x, "baslik"), Tarih(x, "bitis"), Sayi(x, "gun"), Metin(x, "proje"), Metin(x, "oncelik"))).ToList(),
-            g.TryGetProperty("toplam", out var t) && t.ValueKind == JsonValueKind.Object
-                ? new BeyinGunToplamiDto(Sayi(t, "madde") ?? 0, Sayi(t, "yapildi") ?? 0, Sayi(t, "acik") ?? 0)
-                : null,
+            // With the filter on, the totals are counted from what is left: the brain's own count includes what was left out.
+            izinliGorevler is not null
+                ? new BeyinGunToplamiDto(
+                    bolumler.Sum(b => b.Maddeler.Count), bolumler.Sum(b => b.Maddeler.Count(m => m.Durum == "yapildi")), bolumler.Sum(b => b.Maddeler.Count(m => m.Durum == "acik")))
+                : g.TryGetProperty("toplam", out var t) && t.ValueKind == JsonValueKind.Object
+                    ? new BeyinGunToplamiDto(Sayi(t, "madde") ?? 0, Sayi(t, "yapildi") ?? 0, Sayi(t, "acik") ?? 0)
+                    : null,
             acikTahmin > kapasiteDk ? new GunKapasiteUyarisi(acikTahmin, kapasiteDk, acikTahmin - kapasiteDk) : null);
     }
 

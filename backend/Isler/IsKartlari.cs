@@ -78,21 +78,33 @@ public static class IsKartlari
 
     // Writes
 
-    public static async Task<YazmaYaniti> Ac(IsAcGirdi girdi, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    // The checks of a new card, the same for opening one and for a card waiting in the approval queue ("is-ac"): the refusal, or null with the
+    // cleaned values.
+    internal static YazmaYaniti? AcDenetle(IsAcGirdi girdi, out string? baslik, out string? talep, out string? proje, out string? alan, out string tip)
     {
-        if (BeyinYazma.MetinDenetle(girdi.Baslik, "baslik", EnUzunBaslik, out var baslik) is { } baslikHatasi) return baslikHatasi;
-        if (Cok(girdi.Talep, "talep", EnUzunTalep, out var talep) is { } talepHatasi) return talepHatasi;
-        if (BeyinYazma.Istege(girdi.Proje, "proje", 100, out var proje) is { } projeHatasi) return projeHatasi;
-        if (BeyinYazma.Istege(girdi.Alan, "alan", 100, out var alan) is { } alanHatasi) return alanHatasi;
+        talep = proje = alan = null;
+        tip = "kod";
+        if (BeyinYazma.MetinDenetle(girdi.Baslik, "baslik", EnUzunBaslik, out baslik) is { } baslikHatasi) return baslikHatasi;
+        if (Cok(girdi.Talep, "talep", EnUzunTalep, out talep) is { } talepHatasi) return talepHatasi;
+        if (BeyinYazma.Istege(girdi.Proje, "proje", 100, out proje) is { } projeHatasi) return projeHatasi;
+        if (BeyinYazma.Istege(girdi.Alan, "alan", 100, out alan) is { } alanHatasi) return alanHatasi;
         if ((proje is null) == (alan is null))
             return YazmaYaniti.Sorun("proje", "Proje ya da alandan tam biri verilmeli.");
         if (proje is not null && !GecerliKimlik(proje))
             return YazmaYaniti.Sorun("proje", "Proje kimliği küçük harf, rakam ve tire olmalı.");
         if (alan is not null && (!GecerliKimlik(alan) || KapaliAlanlar.Contains(alan)))
             return YazmaYaniti.Sorun("alan", "Alan küçük harf, rakam ve tire olmalı; bu alan API'ye kapalı.");
-        var tip = string.IsNullOrWhiteSpace(girdi.Tip) ? "kod" : girdi.Tip.Trim();
+        tip = string.IsNullOrWhiteSpace(girdi.Tip) ? "kod" : girdi.Tip.Trim();
         if (!Tipler.Contains(tip))
             return YazmaYaniti.Sorun("tip", "Tip kod, genel ya da yeni-proje olmalı.");
+
+        return null;
+    }
+
+    public static async Task<YazmaYaniti> Ac(IsAcGirdi girdi, BeyinIstemcisi beyin, ILogger log, CancellationToken ct)
+    {
+        if (AcDenetle(girdi, out var baslik, out var talep, out var proje, out var alan, out var tip) is { } hata)
+            return hata;
 
         var talepDosyasi = Path.Combine(Path.GetTempPath(), "kd-is-" + Guid.NewGuid().ToString("N") + ".md");
         try

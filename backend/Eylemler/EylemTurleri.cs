@@ -61,6 +61,7 @@ public static class EylemServisleri
         services.AddSingleton<IEylemTuru, TakvimEkleTuru>();
         services.AddSingleton<IEylemTuru, TakvimTasiTuru>();
         services.AddSingleton<IEylemTuru, GorevKapatTuru>();
+        services.AddSingleton<IEylemTuru, IsAcTuru>();
 
         services.AddSingleton<EylemTurleri>();
         services.AddScoped<EylemServisi>();

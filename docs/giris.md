@@ -215,6 +215,11 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Okuma kaydı: `okuma_kaydi_view_model.dart` (alan `konum + max(0, hedef - bugünOkunan)`, hedef yoksa +10, toplam tavan; hata yalnız değişiklik ya da Kaydet sonrası, Kaydet açılışta etkin).
   - Asistan kartları: `akis_ogeleri.dart` ve yeni `core/dugme_stilleri.dart` (kompakt ve tonal düğme), soru birincil, onay amber (`uyariRengi`), brifing oyları satır sonunda küçük ikon, `onayda` sonuç satırı düğmesiz ("aşağıdaki onay kartında"; `sonucuOnayla` ve `sonucuGec` kaldırıldı). Takvim ＋: `app_theme.dart` düz FAB teması (gölgesiz).
   - Testler: `aliskanlik_halka_test.dart` (yeni), `okuma_kaydi_test.dart`, `bugun_screen_test.dart`, `asistan_screen_test.dart`, `aliskanlik_liste_test.dart`, `takvim_screen_test.dart`, `gezinme_test.dart`.
+- UI revizyonu, Faz A4 (backend; 2026-11-11, K-0024, aynı düzen): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Paylaş menüsü kaynağı (E7): `backend/Asistan/AsistanServisi.cs` (`paylas` girdisinde yalnız not hemen, diğerleri `DisKaynak` ile onay kuyruğuna; `onayda` durumu), `backend/Eylemler/IsAcTuru.cs` (iş kartı açma için kuyruk türü), `IsKartlari.AcDenetle`.
+  - Gizlilik süzgeci (E9): `BeyinOkuma.IzinliGorevlerAl` ve `GunAl` / `SabahAl` içindeki `izinliGorevler` süzgeci; `Yapilacaklar/` servisleri ve `GunIslemleri` içindeki madde denetimi.
+  - Devret yanıtı (E10): `GunIslemleri.DevretAsync` yeni günün gerçek öğesini kurar. `appsettings.json`: `Claude:Modeller:asistan-girdi`.
+  - Testler: `backend.Tests/GizlilikApiTests.cs`, `AsistanPaylasApiTests.cs`, `GunYaptimApiTests` (devret kimliği) ve güncellenen gün testleri.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

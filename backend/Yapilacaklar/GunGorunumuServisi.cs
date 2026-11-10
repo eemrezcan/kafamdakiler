@@ -144,9 +144,12 @@ public class GunGorunumuServisi(
         // only because the read failed.
         var planDurumu = "yok";
         BeyinGunDto? plan = null;
+        // A plan item that names a hidden task, or one in a closed folder, is not shown (E9): every read of the day below goes through this set.
+        IReadOnlySet<string>? izinliGorevler = null;
         if (beyin.Bagli)
         {
-            var yanit = await BeyinOkuma.GunAl($"{tarih:yyyy-MM-dd}", beyin, log, ct, gunAyari, kapasiteDk);
+            izinliGorevler = await BeyinOkuma.IzinliGorevlerAl(beyin, log, ct);
+            var yanit = await BeyinOkuma.GunAl($"{tarih:yyyy-MM-dd}", beyin, log, ct, gunAyari, kapasiteDk, izinliGorevler);
             planDurumu = yanit.Basarili ? "tamam" : "okunamadi";
             plan = yanit.Veri;
         }
@@ -274,7 +277,7 @@ public class GunGorunumuServisi(
 
         var dundenKalanlar = new List<DundenKalanDto>();
         if (bugun && beyin.Bagli)
-            dundenKalanlar = await DundenKalanlarAsync(tarih, kullaniciId, sirali, ct);
+            dundenKalanlar = await DundenKalanlarAsync(tarih, kullaniciId, sirali, izinliGorevler!, ct);
 
         return new GunGorunumuDto(
             tarih, bugun, plan?.Kapandi ?? false, bugun ? await OzetAsync(tarih, plan, sirali, yuk, ct) : null, yuk, dundenKalanlar, sirali,
@@ -289,9 +292,10 @@ public class GunGorunumuServisi(
         : 3;
 
     // What yesterday's plan left open, without what the person dropped (BirakilanMadde) and without a task that already shows up late.
-    private async Task<List<DundenKalanDto>> DundenKalanlarAsync(DateOnly bugun, Guid? kullaniciId, List<YapilacakDto> ogeler, CancellationToken ct)
+    private async Task<List<DundenKalanDto>> DundenKalanlarAsync(
+        DateOnly bugun, Guid? kullaniciId, List<YapilacakDto> ogeler, IReadOnlySet<string> izinliGorevler, CancellationToken ct)
     {
-        var sabah = await BeyinOkuma.SabahAl(beyin, log, saat, ct);
+        var sabah = await BeyinOkuma.SabahAl(beyin, log, saat, ct, izinliGorevler);
         if (!sabah.Basarili)
             return [];
 

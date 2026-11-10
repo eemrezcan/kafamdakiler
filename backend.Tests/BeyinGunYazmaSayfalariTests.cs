@@ -121,6 +121,8 @@ public sealed partial class BeyinGunYazmaSayfalariTests(UygulamaFabrikasi uygula
         _beyin.Cikti("[]");
         _beyin.Cikti("gun goster", """{"tarih": "2026-11-03", "plan_var": true, "kapandi": false, "geciken": [{"kimlik": "uye-girisi", "baslik": "Üye girişi", "bitis": "2026-10-31", "gun": 3, "proje": "kitap-kulubu"}], "bolumler": []}""");
         _beyin.Cikti("proje liste", Projeler);
+        // The tasks the day may show (E9): the late task is one of them.
+        _beyin.Cikti("gorev liste", """[{"kimlik": "uye-girisi", "baslik": "Üye girişi", "durum": "aktif", "proje": "kitap-kulubu", "yol": "projects/kitap-kulubu/gorevler/uye-girisi.md", "gizli": false}]""");
         var tarayici = await SahipAsync();
 
         var ham = WebUtility.HtmlDecode(await tarayici.GetStringAsync("/", Ct));

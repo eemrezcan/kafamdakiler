@@ -58,6 +58,8 @@ public class TakvimAraligiServisi(
         var planlar = new Dictionary<DateOnly, BeyinGunDto>();
         if (beyin.Bagli)
         {
+            // The plan items that name a hidden task, or one in a closed folder, are not counted (E9). The task list below is filtered by its own read.
+            var izinliGorevler = await BeyinOkuma.IzinliGorevlerAl(beyin, log, ct);
             var liste = await BeyinOkuma.AcikGorevlerAl(beyin, log, ct);
             if (liste.Basarili)
                 gorevler = liste.Veri!.Where(g => g.Bitis is not null).ToList();
@@ -66,7 +68,7 @@ public class TakvimAraligiServisi(
 
             foreach (var gun in gunler.Where(g => g >= bugun.AddDays(-PlanGeriGun) && g <= bugun.AddDays(PlanIleriGun)))
             {
-                var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, log, ct, gunAyari, Kapasite(gun));
+                var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, log, ct, gunAyari, Kapasite(gun), izinliGorevler);
                 if (yanit.Basarili)
                     planlar[gun] = yanit.Veri!;
             }

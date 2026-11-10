@@ -219,6 +219,8 @@ public sealed partial class BeyinSayfalariTests(UygulamaFabrikasi uygulama) : IC
     public async Task Day_DefaultsToToday_ShowsThePlan_AndDropsTheHiddenLine()
     {
         _beyin.Cikti(GunPlani);
+        // The tasks the day may show (E9): the late task is one of them.
+        _beyin.Cikti("gorev liste", """[{"kimlik": "g", "baslik": "Geciken iş", "durum": "aktif", "proje": "kitap-kulubu", "yol": "projects/kitap-kulubu/gorevler/g.md", "gizli": false}]""");
         var tarayici = await SahipAsync(beyinBagli: true);
 
         var (durum, _, metin) = await AlAsync(tarayici, "/");
