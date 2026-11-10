@@ -4018,3 +4018,107 @@ button.kd-yaptim:hover {
 .kd-bildirim-islem {
   margin-top: 0.4rem;
 }
+
+/* ---------- K-0024: the Asistan stream (W2) ---------- */
+
+.kd-asistan-baglanti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.85rem;
+}
+
+.kd-akis-suzgec {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.kd-akis-sayi {
+  margin-left: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--kd-text-muted);
+}
+
+.kd-akis {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 44rem;
+}
+
+.kd-akis-oge {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.6rem;
+  background: var(--kd-surface-solid);
+}
+
+.kd-akis-oge p {
+  margin: 0 0 0.3rem;
+}
+
+.kd-akis-ben {
+  justify-self: end;
+  max-width: 85%;
+  background: rgba(var(--kd-violet-rgb), 0.1);
+}
+
+.kd-akis-grup {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.kd-akis-kart {
+  border-left: 3px solid var(--kd-line-strong);
+}
+
+.kd-akis-kart.is-ok { border-left-color: var(--kd-ok); }
+.kd-akis-kart.is-sorun { border-left-color: var(--kd-danger); }
+.kd-akis-kart.is-onay,
+.kd-akis-kart.is-soru { border-left-color: var(--kd-hue-amber); }
+
+.kd-akis-tur {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--kd-text-muted);
+}
+
+.kd-akis-baslik {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.kd-akis-ozet {
+  color: var(--kd-text-muted);
+  font-size: 0.9rem;
+}
+
+.kd-akis-zaman {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-akis-foto {
+  max-width: 12rem;
+  border-radius: 0.4rem;
+}
+
+.kd-akis-is {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.kd-akis-brifing summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.kd-akis-brifing-kart {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--kd-line);
+}

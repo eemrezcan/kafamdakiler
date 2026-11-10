@@ -34,7 +34,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     private static List<string> UstMenu(string ham)
     {
         var bar = Regex.Match(ham, "<div (?:b-[a-z0-9]+ )?class=\"kd-nav-links\"[^>]*>(.*?)</div>", RegexOptions.Singleline).Groups[1].Value;
-        return Regex.Matches(bar, "<a (?:b-[a-z0-9]+ )?class=\"kd-nav-link[^\"]*\"[^>]*>(.*?)</a>", RegexOptions.Singleline).Select(m => Duz(m.Groups[1].Value)).ToList();
+        return Regex.Matches(bar, "<a (?:b-[a-z0-9]+ )?class=\"kd-nav-link[^\"]*\"[^>]*>(.*?)</a>", RegexOptions.Singleline).Select(m => Regex.Replace(Duz(m.Groups[1].Value), " \\d+$", "")).ToList();
     }
 
     // The profile menu's entries, in order (the account name line is not an entry).

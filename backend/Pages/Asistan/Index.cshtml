@@ -1,0 +1,258 @@
+@page
+@using Kafamdakiler.Asistan
+@using Kafamdakiler.Eylemler
+@using Kafamdakiler.Yakalamalar
+@model Kafamdakiler.Pages.Asistan.IndexModel
+@inject EylemTurleri Turler
+@{
+    ViewData["Title"] = "Asistan";
+    var filtreler = new[]
+    {
+        ("hepsi", "Hepsi", (int?)null),
+        ("bekleyen", "Bekleyen", Model.Bekleyen),
+        ("isler", "İşler", Model.Isler),
+        ("notlar", "Notlar", Model.Notlar),
+    };
+    string Etiket(AsistanDurumu durum) => durum switch
+    {
+        AsistanDurumu.Uygulandi => "Yapıldı",
+        AsistanDurumu.IzinYok => "İzin yok",
+        AsistanDurumu.Hata => "Olmadı",
+        _ => "Geçersiz",
+    };
+}
+
+<div class="kd-page-head kd-rise kd-c-violet">
+    <div>
+        <p class="kd-eyebrow">Söyle</p>
+        <h1 class="kd-page-title">Asistan</h1>
+    </div>
+    <nav class="kd-asistan-baglanti" aria-label="Asistanın eski sayfaları">
+        <a asp-page="/Gelen/Index">Gelen</a>
+        <a asp-page="/Eylemler/Index">Onay kuyruğu</a>
+        <a asp-page="/Isler/Index">İşler</a>
+        <a asp-page="/Yakalamalar/Index">Yakalamalar</a>
+    </nav>
+</div>
+
+@if (Model.Hata is not null)
+{
+    <div class="kd-alert" role="alert">@Model.Hata</div>
+}
+
+@* The one input: the assistant works out what it is (a reminder, a plan item, a task, an event, a note or a work card) and does it. *@
+<form method="post" asp-page-handler="Girdi" class="kd-composer kd-c-violet" data-kd-asistan-girdi>
+    <input type="hidden" name="girdiId" value="@Model.GirdiId" />
+    <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+    <label class="visually-hidden" for="asistan-metin">Asistana söyle</label>
+    <textarea class="kd-composer-input" id="asistan-metin" name="metin" rows="2" maxlength="@AsistanGirdisiDto.EnUzunMetin" required
+              placeholder="Aklında ne var? Yarın 9'da Ali'yi ara, raporu bugün bitir, kitap kulübü için bir fikir…"></textarea>
+    <div class="kd-composer-bar">
+        <button type="submit" class="btn btn-primary">Gönder</button>
+    </div>
+</form>
+
+<nav class="kd-akis-suzgec" aria-label="Akış süzgeçleri">
+    @foreach (var (ad, etiket, sayi) in filtreler)
+    {
+        <a class="kd-filter-chip @(Model.Suzgec == ad ? "active" : "")" asp-page="/Asistan/Index" asp-route-suzgec="@(ad == "hepsi" ? null : ad)"
+           aria-current="@(Model.Suzgec == ad ? "true" : null)">@etiket@if (sayi is { } s) { <span class="kd-akis-sayi">@IndexModel.SayiMetni(s)</span> }</a>
+    }
+</nav>
+
+@if (Model.Ogeler.Count == 0)
+{
+    <div class="kd-empty kd-empty--small">
+        <p class="kd-empty-title">@(Model.Suzgec switch { "bekleyen" => "Bekleyen bir şey yok.", "isler" => "Açık iş kartı yok.", "notlar" => "Son bir haftada not yok.", _ => "Henüz bir şey yok. Yukarıya yaz." })</p>
+    </div>
+}
+
+<section class="kd-akis" aria-label="Akış">
+    @foreach (var oge in Model.Ogeler)
+    {
+        switch (oge.Tur)
+        {
+            case AkisTuru.Kullanici:
+                <article class="kd-akis-oge kd-akis-ben" data-kd-akis="kullanici">
+                    <p class="kd-akis-metin">@oge.Metin</p>
+                    @if (oge.FotografUrl is not null)
+                    {
+                        <img class="kd-akis-foto" src="@oge.FotografUrl" alt="" loading="lazy" />
+                    }
+                    <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
+                </article>
+                break;
+
+            case AkisTuru.Sonuc:
+                <div class="kd-akis-grup" data-kd-akis="sonuc">
+                    @foreach (var sonuc in oge.Sonuclar ?? [])
+                    {
+                        var onayda = sonuc.Durum.ToString() == "Onayda";
+                        var adres = Model.HedefAdresi(sonuc.Hedef);
+                        <article class="kd-akis-oge kd-akis-kart @(sonuc.Durum == AsistanDurumu.Uygulandi ? "is-ok" : onayda ? "is-onay" : "is-sorun")" data-kd-sonuc="@sonuc.Tur">
+                            <p class="kd-akis-tur">@IsimAdi(sonuc.Tur)</p>
+                            <p class="kd-akis-baslik">
+                                @if (adres is not null)
+                                {
+                                    <a href="@adres">@sonuc.Baslik</a>
+                                }
+                                else
+                                {
+                                    @sonuc.Baslik
+                                }
+                            </p>
+                            <p class="kd-akis-ozet">@sonuc.Ozet</p>
+                            @if (onayda)
+                            {
+                                <p><span class="kd-status is-birakildi">Onayını bekliyor</span></p>
+                            }
+                            else if (sonuc.Durum != AsistanDurumu.Uygulandi)
+                            {
+                                <p><span class="kd-status is-hata">@Etiket(sonuc.Durum)</span></p>
+                            }
+                            @if (sonuc.Mesaj is not null)
+                            {
+                                <p class="kd-muted">@sonuc.Mesaj</p>
+                            }
+                            @if (sonuc.GeriAlinabilir)
+                            {
+                                if (sonuc.EylemId is { } eylemId)
+                                {
+                                    <form method="post" asp-page-handler="GeriAl" asp-route-id="@eylemId">
+                                        <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">Geri al</button>
+                                    </form>
+                                }
+                                else if (Guid.TryParse(sonuc.Hedef.Kimlik, out var yakalamaId))
+                                {
+                                    <form method="post" asp-page-handler="NotuGeriAl" asp-route-id="@yakalamaId">
+                                        <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">Geri al</button>
+                                    </form>
+                                }
+                            }
+                        </article>
+                    }
+                    <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
+                </div>
+                break;
+
+            case AkisTuru.Soru:
+                <article class="kd-akis-oge kd-akis-kart @(oge.Soru is null ? "" : "is-soru")" data-kd-akis="soru">
+                    <p class="kd-akis-tur">Soru</p>
+                    <p class="kd-akis-baslik">@oge.Metin</p>
+                    @if (oge.Soru is { } soru)
+                    {
+                        <div class="kd-gun-actions">
+                            @foreach (var secenek in soru.Secenekler)
+                            {
+                                <form method="post" asp-page-handler="Cevap" asp-route-id="@soru.Id">
+                                    <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                                    <input type="hidden" name="cevap" value="@secenek" />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">@secenek</button>
+                                </form>
+                            }
+                        </div>
+                        <form method="post" asp-page-handler="Cevap" asp-route-id="@soru.Id" class="kd-gun-form">
+                            <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                            <label class="visually-hidden" for="cevap-@soru.Id">Kendi cevabın</label>
+                            <input class="form-control" id="cevap-@soru.Id" name="cevap" maxlength="@AsistanCevabiDto.EnUzunCevap" placeholder="Kendi cevabın" required />
+                            <button type="submit" class="btn btn-primary btn-sm">Cevapla</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="kd-muted">Cevaplandı.</p>
+                    }
+                    <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
+                </article>
+                break;
+
+            case AkisTuru.Onay when oge.Eylem is { } e:
+                <article class="kd-akis-oge kd-akis-kart is-onay" data-kd-akis="onay">
+                    <p class="kd-akis-tur">Onayını bekliyor · @(Turler.Bul(e.Tur)?.GorunenAd ?? e.Tur)</p>
+                    <p class="kd-akis-baslik"><a asp-page="/Eylemler/Detay" asp-route-id="@e.Id">@e.Ozet</a></p>
+                    <p class="kd-eylem-meta">
+                        <span>Kaynak: @EylemGorunum.KaynakAdi(e.Kaynak)</span>
+                        @if (e.DisKaynak)
+                        {
+                            <span class="kd-status is-hata" title="Başkasının yazdığı metinden çıkarıldı; kendiliğinden uygulanmaz.">Dış kaynak</span>
+                        }
+                    </p>
+                    @if (e.Gerekce is not null)
+                    {
+                        <p class="kd-eylem-gerekce">@EylemGorunum.GerekceAyir(e.Gerekce).Metin</p>
+                    }
+                    <div class="kd-gun-actions">
+                        <form method="post" asp-page-handler="Uygula" asp-route-id="@e.Id">
+                            <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                            <button type="submit" class="btn btn-primary btn-sm">Ekle</button>
+                        </form>
+                        <form method="post" asp-page-handler="Reddet" asp-route-id="@e.Id">
+                            <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Geç</button>
+                        </form>
+                    </div>
+                    <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
+                </article>
+                break;
+
+            case AkisTuru.Is when oge.Is is { } kart:
+                <div class="kd-akis-oge kd-akis-is" data-kd-akis="is">
+                    <partial name="~/Pages/Isler/_Kart.cshtml" model="kart" />
+                </div>
+                break;
+
+            case AkisTuru.Brifing when oge.Brifing is { } brifing:
+                <details class="kd-akis-oge kd-akis-kart kd-akis-brifing" data-kd-akis="brifing">
+                    <summary>
+                        <span class="kd-akis-tur">Bugünün brifingi</span>
+                        <span class="kd-akis-ozet">@oge.Metin</span>
+                    </summary>
+                    @foreach (var kart in brifing.Kartlar)
+                    {
+                        <div class="kd-akis-brifing-kart">
+                            <p class="kd-akis-baslik">@kart.Baslik</p>
+                            <p class="kd-akis-ozet">@kart.Metin</p>
+                            <div class="kd-gun-actions">
+                                @foreach (var (oy, ad, simge) in new[] { (1, "Beğendim", "👍"), (-1, "Beğenmedim", "👎") })
+                                {
+                                    <form method="post" asp-page-handler="BrifingOy">
+                                        <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                                        <input type="hidden" name="sira" value="@kart.Sira" />
+                                        @* Pressing the vote already given takes it back. *@
+                                        <input type="hidden" name="oy" value="@(kart.Oy == oy ? 0 : oy)" />
+                                        <button type="submit" class="btn btn-sm @(kart.Oy == oy ? "btn-primary" : "btn-outline-primary")"
+                                                aria-pressed="@(kart.Oy == oy ? "true" : "false")" aria-label="@ad" title="@ad">@simge</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    }
+                </details>
+                break;
+
+            case AkisTuru.Not when oge.Yakalama is { } y:
+                <article class="kd-akis-oge kd-akis-kart" data-kd-akis="not">
+                    <p class="kd-akis-tur">Not</p>
+                    <p class="kd-akis-baslik"><a asp-page="/Yakalamalar/Duzenle" asp-route-id="@y.Id">@(string.IsNullOrWhiteSpace(y.Metin) ? "Fotoğraf" : y.Metin)</a></p>
+                    @if (oge.FotografUrl is not null)
+                    {
+                        <img class="kd-akis-foto" src="@oge.FotografUrl" alt="" loading="lazy" />
+                    }
+                    <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
+                </article>
+                break;
+        }
+    }
+</section>
+
+@if (Model.Sonraki is { } sonraki)
+{
+    <p class="kd-footnote"><a asp-page="/Asistan/Index" asp-route-suzgec="@(Model.Suzgec == "hepsi" ? null : Model.Suzgec)" asp-route-once="@sonraki.ToString("o")">Daha eskiler</a></p>
+}
+
+@functions {
+    // The kind of a result as a person says it.
+    static string IsimAdi(string tur) => AsistanServisi.TurEtiketi(tur);
+}
