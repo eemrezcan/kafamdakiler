@@ -61,16 +61,18 @@ void main() {
       expect(ortam.api.bildirimIstekleri, [null, ilk.liste.last.zaman]);
     });
 
-    test('a row parses with the usual names of its time; none is allowed', () {
-      final a = BildirimOgesi.fromJson({'id': 'a', 'baslik': 'x', 'metin': 'y', 'zaman': '2026-11-10T08:00:00+03:00', 'okundu': true});
+    test('a row parses with the server\'s "olusmaAni"; a row of the older cache without it has no time', () {
+      final a = BildirimOgesi.fromJson({'id': 'a', 'baslik': 'x', 'metin': 'y', 'olusmaAni': '2026-11-10T08:00:00+03:00', 'okundu': true, 'anahtar': 'k'});
       expect(a.zaman, DateTime.utc(2026, 11, 10, 5));
       expect(a.okundu, isTrue);
-      final b = BildirimOgesi.fromJson({'id': 'b', 'baslik': 'x', 'metin': 'y', 'olusturulma': '2026-11-10T05:00:00Z', 'kaynakTuru': 'hatirlatici', 'hedefKimligi': 'h1'});
+      final b = BildirimOgesi.fromJson({'id': 'b', 'baslik': 'x', 'metin': 'y', 'olusmaAni': '2026-11-10T05:00:00Z', 'kaynakTuru': 'hatirlatici', 'hedefKimligi': 'h1'});
       expect(b.zaman, DateTime.utc(2026, 11, 10, 5));
       expect(b.hatirlaticiMi, isTrue);
       final c = BildirimOgesi.fromJson({'id': 'c', 'baslik': 'x', 'metin': 'y'});
       expect(c.zaman, isNull);
       expect(c.okundu, isFalse);
+      // The kept page is read back with the same name.
+      expect(BildirimOgesi.fromJson(a.toJson()).zaman, a.zaman);
     });
   });
 

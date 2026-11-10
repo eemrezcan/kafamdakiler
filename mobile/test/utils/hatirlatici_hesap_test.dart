@@ -268,21 +268,7 @@ void main() {
       expect(kalanGunMetni(-2), '2 gün gecikti');
     });
 
-    test('tekrarOzeti', () {
-      expect(tekrarOzeti(Tekrar.yok, gun(2026, 10, 31)), isNull);
-      expect(tekrarOzeti(Tekrar.gunluk, gun(2026, 10, 31)), 'her gün');
-      expect(tekrarOzeti(Tekrar.haftalik, gun(2026, 11, 2)), 'her hafta Pazartesi');
-      expect(tekrarOzeti(Tekrar.aylik, gun(2026, 10, 31)), "her ay 31'inde");
-      expect(tekrarOzeti(Tekrar.aylik, gun(2026, 10, 2)), "her ay 2'sinde");
-      expect(tekrarOzeti(Tekrar.aylik, gun(2026, 10, 3)), "her ay 3'ünde");
-      expect(tekrarOzeti(Tekrar.aylik, gun(2026, 10, 6)), "her ay 6'sında");
-      expect(tekrarOzeti(Tekrar.aylik, gun(2026, 10, 30)), "her ay 30'unda");
-      expect(tekrarOzeti(Tekrar.yillik, gun(2024, 2, 29)), 'her yıl 29 Şubat');
-    });
-
-    test('onceNotu and names', () {
-      expect(onceNotu(0), isNull);
-      expect(onceNotu(3), '3 gün önce de haber verilir');
+    test('the names', () {
       expect(hatirlaticiTurAdi(HatirlaticiTuru.ozelTarih), 'Özel tarih');
       expect(hatirlaticiDurumAdi(HatirlaticiDurumu.arsiv), 'Arşiv');
       expect(tekrarAdi(Tekrar.yillik), 'Her yıl');

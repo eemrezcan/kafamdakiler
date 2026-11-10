@@ -1,0 +1,42 @@
+{
+  "durum": 200,
+  "govde": {
+    "oge": {
+      "kimlik": "m:be3fb6",
+      "tur": "plan",
+      "baslik": "M3 deneme işi",
+      "saat": "17:00",
+      "bitisSaati": null,
+      "tumGun": false,
+      "tahminDk": 30,
+      "sureDk": null,
+      "durum": "yapildi",
+      "proje": null,
+      "bolum": "Yapılacaklar",
+      "gecikmeGun": null,
+      "bolunmus": null,
+      "hatirlatici": {
+        "id": "01a1c77b-a2c3-7985-968e-19e916ccd978",
+        "saat": "17:00",
+        "tekrar": "haftalik",
+        "gunler": [
+          "pzt",
+          "cum"
+        ],
+        "acil": true,
+        "israrli": false,
+        "onceGun": 1
+      },
+      "maddeId": "be3fb6",
+      "gorevKimligi": null,
+      "hatirlaticiId": null,
+      "etkinlikId": null,
+      "yer": null,
+      "tarih": "2026-11-10"
+    },
+    "zincir": [
+      "h:01a1c77b-a2c3-7985-968e-19e916ccd978"
+    ],
+    "zincirHatasi": null
+  }
+}

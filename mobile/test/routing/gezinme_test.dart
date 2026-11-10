@@ -392,6 +392,28 @@ void main() {
       expect(find.text('2 kayıt gönderilmeyi bekliyor'), findsOneWidget);
     });
 
+    testWidgets('a write the server took without a clear answer (202) waits in the queue as "Dikkat" until it is read and dismissed', (tester) async {
+      await tester.runAsync(() async {
+        await ortam.gunPlani.gorevEkle(baslik: 'Belirsiz görev', proje: 'kitap-kulubu');
+        ortam.api.beyinYazmaKodlari = [202];
+        ortam.api.beyinYazmaGovdesi = {'belirsiz': true, 'ayrinti': 'Beyin zamanında cevap vermedi; yazılmış olabilir.'};
+        await ortam.esitleyici.gonder();
+      });
+      await uygulamayiAc(tester);
+      await profilAc(tester);
+
+      expect(find.text('0 bekleyen, 1 uyarı'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('profil-kuyruk')));
+      await yerles(tester);
+      expect(find.text('Dikkat: 1 kayıt'), findsOneWidget);
+      expect(find.textContaining('yazılmış olabilir'), findsOneWidget);
+
+      await tester.tap(find.textContaining('Tamam'));
+      await yerles(tester);
+      expect(find.text('Dikkat: 1 kayıt'), findsNothing);
+      expect(await tester.runAsync(ortam.esitleyici.uyarilar), isEmpty);
+    });
+
     testWidgets('sign-out asks first and says how many unsent entries would be lost', (tester) async {
       ortam.api.cevrimdisi = true;
       await uygulamayiAc(tester);
@@ -526,6 +548,18 @@ void main() {
       await uygulamayiAc(tester);
 
       router.push('/asistan/takvim');
+      await bekle(tester);
+
+      expect(find.text('Buluşma takvimi'), findsOneWidget);
+    });
+
+    testWidgets('the card is also at the board\'s address, /isler/:kimlik', (tester) async {
+      ortam.api.isAyrintilari = {
+        'takvim': IsAyrinti(kart: kart('takvim'), talep: 'Buluşma takvimi', plan: '## Adımlar'),
+      };
+      await uygulamayiAc(tester);
+
+      router.push('/isler/takvim');
       await bekle(tester);
 
       expect(find.text('Buluşma takvimi'), findsOneWidget);

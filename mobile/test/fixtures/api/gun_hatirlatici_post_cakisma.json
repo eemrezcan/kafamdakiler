@@ -1,0 +1,10 @@
+{
+  "durum": 409,
+  "govde": {
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+    "title": "Çakışma",
+    "status": 409,
+    "detail": "Bu öğenin zaten bir hatırlatıcısı var; değiştirmek için PUT, kaldırmak için DELETE kullan.",
+    "traceId": "test"
+  }
+}

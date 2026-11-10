@@ -149,9 +149,6 @@ class Hatirlatici {
   /// Days from today (Istanbul) to [etkinAn]; negative when it is past.
   int kalanGun(DateTime simdi) => hatirlaticiKalanGun(etkinAn, simdi);
 
-  /// Open and past its moment (the same rule as the web list).
-  bool gecikmis(DateTime simdi) => durum == HatirlaticiDurumu.acik && (kalanGun(simdi) < 0 || etkinAn.isBefore(simdi));
-
   Hatirlatici copyWith({
     String? baslik,
     String? not,

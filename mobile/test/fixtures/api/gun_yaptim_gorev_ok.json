@@ -1,0 +1,29 @@
+{
+  "durum": 200,
+  "govde": {
+    "oge": {
+      "kimlik": "g:bulusma-takvimi-sayfasi",
+      "tur": "gorev",
+      "baslik": "Buluşma takvimi sayfası",
+      "saat": null,
+      "bitisSaati": null,
+      "tumGun": false,
+      "tahminDk": null,
+      "sureDk": null,
+      "durum": "yapildi",
+      "proje": "kitap-kulubu",
+      "bolum": "Görevler",
+      "gecikmeGun": null,
+      "bolunmus": null,
+      "hatirlatici": null,
+      "maddeId": null,
+      "gorevKimligi": "bulusma-takvimi-sayfasi",
+      "hatirlaticiId": null,
+      "etkinlikId": null,
+      "yer": null,
+      "tarih": "2026-11-10"
+    },
+    "zincir": [],
+    "zincirHatasi": null
+  }
+}

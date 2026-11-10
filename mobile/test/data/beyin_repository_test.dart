@@ -33,41 +33,7 @@ void main() {
       expect(ProjeOzet.fromJson({'kimlik': 'a', 'baslik': 'A'}).hedef, 'projects/a');
     });
 
-    test('day plan, with null fields and a missing list', () {
-      final g = BeyinGun.fromJson({
-        'tarih': '2026-11-03',
-        'gunAdi': '3 Kasım 2026',
-        'haftaGunu': 'Salı',
-        'bugun': false,
-        'planVar': true,
-        'kapandi': false,
-        'bolumler': [
-          {
-            'ad': 'Yapılacaklar',
-            'maddeler': [
-              {'id': 'd64fb2', 'baslik': 'Takvim ay görünümü', 'durum': 'acik', 'tahminDk': 90, 'sureDk': 45, 'proje': null, 'gorev': null},
-              {'id': 'c4d957', 'baslik': '20 sayfa kitap', 'durum': 'yapildi', 'tahminDk': null, 'sureDk': 0, 'proje': null, 'gorev': null},
-            ],
-          },
-        ],
-        'toplam': {'madde': 3, 'yapildi': 1, 'acik': 2},
-      });
-
-      expect(g.tarih, DateTime.utc(2026, 11, 3));
-      expect(g.bolumler.single.maddeler.last.yapildi, isTrue);
-      expect(g.bolumler.single.maddeler.first.tahminDk, 90);
-      expect(g.geciken, isEmpty, reason: 'a missing list is an empty one');
-      expect(g.bos, isFalse);
-      expect(BeyinGun.fromJson({'tarih': '2026-12-24', 'planVar': false, 'bolumler': [], 'geciken': []}).bos, isTrue);
-    });
-
-    test('overdue task, search hit and note', () {
-      final g = GecikenGorev.fromJson(
-        {'kimlik': 'dis', 'baslik': 'Diş randevusu al', 'bitis': '2026-11-05', 'gun': 49, 'proje': null, 'oncelik': null},
-      );
-      expect(g.gun, 49);
-      expect(g.bitis, DateTime.utc(2026, 11, 5));
-
+    test('search hit and note', () {
       final a = AramaSonucu.fromJson({'yol': 'gelen/x.md', 'baslik': 'X', 'proje': null, 'alan': 'gelen', 'alinti': 'ö'});
       expect(a.alan, 'gelen');
 

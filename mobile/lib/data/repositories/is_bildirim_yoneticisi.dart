@@ -26,6 +26,8 @@ class IsBildirimYoneticisi {
   Future<bool> yanitla(BildirimYaniti yanit) async {
     final eylem = yanit.isEylemi;
     if (eylem == null || !eylem.guvenli || !_yazabilir()) return true;
+    // A revision (back to the plan) needs a short note, which a notification button cannot ask for: the card opens for it.
+    if (eylem.asama == 'plan') return true;
     final no = yanit.bildirimNo ?? bildirimKimligi('sunucu:${eylem.kimlik}');
 
     var tamam = false;

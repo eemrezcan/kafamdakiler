@@ -351,21 +351,18 @@ class _Suzgecler extends StatelessWidget {
       (AkisSuzgeci.isler, sayili('İşler', vm.islerSayisi)),
       (AkisSuzgeci.notlar, 'Notlar'),
     ];
-    return SizedBox(
-      height: 52,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    // Wrapped, not scrolled: at 360 dp the chips go on a second line, and the last one ("Notlar") is never out of sight.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+      child: Wrap(
+        spacing: 8,
         children: [
           for (final (anahtar, etiket) in secenekler)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                key: ValueKey('suzgec-$anahtar'),
-                label: Text(etiket),
-                selected: vm.suzgec == anahtar,
-                onSelected: (_) => vm.suzgecDegistir(anahtar),
-              ),
+            ChoiceChip(
+              key: ValueKey('suzgec-$anahtar'),
+              label: Text(etiket),
+              selected: vm.suzgec == anahtar,
+              onSelected: (_) => vm.suzgecDegistir(anahtar),
             ),
         ],
       ),

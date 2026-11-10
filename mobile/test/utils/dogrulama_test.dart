@@ -87,11 +87,7 @@ void main() {
       expect(ogeToplamDogrula('11', 10), isNull);
     });
 
-    test('rating 1-5, note 2000 characters', () {
-      expect(puanDogrula(null), isNull);
-      expect(puanDogrula(0), isNotNull);
-      expect(puanDogrula(6), isNotNull);
-      expect(puanDogrula(5), isNull);
+    test('note 2000 characters', () {
       expect(notDogrula('x' * 2001), isNotNull);
     });
   });

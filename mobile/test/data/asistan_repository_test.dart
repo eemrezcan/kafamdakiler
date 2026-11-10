@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kafamdakiler/data/models/asistan.dart';
-import 'package:kafamdakiler/data/models/brifing.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/is_karti.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
@@ -144,7 +143,7 @@ void main() {
         },
       });
       expect(o.brifing!.kartlar.single.oy, 1);
-      expect(o.brifing!.yontem, Brifing.claudeYontemi);
+      expect(o.brifing!.yontem, 'claude');
     });
   });
 

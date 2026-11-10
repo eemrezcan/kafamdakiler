@@ -1,0 +1,91 @@
+{
+  "durum": 200,
+  "govde": {
+    "tarih": "2026-11-11",
+    "bugun": false,
+    "kapandi": false,
+    "ozet": null,
+    "yuk": {
+      "acikTahminDk": 30,
+      "etkinlikDk": 0,
+      "kapasiteDk": 360,
+      "asimDk": 0,
+      "bosDk": 330,
+      "tahminsizSayi": 2
+    },
+    "dundenKalanlar": [],
+    "ogeler": [
+      {
+        "kimlik": "m:2f4d48",
+        "tur": "plan",
+        "baslik": "Kitap",
+        "saat": null,
+        "bitisSaati": null,
+        "tumGun": false,
+        "tahminDk": null,
+        "sureDk": null,
+        "durum": "acik",
+        "proje": null,
+        "bolum": "Kendim",
+        "gecikmeGun": null,
+        "bolunmus": null,
+        "hatirlatici": null,
+        "maddeId": "2f4d48",
+        "gorevKimligi": null,
+        "hatirlaticiId": null,
+        "etkinlikId": null,
+        "yer": null,
+        "tarih": "2026-11-11"
+      },
+      {
+        "kimlik": "m:9bb5b2",
+        "tur": "plan",
+        "baslik": "M3 deneme işi",
+        "saat": null,
+        "bitisSaati": null,
+        "tumGun": false,
+        "tahminDk": 30,
+        "sureDk": null,
+        "durum": "acik",
+        "proje": null,
+        "bolum": "Yapılacaklar",
+        "gecikmeGun": null,
+        "bolunmus": null,
+        "hatirlatici": null,
+        "maddeId": "9bb5b2",
+        "gorevKimligi": null,
+        "hatirlaticiId": null,
+        "etkinlikId": null,
+        "yer": null,
+        "tarih": "2026-11-11"
+      },
+      {
+        "kimlik": "m:091b17",
+        "tur": "plan",
+        "baslik": "Portfolyoya iki proje ekle",
+        "saat": null,
+        "bitisSaati": null,
+        "tumGun": false,
+        "tahminDk": null,
+        "sureDk": null,
+        "durum": "acik",
+        "proje": "staj-hazirligi",
+        "bolum": "Yapılacaklar",
+        "gecikmeGun": null,
+        "bolunmus": null,
+        "hatirlatici": null,
+        "maddeId": "091b17",
+        "gorevKimligi": "portfolyoya-iki-proje-ekle",
+        "hatirlaticiId": null,
+        "etkinlikId": null,
+        "yer": null,
+        "tarih": "2026-11-11"
+      }
+    ],
+    "kaynaklar": {
+      "plan": "tamam",
+      "google": "kapali",
+      "sonEsitleme": null
+    }
+  }
+}

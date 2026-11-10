@@ -275,50 +275,7 @@ class Esitleyici extends ChangeNotifier {
 
   // Day plan and task writes (K2.3a). Each is its own entry; the entry id is the `Idempotency-Key` of its send, so a send
   // repeated after a lost answer is applied once. [govde]`['istek']` is the request body; the other keys are what the
-  // plan card needs to show the write before it is sent ([gunPlaninaBekleyenleriUygula]).
-
-  /// Queues "add [metin] to the plan of [tarih]" (optionally in section [bolum]).
-  Future<String> beyinMaddeEkleKuyrugaAl(DateTime tarih, {required String metin, String? bolum}) {
-    final id = _uuid.v7();
-    return _kuyrugaAl(
-      id: id,
-      tur: BekleyenTur.beyinMaddeEkle,
-      hedefId: id,
-      tarih: tarihMetni(tarih),
-      govde: {
-        'istek': {'metin': metin, 'bolum': ?bolum},
-        'baslik': metin,
-        'bolum': ?bolum,
-      },
-    );
-  }
-
-  /// Queues a tick of plan item [madde] on [tarih]; [geri] takes the tick away.
-  Future<String> beyinMaddeIsaretleKuyrugaAl(DateTime tarih, String madde, {bool geri = false}) => _kuyrugaAl(
-        id: _uuid.v7(),
-        tur: BekleyenTur.beyinMaddeIsaretle,
-        hedefId: madde,
-        tarih: tarihMetni(tarih),
-        govde: {
-          'istek': {'madde': madde, 'geri': geri},
-        },
-      );
-
-  /// Queues "carry [madde] of [tarih] to the next day". [baslik], [bolum] and [tahminDk] are kept so the next day's plan
-  /// can show the item before it is sent.
-  Future<String> beyinMaddeDevretKuyrugaAl(DateTime tarih, String madde, {required String baslik, String? bolum, int? tahminDk}) =>
-      _kuyrugaAl(
-        id: _uuid.v7(),
-        tur: BekleyenTur.beyinMaddeDevret,
-        hedefId: madde,
-        tarih: tarihMetni(tarih),
-        govde: {
-          'istek': {'madde': madde},
-          'baslik': baslik,
-          'bolum': ?bolum,
-          'tahminDk': ?tahminDk,
-        },
-      );
+  // screens need to show the write before it is sent.
 
   Future<String> beyinMaddeNotKuyrugaAl(DateTime tarih, String madde, String metin) => _kuyrugaAl(
         id: _uuid.v7(),

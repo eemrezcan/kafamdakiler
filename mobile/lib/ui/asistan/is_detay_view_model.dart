@@ -20,7 +20,6 @@ class IsDetayViewModel extends BeyinYukleyici<IsAyrinti> {
   final bool yazabilir;
 
   bool _islemde = false;
-  bool get islemde => _islemde;
 
   /// What the last write said when it did not simply work: the server's own sentence, or the offline text.
   String? _mesaj;
@@ -48,14 +47,18 @@ class IsDetayViewModel extends BeyinYukleyici<IsAyrinti> {
     return _yaz(() => _repo.cevapla(kimlik, soru.no, cevap.trim()));
   }
 
-  Future<bool> asamaDegistir(String asama, {String? gerekce}) => _yaz(() => _repo.asamaDegistir(kimlik, asama, gerekce: gerekce));
+  /// [gerekce] goes with `iptal`; [not] with a revision (`plan` from a later stage), which the server does not take without one
+  /// (`not-gerekli`): an empty note is not sent at all.
+  Future<bool> asamaDegistir(String asama, {String? gerekce, String? not}) {
+    if (asama == 'plan' && not != null && not.trim().isEmpty) {
+      _mesaj = 'Revizyon için kısa bir not yaz.';
+      notifyListeners();
+      return Future.value(false);
+    }
+    return _yaz(() => _repo.asamaDegistir(kimlik, asama, gerekce: gerekce, not: not?.trim()));
+  }
 
   Future<bool> notYaz(String metin) => _yaz(() => _repo.notYaz(kimlik, metin.trim()));
-
-  void mesajiTemizle() {
-    _mesaj = null;
-    notifyListeners();
-  }
 
   /// True when the brain took the write. A false answer leaves [mesaj] saying why.
   Future<bool> _yaz(Future<IsYazmaSonucu> Function() yaz) async {

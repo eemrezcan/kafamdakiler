@@ -1,0 +1,10 @@
+{
+  "durum": 404,
+  "govde": {
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+    "title": "Soru bulunamadı",
+    "status": 404,
+    "detail": "Kartta bu numaralı bir soru yok. Hiçbir şey yazılmadı.",
+    "traceId": "test"
+  }
+}

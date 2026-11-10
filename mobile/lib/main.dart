@@ -97,7 +97,7 @@ Future<void> main() async {
     brifingOkuyabilir: () => kullanici.brifingOkuyabilir,
   );
   final beyin = BeyinRepository(api: api, db: db);
-  final gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici);
+  final gunPlani = GunPlaniRepository(beyin: beyin, esitleyici: esitleyici);
   final gun = GunRepository(api: api, db: db, esitleyici: esitleyici);
   final bildirimMerkezi = BildirimRepository(api: api, db: db, esitleyici: esitleyici);
   final asistan = AsistanRepository(api: api, db: db, esitleyici: esitleyici);

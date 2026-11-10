@@ -23,14 +23,6 @@ class BolumBasligi extends StatelessWidget {
   }
 }
 
-/// "45 dk", "2 sa", "1 sa 30 dk".
-String dakikaMetni(int dakika) {
-  if (dakika < 60) return '$dakika dk';
-  final saat = dakika ~/ 60;
-  final kalan = dakika % 60;
-  return kalan == 0 ? '$saat sa' : '$saat sa $kalan dk';
-}
-
 /// "10 Kas" for a due date.
 String kisaTarih(DateTime tarih) => DateFormat('d MMM', 'tr').format(tarih);
 

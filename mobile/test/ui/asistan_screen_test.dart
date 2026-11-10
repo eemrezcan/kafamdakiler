@@ -340,7 +340,7 @@ void main() {
       final brifing = Brifing(
         gun: '2026-10-31',
         uretimAni: bugun,
-        yontem: Brifing.claudeYontemi,
+        yontem: 'claude',
         kartlar: const [
           BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Bugün 7 iş var', metin: 'İlki 14:00\'te'),
           BrifingKarti(sira: 1, tur: BrifingTuru.kalan, baslik: 'Dünden kalanlar', metin: 'Market'),
@@ -369,7 +369,7 @@ void main() {
       final brifing = Brifing(
         gun: '2026-10-31',
         uretimAni: bugun,
-        yontem: Brifing.hesapYontemi,
+        yontem: 'hesap',
         kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Plan', metin: 'x')],
       );
       ortam.api.brifingYaniti = brifing;
@@ -440,6 +440,28 @@ void main() {
       await bekle(tester);
 
       expect(find.text('Bu süzgeçte bir şey yok.'), findsOneWidget);
+    });
+
+    testWidgets('at 360 dp every chip is on screen, the last one too, with big counts; each can be tapped', (tester) async {
+      ortam.api.akisOgeleri = [
+        for (var i = 0; i < 12; i++) ornekAkis('o$i', AkisTuru.onay, zaman: bugun.add(Duration(minutes: i)), eylem: ornekEylem(id: 'e$i')),
+        for (var i = 0; i < 11; i++)
+          ornekAkis('i$i', AkisTuru.isKarti, zaman: bugun.subtract(Duration(minutes: i + 1)), isKarti: IsKarti(kimlik: 'k$i', baslik: 'İş $i', tip: 'kod', asama: 'yapim', sahip: 'vps')),
+      ];
+      await goster(tester, cevrimdisi: false);
+
+      expect(tester.takeException(), isNull);
+      for (final k in ['hepsi', 'bekleyen', 'isler', 'notlar']) {
+        final r = tester.getRect(find.byKey(ValueKey('suzgec-$k')));
+        expect(r.left, greaterThanOrEqualTo(0), reason: k);
+        expect(r.right, lessThanOrEqualTo(360), reason: k);
+        expect(r.height, greaterThanOrEqualTo(32), reason: k);
+      }
+      expect(find.text('Bekleyen 12'), findsOneWidget);
+      expect(find.text('İşler 11'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('suzgec-notlar')));
+      await bekle(tester);
+      expect(ortam.api.akisIstekleri, contains('notlar|'));
     });
 
     testWidgets('offline the filters work on the kept page', (tester) async {

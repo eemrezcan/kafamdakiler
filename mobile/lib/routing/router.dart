@@ -354,6 +354,14 @@ GoRouter routerOlustur(
           (vm) => IsDetayScreen(viewModel: vm),
         ),
       ),
+      // The same card under the board's address (`/isler`).
+      GoRoute(
+        path: '/isler/:kimlik',
+        builder: (context, state) => _sayfa(
+          (c) => IsDetayViewModel(repo: c.read<IsRepository>(), kimlik: state.pathParameters['kimlik']!, yazabilir: kullanici.sahip)..yukle(),
+          (vm) => IsDetayScreen(viewModel: vm),
+        ),
+      ),
       GoRoute(
         path: Rotalar.yonetim,
         builder: (context, state) => _sayfa(

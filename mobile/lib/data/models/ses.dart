@@ -1,12 +1,6 @@
 // Voice and text (K2.4, `/api/is-cikar`, `/api/metin/yeniden-yaz`). The phone turns speech into text; the server only gets
 // the text. Plain hand-written JSON (camelCase, like the API); nothing here needs code generation.
 
-/// The `kaynak` of `/api/is-cikar/uygula`: where the text was written. It only labels the actions in the queue.
-abstract final class IsCikarKaynagi {
-  /// The box in the morning briefing (K2.7). Without a source the server takes `ses`.
-  static const brifing = 'brifing';
-}
-
 /// `IsOnerisi`: one suggestion, in the shape of the preview and of the apply request alike (the person may correct a field
 /// in between). [tur] is `hatirlatici-kur`, `plan-ekle` or `gorev-ekle`; [baslik] is the reminder's title, the plan item's
 /// text or the task's title. Dates are `yyyy-MM-dd`, [saat] is `HH:mm`.

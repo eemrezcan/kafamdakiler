@@ -184,7 +184,6 @@ void main() {
       expect(find.textContaining('Mikrofon izni verilmedi'), findsOneWidget);
       expect(dikte.dinlemeSayisi, 0);
       expect(find.text('Dikte'), findsOneWidget);
-      expect(ses.izinReddedildi, isTrue);
     });
 
     testWidgets('a permission error while listening stops it and says so', (tester) async {

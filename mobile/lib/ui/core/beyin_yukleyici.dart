@@ -45,14 +45,6 @@ abstract class BeyinYukleyici<T> extends ChangeNotifier {
     }
   }
 
-  /// Replaces the shown data without a read (a local change laid over it). Ignored while nothing is shown yet.
-  @protected
-  void veriyiDegistir(T yeni) {
-    if (_atildi || _veri == null) return;
-    _veri = yeni;
-    notifyListeners();
-  }
-
   /// Forgets the shown data (before loading something else, so an old answer is not shown for the new request).
   void temizle() {
     _veri = null;

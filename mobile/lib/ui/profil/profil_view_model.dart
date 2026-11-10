@@ -17,6 +17,15 @@ class GonderilemeyenKayit {
   final String hata;
 }
 
+/// A sent write the server accepted without a clear "done" (202), or a split that stopped half way (207): the note to read.
+class UyariKaydi {
+  const UyariKaydi({required this.id, required this.baslik, required this.metin});
+
+  final String id;
+  final String baslik;
+  final String metin;
+}
+
 /// Offline queue state for the profile sheet.
 class ProfilViewModel extends ChangeNotifier {
   ProfilViewModel({required this._repo, required this._esitleyici}) {
@@ -33,12 +42,19 @@ class ProfilViewModel extends ChangeNotifier {
   List<GonderilemeyenKayit> _gonderilemeyenler = const [];
   List<GonderilemeyenKayit> get gonderilemeyenler => _gonderilemeyenler;
 
+  /// Writes the server took without a clear answer; each stays until it is read and dismissed.
+  List<UyariKaydi> _uyarilar = const [];
+  List<UyariKaydi> get uyarilar => _uyarilar;
+
   Future<void> yukle() async {
     final adlar = {for (final a in await _repo.yerelListe()) a.id: a.ad};
     _bekleyen = (await _esitleyici.bekleyenler()).length;
     _gonderilemeyenler = [
       for (final b in await _esitleyici.reddedilenler())
         GonderilemeyenKayit(id: b.id, baslik: _baslik(b, adlar), hata: b.hata ?? ''),
+    ];
+    _uyarilar = [
+      for (final b in await _esitleyici.uyarilar()) UyariKaydi(id: b.id, baslik: _baslik(b, adlar), metin: b.uyari ?? ''),
     ];
     notifyListeners();
   }

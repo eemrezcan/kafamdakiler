@@ -1,0 +1,27 @@
+{
+  "durum": 200,
+  "govde": {
+    "oge": {
+      "kimlik": "m:091b17",
+      "tur": "plan",
+      "baslik": "Portfolyoya iki proje ekle",
+      "saat": null,
+      "bitisSaati": null,
+      "tumGun": false,
+      "tahminDk": null,
+      "sureDk": null,
+      "durum": "acik",
+      "proje": "staj-hazirligi",
+      "bolum": "Yapılacaklar",
+      "gecikmeGun": null,
+      "bolunmus": null,
+      "hatirlatici": null,
+      "maddeId": "091b17",
+      "gorevKimligi": "portfolyoya-iki-proje-ekle",
+      "hatirlaticiId": null,
+      "etkinlikId": null,
+      "yer": null,
+      "tarih": "2026-11-11"
+    }
+  }
+}

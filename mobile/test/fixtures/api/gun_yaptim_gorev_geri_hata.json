@@ -1,0 +1,11 @@
+{
+  "durum": 409,
+  "govde": {
+    "type": "gorev-geri-alinamaz",
+    "title": "Görev geri alınamaz",
+    "status": 409,
+    "detail": "Biten görev buradan yeniden açılamaz.",
+    "kod": "gorev-geri-alinamaz",
+    "traceId": "test"
+  }
+}

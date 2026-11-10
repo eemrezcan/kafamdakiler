@@ -84,12 +84,6 @@ class IsPanosu {
     return IsPanosu(sende: sende, vps: vps, laptop: laptop, yapim: yapim, kapilar: kapilar, biten: biten);
   }
 
-  /// Waiting on the person: the cards they hold and the gates.
-  List<IsKarti> get sendeBekleyen => [...kapilar, ...sende];
-
-  /// Being worked on by the VPS: what it holds, and a build it holds.
-  int get vpstekiSayi => vps.length + yapim.where((k) => k.sahip == 'vps').length;
-
   bool get bos => sende.isEmpty && vps.isEmpty && laptop.isEmpty && yapim.isEmpty && kapilar.isEmpty && biten.isEmpty;
 }
 
