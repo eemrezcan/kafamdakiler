@@ -43,8 +43,8 @@ void main() {
   });
   tearDown(() async => ortam.kapat());
 
-  Future<List<String>> goster(WidgetTester tester, {bool acik = true, OnayBekleyenViewModel? onay}) async {
-    tester.view.physicalSize = const Size(400, 1400);
+  Future<List<String>> goster(WidgetTester tester, {bool acik = true, OnayBekleyenViewModel? onay, double genislik = 400}) async {
+    tester.view.physicalSize = Size(genislik, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     vm = BrifingViewModel(repo: ortam.brifing, yenileyebilir: () => sahip);
@@ -114,6 +114,22 @@ void main() {
     await tester.tap(find.text('Onay bekleyen 2'));
     await tester.pumpAndSettle();
     expect(gidilen, [Rotalar.eylemler]);
+  });
+
+  testWidgets('on a narrow phone the badge sits under the title, which stays on one line', (tester) async {
+    ortam.api.brifingYaniti = ornek();
+    ortam.api.eylemler = [for (var i = 0; i < 12; i++) ornekEylem(id: 'e$i')];
+    final onay = OnayBekleyenViewModel(repo: ortam.eylemler, esitleyici: ortam.esitleyici);
+    addTearDown(onay.dispose);
+    await tester.runAsync(onay.yukle);
+    await goster(tester, acik: true, onay: onay, genislik: 320);
+
+    final baslik = tester.getRect(find.text('Sabah brifingi'));
+    final cip = tester.getRect(find.byKey(const ValueKey('brifing-onay')));
+    final tekSatir = tester.getSize(find.text('8 Kasım Pazar · Asistan hazırladı')).height;
+    expect(cip.top, greaterThanOrEqualTo(baslik.bottom), reason: 'the badge is below the title, not beside it');
+    expect(baslik.height, lessThan(tekSatir * 2), reason: 'the title is one line');
+    expect(tester.takeException(), isNull, reason: 'no overflow');
   });
 
   testWidgets('without waiting actions there is no badge', (tester) async {

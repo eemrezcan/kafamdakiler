@@ -160,6 +160,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
 - İş kartı uygulama tarafı (2026-11-10): `backend/Isler/` (uçlar, `beyin.py is` sarmalayıcısı, kart izleyici), `backend/Pages/Isler/`, bildirim düğmesi seçenekleri, mobilde `ui/asistan/`, `is_karti.dart`, `is_repository.dart`, `is_bildirim_yoneticisi.dart`, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
 - Web arayüz yenilemesi (2026-11-10): `Pages/Index.cshtml` (iki sütunlu Bugün, alışkanlıklar üstte), `_Brifing`, `_ZamanCizelgesi`, `_Layout` menüsü, alışkanlık kartları, `Gelen`, `site.css`, `bugun.js`: Claude'un açtığı Sonnet işçisi yazdı; simge dosyası onarımı ve kart rengi Claude.
 - Mobil arayüz yenilemesi (2026-11-10): `router.dart` ve `ana_iskele.dart` (Alışkanlıklar sekmesi), `bugun_screen.dart` sırası, katlanır brifing, `zaman_cizelgesi_karti.dart`, `widgets.dart` ortak kart başlığı ve boş durum, yüzen düğme boşluğu, testleri: Claude'un açtığı Sonnet işçisi yazdı, Claude denetledi.
+- Mobil brifing başlığı düzeltmesi (2026-11-10): `brifing_seridi.dart` ("Onay bekleyen" çipi başlığın altına) ve dar ekran testi: Claude yazdı.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

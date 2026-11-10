@@ -211,6 +211,19 @@ class _Baslik extends StatelessWidget {
                             Text('${brifingGunMetni(brifing.gun)} · $yontem', style: tema.textTheme.bodySmall?.copyWith(color: soluk))
                           else
                             Text(ozet, maxLines: 1, overflow: TextOverflow.ellipsis, style: tema.textTheme.bodySmall?.copyWith(color: soluk)),
+                          // Under the title, not beside it: on a phone the chip next to the title squeezed it to a few letters.
+                          if (onayBekleyen > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: ActionChip(
+                                key: const ValueKey('brifing-onay'),
+                                avatar: Icon(LucideIcons.listChecks, size: 18, color: tema.colorScheme.primary),
+                                label: Text('Onay bekleyen $onayBekleyen'),
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                onPressed: () => rotayaGit(context, Rotalar.eylemler),
+                              ),
+                            ),
                           if (!guncel)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
@@ -237,14 +250,6 @@ class _Baslik extends StatelessWidget {
               ),
             ),
           ),
-          if (onayBekleyen > 0)
-            ActionChip(
-              key: const ValueKey('brifing-onay'),
-              avatar: Icon(LucideIcons.listChecks, size: 18, color: tema.colorScheme.primary),
-              label: Text('Onay bekleyen $onayBekleyen'),
-              visualDensity: VisualDensity.compact,
-              onPressed: () => rotayaGit(context, Rotalar.eylemler),
-            ),
           if (yenileyebilir && acik)
             IconButton(
               tooltip: 'Yeniden hazırla',
