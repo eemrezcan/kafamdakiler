@@ -115,5 +115,6 @@ class HatirlaticiRepository extends ChangeNotifier {
         israrAraligiDakika: y.israrAraligiDakika,
         israrEnCok: y.israrEnCok,
         acil: y.acil,
+        gunler: y.gunler,
       );
 }

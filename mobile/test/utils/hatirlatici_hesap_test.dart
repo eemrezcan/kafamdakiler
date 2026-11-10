@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/utils/hatirlatici_gorunum.dart';
 import 'package:kafamdakiler/utils/hatirlatici_hesap.dart';
@@ -95,6 +96,59 @@ void main() {
       final b = gun(2026, 11, 1);
       expect(sonrakiHatirlaticiAni(Tekrar.gunluk, b, yarimGece, z('2026-11-05T22:30:00Z')), ist('2026-11-07', '00:30'));
       expect(sonrakiHatirlaticiAni(Tekrar.gunluk, b, yarimGece, z('2026-11-05T21:00:00Z')), ist('2026-11-06', '00:30'));
+    });
+  });
+
+  // The weekly rule with several weekdays (UI revision, sözleşme §2): the same cases as the server's HatirlaticiHesapTests,
+  // so the phone and the server agree on every moment. 2026-11-02 is a Monday.
+  group('weekly on several days', () {
+    const salPer = [HaftaGunu.sal, HaftaGunu.per];
+
+    DateTime sonraki(String baslangic, String simdi, [List<HaftaGunu>? gunler = salPer]) {
+      final b = DateTime.parse('${baslangic}T00:00:00Z');
+      return sonrakiHatirlaticiAni(Tekrar.haftalik, b, dokuz, z(simdi), gunler: gunler);
+    }
+
+    test('before the first chosen day it is that day; on it, before the hour, it is today', () {
+      expect(sonraki('2026-11-02', '2026-11-02T10:00:00Z'), ist('2026-11-03'), reason: 'Monday -> Tuesday');
+      expect(sonraki('2026-11-02', '2026-11-03T05:00:00Z'), ist('2026-11-03'), reason: 'Tuesday 08:00 Istanbul, hour not reached');
+    });
+
+    test('after the hour of a chosen day the next chosen day comes, across the weekend into the next week', () {
+      expect(sonraki('2026-11-02', '2026-11-03T07:00:00Z'), ist('2026-11-05'), reason: 'Tuesday after 09:00 -> Thursday');
+      expect(sonraki('2026-11-02', '2026-11-05T07:00:00Z'), ist('2026-11-10'), reason: 'Thursday after 09:00 -> next Tuesday');
+    });
+
+    test('a start in the future waits for its first chosen weekday', () {
+      expect(sonraki('2026-12-01', '2026-11-06T00:00:00Z'), ist('2026-12-01'), reason: 'the start day is a Tuesday');
+      expect(sonraki('2026-12-02', '2026-11-06T00:00:00Z'), ist('2026-12-03'), reason: 'a Wednesday start -> Thursday');
+    });
+
+    test('no days chosen (null or empty) is the old rule: the weekday of the start', () {
+      final eski = sonrakiHatirlaticiAni(Tekrar.haftalik, gun(2026, 11, 2), dokuz, z('2026-11-06T00:00:00Z'));
+      expect(sonraki('2026-11-02', '2026-11-06T00:00:00Z', null), eski);
+      expect(sonraki('2026-11-02', '2026-11-06T00:00:00Z', const []), eski);
+    });
+
+    test('days only count for a weekly repeat', () {
+      final b = gun(2026, 11, 2);
+      expect(sonrakiHatirlaticiAni(Tekrar.gunluk, b, dokuz, z('2026-11-06T06:00:00Z'), gunler: salPer), ist('2026-11-07'));
+    });
+
+    test('the Istanbul day decides, not the UTC one', () {
+      // Tuesday 23:30 UTC is Wednesday 02:30 in Istanbul: Tuesday is over, the next one is Thursday.
+      expect(sonraki('2026-11-02', '2026-11-03T23:30:00Z'), ist('2026-11-05'));
+    });
+
+    test('Yaptım on a multi-day reminder moves to the next chosen day; a new one built from a write gets its first moment', () {
+      final yaz = HatirlaticiYaz(id: 'h', baslik: 'Spor', gun: gun(2026, 11, 2), tekrar: Tekrar.haftalik, gunler: salPer);
+      final h = hatirlaticiYazdan(yaz, z('2026-11-02T10:00:00Z'));
+      expect(h.sonrakiAn, ist('2026-11-03'));
+      expect(h.gunler, salPer);
+
+      final sonra = hatirlaticiYaptim(h, z('2026-11-03T07:00:00Z'));
+      expect(sonra.sonrakiAn, ist('2026-11-05'));
+      expect(sonra.gunler, salPer);
     });
   });
 

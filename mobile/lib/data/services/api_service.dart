@@ -4,15 +4,17 @@ import 'package:dio/dio.dart';
 
 import '../../utils/aliskanlik_gunu.dart';
 import '../models/aliskanlik.dart';
+import '../models/asistan.dart';
+import '../models/bildirim_ogesi.dart';
 import '../models/ben.dart';
 import '../models/beyin.dart';
 import '../models/beyin_yazma.dart';
 import '../models/proje_repo.dart';
 import '../models/brifing.dart';
-import '../models/zaman_cizelgesi.dart';
 import '../models/enums.dart';
 import '../models/eylem.dart';
 import '../models/gelen.dart';
+import '../models/gun_gorunum.dart';
 import '../models/giris.dart';
 import '../models/hatirlatici.dart';
 import '../models/gun.dart';
@@ -393,12 +395,6 @@ class ApiService {
   // ---- Timeline (K2.3c) ----
   // Needs the `takvim.oku` permission (403 without).
 
-  /// `GET /api/zaman-cizelgesi?gun=yyyy-MM-dd`: the day's events, timed reminders and plan items in one list.
-  Future<ZamanCizelgesi> zamanCizelgesi(String gun) async {
-    final yanit = await _dio.get<Map<String, dynamic>>('/api/zaman-cizelgesi', queryParameters: {'gun': gun});
-    return ZamanCizelgesi.fromJson(yanit.data!);
-  }
-
   /// `POST /api/metin/yeniden-yaz`: the text as a summary or a bullet list. Saves nothing.
   Future<String> metniYenidenYaz(String metin, YenidenYazKipi kip) async {
     final yanit = await _dio.post<Map<String, dynamic>>(
@@ -569,6 +565,131 @@ class ApiService {
   Future<GoogleEsitlemeOzeti> googleEsitle() async {
     final yanit = await _dio.post<Map<String, dynamic>>('/api/google/esitle');
     return GoogleEsitlemeOzeti.fromJson(yanit.data!);
+  }
+
+  // ---- Day view, calendar and settings of the UI revision (K-0024, docs/planlar/ui-revizyon/sozlesme.md) ----
+
+  /// `GET /api/gun/{tarih}`: [tarih] is `yyyy-MM-dd` or `bugun`.
+  Future<GunGorunum> gunGorunumu(String tarih) async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/gun/$tarih');
+    return GunGorunum.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/gun/{tarih}/yaptim`: the one "done" for any kind of row. [anahtar] is the `Idempotency-Key`.
+  Future<YaptimYaniti> gunYaptim(String tarih, String kimlik, {bool geri = false, required String anahtar}) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/gun/$tarih/yaptim',
+      data: {'kimlik': kimlik, 'geri': geri},
+      options: Options(headers: {'Idempotency-Key': anahtar}),
+    );
+    return YaptimYaniti.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/gun/{tarih}/dunden/{maddeId}/birak`: yesterday's open item is let go (nothing is written to the brain).
+  Future<void> dundenBirak(String tarih, String maddeId) =>
+      _dio.post<void>('/api/gun/$tarih/dunden/${Uri.encodeComponent(maddeId)}/birak');
+
+  /// `POST /api/gun/{tarih}/ogeler`: a new "yapılacak", with a reminder when the body carries one.
+  Future<Yapilacak> gunOgeEkle(String tarih, YeniOgeYaz yaz, {required String anahtar}) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/gun/$tarih/ogeler',
+      data: yaz.toJson(),
+      options: Options(headers: {'Idempotency-Key': anahtar}),
+    );
+    return Yapilacak.fromJson(yanit.data!);
+  }
+
+  /// `POST` (set up) or `PUT` (change) `/api/gun/{tarih}/ogeler/{kimlik}/hatirlatici`: the reminder tied to a row.
+  Future<void> ogeHatirlaticiYaz(String tarih, String kimlik, HatirlaticiGovde govde, {required bool guncelle}) {
+    final yol = '/api/gun/$tarih/ogeler/${Uri.encodeComponent(kimlik)}/hatirlatici';
+    return guncelle ? _dio.put<void>(yol, data: govde.toJson()) : _dio.post<void>(yol, data: govde.toJson());
+  }
+
+  /// `DELETE /api/gun/{tarih}/ogeler/{kimlik}/hatirlatici`.
+  Future<void> ogeHatirlaticiSil(String tarih, String kimlik) =>
+      _dio.delete<void>('/api/gun/$tarih/ogeler/${Uri.encodeComponent(kimlik)}/hatirlatici');
+
+  /// `GET /api/takvim?baslangic=&bitis=` (at most 42 days).
+  Future<TakvimAraligi> takvimAraligi(DateTime baslangic, DateTime bitis) async {
+    final yanit = await _dio.get<Map<String, dynamic>>(
+      '/api/takvim',
+      queryParameters: {'baslangic': tarihMetni(baslangic), 'bitis': tarihMetni(bitis)},
+    );
+    return TakvimAraligi.fromJson(yanit.data!);
+  }
+
+  /// `GET /api/ayarlar/gun`.
+  Future<GunAyari> gunAyari() async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/ayarlar/gun');
+    return GunAyari.fromJson(yanit.data!);
+  }
+
+  /// `PUT /api/ayarlar/gun` (Sahip).
+  Future<void> gunAyariYaz(GunAyari ayar) => _dio.put<void>('/api/ayarlar/gun', data: ayar.toJson());
+
+  /// `GET /api/bildirimler/sayi`: how many notifications are unread (the badge on the bell).
+  Future<int> bildirimSayisi() async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/bildirimler/sayi');
+    return (yanit.data?['okunmamis'] as num?)?.toInt() ?? 0;
+  }
+
+  /// `POST /api/gun/{tarih}/devret` (sözleşme E2): the row [kimlik] goes to the next day. Answers the row of the new day.
+  Future<Yapilacak> gunDevret(String tarih, String kimlik, {required String anahtar}) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/gun/$tarih/devret',
+      data: {'kimlik': kimlik},
+      options: Options(headers: {'Idempotency-Key': anahtar}),
+    );
+    return Yapilacak.fromJson((yanit.data!['oge'] ?? yanit.data!) as Map<String, dynamic>);
+  }
+
+  // ---- Notification centre (sözleşme §6) ----
+
+  /// `GET /api/bildirimler?once=&limit=`: newest first, only this person's.
+  Future<List<BildirimOgesi>> bildirimleriGetir({DateTime? once, int limit = 30}) async {
+    final yanit = await _dio.get<List<dynamic>>(
+      '/api/bildirimler',
+      queryParameters: {'limit': limit, if (once != null) 'once': once.toUtc().toIso8601String()},
+    );
+    return _liste(yanit, BildirimOgesi.fromJson);
+  }
+
+  /// `POST /api/bildirimler/{id}/okundu`.
+  Future<void> bildirimOkundu(String id) => _dio.post<void>('/api/bildirimler/${Uri.encodeComponent(id)}/okundu');
+
+  /// `POST /api/bildirimler/okundu`: all of them.
+  Future<void> bildirimlerinHepsiOkundu() => _dio.post<void>('/api/bildirimler/okundu');
+
+  // ---- Assistant (sözleşme §7) ----
+
+  /// `POST /api/asistan/girdi`: the one input. The same [AsistanGirdisi.id] again gets the same answer.
+  Future<AsistanYaniti> asistanGirdi(AsistanGirdisi girdi) async {
+    final yanit = await _dio.post<Map<String, dynamic>>('/api/asistan/girdi', data: girdi.toJson());
+    return AsistanYaniti.fromJson(yanit.data!);
+  }
+
+  /// `POST /api/asistan/sorular/{id}/cevap`.
+  Future<AsistanYaniti> asistanSoruCevap(String soruId, String cevap) async {
+    final yanit = await _dio.post<Map<String, dynamic>>(
+      '/api/asistan/sorular/${Uri.encodeComponent(soruId)}/cevap',
+      data: {'cevap': cevap},
+    );
+    return AsistanYaniti.fromJson(yanit.data!);
+  }
+
+  /// `GET /api/asistan/akis?once=&limit=&suzgec=`: newest first.
+  Future<List<AkisOgesi>> asistanAkis({DateTime? once, int limit = 40, String suzgec = AkisSuzgeci.hepsi}) async {
+    final yanit = await _dio.get<List<dynamic>>(
+      '/api/asistan/akis',
+      queryParameters: {'limit': limit, 'suzgec': suzgec, if (once != null) 'once': once.toUtc().toIso8601String()},
+    );
+    return _liste(yanit, AkisOgesi.fromJson);
+  }
+
+  /// `GET /api/asistan/sayi`: how many things wait on the person (the badge of the Asistan tab).
+  Future<int> asistanSayi() async {
+    final yanit = await _dio.get<Map<String, dynamic>>('/api/asistan/sayi');
+    return (yanit.data?['bekleyen'] as num?)?.toInt() ?? 0;
   }
 
   // ---- Helpers ----

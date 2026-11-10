@@ -65,7 +65,7 @@ void main() {
   group('YakalaYonlendirici', () {
     late BekleyenYakala bekleyen;
     late ValueNotifier<int> degisim;
-    late bool girisYapildi, rolBilinir, sahip, hazir, yakalaAcik;
+    late bool girisYapildi, rolBilinir, kullanabilir, hazir;
     late List<YakalaGirdisi> acilan;
     late List<String> mesajlar;
     late YakalaYonlendirici yonlendirici;
@@ -75,9 +75,8 @@ void main() {
       degisim = ValueNotifier(0);
       girisYapildi = true;
       rolBilinir = true;
-      sahip = true;
+      kullanabilir = true;
       hazir = true;
-      yakalaAcik = false;
       acilan = [];
       mesajlar = [];
       yonlendirici = YakalaYonlendirici(
@@ -85,9 +84,8 @@ void main() {
         degisim: Listenable.merge([degisim, bekleyen]),
         girisYapildi: () => girisYapildi,
         rolBilinir: () => rolBilinir,
-        sahip: () => sahip,
+        kullanabilir: () => kullanabilir,
         hazir: () => hazir,
-        yakalaAcik: () => yakalaAcik,
         ac: acilan.add,
         mesaj: mesajlar.add,
       );
@@ -95,7 +93,7 @@ void main() {
 
     tearDown(() => yonlendirici.durdur());
 
-    test('Sahip signed in: Yakala opens with the content', () {
+    test('someone who may use the assistant, signed in: the Asistan tab opens with the content', () {
       bekleyen.bekle(const YakalaGirdisi(metin: 'x'));
       expect(acilan.single.metin, 'x');
       expect(bekleyen.bekleyen, isNull);
@@ -124,8 +122,8 @@ void main() {
       expect(bekleyen.bekleyen, isNull);
     });
 
-    test('Asistan: the content is dropped with a message', () {
-      sahip = false;
+    test('without the assistant permission: the content is dropped with a message', () {
+      kullanabilir = false;
       bekleyen.bekle(const YakalaGirdisi(metin: 'x'));
       expect(acilan, isEmpty);
       expect(bekleyen.bekleyen, isNull);
@@ -141,19 +139,11 @@ void main() {
       expect(acilan.single.metin, 'yeni');
     });
 
-    test('a plain request is ignored when Yakala is already on top, shared content is not', () {
-      yakalaAcik = true;
+    test('a plain request (widget, shortcut) opens the tab to put the cursor in the input, every time', () {
       bekleyen.bekle(kisayolGirdisi(yakalaKisayoluTuru)!);
-      expect(acilan, isEmpty);
-      expect(bekleyen.bekleyen, isNull);
-
-      bekleyen.bekle(const YakalaGirdisi(metin: 'x'));
-      expect(acilan.single.metin, 'x');
-    });
-
-    test('a plain request opens Yakala when it is not on top', () {
       bekleyen.bekle(kisayolGirdisi(yakalaKisayoluTuru)!);
-      expect(acilan.single.bos, isTrue);
+      expect(acilan, hasLength(2));
+      expect(acilan.first.bos, isTrue);
     });
 
     test('nothing waiting: nothing happens', () {

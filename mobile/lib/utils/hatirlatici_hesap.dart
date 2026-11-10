@@ -1,3 +1,4 @@
+import '../data/models/enums.dart';
 import '../data/models/hatirlatici.dart';
 
 // Reminder date math, a Dart port of backend/Hatirlaticilar/HatirlaticiHesap.cs. The phone needs it so a reminder
@@ -52,9 +53,24 @@ DateTime hatirlaticiOlusumu(Tekrar tekrar, DateTime baslangic, int n) {
   }
 }
 
+const _haftaGunleri = [HaftaGunu.pzt, HaftaGunu.sal, HaftaGunu.car, HaftaGunu.per, HaftaGunu.cum, HaftaGunu.cmt, HaftaGunu.paz];
+
 /// The first firing moment strictly after [sonra]. A one-off has only its own moment, even when it is past.
-DateTime sonrakiHatirlaticiAni(Tekrar tekrar, DateTime baslangic, Saat saat, DateTime sonra) {
+///
+/// A weekly rule with [gunler] fires on each chosen weekday, from the start day on (the same rule as the server's
+/// `HatirlaticiHesap.Olusum`); without them it fires on the weekday of [baslangic].
+DateTime sonrakiHatirlaticiAni(Tekrar tekrar, DateTime baslangic, Saat saat, DateTime sonra, {List<HaftaGunu>? gunler}) {
   if (tekrar == Tekrar.yok) return hatirlaticiAni(baslangic, saat);
+  if (tekrar == Tekrar.haftalik && gunler != null && gunler.isNotEmpty) {
+    final bugun = istanbulGunu(sonra);
+    var gun = bugun.subtract(const Duration(days: 1)).isAfter(baslangic) ? bugun.subtract(const Duration(days: 1)) : baslangic;
+    while (true) {
+      if (gunler.contains(_haftaGunleri[gun.weekday - 1]) && hatirlaticiAni(gun, saat).isAfter(sonra)) {
+        return hatirlaticiAni(gun, saat);
+      }
+      gun = DateTime.utc(gun.year, gun.month, gun.day + 1);
+    }
+  }
 
   final gunFark = istanbulGunu(sonra).difference(baslangic).inDays;
   final tahmin = switch (tekrar) {

@@ -6,7 +6,6 @@ import '../../data/models/eylem.dart';
 import '../../data/models/yakalama.dart';
 import '../../utils/eylem_gorunum.dart';
 import '../../data/models/yonetim.dart';
-import '../../data/models/zaman_cizelgesi.dart';
 import '../core/widgets.dart';
 import 'asistan_sifre_dialog.dart';
 import 'izin_gruplari.dart';

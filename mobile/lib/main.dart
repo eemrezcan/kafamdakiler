@@ -10,8 +10,10 @@ import 'package:provider/provider.dart';
 import 'config/app_config.dart';
 import 'config/app_theme.dart';
 import 'data/repositories/aliskanlik_repository.dart';
+import 'data/repositories/asistan_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/beyin_repository.dart';
+import 'data/repositories/bildirim_repository.dart';
 import 'data/repositories/brifing_repository.dart';
 import 'data/repositories/esitleyici.dart';
 import 'data/repositories/bildirim_izni.dart';
@@ -19,6 +21,7 @@ import 'data/repositories/eylem_bildirim_yoneticisi.dart';
 import 'data/repositories/eylem_repository.dart';
 import 'data/repositories/gelen_repository.dart';
 import 'data/repositories/gun_plani_repository.dart';
+import 'data/repositories/gun_repository.dart';
 import 'data/repositories/hatirlatici_bildirim_yoneticisi.dart';
 import 'data/repositories/hatirlatici_repository.dart';
 import 'data/repositories/is_bildirim_yoneticisi.dart';
@@ -27,7 +30,6 @@ import 'data/repositories/kronometre_repository.dart';
 import 'data/repositories/kullanici_repository.dart';
 import 'data/repositories/push_mesaj_isleyici.dart';
 import 'data/repositories/push_yoneticisi.dart';
-import 'data/repositories/zaman_cizelgesi_repository.dart';
 import 'data/repositories/surum_denetcisi.dart';
 import 'data/repositories/yakala_yonlendirici.dart';
 import 'data/repositories/yakalama_repository.dart';
@@ -84,7 +86,6 @@ Future<void> main() async {
     cihazAdi: 'Android',
   );
   final brifing = BrifingRepository(api: api, db: db);
-  final zamanCizelgesi = ZamanCizelgesiRepository(api: api, db: db);
   final bildirimler = HatirlaticiBildirimYoneticisi(
     repo: hatirlaticilar,
     esitleyici: esitleyici,
@@ -97,6 +98,9 @@ Future<void> main() async {
   );
   final beyin = BeyinRepository(api: api, db: db);
   final gunPlani = GunPlaniRepository(beyin: beyin, db: db, esitleyici: esitleyici);
+  final gun = GunRepository(api: api, db: db, esitleyici: esitleyici);
+  final bildirimMerkezi = BildirimRepository(api: api, db: db, esitleyici: esitleyici);
+  final asistan = AsistanRepository(api: api, db: db, esitleyici: esitleyici);
   auth = AuthRepository(
     api: api,
     depo: depo,
@@ -151,9 +155,11 @@ Future<void> main() async {
     bildirimIzni: bildirimIzni,
     push: push,
     brifing: brifing,
-    zamanCizelgesi: zamanCizelgesi,
     beyin: beyin,
     gunPlani: gunPlani,
+    gun: gun,
+    bildirimMerkezi: bildirimMerkezi,
+    asistan: asistan,
     kronometre: KronometreRepository(db: db),
     surum: surum,
   ));
@@ -177,9 +183,11 @@ class KafamdakilerApp extends StatefulWidget {
     required this.bildirimIzni,
     required this.push,
     required this.brifing,
-    required this.zamanCizelgesi,
     required this.beyin,
     required this.gunPlani,
+    required this.gun,
+    required this.bildirimMerkezi,
+    required this.asistan,
     required this.kronometre,
     required this.surum,
   });
@@ -199,9 +207,11 @@ class KafamdakilerApp extends StatefulWidget {
   final BildirimIzni bildirimIzni;
   final PushYoneticisi push;
   final BrifingRepository brifing;
-  final ZamanCizelgesiRepository zamanCizelgesi;
   final BeyinRepository beyin;
   final GunPlaniRepository gunPlani;
+  final GunRepository gun;
+  final BildirimRepository bildirimMerkezi;
+  final AsistanRepository asistan;
   final KronometreRepository kronometre;
   final SurumDenetcisi surum;
 
@@ -218,11 +228,11 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
     degisim: Listenable.merge([widget.auth, widget.kullanici, _bekleyenYakala, _router.routerDelegate]),
     girisYapildi: () => widget.auth.girisYapildi,
     rolBilinir: () => widget.kullanici.ben != null,
-    sahip: () => widget.kullanici.sahip,
+    kullanabilir: () => widget.kullanici.asistanKullanabilir,
     // After a sign-in the router first goes to the start page; wait for that.
     hazir: () => _router.routeInformationProvider.value.uri.path != Rotalar.giris,
-    yakalaAcik: () => yakalaUstte(_router),
-    ac: (girdi) => _router.push(Rotalar.yakala, extra: girdi),
+    // Share, the widget and the shortcut land on the Asistan tab; the input starts with what was shared.
+    ac: (girdi) => _router.go(Rotalar.asistanSekmesi, extra: girdi),
     mesaj: (metin) => _mesajAnahtari.currentState?.showSnackBar(SnackBar(content: Text(metin))),
   );
   late final EsitlemeTetikleyici _tetikleyici = EsitlemeTetikleyici(
@@ -254,7 +264,7 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
     // Notification taps and buttons; a platform failure must not stop the app.
     widget.bildirimler
         .baslat(listeyiAc: () {
-          if (widget.auth.girisYapildi) _router.go(Rotalar.hatirlaticilar);
+          if (widget.auth.girisYapildi) _router.go(Rotalar.takvim);
         }, kuyruguAc: () {
           if (widget.auth.girisYapildi) _router.push(Rotalar.eylemler);
         }, brifingiAc: () {
@@ -298,9 +308,11 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         Provider.value(value: widget.bildirimler),
         ChangeNotifierProvider.value(value: widget.bildirimIzni),
         Provider.value(value: widget.brifing),
-        Provider.value(value: widget.zamanCizelgesi),
         Provider.value(value: widget.beyin),
         ChangeNotifierProvider.value(value: widget.gunPlani),
+        ChangeNotifierProvider.value(value: widget.gun),
+        ChangeNotifierProvider.value(value: widget.bildirimMerkezi),
+        ChangeNotifierProvider.value(value: widget.asistan),
         Provider.value(value: widget.kronometre),
         ChangeNotifierProvider.value(value: widget.surum),
       ],

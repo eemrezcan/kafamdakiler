@@ -8,6 +8,7 @@ import '../models/oge.dart';
 import '../models/oturum.dart';
 import '../models/eylem.dart';
 import '../models/gelen.dart';
+import '../models/gun_gorunum.dart';
 import '../models/gun.dart';
 import '../models/hatirlatici.dart';
 import '../../utils/hatirlatici_islemleri.dart';
@@ -383,4 +384,126 @@ final _dakika = RegExp(r'~(\d+)\s*(?:dk|d)(?![\wçğıöşüÇĞİÖŞÜ])');
   final d = _dakika.firstMatch(metin);
   if (d != null) return (temiz(metin.replaceRange(d.start, d.end, '')), int.parse(d.group(1)!));
   return (temiz(metin), null);
+}
+
+/// Lays the queued day-view writes over one day of the day view (optimistic update), in queue order, so a tick, a new row,
+/// a reminder, a carry-over or a "Bırak" shows at once, offline too. [bekleyenler] holds the unsent entries without the
+/// refused ones: a write the server refused is no longer applied.
+///
+/// - A new row is shown as `yerel:<queue id>`: it cannot be ticked or edited until it is sent.
+/// - Carrying yesterday's item to today (the plan write dated yesterday) takes it off "Dünden kalanlar" and adds it here;
+///   carrying an item of this day away takes it off the list.
+/// - The load is worked out again from the open rows. The capacity is the server's, kept as it came.
+GunGorunum gunGorunumuneBekleyenleriUygula(GunGorunum gun, List<BekleyenIslemlerData> bekleyenler) {
+  final tarih = tarihMetni(gun.tarih);
+  final dun = tarihMetni(gun.tarih.subtract(const Duration(days: 1)));
+  var ogeler = [...gun.ogeler];
+  var dunden = [...gun.dundenKalanlar];
+  var degisti = false;
+
+  void degistir(String kimlik, Yapilacak Function(Yapilacak) f) {
+    for (var i = 0; i < ogeler.length; i++) {
+      if (ogeler[i].kimlik == kimlik) {
+        ogeler[i] = f(ogeler[i]);
+        degisti = true;
+      }
+    }
+  }
+
+  HatirlaticiOzet ozet(String id, Map<String, dynamic> istek) {
+    final g = HatirlaticiGovde.fromJson(istek);
+    return HatirlaticiOzet(id: id, saat: g.saat, tekrar: g.tekrar, gunler: g.gunler, acil: g.acil, israrli: g.israrli, onceGun: g.onceGun);
+  }
+
+  for (final b in bekleyenler) {
+    final govde = jsonDecode(b.govde) as Map<String, dynamic>;
+    switch (b.tur) {
+      case BekleyenTur.gunYaptim when b.tarih == tarih:
+        final geri = govde['geri'] == true;
+        degistir(b.hedefId, (o) => o.copyWith(durum: geri ? 'acik' : 'yapildi'));
+      case BekleyenTur.beyinGorevBitir:
+        degistir('g:${b.hedefId}', (o) => o.copyWith(durum: 'yapildi'));
+      case BekleyenTur.gunOgeEkle when b.tarih == tarih:
+        final y = YeniOgeYaz.fromJson(govde);
+        ogeler.add(Yapilacak(
+          kimlik: '${Yapilacak.yerelOnek}${b.id}',
+          tur: YapilacakTuru.plan,
+          baslik: y.baslik,
+          saat: y.saat ?? y.hatirlatici?.saat,
+          tahminDk: y.tahminDk,
+          proje: y.proje,
+          bolum: y.bolum,
+          hatirlatici: y.hatirlatici == null ? null : ozet('yerel', y.hatirlatici!.toJson()),
+        ));
+        degisti = true;
+      case BekleyenTur.ogeHatirlaticiYaz when b.tarih == tarih:
+        final istek = Map<String, dynamic>.from(govde['istek'] as Map);
+        degistir(b.hedefId, (o) {
+          final h = ozet(o.hatirlatici?.id ?? 'yerel', istek);
+          return o.copyWith(hatirlatici: h, saat: o.saat == null ? h.saat : null);
+        });
+      case BekleyenTur.ogeHatirlaticiSil when b.tarih == tarih:
+        degistir(b.hedefId, (o) => o.copyWith(hatirlaticiTemizle: true));
+      case BekleyenTur.dundenBirak when b.tarih == tarih:
+        final once = dunden.length;
+        dunden.removeWhere((d) => d.maddeId == b.hedefId);
+        degisti |= dunden.length != once;
+      case BekleyenTur.gunDevret when b.tarih == dun:
+        // Carried here from yesterday: off the "left over" list, onto this day (the brain skips a twin that is open already).
+        final baslik = govde['baslik'] as String;
+        final once = dunden.length;
+        dunden.removeWhere((d) => 'm:${d.maddeId}' == b.hedefId);
+        degisti |= dunden.length != once;
+        if (ogeler.any((o) => o.baslik == baslik && !o.yapildi)) break;
+        ogeler.add(Yapilacak(
+          kimlik: '${Yapilacak.yerelOnek}${b.id}',
+          tur: YapilacakTuru.plan,
+          baslik: baslik,
+          bolum: govde['bolum'] as String?,
+          tahminDk: govde['tahminDk'] as int?,
+        ));
+        degisti = true;
+      case BekleyenTur.gunDevret when b.tarih == tarih:
+        final once = ogeler.length;
+        ogeler.removeWhere((o) => o.kimlik == b.hedefId);
+        degisti |= ogeler.length != once;
+      case BekleyenTur.beyinMaddeDevret when b.tarih == dun:
+        // The older plan write (an entry queued before the single carry-over): same effect on the lists.
+        final baslik = govde['baslik'] as String;
+        final once = dunden.length;
+        dunden.removeWhere((d) => d.maddeId == b.hedefId);
+        degisti |= dunden.length != once;
+        if (ogeler.any((o) => o.baslik == baslik && !o.yapildi)) break;
+        ogeler.add(Yapilacak(
+          kimlik: '${Yapilacak.yerelOnek}${b.id}',
+          tur: YapilacakTuru.plan,
+          baslik: baslik,
+          bolum: govde['bolum'] as String?,
+          tahminDk: govde['tahminDk'] as int?,
+        ));
+        degisti = true;
+      case BekleyenTur.beyinMaddeDevret when b.tarih == tarih:
+        final once = ogeler.length;
+        ogeler.removeWhere((o) => o.kimlik == 'm:${b.hedefId}');
+        degisti |= ogeler.length != once;
+      default:
+        break;
+    }
+  }
+  if (!degisti) return gun;
+
+  // Timed rows by their hour first, then the ones without (the server's order; the sort is stable).
+  ogeler = [
+    ...ogeler.where((o) => o.saat != null).toList()..sort((a, b) => a.saat!.compareTo(b.saat!)),
+    ...ogeler.where((o) => o.saat == null),
+  ];
+  final yukluler = ogeler.where((o) => o.yuke).toList();
+  return gun.copyWith(
+    ogeler: ogeler,
+    dundenKalanlar: dunden,
+    yuk: gun.yuk.yenidenHesapla(
+      acikTahminDk: yukluler.fold<int>(0, (t, o) => t + (o.tahminDk ?? 0)),
+      tahminsizSayi: yukluler.where((o) => o.tahminDk == null).length,
+    ),
+  );
 }

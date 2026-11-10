@@ -21,19 +21,19 @@ class BekleyenYakala extends ChangeNotifier {
   }
 }
 
-/// Opens Yakala with the waiting item once that is possible:
+/// Opens the Asistan tab with the waiting item (the input starts with it) once that is possible:
 /// - signed out, or the role not known yet, or the router still on the login screen: keep waiting;
-/// - Sahip: open Yakala with it (an empty request is ignored when Yakala is already on top);
-/// - Asistan (may not capture): drop it and say so.
+/// - someone who may use the assistant: open it with the item (an empty request just puts the cursor in the input, even when the
+///   tab is open already);
+/// - someone who may not: drop it and say so.
 class YakalaYonlendirici {
   YakalaYonlendirici({
     required this.bekleyen,
     required this._degisim,
     required this.girisYapildi,
     required this.rolBilinir,
-    required this.sahip,
+    required this.kullanabilir,
     required this.hazir,
-    required this.yakalaAcik,
     required this.ac,
     required this.mesaj,
   }) {
@@ -44,12 +44,10 @@ class YakalaYonlendirici {
   final Listenable _degisim;
   final bool Function() girisYapildi;
   final bool Function() rolBilinir;
-  final bool Function() sahip;
+  final bool Function() kullanabilir;
 
   /// False while the router is still on the login screen.
   final bool Function() hazir;
-  /// True when Yakala is already the screen on top.
-  final bool Function() yakalaAcik;
   final void Function(YakalaGirdisi girdi) ac;
   final void Function(String mesaj) mesaj;
 
@@ -57,12 +55,10 @@ class YakalaYonlendirici {
     if (bekleyen.bekleyen == null) return;
     if (!girisYapildi() || !rolBilinir() || !hazir()) return;
     final girdi = bekleyen.tuket()!;
-    if (sahip()) {
-      // A plain "open Yakala" request while Yakala is showing changes nothing; shared content still opens a new one.
-      if (girdi.bos && yakalaAcik()) return;
+    if (kullanabilir()) {
       ac(girdi);
     } else {
-      mesaj('Yakalama yalnız Sahip hesabıyla yapılır; paylaşılan içerik alınmadı.');
+      mesaj('Asistanı kullanma iznin yok; paylaşılan içerik alınmadı.');
     }
   }
 

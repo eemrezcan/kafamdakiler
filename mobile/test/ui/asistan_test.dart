@@ -5,15 +5,12 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/is_karti.dart';
 import 'package:kafamdakiler/routing/router.dart';
-import 'package:kafamdakiler/ui/asistan/asistan_ozet_karti.dart';
 import 'package:kafamdakiler/ui/asistan/asistan_pano_screen.dart';
 import 'package:kafamdakiler/ui/asistan/asistan_pano_view_model.dart';
 import 'package:kafamdakiler/ui/asistan/is_detay_screen.dart';
 import 'package:kafamdakiler/ui/asistan/is_detay_view_model.dart';
 import 'package:kafamdakiler/ui/asistan/is_form_screen.dart';
 import 'package:kafamdakiler/ui/asistan/is_form_view_model.dart';
-import 'package:kafamdakiler/ui/bugun/bugun_screen.dart';
-import 'package:kafamdakiler/ui/bugun/bugun_view_model.dart';
 import 'package:kafamdakiler/utils/is_gorunum.dart';
 
 import '../test_destek.dart';
@@ -88,63 +85,6 @@ void main() {
     kart('vps-yapim', asama: 'yapim', sahip: 'vps'),
     kart('bitti', asama: 'bitti', sahip: 'vps', acik: false),
   ];
-
-  group('the Asistan card on Bugün', () {
-    Future<AsistanOzetViewModel> goster(WidgetTester tester) async {
-      telefonBoyu(tester);
-      final vm = AsistanOzetViewModel(repo: ortam.isler);
-      await tester.runAsync(vm.yukle);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: AsistanOzetKarti(viewModel: vm))));
-      await tester.pump();
-      return vm;
-    }
-
-    testWidgets('the three numbers and the titles of the first two cards that wait on the person', (tester) async {
-      ortam.api.isKartlari = panoKartlari;
-
-      await goster(tester);
-
-      expect(find.text("Sende bekleyen 3 · VPS'te 2 · Bu hafta biten 1"), findsOneWidget);
-      expect(find.text('• Kart kod'), findsOneWidget, reason: 'the gates come first');
-      expect(find.text('• Kart push'), findsOneWidget);
-      expect(find.text('• Kart karar-bir'), findsNothing, reason: 'only two titles');
-    });
-
-    testWidgets('hidden when the read failed with nothing on the phone; says so when it shows the last download', (tester) async {
-      ortam.api.beyinHatasi = 503;
-      await goster(tester);
-      expect(find.text('Asistan'), findsNothing);
-    });
-
-    testWidgets('offline, the last download is shown and marked', (tester) async {
-      ortam.api.isKartlari = panoKartlari;
-      await tester.runAsync(ortam.isler.panoyuGetir);
-      ortam.api.beyinCevrimdisi = true;
-
-      await goster(tester);
-
-      expect(find.text('Çevrimdışı: son indirilen'), findsOneWidget);
-      expect(find.textContaining('Sende bekleyen 3'), findsOneWidget);
-    });
-
-    testWidgets('it sits on the Bugün screen under the approval queue card', (tester) async {
-      ortam.api.isKartlari = panoKartlari;
-      telefonBoyu(tester);
-      final bugun = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
-      await tester.runAsync(() async {
-        ortam.api.aliskanliklar = [ornekAliskanlik(ad: 'Su')];
-        await bugun.yukle();
-      });
-      final ozet = AsistanOzetViewModel(repo: ortam.isler);
-      await tester.runAsync(ozet.yukle);
-
-      await tester.pumpWidget(MaterialApp(home: BugunScreen(viewModel: bugun, asistanOzet: ozet)));
-      await tester.pump();
-
-      expect(find.text('Asistan'), findsOneWidget);
-      expect(find.textContaining('Sende bekleyen 3'), findsOneWidget);
-    });
-  });
 
   group('the board', () {
     Future<AsistanPanoViewModel> goster(WidgetTester tester, {bool yazabilir = true}) async {
@@ -556,7 +496,7 @@ void main() {
     test('the form is the Sahip\'s: the route is blocked for the others, not just the button hidden', () {
       expect(yetkiYonlendirme(Rotalar.asistanYeni, girisYapildi: true, sahip: false), Rotalar.aliskanliklar);
       expect(yetkiYonlendirme(Rotalar.asistanYeni, girisYapildi: true, sahip: true), isNull);
-      expect(yetkiYonlendirme(Rotalar.asistan, girisYapildi: true, sahip: false), isNull, reason: 'the board is for reading');
+      expect(yetkiYonlendirme(Rotalar.isler, girisYapildi: true, sahip: false), isNull, reason: 'the board is for reading');
       expect(yetkiYonlendirme('/asistan/takvim', girisYapildi: true, sahip: false), isNull);
     });
   });

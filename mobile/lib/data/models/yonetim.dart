@@ -1,7 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'yakalama.dart';
-import 'zaman_cizelgesi.dart';
 
 part 'yonetim.g.dart';
 
@@ -101,6 +100,14 @@ class Gonderim {
 
   factory Gonderim.fromJson(Map<String, dynamic> json) => _$GonderimFromJson(json);
   Map<String, dynamic> toJson() => _$GonderimToJson(this);
+}
+
+/// The state of the Google link (`google`).
+abstract final class GoogleDurumu {
+  static const kapali = 'kapali';
+  static const bagliDegil = 'bagliDegil';
+  static const bagli = 'bagli';
+  static const yenidenBaglan = 'yenidenBaglan';
 }
 
 /// `GoogleDurumDto` (`GET /api/google/durum`): is Google Calendar set up and connected, and when it was last synced.
