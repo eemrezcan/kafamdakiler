@@ -23,11 +23,12 @@ public static class BeyinEndpoints
 
         // The day's warning counts against the person's capacity for that kind of day (weekday or weekend, Ayarlar/GunAyarlari).
         beyin.MapGet("/gunler/{tarih}", async (string tarih, BeyinIstemcisi b, AppDbContext db, GunAyari ayar, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
-            await BeyinOkuma.Gun(tarih, b, log, ct, ayar, await GunKapasitesi.DkAsync(db, ayar, tarih, ct)));
+            await BeyinOkuma.Gun(tarih, b, log, ct, ayar, await GunKapasitesi.DkAsync(db, ayar, tarih, ct), b.Bagli ? await BeyinOkuma.IzinliGorevlerAl(b, log, ct) : null));
 
         // The morning card: yesterday's plan, what is still open (yesterday by the 05:00 day-turn rule, worked out here).
-        beyin.MapGet("/sabah", (BeyinIstemcisi b, TimeProvider saat, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
-            BeyinOkuma.Sabah(b, log, saat, ct));
+        // Both leave out what links to a task the API may not show (E9): the old screens get the same filter as the new ones.
+        beyin.MapGet("/sabah", async (BeyinIstemcisi b, TimeProvider saat, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
+            await BeyinOkuma.Sabah(b, log, saat, ct, b.Bagli ? await BeyinOkuma.IzinliGorevlerAl(b, log, ct) : null));
 
         beyin.MapGet("/ara", (string? q, string? proje, int? limit, BeyinIstemcisi b, ILogger<BeyinIstemcisi> log, CancellationToken ct) =>
             BeyinOkuma.Ara(q, proje, limit, b, log, ct));

@@ -137,4 +137,54 @@ public sealed class GizlilikApiTests(UygulamaFabrikasi uygulama) : GunTestTabani
         Assert.Equal(["m:a1b1c1", "m:b2b2b2"], Kimlikler(gun));
         Assert.Equal("tamam", gun.GetProperty("kaynaklar").GetProperty("plan").GetString());
     }
+
+    // The old endpoints and readers (E9 for what the old screens, the timeline and the briefing still use)
+
+    [Fact]
+    public async Task OldEndpoints_TheDayAndTheMorningCard_LeaveOutTheClosedOnesToo()
+    {
+        var (fabrika, sahip) = await HazirlaAsync();
+
+        var gun = await OkuAsync(await GonderAsync(HttpMethod.Get, $"/api/beyin/gunler/{BugunMetni}", sahip, fabrika));
+        var sabah = await OkuAsync(await GonderAsync(HttpMethod.Get, "/api/beyin/sabah", sahip, fabrika));
+
+        var maddeler = gun.GetProperty("bolumler").EnumerateArray().SelectMany(b => b.GetProperty("maddeler").EnumerateArray()).Select(m => m.GetProperty("id").GetString()!).Order().ToList();
+        Assert.Equal(["a1b1c1", "b2b2b2", "g:uye-girisi"], maddeler);
+        // The late list and the totals too: nothing of the closed ones, in the weight either (30 + 40 + 20 minutes, not 490).
+        Assert.Equal(["uye-girisi"], gun.GetProperty("geciken").EnumerateArray().Select(g => g.GetProperty("kimlik").GetString()!));
+        Assert.Equal(3, gun.GetProperty("toplam").GetProperty("madde").GetInt32());
+        Assert.Equal(JsonValueKind.Null, gun.GetProperty("kapasiteUyarisi").ValueKind);
+        Assert.Equal(["a1b1c1", "b2b2b2", "g:uye-girisi"], sabah.GetProperty("maddeler").EnumerateArray().Select(m => m.GetProperty("id").GetString()!).Order());
+        Assert.DoesNotContain("randevusu", gun.GetRawText() + sabah.GetRawText());
+    }
+
+    [Fact]
+    public async Task OldEndpoints_WhenTheAllowedListCannotBeRead_ItemsThatNameATaskAreLeftOut()
+    {
+        var (fabrika, sahip) = await HazirlaAsync();
+        Beyin.Cikti("gorev liste", """{"hata": {"kod": "hata", "mesaj": "okunamadı"}}""", cikis: 1);
+
+        var gun = await OkuAsync(await GonderAsync(HttpMethod.Get, $"/api/beyin/gunler/{BugunMetni}", sahip, fabrika));
+
+        Assert.Equal(["a1b1c1", "b2b2b2"], gun.GetProperty("bolumler").EnumerateArray().SelectMany(b => b.GetProperty("maddeler").EnumerateArray()).Select(m => m.GetProperty("id").GetString()!).Order());
+    }
+
+    [Fact]
+    public async Task Timeline_AndTheBriefingsInput_LeaveOutTheClosedOnes()
+    {
+        var (fabrika, sahip) = await HazirlaAsync();
+
+        var cizelge = await OkuAsync(await GonderAsync(HttpMethod.Get, $"/api/zaman-cizelgesi?gun={BugunMetni}", sahip, fabrika));
+        Assert.Equal(["a1b1c1", "b2b2b2", "g:uye-girisi"], cizelge.GetProperty("saatsiz").EnumerateArray().Where(o => o.GetProperty("tur").GetString() == "plan").Select(o => o.GetProperty("kimlik").GetString()!).Order());
+        Assert.DoesNotContain("randevusu", cizelge.GetRawText());
+
+        // The input of the briefing (and so of the Claude call that writes it).
+        await using var db = YeniDb();
+        var okuyucu = new Kafamdakiler.Brifing.BrifingGirdiOkuyucu(db, Beyin.Istemci(), new Kafamdakiler.Beyin.GunAyari(), Microsoft.Extensions.Logging.Abstractions.NullLogger<Kafamdakiler.Brifing.BrifingGirdiOkuyucu>.Instance);
+        var sonuc = await okuyucu.OkuAsync(BugunGunu, Ct);
+        var girdi = Assert.IsType<Kafamdakiler.Brifing.BrifingGirdisi>(sonuc.Girdi);
+        Assert.Equal(["a1b1c1", "b2b2b2", "g:uye-girisi"], girdi.Plan.Select(m => m.Kimlik).Order());
+        Assert.DoesNotContain(girdi.Kalan, m => m.Kimlik.Contains("dis-randevusu") || m.Baslik.Contains("randevusu") || m.Baslik.Contains("Maliyet"));
+        Assert.Equal(3, girdi.PlanToplam);
+    }
 }

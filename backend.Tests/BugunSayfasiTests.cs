@@ -100,7 +100,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var cekmece = ham[ham.IndexOf("kd-drawer-pages", StringComparison.Ordinal)..];
         cekmece = cekmece[..cekmece.IndexOf("</section>", StringComparison.Ordinal)];
         var adlar = Regex.Matches(cekmece, "<a (?:b-[a-z0-9]+ )?class=\"kd-drawer-link[^\"]*\"[^>]*>(.*?)</a>", RegexOptions.Singleline)
-            .Select(m => Duz(m.Groups[1].Value)).ToList();
+            .Select(m => Regex.Replace(Duz(m.Groups[1].Value), " \\d+$", "")).ToList();
         Assert.Equal(["Bugün", "Takvim", "Asistan", "Alışkanlıklar", "Beyin", "Yönetim", "Gün kapasitesi"], adlar);
     }
 
@@ -123,7 +123,8 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         var ham = await HamAsync(tarayici, yol);
 
         var etkin = Regex.Match(ham, "class=\"kd-nav-link active\"[^>]*>(.*?)</(?:a|button)>", RegexOptions.Singleline).Groups[1].Value;
-        Assert.Equal(beklenen, Duz(etkin));
+        // Without the badge count: other tests of the class may leave an action waiting, and the menu then says "Asistan 1".
+        Assert.Equal(beklenen, Regex.Replace(Duz(etkin), " \\d+$", ""));
     }
 
     [Theory]

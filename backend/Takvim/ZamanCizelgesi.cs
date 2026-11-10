@@ -104,7 +104,8 @@ public class ZamanCizelgesiServisi(
         var plan = hazirPlan;
         if (plan is null)
         {
-            var yanit = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun, ct));
+            var yanit = await BeyinOkuma.GunAl(
+                $"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun, ct), await BeyinOkuma.IzinliGorevlerAl(beyin, gunluk, ct));
             if (!yanit.Basarili)
                 return ("okunamadi", [], 0);
             plan = yanit.Veri!;

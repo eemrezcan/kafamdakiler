@@ -512,6 +512,7 @@ public sealed class BeyinYazmaApiTests(UygulamaFabrikasi uygulama) : IClassFixtu
         Assert.Equal("2026-11-05", kart.GetProperty("dun").GetString());
         Assert.Equal("2026-11-06", kart.GetProperty("bugun").GetString());
         Assert.Equal("a3f09c", kart.GetProperty("maddeler")[0].GetProperty("id").GetString());
-        Assert.Equal("--tarih=2026-11-05", SahteBeyin.Argumanlar(_beyin.Cagrilar().Single())[2]);
+        // The day (yesterday) is asked once; the list of tasks the card may show is asked beside it (E9).
+        Assert.Equal("--tarih=2026-11-05", SahteBeyin.Argumanlar(_beyin.Cagrilar().Single(c => SahteBeyin.Argumanlar(c)[0] == "gun"))[2]);
     }
 }

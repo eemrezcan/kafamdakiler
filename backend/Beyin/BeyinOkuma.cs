@@ -99,11 +99,12 @@ public static partial class BeyinOkuma
     public static async Task<IResult> Proje(string kimlik, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         (await ProjeAl(kimlik, beyin, log, ct)).Sonuc();
 
-    public static async Task<IResult> Gun(string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null, int? kapasiteDk = null) =>
-        (await GunAl(tarih, beyin, log, ct, ayar, kapasiteDk)).Sonuc();
+    public static async Task<IResult> Gun(
+        string tarih, BeyinIstemcisi beyin, ILogger log, CancellationToken ct, GunAyari? ayar = null, int? kapasiteDk = null, IReadOnlySet<string>? izinliGorevler = null) =>
+        (await GunAl(tarih, beyin, log, ct, ayar, kapasiteDk, izinliGorevler)).Sonuc();
 
-    public static async Task<IResult> Sabah(BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct) =>
-        (await SabahAl(beyin, log, saat, ct)).Sonuc();
+    public static async Task<IResult> Sabah(BeyinIstemcisi beyin, ILogger log, TimeProvider saat, CancellationToken ct, IReadOnlySet<string>? izinliGorevler = null) =>
+        (await SabahAl(beyin, log, saat, ct, izinliGorevler)).Sonuc();
 
     public static async Task<IResult> Ara(string? q, string? proje, int? limit, BeyinIstemcisi beyin, ILogger log, CancellationToken ct) =>
         (await AraAl(q, proje, limit, beyin, log, ct)).Sonuc();

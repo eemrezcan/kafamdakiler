@@ -34,10 +34,12 @@ public class BrifingGirdiOkuyucu(AppDbContext db, BeyinIstemcisi beyin, GunAyari
 
         if (beyin.Bagli)
         {
-            var bugunYaniti = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun, ct));
+            // What links to a hidden task or one in a closed folder never reaches the briefing (nor Claude, which writes it from this).
+            var izinli = await BeyinOkuma.IzinliGorevlerAl(beyin, gunluk, ct);
+            var bugunYaniti = await BeyinOkuma.GunAl($"{gun:yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun, ct), izinli);
             if (!bugunYaniti.Basarili)
                 return new GirdiSonucu(null, "Bugünün planı beyinden okunamadı.");
-            var dunYaniti = await BeyinOkuma.GunAl($"{gun.AddDays(-1):yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun.AddDays(-1), ct));
+            var dunYaniti = await BeyinOkuma.GunAl($"{gun.AddDays(-1):yyyy-MM-dd}", beyin, gunluk, ct, gunAyari, await GunKapasitesi.DkAsync(db, gunAyari, gun.AddDays(-1), ct), izinli);
             if (!dunYaniti.Basarili)
                 return new GirdiSonucu(null, "Dünün planı beyinden okunamadı.");
 
