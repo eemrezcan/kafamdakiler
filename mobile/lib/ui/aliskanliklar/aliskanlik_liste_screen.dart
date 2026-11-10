@@ -7,16 +7,36 @@ import '../../config/app_theme.dart';
 import '../../data/models/aliskanlik.dart';
 import '../../data/models/enums.dart';
 import '../../data/repositories/kullanici_repository.dart';
-import '../bugun/aliskanlik_karti.dart' show yuzdeMetni;
+import '../bugun/aliskanlik_karti.dart';
+import '../bugun/sayi_giris_dialog.dart';
 import '../core/ikonlar.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
+import '../shell/ust_sag.dart';
 import 'aliskanlik_liste_view_model.dart';
 
+/// The Alışkanlıklar tab (K-0024): every habit as a card with its own quick write (tick, +/-, the reading entry of a shelf
+/// habit with the book in progress and the others on the shelf); the archive is a plain list.
 class AliskanlikListeScreen extends StatelessWidget {
   const AliskanlikListeScreen({super.key, required this.viewModel});
 
   final AliskanlikListeViewModel viewModel;
+
+  Future<void> _tik(BuildContext context, Aliskanlik a) async {
+    final mesaj = ScaffoldMessenger.of(context);
+    final onceki = await viewModel.tikDegistir(a);
+    mesaj
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(onceki >= 1 ? '${a.ad}: işaret kaldırıldı' : '${a.ad}: yapıldı'),
+        action: SnackBarAction(label: 'Geri al', onPressed: () => viewModel.miktarYaz(a, onceki)),
+      ));
+  }
+
+  Future<void> _sayiGir(BuildContext context, Aliskanlik a) async {
+    final yeni = await sayiGirisDialogu(context, baslik: a.ad, mevcut: a.bugun?.miktar ?? 0, birim: a.birim);
+    if (yeni != null) await viewModel.miktarYaz(a, yeni);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +44,25 @@ class AliskanlikListeScreen extends StatelessWidget {
     final sahip = context.watch<KullaniciRepository>().sahip;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alışkanlıklar'),
+        toolbarHeight: 64,
+        title: ListenableBuilder(
+          listenable: viewModel,
+          builder: (context, _) {
+            final ozet = viewModel.bugunOzeti;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!viewModel.arsiv && viewModel.liste != null && ozet.planli > 0)
+                  Text(
+                    '${ozet.tamam} / ${ozet.planli} bugün',
+                    key: const ValueKey('aliskanlik-ozet'),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                const Text('Alışkanlıklar'),
+              ],
+            );
+          },
+        ),
         actions: [
           ListenableBuilder(
             listenable: viewModel,
@@ -41,6 +79,7 @@ class AliskanlikListeScreen extends StatelessWidget {
               icon: const Icon(LucideIcons.plus),
               onPressed: () => context.push('/aliskanlik/yeni'),
             ),
+          const UstSagDugmeleri(),
         ],
       ),
       body: ListenableBuilder(
@@ -69,11 +108,17 @@ class AliskanlikListeScreen extends StatelessWidget {
                 : OrtaGenislik(
                     child: ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      // Room for the floating "Yakala" button under the last card.
-                      padding: listeKenarlari(),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                       itemCount: liste.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (context, i) => _Satir(liste[i]),
+                      separatorBuilder: (_, _) => SizedBox(height: viewModel.arsiv ? 8 : 12),
+                      itemBuilder: (context, i) => viewModel.arsiv
+                          ? _Satir(liste[i])
+                          : AliskanlikKarti(
+                              aliskanlik: liste[i],
+                              onTik: () => _tik(context, liste[i]),
+                              onMiktar: (a, yeni) => viewModel.miktarYaz(a, yeni),
+                              onSayiGir: () => _sayiGir(context, liste[i]),
+                            ),
                     ),
                   ),
           );

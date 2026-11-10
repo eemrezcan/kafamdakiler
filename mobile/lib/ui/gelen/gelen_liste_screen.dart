@@ -8,8 +8,6 @@ import '../../data/models/yakalama.dart';
 import '../../data/repositories/kullanici_repository.dart';
 import '../../utils/eylem_gorunum.dart';
 import '../ara/ara_dugmesi.dart';
-import '../bugun/onay_bekleyen_karti.dart';
-import '../bugun/onay_bekleyen_view_model.dart';
 import '../core/beyin_gorunum.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
@@ -22,12 +20,9 @@ import 'gonderiliyor_satiri.dart';
 /// approve it, swipe left to look at it later, tap for the preview (correct, place by hand, delete, ask again).
 /// Deciding is for the Sahip (K-0009); other users only read.
 class GelenListeScreen extends StatelessWidget {
-  const GelenListeScreen({super.key, required this.viewModel, this.onayBekleyen});
+  const GelenListeScreen({super.key, required this.viewModel});
 
   final GelenListeViewModel viewModel;
-
-  /// The "Onay bekleyen N" card at the top; it hides itself when nothing waits. Without it the card is not there.
-  final OnayBekleyenViewModel? onayBekleyen;
 
   void _ileti(BuildContext context, String metin) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -141,13 +136,12 @@ class GelenListeScreen extends StatelessWidget {
           final kartlarAlinamadi = viewModel.liste == null ||
               viewModel.liste!.isEmpty && (viewModel.hata != null || viewModel.cevrimdisi);
           return RefreshIndicator(
-            onRefresh: () => Future.wait([viewModel.yukle(), if (onayBekleyen != null) onayBekleyen!.yukle()]),
+            onRefresh: viewModel.yukle,
             child: OrtaGenislik(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: listeKenarlari(ust: 12),
                 children: [
-                  if (onayBekleyen != null) OnayBekleyenKarti(viewModel: onayBekleyen!),
                   if (viewModel.cevrimdisi && kartlar.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),

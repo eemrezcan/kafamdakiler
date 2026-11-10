@@ -15,9 +15,11 @@ public record ZincirSonucu(List<string> Kimlikler, string? Hata)
 // the endpoints, so every way of finishing an item goes through the same rules: the day plan and task endpoints, "yaptım" of the day
 // view, "yaptım" of a reminder (the app, the notification button) and the approval queue's task closing.
 //
-// Item or task done -> the reminder tied to it is done too (a one-off closes, a repeating one counts the turn as done: the same
-// progress as its own "yaptım"). Reminder done -> the plan item is ticked, or the task finished when the reminder has no item. A repeating
-// reminder only ticks the item of its own day and never finishes the task. A failed brain step never undoes the reminder's side.
+// Item or task done -> the reminder tied to it is done too. A task finished (by any route) closes every reminder tied to it for good
+// (`Tamam`, a repeating one too: nothing is left to remind of). A plan item ticked counts the turn of the reminders tied to that item
+// (a one-off closes, a repeating one moves to its next turn: the same progress as its own "yaptım"). Reminder done -> the plan item is
+// ticked, or the task finished when the reminder has no item. A repeating reminder only ticks the item of its own day and never finishes
+// the task. A failed brain step never undoes the reminder's side.
 public static class HatirlaticiZinciri
 {
     // The plan reference as the brain takes it: a permanent id, or `g:<task>` for an item that exists only as a task.
@@ -25,7 +27,8 @@ public static class HatirlaticiZinciri
     public static (string? MaddeId, string? Gorev) MaddeBagi(string madde) =>
         madde.StartsWith("g:", StringComparison.Ordinal) ? (null, madde[2..]) : (madde, null);
 
-    // Items -> reminders. Closes (in the context; the caller saves) every open reminder tied to the plan item of that day or to the task.
+    // Items -> reminders. Changes (in the context; the caller saves) every open reminder tied to what was done. `gorevKimligi` is a task that
+    // is finished: its reminders close for good. `maddeId` is a plan item of that day that was ticked: its reminders count the turn.
     // `haric` is the reminder that started the chain, which is already done.
     public static async Task<List<string>> YapildiAsync(
         AppDbContext db, string? maddeId, DateOnly? maddeTarihi, string? gorevKimligi, TimeOnly varsayilan, DateTimeOffset simdi,
@@ -43,7 +46,10 @@ public static class HatirlaticiZinciri
         var kapanan = new List<string>();
         foreach (var h in adaylar)
         {
-            if (HatirlaticiIslemleri.Yaptim(db, h, varsayilan, simdi).Basarili)
+            // The finished task wins: a reminder tied to it ends, even when it is also tied to the item that was ticked.
+            var gorevBitti = gorevKimligi is not null && h.GorevKimligi == gorevKimligi;
+            var sonuc = gorevBitti ? HatirlaticiIslemleri.Kapat(db, h, simdi) : HatirlaticiIslemleri.Yaptim(db, h, varsayilan, simdi);
+            if (sonuc.Basarili)
                 kapanan.Add($"h:{h.Id}");
         }
 

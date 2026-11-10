@@ -24,12 +24,13 @@ Hatirlatici hatirlaticiYazdan(HatirlaticiYaz yaz, DateTime simdi, {Hatirlatici? 
     tekrar: yaz.tekrar,
     onceGun: yaz.onceGun,
     durum: yaz.durum,
-    sonrakiAn: sonrakiHatirlaticiAni(yaz.tekrar, yaz.gun, saat, simdi),
+    sonrakiAn: sonrakiHatirlaticiAni(yaz.tekrar, yaz.gun, saat, simdi, gunler: yaz.gunler),
     createdAt: mevcut?.createdAt ?? simdi,
     israrli: yaz.israrli,
     israrAraligiDakika: yaz.israrAraligiDakika,
     israrEnCok: yaz.israrEnCok,
     acil: yaz.acil,
+    gunler: yaz.gunler,
   );
 }
 
@@ -42,7 +43,7 @@ Hatirlatici hatirlaticiYaptim(Hatirlatici h, DateTime simdi) {
   }
   final sonra = simdi.isAfter(h.sonrakiAn) ? simdi : h.sonrakiAn;
   return h.copyWith(
-    sonrakiAn: sonrakiHatirlaticiAni(h.tekrar, h.gun, h.kuralSaati, sonra),
+    sonrakiAn: sonrakiHatirlaticiAni(h.tekrar, h.gun, h.kuralSaati, sonra, gunler: h.gunler),
     erteleAnTemizle: true,
   );
 }

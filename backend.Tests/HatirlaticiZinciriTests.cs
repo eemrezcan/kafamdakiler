@@ -70,23 +70,39 @@ public sealed class HatirlaticiZinciriTests(UygulamaFabrikasi uygulama) : IClass
     }
 
     [Fact]
-    public async Task YapildiAsync_ARepeatingOneCountsTheTurn_NothingTiedMeansNothingToDo_AndTheStarterIsLeftOut()
+    public async Task YapildiAsync_AFinishedTaskEndsEvenARepeatingReminder_ATickedItemOnlyCountsTheTurn()
     {
         await TemizleAsync();
-        var gunluk = await EkleAsync("her gün", Tekrar.Gunluk, gorev: "uye-girisi");
+        var gorevTekrarli = await EkleAsync("görev her gün", Tekrar.Gunluk, gorev: "uye-girisi");
+        var maddeTekrarli = await EkleAsync("madde her gün", Tekrar.Gunluk, maddeId: "a3f09c", maddeTarihi: Bugun);
+        var ikisi = await EkleAsync("madde ve görev her gün", Tekrar.Gunluk, maddeId: "a3f09c", maddeTarihi: Bugun, gorev: "uye-girisi");
         var baslatan = await EkleAsync("başlatan", gorev: "uye-girisi");
-        var once = await OkuAsync(gunluk.Id);
+        var maddeOnce = await OkuAsync(maddeTekrarli.Id);
+
+        await using var db = uygulama.YeniDb();
+        // The item is ticked and the task with it: the reminder tied to the task ends, the one tied to the item only moves on.
+        var kapananlar = await HatirlaticiZinciri.YapildiAsync(db, "a3f09c", Bugun, "uye-girisi", Varsayilan, Simdi, Ct, haric: baslatan.Id);
+        await db.SaveChangesAsync(Ct);
+
+        Assert.Equivalent(new[] { $"h:{gorevTekrarli.Id}", $"h:{maddeTekrarli.Id}", $"h:{ikisi.Id}" }, kapananlar);
+        Assert.Equal(HatirlaticiDurumu.Tamam, (await OkuAsync(gorevTekrarli.Id)).Durum);
+        Assert.Equal(HatirlaticiDurumu.Tamam, (await OkuAsync(ikisi.Id)).Durum);
+        var madde = await OkuAsync(maddeTekrarli.Id);
+        Assert.Equal(HatirlaticiDurumu.Acik, madde.Durum);
+        Assert.Equal(maddeOnce.SonrakiAn.AddDays(1), madde.SonrakiAn);
+        Assert.Equal(HatirlaticiDurumu.Acik, (await OkuAsync(baslatan.Id)).Durum);
+        // Each counted once in the weekly summary.
+        Assert.Equal(3, await db.HatirlaticiOlaylari.CountAsync(o => o.Tur == HatirlaticiOlayTuru.Yapildi, Ct));
+    }
+
+    [Fact]
+    public async Task YapildiAsync_NothingTiedMeansNothingToDo()
+    {
+        await TemizleAsync();
+        await EkleAsync("bağsız");
 
         await using var db = uygulama.YeniDb();
         Assert.Empty(await HatirlaticiZinciri.YapildiAsync(db, null, null, null, Varsayilan, Simdi, Ct));
-        var kapananlar = await HatirlaticiZinciri.YapildiAsync(db, null, null, "uye-girisi", Varsayilan, Simdi, Ct, haric: baslatan.Id);
-        await db.SaveChangesAsync(Ct);
-
-        Assert.Equal([$"h:{gunluk.Id}"], kapananlar);
-        var sonra = await OkuAsync(gunluk.Id);
-        Assert.Equal(HatirlaticiDurumu.Acik, sonra.Durum);
-        Assert.Equal(once.SonrakiAn.AddDays(1), sonra.SonrakiAn);
-        Assert.Equal(HatirlaticiDurumu.Acik, (await OkuAsync(baslatan.Id)).Durum);
     }
 
     [Theory]

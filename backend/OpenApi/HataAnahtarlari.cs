@@ -2,6 +2,11 @@ namespace Kafamdakiler.OpenApi;
 
 public static class HataAnahtarlari
 {
+    // A revision of a work card (back to "plan") needs a short note on what should change. The key of the 400's `errors` entry, in the brain's own word.
+    public const string NotGerekli = "not-gerekli";
+
+    public const string NotGerekliMetni = "Revizyon için kısa bir not yaz.";
+
     // Validation errors are keyed by the C# property name ("BitisKonum"); the API speaks camelCase JSON ("bitisKonum").
     public static void CamelCaseYap(HttpValidationProblemDetails sorun)
     {

@@ -11,9 +11,12 @@ import 'ara_view_model.dart';
 String notRotasi(String yol) => Uri(path: '/not', queryParameters: {'yol': yol}).toString();
 
 class AraScreen extends StatefulWidget {
-  const AraScreen({super.key, required this.viewModel});
+  const AraScreen({super.key, required this.viewModel, this.baslangicSorgusu});
 
   final AraViewModel viewModel;
+
+  /// Words typed on the Beyin tab: searched at once when the page opens.
+  final String? baslangicSorgusu;
 
   @override
   State<AraScreen> createState() => _AraScreenState();
@@ -28,6 +31,14 @@ class _AraScreenState extends State<AraScreen> {
   void initState() {
     super.initState();
     _alan.text = _vm.sorgu;
+    final q = widget.baslangicSorgusu?.trim();
+    if (q != null && q.isNotEmpty && _vm.sorgu.isEmpty) {
+      _alan.text = q;
+      // After the first frame: the view model tells its listeners at once, and the build is not the place for that.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _vm.ara(q);
+      });
+    }
   }
 
   @override

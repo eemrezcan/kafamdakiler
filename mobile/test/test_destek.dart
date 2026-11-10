@@ -2,18 +2,21 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 import 'package:drift/native.dart';
 import 'package:kafamdakiler/data/models/aliskanlik.dart';
+import 'package:kafamdakiler/data/models/asistan.dart';
+import 'package:kafamdakiler/data/models/bildirim_ogesi.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
 import 'package:kafamdakiler/data/models/beyin_yazma.dart';
 import 'package:kafamdakiler/data/models/brifing.dart';
-import 'package:kafamdakiler/data/models/zaman_cizelgesi.dart';
-import 'package:kafamdakiler/data/repositories/zaman_cizelgesi_repository.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/gelen.dart';
 import 'package:kafamdakiler/data/models/gun.dart';
+import 'package:kafamdakiler/data/models/gun_gorunum.dart';
 import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/is_karti.dart';
 import 'package:kafamdakiler/data/repositories/is_repository.dart';
@@ -25,10 +28,16 @@ import 'package:kafamdakiler/data/models/ses.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/models/yonetim.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
+import 'package:kafamdakiler/data/repositories/asistan_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
+import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
+import 'package:kafamdakiler/data/repositories/bildirim_repository.dart';
 import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
+import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
+import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
 import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
+import 'package:kafamdakiler/data/repositories/gun_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/gelen_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_repository.dart';
@@ -112,9 +121,41 @@ class SahteApi extends ApiService {
   }
 
   @override
+  Future<Aliskanlik> aliskanlikGetir(String id) async {
+    _kontrol('aliskanlikGetir');
+    return aliskanliklar.firstWhere((a) => a.id == id);
+  }
+
+  /// The habit writes the fake server was sent, as `guncelle:ID:ARSIVLENDI` and `sil:ID`.
+  final List<String> aliskanlikYazimlari = [];
+
+  @override
+  Future<Aliskanlik> aliskanlikGuncelle(String id, AliskanlikYaz yaz) async {
+    _kontrol('aliskanlikGuncelle');
+    aliskanlikYazimlari.add('guncelle:$id:${yaz.arsivlendi}');
+    return aliskanliklar.firstWhere((a) => a.id == id);
+  }
+
+  @override
+  Future<void> aliskanlikSil(String id) async {
+    _kontrol('aliskanlikSil');
+    aliskanlikYazimlari.add('sil:$id');
+  }
+
+  @override
   Future<List<Oge>> ogeleriGetir(String aliskanlikId, {OgeDurumu? durum}) async {
     _kontrol('ogeleriGetir');
     return [for (final o in ogeler) if (o.aliskanlikId == aliskanlikId) o];
+  }
+
+  /// The item writes the fake server was sent: the item id and the body.
+  final List<(String, OgeYaz)> ogeGuncellemeleri = [];
+
+  @override
+  Future<Oge> ogeGuncelle(String id, OgeYaz yaz) async {
+    _kontrol('ogeGuncelle');
+    ogeGuncellemeleri.add((id, yaz));
+    return ogeler.firstWhere((o) => o.id == id).copyWith(durum: yaz.durum);
   }
 
   @override
@@ -384,27 +425,183 @@ class SahteApi extends ApiService {
     return brifingYaniti!;
   }
 
-  // ---- Timeline ----
+  // ---- Day view of the UI revision (K-0024) ----
 
-  /// What `zamanCizelgesi` answers; null means the server has nothing for the day (404).
-  ZamanCizelgesi? zamanCizelgesiYaniti;
+  /// What `GET /api/gun/{tarih}` answers per day ("2026-11-10"); a day not in the map is an empty day.
+  final Map<String, GunGorunum> gunGorunumleri = {};
 
-  /// The days asked for, in order.
-  final List<String> zamanCizelgesiGunleri = [];
+  /// What `GET /api/takvim` answers (any range).
+  TakvimAraligi takvimYaniti = const TakvimAraligi();
 
-  /// When set, the timeline call fails with this HTTP status (403, 503) even when online.
-  int? zamanCizelgesiHatasi;
+  /// The ranges asked for, as "baslangic/bitis".
+  final List<String> takvimIstekleri = [];
+
+  GunAyari gunAyariYaniti = const GunAyari();
+  int okunmamisBildirim = 0;
+
+  /// Every write of the day view the fake server was sent, in order.
+  final List<({String tur, String tarih, String kimlik, Object? govde, String? anahtar})> gunYazimlari = [];
+
+  /// When set, the day view's writes are refused with this status (a ProblemDetails body), like a 409 or a 400.
+  int? gunYazmaHatasi;
+
+  void _gunYazma(String tur, String tarih, String kimlik, Object? govde, [String? anahtar]) {
+    _kontrol('gun:$tur');
+    gunYazimlari.add((tur: tur, tarih: tarih, kimlik: kimlik, govde: govde, anahtar: anahtar));
+    if (gunYazmaHatasi != null) {
+      final istek = RequestOptions(path: tur);
+      throw DioException.badResponse(
+        statusCode: gunYazmaHatasi!,
+        requestOptions: istek,
+        response: Response(requestOptions: istek, statusCode: gunYazmaHatasi, data: {'title': 'Reddedildi', 'detail': 'Sunucu bu işi kabul etmedi.'}),
+      );
+    }
+  }
 
   @override
-  Future<ZamanCizelgesi> zamanCizelgesi(String gun) async {
-    _kontrol('zamanCizelgesi');
-    zamanCizelgesiGunleri.add(gun);
-    final kod = zamanCizelgesiHatasi ?? (zamanCizelgesiYaniti == null ? 404 : null);
-    if (kod != null) {
-      final istek = RequestOptions(path: 'zamanCizelgesi');
-      throw DioException.badResponse(statusCode: kod, requestOptions: istek, response: Response(requestOptions: istek, statusCode: kod));
-    }
-    return zamanCizelgesiYaniti!;
+  Future<GunGorunum> gunGorunumu(String tarih) async {
+    _kontrol('gunGorunumu:$tarih');
+    return gunGorunumleri[tarih] ?? GunGorunum(tarih: tarihCoz(tarih));
+  }
+
+  @override
+  Future<YaptimYaniti> gunYaptim(String tarih, String kimlik, {bool geri = false, required String anahtar}) async {
+    _gunYazma('yaptim', tarih, kimlik, {'geri': geri}, anahtar);
+    final oge = gunGorunumleri[tarih]?.ogeler.where((o) => o.kimlik == kimlik).firstOrNull;
+    return YaptimYaniti(oge: (oge ?? Yapilacak(kimlik: kimlik, tur: YapilacakTuru.plan, baslik: kimlik)).copyWith(durum: geri ? 'acik' : 'yapildi'));
+  }
+
+  @override
+  Future<void> dundenBirak(String tarih, String maddeId) async => _gunYazma('dundenBirak', tarih, maddeId, null);
+
+  @override
+  Future<Yapilacak> gunOgeEkle(String tarih, YeniOgeYaz yaz, {required String anahtar}) async {
+    _gunYazma('ogeEkle', tarih, '', yaz.toJson(), anahtar);
+    return Yapilacak(kimlik: 'm:aaaaaa', tur: YapilacakTuru.plan, baslik: yaz.baslik);
+  }
+
+  @override
+  Future<void> ogeHatirlaticiYaz(String tarih, String kimlik, HatirlaticiGovde govde, {required bool guncelle}) async =>
+      _gunYazma(guncelle ? 'hatirlaticiGuncelle' : 'hatirlaticiKur', tarih, kimlik, govde.toJson());
+
+  @override
+  Future<void> ogeHatirlaticiSil(String tarih, String kimlik) async => _gunYazma('hatirlaticiSil', tarih, kimlik, null);
+
+  @override
+  Future<TakvimAraligi> takvimAraligi(DateTime baslangic, DateTime bitis) async {
+    final anahtar = '${tarihMetni(baslangic)}/${tarihMetni(bitis)}';
+    _kontrol('takvimAraligi:$anahtar');
+    takvimIstekleri.add(anahtar);
+    return takvimYaniti;
+  }
+
+  @override
+  Future<GunAyari> gunAyari() async {
+    _kontrol('gunAyari');
+    return gunAyariYaniti;
+  }
+
+  @override
+  Future<void> gunAyariYaz(GunAyari ayar) async {
+    _gunYazma('ayarYaz', '', '', ayar.toJson());
+    gunAyariYaniti = ayar;
+  }
+
+  @override
+  Future<int> bildirimSayisi() async {
+    _kontrol('bildirimSayisi');
+    return okunmamisBildirim;
+  }
+
+  @override
+  Future<Yapilacak> gunDevret(String tarih, String kimlik, {required String anahtar}) async {
+    _gunYazma('devret', tarih, kimlik, null, anahtar);
+    return Yapilacak(kimlik: kimlik, tur: YapilacakTuru.plan, baslik: kimlik);
+  }
+
+  // ---- Notification centre (sözleşme §6) ----
+
+  /// What `GET /api/bildirimler` holds, newest first.
+  List<BildirimOgesi> bildirimler = [];
+
+  /// The `once` values asked for, in order (null for the first page).
+  final List<DateTime?> bildirimIstekleri = [];
+
+  /// Ids marked read on the fake server; "hepsi" for the call that marks them all.
+  final List<String> okunduIstekleri = [];
+
+  @override
+  Future<List<BildirimOgesi>> bildirimleriGetir({DateTime? once, int limit = 30}) async {
+    _kontrol('bildirimleriGetir');
+    bildirimIstekleri.add(once);
+    return [
+      for (final b in bildirimler)
+        if (once == null || (b.zaman != null && b.zaman!.isBefore(once))) b,
+    ].take(limit).toList();
+  }
+
+  @override
+  Future<void> bildirimOkundu(String id) async {
+    _gunYazma('bildirimOkundu', '', id, null);
+    okunduIstekleri.add(id);
+  }
+
+  @override
+  Future<void> bildirimlerinHepsiOkundu() async {
+    _gunYazma('bildirimHepsiOkundu', '', 'hepsi', null);
+    okunduIstekleri.add('hepsi');
+  }
+
+  // ---- Assistant (sözleşme §7) ----
+
+  /// What `GET /api/asistan/akis` holds, newest first.
+  List<AkisOgesi> akisOgeleri = [];
+
+  /// Every feed read, as "suzgec|once".
+  final List<String> akisIstekleri = [];
+  int asistanBekleyenSayisi = 0;
+
+  /// The inputs the fake server was sent, and the answers to questions as (question id, answer).
+  final List<AsistanGirdisi> asistanGirdileri = [];
+  final List<(String, String)> asistanCevaplari = [];
+
+  /// The photo files uploaded, in order.
+  final List<String> yuklenenDosyalar = [];
+
+  @override
+  Future<List<AkisOgesi>> asistanAkis({DateTime? once, int limit = 40, String suzgec = AkisSuzgeci.hepsi}) async {
+    _kontrol('asistanAkis');
+    akisIstekleri.add('$suzgec|${once == null ? '' : tarihMetni(once)}');
+    bool uygun(AkisOgesi o) => switch (suzgec) {
+          AkisSuzgeci.bekleyen => o.bekleyenMi,
+          AkisSuzgeci.isler => o.tur == AkisTuru.isKarti,
+          AkisSuzgeci.notlar => o.tur == AkisTuru.not,
+          _ => true,
+        };
+    return [
+      for (final o in akisOgeleri)
+        if (uygun(o) && (once == null || o.zaman.isBefore(once))) o,
+    ].take(limit).toList();
+  }
+
+  @override
+  Future<int> asistanSayi() async {
+    _kontrol('asistanSayi');
+    return asistanBekleyenSayisi;
+  }
+
+  @override
+  Future<AsistanYaniti> asistanGirdi(AsistanGirdisi girdi) async {
+    _gunYazma('asistanGirdi', '', girdi.id, girdi.toJson());
+    asistanGirdileri.add(girdi);
+    return AsistanYaniti(girdiId: girdi.id, mesajId: 'm-${girdi.id}');
+  }
+
+  @override
+  Future<AsistanYaniti> asistanSoruCevap(String soruId, String cevap) async {
+    _gunYazma('asistanCevap', '', soruId, {'cevap': cevap});
+    asistanCevaplari.add((soruId, cevap));
+    return AsistanYaniti(girdiId: soruId, mesajId: 'c-$soruId');
   }
 
   // ---- Voice and text ----
@@ -601,7 +798,17 @@ class SahteApi extends ApiService {
   @override
   Future<DosyaYaniti> dosyaYukle(String yol, {String? dosyaAdi}) async {
     _kontrol('dosyaYukle');
+    yuklenenDosyalar.add(yol);
     return const DosyaYaniti(id: 'f1', url: '/api/dosyalar/f1');
+  }
+
+  /// The captures deleted on the fake server.
+  final List<String> silinenYakalamalar = [];
+
+  @override
+  Future<void> yakalamaSil(String id) async {
+    _kontrol('yakalamaSil');
+    silinenYakalamalar.add(id);
   }
 
   @override
@@ -752,10 +959,13 @@ class SahteApi extends ApiService {
     return yeni;
   }
 
+  /// The sessions `GET /api/ogeler/{id}/oturumlar` answers, by item id.
+  Map<String, List<Oturum>> oturumlar = {};
+
   @override
   Future<List<Oturum>> oturumlariGetir(String ogeId) async {
     _kontrol('oturumlariGetir');
-    return const [];
+    return oturumlar[ogeId] ?? const [];
   }
 }
 
@@ -840,6 +1050,125 @@ GelenKarti ornekGelenKarti({
             disKaynak: disKaynak,
             yeniEtiket: yeniEtiket,
           ),
+  );
+}
+
+/// One item of the assistant feed; the field that goes with [tur] is given.
+AkisOgesi ornekAkis(
+  String id,
+  String tur, {
+  DateTime? zaman,
+  String? metin,
+  List<AsistanSonucu> sonuclar = const [],
+  AsistanSorusu? soru,
+  Eylem? eylem,
+  IsKarti? isKarti,
+  Brifing? brifing,
+  Yakalama? yakalama,
+}) =>
+    AkisOgesi(
+      id: id,
+      zaman: zaman ?? DateTime.utc(2026, 10, 31, 8),
+      tur: tur,
+      metin: metin,
+      sonuclar: sonuclar,
+      soru: soru,
+      eylem: eylem,
+      isKarti: isKarti,
+      brifing: brifing,
+      yakalama: yakalama,
+    );
+
+/// One result of the assistant: an applied reminder that can be undone, unless said otherwise.
+AsistanSonucu ornekSonuc({
+  String tur = 'hatirlatici-kur',
+  String baslik = 'E-kampüsü kontrol et',
+  String ozet = 'yarın 09:00 · 🔔',
+  String durum = SonucDurumu.uygulandi,
+  String? eylemId = 'e1',
+  String? hedefKimlik,
+  String? hedefRota,
+  bool geriAlinabilir = true,
+  String? mesaj,
+}) =>
+    AsistanSonucu(
+      tur: tur,
+      baslik: baslik,
+      ozet: ozet,
+      durum: durum,
+      eylemId: eylemId,
+      hedefKimlik: hedefKimlik,
+      hedefRota: hedefRota,
+      geriAlinabilir: geriAlinabilir,
+      mesaj: mesaj,
+    );
+
+/// One row of the day view; [kimlik] carries the type prefix (`m:`, `g:`, `h:`, `e:`) and the ids follow from it.
+Yapilacak ornekYapilacak({
+  String kimlik = 'm:a1b2c3',
+  String baslik = 'Vize slaytlarını oku',
+  YapilacakTuru? tur,
+  String? saat,
+  int? tahminDk,
+  String durum = 'acik',
+  String? proje,
+  HatirlaticiOzet? hatirlatici,
+  BolunmusBilgi? bolunmus,
+  int? gecikmeGun,
+}) {
+  final onek = kimlik.substring(0, 2);
+  final id = kimlik.substring(2);
+  return Yapilacak(
+    kimlik: kimlik,
+    tur: tur ??
+        switch (onek) {
+          'g:' => YapilacakTuru.gorev,
+          'h:' => YapilacakTuru.hatirlatici,
+          'e:' => YapilacakTuru.etkinlik,
+          _ => YapilacakTuru.plan,
+        },
+    baslik: baslik,
+    saat: saat,
+    tahminDk: tahminDk,
+    durum: durum,
+    proje: proje,
+    hatirlatici: hatirlatici,
+    bolunmus: bolunmus,
+    gecikmeGun: gecikmeGun,
+    maddeId: onek == 'm:' ? id : null,
+    gorevKimligi: onek == 'g:' ? id : null,
+    hatirlaticiId: onek == 'h:' ? id : null,
+    etkinlikId: onek == 'e:' ? id : null,
+  );
+}
+
+/// The day view of [tarih] (default: the fixed "today", 2026-10-31) with the load worked out from the rows, as the server does.
+GunGorunum ornekGun({
+  DateTime? tarih,
+  String? ozet,
+  List<Yapilacak> ogeler = const [],
+  List<DundenKalan> dunden = const [],
+  int kapasiteDk = 360,
+  int etkinlikDk = 0,
+  bool bugun = true,
+}) {
+  final yukluler = ogeler.where((o) => o.yuke);
+  final acik = yukluler.fold<int>(0, (t, o) => t + (o.tahminDk ?? 0));
+  final toplam = acik + etkinlikDk;
+  return GunGorunum(
+    tarih: tarih ?? sabitBugun,
+    bugun: bugun,
+    ozet: ozet,
+    yuk: GunYuku(
+      acikTahminDk: acik,
+      etkinlikDk: etkinlikDk,
+      kapasiteDk: kapasiteDk,
+      asimDk: toplam > kapasiteDk ? toplam - kapasiteDk : 0,
+      bosDk: kapasiteDk > toplam ? kapasiteDk - toplam : 0,
+      tahminsizSayi: yukluler.where((o) => o.tahminDk == null).length,
+    ),
+    dundenKalanlar: dunden,
+    ogeler: ogeler,
   );
 }
 
@@ -955,7 +1284,15 @@ class TestOrtami {
     eylemler = EylemRepository(api: this.api, db: db, esitleyici: esitleyici);
     gelen = GelenRepository(api: this.api, db: db, esitleyici: esitleyici);
     brifing = BrifingRepository(api: this.api, db: db, simdi: () => sabitAn);
-    zamanCizelgesi = ZamanCizelgesiRepository(api: this.api, db: db, simdi: () => sabitAn);
+    gun = GunRepository(api: this.api, db: db, esitleyici: esitleyici, simdi: () => sabitAn);
+    bildirimMerkezi = BildirimRepository(api: this.api, db: db, esitleyici: esitleyici);
+    asistan = AsistanRepository(
+      api: this.api,
+      db: db,
+      esitleyici: esitleyici,
+      fotograflar: FotografDeposu(klasor: () async => fotografKlasoru),
+      simdi: () => sabitAn,
+    );
   }
 
   final SahteApi api;
@@ -970,7 +1307,9 @@ class TestOrtami {
   late final EylemRepository eylemler;
   late final GelenRepository gelen;
   late final BrifingRepository brifing;
-  late final ZamanCizelgesiRepository zamanCizelgesi;
+  late final GunRepository gun;
+  late final BildirimRepository bildirimMerkezi;
+  late final AsistanRepository asistan;
 
   /// Where the photo copies of the captures go in tests.
   final Directory fotografKlasoru = Directory.systemTemp.createTempSync('yakalama_test');
@@ -1044,4 +1383,40 @@ class SahteBildirimServisi implements BildirimServisi {
 
   @override
   Future<void> isHatasiBildir({required int id, required String baslik, required String kimlik}) async => isHatalari.add((id, kimlik));
+}
+
+/// A signed-in user of [rol] ("Sahip" or "Asistan"), read through the fake API into [ortam]'s database. Call it inside
+/// `tester.runAsync` (drift needs real time).
+Future<KullaniciRepository> testKullanicisi(TestOrtami ortam, {String rol = 'Sahip'}) async {
+  ortam.api.ben_ = Ben(id: 'u', email: 'emre@example.com', roller: [rol]);
+  final kullanici = KullaniciRepository(api: ortam.api, db: ortam.db);
+  await kullanici.yukle();
+  return kullanici;
+}
+
+/// The providers the tabs' top bar, the profile sheet and the row sheets read, around [child].
+Widget testSarmalayici(TestOrtami ortam, KullaniciRepository kullanici, Widget child) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<KullaniciRepository>.value(value: kullanici),
+      Provider<ApiService>.value(value: ortam.api),
+      ChangeNotifierProvider<Esitleyici>.value(value: ortam.esitleyici),
+      ChangeNotifierProvider<AliskanlikRepository>.value(value: ortam.repo),
+      ChangeNotifierProvider<GunRepository>.value(value: ortam.gun),
+      ChangeNotifierProvider<BildirimRepository>.value(value: ortam.bildirimMerkezi),
+      ChangeNotifierProvider<AsistanRepository>.value(value: ortam.asistan),
+      Provider<BeyinRepository>.value(value: ortam.beyin),
+      Provider<BrifingRepository>.value(value: ortam.brifing),
+      ChangeNotifierProvider<BildirimIzni>.value(value: BildirimIzni(servis: SahteBildirimServisi())),
+      Provider<HatirlaticiBildirimYoneticisi>.value(
+        value: HatirlaticiBildirimYoneticisi(
+          repo: ortam.hatirlaticilar,
+          esitleyici: ortam.esitleyici,
+          servis: SahteBildirimServisi(),
+          yazabilir: () => true,
+        ),
+      ),
+    ],
+    child: child,
+  );
 }

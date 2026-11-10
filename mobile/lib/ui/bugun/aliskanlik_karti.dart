@@ -15,6 +15,7 @@ import '../../utils/dogrulama.dart';
 import '../core/ikonlar.dart';
 import '../core/renkler.dart';
 import '../core/widgets.dart';
+import '../oturum/okuma_kaydi_sheet.dart';
 
 typedef MiktarDegisti = void Function(Aliskanlik aliskanlik, double yeniMiktar);
 
@@ -428,7 +429,7 @@ class _RafIcerik extends StatelessWidget {
             ],
           )
         else if (a.devamEdenler.length == 1)
-          _DevamEdenOge(oge: a.devamEdenler.first, birim: a.birim ?? '', renk: renk)
+          _DevamEdenOge(aliskanlik: a, oge: a.devamEdenler.first, birim: a.birim ?? '', renk: renk)
         else
           _DevamEdenSecici(aliskanlik: a, renk: renk),
       ],
@@ -527,15 +528,17 @@ class _DevamEdenSeciciState extends State<_DevamEdenSecici> {
           ],
         ),
         const SizedBox(height: 8),
-        _DevamEdenOge(oge: secili, birim: a.birim ?? '', renk: widget.renk, kapakGoster: false),
+        _DevamEdenOge(aliskanlik: a, oge: secili, birim: a.birim ?? '', renk: widget.renk, kapakGoster: false),
       ],
     );
   }
 }
 
 class _DevamEdenOge extends StatelessWidget {
-  const _DevamEdenOge({required this.oge, required this.birim, required this.renk, this.kapakGoster = true});
+  const _DevamEdenOge({required this.aliskanlik, required this.oge, required this.birim, required this.renk, this.kapakGoster = true});
 
+  /// The habit the item belongs to: the reading entry sheet needs its goal and its other items.
+  final Aliskanlik aliskanlik;
   final OgeOzet oge;
   final String birim;
   final Color renk;
@@ -590,12 +593,28 @@ class _DevamEdenOge extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text('$konum$toplam $birim', style: rakam),
                 const SizedBox(height: 8),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
-                  onPressed: () => context.push('/oge/${oge.id}/oturum'),
-                  icon: const Icon(LucideIcons.play, size: 18),
-                  label: const Text('Okumaya başla'),
-                ),
+                // Reading is written by the Sahip, like the other writes; without the user repository (a bare card) it shows.
+                if (context.watch<KullaniciRepository?>()?.sahip ?? true)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        key: ValueKey('okudum-${oge.id}'),
+                        style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                        onPressed: () => okumaKaydiAc(context, aliskanlik: aliskanlik, ogeId: oge.id),
+                        icon: const Icon(LucideIcons.check, size: 18),
+                        label: const Text('Okudum'),
+                      ),
+                      OutlinedButton.icon(
+                        key: ValueKey('kronometre-${oge.id}'),
+                        style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                        onPressed: () => context.push('/oge/${oge.id}/oturum'),
+                        icon: const Icon(LucideIcons.timer, size: 18),
+                        label: const Text('Kronometre'),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),

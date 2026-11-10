@@ -59,7 +59,16 @@ Content-Type: application/json
 
 { "kimlik": "{{oge}}", "geri": true }
 
-### 5. A leftover of yesterday: carry it to today with the existing devret, or drop it from today's list (nothing goes to the brain)
+### 4c. Carry an item to the next day, one endpoint for all kinds (m: the brain's devret, g: an item for the task tomorrow, h: snoozed to tomorrow)
+### The answer is the item as it is on its new day (`oge.tarih`). An event (e:) cannot be carried -> 400.
+POST {{host}}/api/gun/{{gun}}/devret
+Authorization: Bearer {{token}}
+Idempotency-Key: gun-devret-001
+Content-Type: application/json
+
+{ "kimlik": "{{oge}}" }
+
+### 5. A leftover of yesterday: carry it to today (POST /api/beyin/gunler/{yesterday}/devret, or 4c above), or drop it from today's list (nothing goes to the brain)
 POST {{host}}/api/gun/bugun/dunden/d1d1d1/birak
 Authorization: Bearer {{token}}
 

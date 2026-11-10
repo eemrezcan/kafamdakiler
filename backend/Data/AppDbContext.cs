@@ -257,6 +257,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.KaynakTuru).HasMaxLength(30);
             e.Property(x => x.Anahtar).HasMaxLength(400);
             e.HasIndex(x => x.OlusmaAni);
+            // The center lists one person's rows newest first and counts the unread ones.
+            e.HasIndex(x => new { x.KullaniciId, x.OlusmaAni });
             e.HasIndex(x => new { x.KullaniciId, x.Anahtar }).IsUnique().HasFilter("\"Anahtar\" IS NOT NULL");
         });
 

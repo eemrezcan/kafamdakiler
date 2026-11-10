@@ -108,6 +108,14 @@ public sealed class GunGorunumuApiTests(UygulamaFabrikasi uygulama) : GunTestTab
         Assert.Equal(255, yuk.GetProperty("bosDk").GetInt32());
         Assert.Equal(3, yuk.GetProperty("tahminsizSayi").GetInt32());
 
+        // Every item carries its day: the list's day for the plan, the events and the reminders of that day; a late task keeps its due day.
+        Assert.All(gun.GetProperty("ogeler").EnumerateArray(), o => Assert.Equal(JsonValueKind.String, o.GetProperty("tarih").ValueKind));
+        Assert.Equal(BugunMetni, rapor.GetProperty("tarih").GetString());
+        Assert.Equal(BugunMetni, gorev.GetProperty("tarih").GetString());
+        Assert.Equal("2026-11-05", gecikmis.GetProperty("tarih").GetString());
+        Assert.Equal(BugunMetni, etkinlik.GetProperty("tarih").GetString());
+        Assert.Equal(BugunMetni, own.GetProperty("tarih").GetString());
+
         var kaynaklar = gun.GetProperty("kaynaklar");
         Assert.Equal("tamam", kaynaklar.GetProperty("plan").GetString());
         Assert.Equal("kapali", kaynaklar.GetProperty("google").GetString());

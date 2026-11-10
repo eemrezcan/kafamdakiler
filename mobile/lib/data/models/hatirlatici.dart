@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../utils/hatirlatici_hesap.dart';
+import 'enums.dart';
 import 'tarih_donusturucu.dart';
 
 part 'hatirlatici.g.dart';
@@ -102,6 +103,7 @@ class Hatirlatici {
     this.israrAraligiDakika = 15,
     this.israrEnCok = 3,
     this.acil = false,
+    this.gunler,
   });
 
   final String id;
@@ -131,6 +133,9 @@ class Hatirlatici {
   final int israrEnCok;
   @JsonKey(defaultValue: false)
   final bool acil;
+
+  /// The weekdays of a weekly repeat (UI revision, sözleşme §2); empty or null means the weekday of [gun].
+  final List<HaftaGunu>? gunler;
 
   /// The hour the rule fires at: its own, or the default morning hour.
   Saat get kuralSaati => saat ?? varsayilanHatirlaticiSaati;
@@ -183,6 +188,7 @@ class Hatirlatici {
         israrAraligiDakika: israrAraligiDakika ?? this.israrAraligiDakika,
         israrEnCok: israrEnCok ?? this.israrEnCok,
         acil: acil ?? this.acil,
+        gunler: gunler,
       );
 
   factory Hatirlatici.fromJson(Map<String, dynamic> json) => _$HatirlaticiFromJson(json);
@@ -208,6 +214,7 @@ class HatirlaticiYaz {
     this.israrAraligiDakika = 15,
     this.israrEnCok = 3,
     this.acil = false,
+    this.gunler,
   });
 
   final String? id;
@@ -232,6 +239,9 @@ class HatirlaticiYaz {
   final int israrEnCok;
   @JsonKey(defaultValue: false)
   final bool acil;
+
+  /// See [Hatirlatici.gunler].
+  final List<HaftaGunu>? gunler;
 
   factory HatirlaticiYaz.fromJson(Map<String, dynamic> json) => _$HatirlaticiYazFromJson(json);
   Map<String, dynamic> toJson() => _$HatirlaticiYazToJson(this);

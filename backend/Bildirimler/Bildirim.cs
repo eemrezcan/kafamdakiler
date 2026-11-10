@@ -16,7 +16,8 @@ public class Bildirim
 
     public string? HedefKimligi { get; set; }
 
-    // What made it: "test", "hatirlatici" (a reminder's moment), "gorev" (a brain task), "dogrulama" (a task found done).
+    // What made it: "test", "hatirlatici" (a reminder's moment), "gorev" (a brain task), "dogrulama" (a task found done), "is" (a work card),
+    // "asistan" (what the assistant did on its own: a row without a push).
     public string KaynakTuru { get; set; } = "";
 
     // Says which occurrence this is, so the same one is never sent twice to the same user ("hatirlatici:<id>:<moment>",
@@ -24,6 +25,9 @@ public class Bildirim
     public string? Anahtar { get; set; }
 
     public DateTimeOffset OlusmaAni { get; set; }
+
+    // When the person read it in the notification center (K-0024, §6); null while it is unread. Reading is a mark on the row, nothing is deleted.
+    public DateTimeOffset? OkunmaAni { get; set; }
 }
 
 // A phone that can be woken: its FCM token. One row per token; a token that comes again is updated, not added.

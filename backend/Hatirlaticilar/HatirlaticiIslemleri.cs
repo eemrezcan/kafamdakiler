@@ -60,6 +60,21 @@ public static class HatirlaticiIslemleri
         return Sonuc.Tamam;
     }
 
+    // Closed for good, whatever the rule: the task it is tied to is finished, so there is nothing left to remind of. A repeating reminder
+    // stops too. The weekly summary counts it as a "yaptım". Only an open reminder can be closed.
+    public static Sonuc Kapat(AppDbContext db, Hatirlatici h, DateTimeOffset simdi)
+    {
+        if (h.Durum != HatirlaticiDurumu.Acik)
+            return Sonuc.Catisma("Hatırlatıcı açık değil.");
+
+        return OlayliUygula(db, h, HatirlaticiOlayTuru.Yapildi, simdi, () =>
+        {
+            h.ErteleAn = null;
+            h.Durum = HatirlaticiDurumu.Tamam;
+            return Sonuc.Tamam;
+        });
+    }
+
     // Snooze: only the moment changes, the rule stays.
     public static Sonuc Ertele(Hatirlatici h, string? sure, TimeOnly varsayilan, DateTimeOffset simdi)
     {

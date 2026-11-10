@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Kafamdakiler.Beyin;
+using Kafamdakiler.OpenApi;
 
 namespace Kafamdakiler.Isler;
 
@@ -151,6 +152,11 @@ public static class IsKartlari
         var kart = await GorunurKartAsync(kimlik, beyin, log, ct);
         if (kart.Hata is not null) return kart.Hata;
 
+        // Going back to "plan" from any later stage is a revision: the plan session reads the note as its input, so it is asked for here
+        // and the brain is not called without one (moving a new card on from "talep" to "plan" is the plain forward step and needs none).
+        if (asama == "plan" && kart.Ayrinti!.Acik && kart.Ayrinti.Asama != "talep" && not is null)
+            return YazmaYaniti.Sorun(HataAnahtarlari.NotGerekli, HataAnahtarlari.NotGerekliMetni);
+
         var komut = new List<string> { "is", "asama", $"--kim={Kim}" };
         if (Kapilar.Contains(kart.Ayrinti!.Asama) && asama is not ("plan" or "iptal"))
             komut.Add($"--onay=onay:telefon-{GunSiniri.Bugun(saat.GetUtcNow()):yyyy-MM-dd}");
@@ -284,6 +290,7 @@ public static class IsKartlari
             "onay-gerekli" => YazmaYaniti.Red(409, "Onay gerekli", "Bu aşamadan ilerlemek için onay gerekir." + Yazilmadi),
             "gecersiz-gecis" => YazmaYaniti.Red(409, "Aşama değiştirilemedi", "Kart bu aşamadan oraya geçemez: sıradaki aşamaya geçebilir, plana dönebilir ya da iptal edilebilir." + Yazilmadi),
             "gerekce-gerekli" => YazmaYaniti.Red(400, "Gerekçe gerekli", "İptal için gerekçe yaz." + Yazilmadi),
+            "not-gerekli" => YazmaYaniti.Sorun(HataAnahtarlari.NotGerekli, HataAnahtarlari.NotGerekliMetni),
             "kilitli" => YazmaYaniti.Red(409, "Kart kilitli", "Kart şu an bir oturumda çalışılıyor; oturum bırakınca tekrar dene." + Yazilmadi),
             "kapali" => YazmaYaniti.Red(409, "Kart kapalı", "Bitmiş ya da iptal edilmiş karta yazılmaz." + Yazilmadi),
             "bozuk-kart" => YazmaYaniti.Red(409, "Kart bozuk", "Kartın dosyası okunamıyor; beyinde elle düzeltilmeli." + Yazilmadi),

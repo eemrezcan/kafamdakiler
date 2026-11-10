@@ -1,258 +1,586 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:kafamdakiler/data/models/brifing.dart';
-import 'package:kafamdakiler/data/models/ses.dart';
-import 'package:kafamdakiler/data/models/zaman_cizelgesi.dart';
-import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
-import 'package:kafamdakiler/ui/brifing/brifing_view_model.dart';
-import 'package:kafamdakiler/ui/bugun/zaman_cizelgesi_view_model.dart';
-import 'package:kafamdakiler/ui/yakalama/ses_view_model.dart';
 import 'package:kafamdakiler/data/models/enums.dart';
-import 'package:kafamdakiler/data/models/gun.dart';
+import 'package:kafamdakiler/data/models/gun_gorunum.dart';
+import 'package:kafamdakiler/data/models/hatirlatici.dart';
 import 'package:kafamdakiler/data/models/oge.dart';
+import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
+import 'package:kafamdakiler/data/services/database/app_database.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_screen.dart';
 import 'package:kafamdakiler/ui/bugun/bugun_view_model.dart';
+import 'package:kafamdakiler/ui/gun/gun_view_model.dart';
 
 import '../test_destek.dart';
-import 'ses_test.dart' show SahteBaglanti, SahteDikte;
 
+/// Bugün (K-0024): the summary with the day's load, what yesterday left, the habit rings and the one list with its sheet.
 void main() {
   late TestOrtami ortam;
+  late GoRouter router;
 
-  // The date line above the list uses Turkish month and day names (main.dart loads them in the app).
   setUpAll(() => initializeDateFormatting('tr'));
-  tearDown(() async => ortam.kapat());
+  setUp(() => ortam = TestOrtami());
+  tearDown(() async {
+    await ortam.kapat();
+  });
 
-  /// The view model is loaded outside the fake-async zone (drift needs real
-  /// time); the widget then just renders its state.
-  Future<BugunViewModel> yukle(WidgetTester tester, SahteApi api) async {
-    ortam = TestOrtami(api: api);
-    final vm = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
-    await tester.runAsync(vm.yukle);
-    return vm;
+  final dun = DateTime.utc(2026, 10, 30);
+
+  /// Real time for drift, then a frame.
+  Future<void> bekle(WidgetTester tester, [int ms = 120]) async {
+    await tester.runAsync(() => Future<void>.delayed(Duration(milliseconds: ms)));
+    await tester.pump();
+    await tester.pump();
   }
 
-  Future<void> goster(
-    WidgetTester tester,
-    BugunViewModel vm, {
-    Size boyut = const Size(360, 800),
+  /// The screen on a router, so "Takvim" and the shelf page have somewhere to go. [cevrimdisi] (the default) cuts the connection
+  /// after the first load: the fake server never changes its answer, so a write that was sent would be undone by the next read.
+  Future<({BugunViewModel bugun, GunViewModel gun})> goster(
+    WidgetTester tester, {
+    GunGorunum? gun,
+    String rol = 'Sahip',
+    Size boyut = const Size(360, 900),
     BildirimIzni? izin,
-    BrifingViewModel? brifing,
-    SesViewModel? ses,
-    ZamanCizelgesiViewModel? zaman,
-    VoidCallback? ekle,
+    bool cevrimdisi = true,
+    bool yuklemedenOnce = false,
   }) async {
     tester.view.physicalSize = boyut;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      home: BugunScreen(viewModel: vm, bildirimIzni: izin, brifing: brifing, brifingSes: ses, zamanCizelgesi: zaman, onAliskanlikEkle: ekle),
-    ));
-    await tester.pump();
+    if (gun != null) ortam.api.gunGorunumleri['2026-10-31'] = gun;
+    final kullanici = (await tester.runAsync(() => testKullanicisi(ortam, rol: rol)))!;
+    final bugun = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
+    final gunVm = GunViewModel(repo: ortam.gun, esitleyici: ortam.esitleyici);
+    addTearDown(bugun.dispose);
+    addTearDown(gunVm.dispose);
+    if (yuklemedenOnce) ortam.api.cevrimdisi = true;
+    await tester.runAsync(() async {
+      await bugun.yukle();
+      await gunVm.yukle();
+    });
+    if (cevrimdisi) ortam.api.cevrimdisi = true;
+    router = GoRouter(routes: [
+      GoRoute(
+        path: '/',
+        builder: (c, s) => BugunScreen(viewModel: bugun, gun: gunVm, bildirimIzni: izin, yazabilir: kullanici.sahip),
+      ),
+      GoRoute(path: '/takvim', builder: (c, s) => const Scaffold(body: Text('takvim sekmesi'))),
+      GoRoute(path: '/aliskanlik/:id/raf', builder: (c, s) => Scaffold(body: Text('raf ${s.pathParameters['id']}'))),
+    ]);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(testSarmalayici(ortam, kullanici, MaterialApp.router(routerConfig: router)));
+    await bekle(tester);
+    return (bugun: bugun, gun: gunVm);
   }
 
-  testWidgets('planned habits first, the others under a faded "Bugün planlı değil" heading', (tester) async {
-    final vm = await yukle(
-      tester,
-      SahteApi(aliskanliklar: [
-        ornekAliskanlik(id: 'a', ad: 'Planlı su', miktar: 2),
-        ornekAliskanlik(id: 'b', ad: 'Pazartesi koşusu', planli: false, sira: 1),
-        ornekAliskanlik(id: 'c', ad: 'Planlı yoga', olcu: Olcu.evetHayir, sira: 2),
-      ]),
-    );
-    await goster(tester, vm);
+  Future<List<BekleyenIslemlerData>> kuyruk(WidgetTester tester) async =>
+      (await tester.runAsync(() => ortam.db.select(ortam.db.bekleyenIslemler).get()))!;
 
-    expect(find.text('Planlı su'), findsOneWidget);
-    expect(find.text('Planlı yoga'), findsOneWidget);
-    expect(find.text('Pazartesi koşusu'), findsOneWidget);
-    expect(find.text('Bugün planlı değil'), findsOneWidget);
+  final yedekIsler = [
+    ornekYapilacak(kimlik: 'e:1', baslik: 'BLM4581 dersi', saat: '09:00'),
+    ornekYapilacak(
+      kimlik: 'm:aa11bb',
+      baslik: 'E-kampüsü kontrol et',
+      saat: '14:00',
+      tahminDk: 15,
+      hatirlatici: const HatirlaticiOzet(id: 'r1', saat: '14:00'),
+    ),
+    ornekYapilacak(kimlik: 'm:cc22dd', baslik: 'Vize slaytlarını oku', tahminDk: 120, proje: 'Okul'),
+    ornekYapilacak(kimlik: 'm:ee33ff', baslik: 'Gösterim videosunu çek', tahminDk: 90, proje: 'Kafamdakiler', bolunmus: const BolunmusBilgi(sira: 1, toplam: 2)),
+  ];
 
-    final baslikY = tester.getTopLeft(find.text('Bugün planlı değil')).dy;
-    expect(tester.getTopLeft(find.text('Planlı su')).dy, lessThan(baslikY));
-    expect(tester.getTopLeft(find.text('Planlı yoga')).dy, lessThan(baslikY));
-    expect(tester.getTopLeft(find.text('Pazartesi koşusu')).dy, greaterThan(baslikY));
+  group('the list', () {
+    testWidgets('rows with hour, estimate, bell and the meta line; events have no "yaptım" box', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler, etkinlikDk: 60));
 
-    // The unplanned card is faded.
-    final soluk = find.ancestor(of: find.text('Pazartesi koşusu'), matching: find.byType(Opacity));
-    expect(tester.widget<Opacity>(soluk.first).opacity, lessThan(1));
-    expect(find.ancestor(of: find.text('Planlı su'), matching: find.byType(Opacity)), findsNothing);
+      expect(find.text('BLM4581 dersi'), findsOneWidget);
+      expect(find.text('14:00'), findsWidgets);
+      expect(find.text('15 dk'), findsOneWidget);
+      expect(find.text('2 sa'), findsOneWidget);
+      expect(find.text('Okul'), findsOneWidget);
+      expect(find.text('Kafamdakiler · 2 günden 1.'), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsNothing);
+      expect(find.byKey(const ValueKey('yaptim-e:1')), findsNothing, reason: 'an event cannot be ticked');
+      expect(find.byKey(const ValueKey('yaptim-m:aa11bb')), findsOneWidget);
+      expect(find.text('Yapılacaklar · 3'), findsNothing, reason: 'headings are upper case');
+      expect(find.text('YAPILACAKLAR · 3'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the "yaptım" box ticks the row at once and queues one write with the typed id', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler));
+
+      await tester.tap(find.byKey(const ValueKey('yaptim-m:cc22dd')));
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.single.tur, BekleyenTur.gunYaptim);
+      expect(satirlar.single.hedefId, 'm:cc22dd');
+      expect(satirlar.single.tarih, '2026-10-31');
+      expect(tester.widget<Checkbox>(find.byKey(const ValueKey('yaptim-m:cc22dd'))).value, isTrue);
+      expect(find.text('YAPILACAKLAR · 2'), findsOneWidget, reason: 'the open count drops');
+      expect(find.text('Geri al'), findsOneWidget);
+    });
+
+    testWidgets('"Geri al" takes the tick back with one more write', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler));
+
+      await tester.tap(find.byKey(const ValueKey('yaptim-m:cc22dd')));
+      await bekle(tester);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('Geri al'));
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.map((s) => s.tur), [BekleyenTur.gunYaptim, BekleyenTur.gunYaptim]);
+      expect(tester.widget<Checkbox>(find.byKey(const ValueKey('yaptim-m:cc22dd'))).value, isFalse);
+    });
+
+    testWidgets('a finished task offers no "Geri al": the server cannot reopen it', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: [ornekYapilacak(kimlik: 'g:rapor', baslik: 'Raporu yaz', tahminDk: 60)]));
+
+      await tester.tap(find.byKey(const ValueKey('yaptim-g:rapor')));
+      await bekle(tester);
+
+      expect(find.text('Geri al'), findsNothing);
+      expect((await kuyruk(tester)).single.hedefId, 'g:rapor');
+    });
+
+    testWidgets('an empty day says so', (tester) async {
+      await goster(tester, gun: ornekGun());
+      expect(find.byKey(const ValueKey('gun-bos')), findsOneWidget);
+    });
   });
 
-  testWidgets('"Bildirimler kapalı" tops the screen when the permission is off, and is not there when it is on', (tester) async {
-    final servis = SahteBildirimServisi()
-      ..izinli = false
-      ..izinVerilir = false;
-    final izin = BildirimIzni(servis: servis);
-    await tester.runAsync(izin.denetle);
-    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
-    await goster(tester, vm, izin: izin);
+  group('the summary and the load', () {
+    testWidgets('over the capacity: the overflow in words and "Bir kısmını devret"', (tester) async {
+      // 120 + 90 + 15 = 225 dk against 180.
+      await goster(tester, gun: ornekGun(ozet: 'Bugün 3 iş var.', ogeler: yedekIsler.skip(1).toList(), kapasiteDk: 180));
 
-    expect(find.text('Bildirimler kapalı'), findsOneWidget);
-    expect(find.text('Ayarlara git'), findsOneWidget);
-    expect(tester.getTopLeft(find.text('Bildirimler kapalı')).dy, lessThan(tester.getTopLeft(find.text('Su')).dy));
+      expect(find.text('Bugün 3 iş var.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('gun-yuku')), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const ValueKey('gun-yuku'))).data, '3 sa 45 dk / 3 sa');
+      expect(tester.widget<Text>(find.byKey(const ValueKey('gun-yuk-mesaj'))).data, '45 dk fazla.');
+      expect(find.byKey(const ValueKey('gun-yuk-eylem')), findsOneWidget);
+    });
 
-    servis.izinli = true;
-    await tester.runAsync(izin.denetle);
-    await tester.pump();
-    expect(find.text('Bildirimler kapalı'), findsNothing);
+    testWidgets('"Bir kısmını devret" opens the sheet with the guess ticked; the button carries them to tomorrow', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler.skip(1).toList(), kapasiteDk: 180));
+
+      await tester.tap(find.byKey(const ValueKey('gun-yuk-eylem')));
+      await tester.pumpAndSettle();
+
+      // The guess starts from the end of the list: the 90 minute item alone clears 45 minutes.
+      expect(tester.widget<CheckboxListTile>(find.byKey(const ValueKey('devret-m:ee33ff'))).value, isTrue);
+      expect(tester.widget<CheckboxListTile>(find.byKey(const ValueKey('devret-m:cc22dd'))).value, isFalse);
+      expect(find.text('Seçilenlerle gün sığar.'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('devret-tamam')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.single.tur, BekleyenTur.gunDevret);
+      expect(satirlar.single.hedefId, 'm:ee33ff');
+      expect(satirlar.single.tarih, '2026-10-31');
+      expect(find.text('Gösterim videosunu çek'), findsNothing, reason: 'carried rows leave today at once');
+      expect(find.byKey(const ValueKey('gun-yuk-eylem')), findsNothing, reason: 'and the day fits now');
+    });
+
+    testWidgets('ticking nothing leaves the button off; picking more shows what is still over', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler.skip(1).toList(), kapasiteDk: 120));
+
+      await tester.tap(find.byKey(const ValueKey('gun-yuk-eylem')));
+      await tester.pumpAndSettle();
+      // 105 dk over; the guess is 90 + 120 from the end, so it fits.
+      expect(find.text('Seçilenlerle gün sığar.'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('devret-m:cc22dd')));
+      await tester.pump();
+      expect(find.text('Seçilenlerle de 15 dk fazla kalır.'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('devret-m:ee33ff')));
+      await tester.pump();
+      expect(tester.widget<FilledButton>(find.byKey(const ValueKey('devret-tamam'))).onPressed, isNull);
+    });
+
+    testWidgets('little to do: the free time and a way to look at tomorrow', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Kısa iş', tahminDk: 30)]));
+
+      expect(tester.widget<Text>(find.byKey(const ValueKey('gun-yuk-mesaj'))).data, 'Bugün az iş var, 5 sa 30 dk boşluk.');
+      await tester.tap(find.byKey(const ValueKey('gun-yuk-eylem')));
+      await tester.pumpAndSettle();
+      expect(find.text('takvim sekmesi'), findsOneWidget);
+    });
+
+    testWidgets('it fits: the room left, and no action', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Büyük iş', tahminDk: 270)]));
+
+      expect(tester.widget<Text>(find.byKey(const ValueKey('gun-yuk-mesaj'))).data, 'Sığıyor. 1 sa 30 dk boşluk kaldı.');
+      expect(find.byKey(const ValueKey('gun-yuk-eylem')), findsNothing);
+    });
+
+    testWidgets('no summary from the server: a plain line from the count; no capacity: no bar', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler.skip(1).toList(), kapasiteDk: 0));
+
+      expect(tester.widget<Text>(find.byKey(const ValueKey('gun-ozet'))).data, 'Bugün 3 iş var.');
+      expect(find.byKey(const ValueKey('gun-yuku')), findsNothing);
+    });
+
+    testWidgets('rows without an estimate are counted aside', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Tahminsiz')]));
+      expect(find.text('1 işin süre tahmini yok.'), findsOneWidget);
+    });
   });
 
-  testWidgets('no "not planned" heading when every habit is planned', (tester) async {
-    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
-    await goster(tester, vm);
-    expect(find.text('Bugün planlı değil'), findsNothing);
+  group('left over from yesterday', () {
+    final market = [const DundenKalan(maddeId: 'ab12cd', baslik: 'Market', tahminDk: 45)];
+
+    testWidgets('"Bugüne al" carries it with a plan write dated yesterday and it joins the list', (tester) async {
+      await goster(tester, gun: ornekGun(dunden: market));
+
+      expect(find.textContaining('Dünden kaldı: '), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('dunden-al-ab12cd')));
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.single.tur, BekleyenTur.gunDevret);
+      expect(satirlar.single.hedefId, 'm:ab12cd');
+      expect(satirlar.single.tarih, '2026-10-30');
+      expect(find.textContaining('Dünden kaldı: '), findsNothing);
+      expect(find.text('Market'), findsOneWidget);
+      expect(dun.day, 30);
+    });
+
+    testWidgets('"Bırak" queues the new letting-go call and the band goes', (tester) async {
+      await goster(tester, gun: ornekGun(dunden: market));
+
+      await tester.tap(find.byKey(const ValueKey('dunden-birak-ab12cd')));
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.single.tur, BekleyenTur.dundenBirak);
+      expect(satirlar.single.hedefId, 'ab12cd');
+      expect(find.textContaining('Dünden kaldı: '), findsNothing);
+      expect(find.text('Market'), findsNothing, reason: 'it is not added to today');
+    });
+
+    testWidgets('the Asistan sees the line but not the buttons', (tester) async {
+      await goster(tester, gun: ornekGun(dunden: market), rol: 'Asistan');
+
+      expect(find.textContaining('Dünden kaldı: '), findsOneWidget);
+      expect(find.byKey(const ValueKey('dunden-al-ab12cd')), findsNothing);
+      expect(find.byKey(const ValueKey('dunden-birak-ab12cd')), findsNothing);
+    });
   });
 
-  testWidgets('empty state guides the user', (tester) async {
-    final vm = await yukle(tester, SahteApi());
-    await goster(tester, vm);
-    expect(find.text('Bugün için alışkanlık yok'), findsOneWidget);
-    expect(find.text('Bugünün alışkanlıkları'), findsNothing);
-  });
-
-  testWidgets('no habits today: one card that opens the new habit form when the person may add', (tester) async {
-    final vm = await yukle(tester, SahteApi());
-    var acildi = 0;
-    await goster(tester, vm, ekle: () => acildi++);
-
-    expect(find.text('Bugün için alışkanlık yok · + Alışkanlık ekle'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('aliskanlik-yok')));
-    expect(acildi, 1);
-  });
-
-  testWidgets('today\'s habits come first, above the briefing, which starts closed', (tester) async {
-    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
-    ortam.api.brifingYaniti = Brifing(
-      gun: '2026-11-08',
-      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
-      yontem: Brifing.claudeYontemi,
-      kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Bugün 3 iş var', metin: 'Rapor ve iki küçük iş.')],
-    );
-    final brifing = BrifingViewModel(repo: ortam.brifing, yenileyebilir: () => true);
-    final ses = SesViewModel(api: ortam.api, dikte: SahteDikte(), baglanti: SahteBaglanti(), kaynak: IsCikarKaynagi.brifing);
-    addTearDown(brifing.dispose);
-    addTearDown(ses.dispose);
-    await tester.runAsync(brifing.yukle);
-    await goster(tester, vm, brifing: brifing, ses: ses);
-
-    expect(find.text('Bugünün alışkanlıkları'), findsOneWidget);
-    expect(find.text('Sabah brifingi'), findsOneWidget);
-    expect(tester.getTopLeft(find.text('Bugünün alışkanlıkları')).dy, lessThan(tester.getTopLeft(find.text('Su')).dy));
-    expect(tester.getTopLeft(find.text('Su')).dy, lessThan(tester.getTopLeft(find.text('Sabah brifingi')).dy));
-    expect(find.text('Bugün 3 iş var'), findsNothing, reason: 'closed: its cards are not drawn');
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('hourless tasks alone leave no timeline card: the plan lists them already', (tester) async {
-    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
-    ortam.api.zamanCizelgesiYaniti = const ZamanCizelgesi(
-      gun: '2026-10-31',
-      google: GoogleDurumu.bagli,
-      plan: 'tamam',
-      saatli: [],
-      saatsiz: [ZamanCizelgesiOgesi(tur: ZamanCizelgesiTuru.plan, kimlik: 'm1', baslik: 'Rapor', durum: 'acik')],
-    );
-    final zaman = ZamanCizelgesiViewModel(repo: ortam.zamanCizelgesi);
-    addTearDown(zaman.dispose);
-    await tester.runAsync(zaman.yukle);
-    await goster(tester, vm, zaman: zaman);
-
-    expect(find.byKey(const Key('zaman-cizelgesi')), findsNothing);
-    expect(find.text('Saatsiz'), findsNothing);
-  });
-
-  testWidgets('a server error on the first load shows a Turkish message and a retry button', (tester) async {
-    final vm = await yukle(tester, SahteApi()..sunucuHatasi = 500);
-    await goster(tester, vm);
-    expect(find.textContaining('Alışkanlıklar alınamadı (sunucu hatası 500)'), findsOneWidget);
-    expect(find.text('Tekrar dene'), findsOneWidget);
-  });
-
-  testWidgets('offline with a cache: shows the cached habits and says so', (tester) async {
-    final api = SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]);
-    final ilk = await yukle(tester, api); // online: fills the cache
-    expect(ilk.liste, hasLength(1));
-    api.cevrimdisi = true;
-    final vm = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
-    await tester.runAsync(vm.yukle);
-    await goster(tester, vm);
-    expect(find.text('Su'), findsOneWidget);
-    expect(find.textContaining('Çevrimdışısın'), findsOneWidget);
-  });
-
-  testWidgets('shows progress, strength and the yes/no tick; no overflow at 360 dp', (tester) async {
-    final vm = await yukle(
-      tester,
-      SahteApi(aliskanliklar: [
-        ornekAliskanlik(id: 'a', ad: 'Çok uzun bir alışkanlık adı taşmamalı ekranda', miktar: 6),
-        ornekAliskanlik(id: 'b', ad: 'Yoga', olcu: Olcu.evetHayir, sira: 1),
-      ]),
-    );
-    await goster(tester, vm);
-
-    expect(find.textContaining('Güç %50'), findsWidgets);
-    expect(find.byTooltip('Bir artır'), findsOneWidget);
-    expect(find.byTooltip('Yapıldı olarak işaretle'), findsOneWidget);
-    // One bar in the counter card; the other is today's summary above the cards.
-    expect(find.descendant(of: find.byType(Card), matching: find.byType(LinearProgressIndicator)), findsOneWidget);
-    expect(find.textContaining('alışkanlıktan'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('wide screens: content is centred with a maximum width', (tester) async {
-    final vm = await yukle(tester, SahteApi(aliskanliklar: [ornekAliskanlik(ad: 'Su')]));
-    await goster(tester, vm, boyut: const Size(1200, 800));
-
-    final kart = tester.getRect(find.byType(Card).first);
-    expect(kart.width, lessThanOrEqualTo(640));
-    expect(kart.center.dx, closeTo(600, 1));
-  });
-
-  testWidgets('shelf card with several books: covers pick the book, the first one opens selected', (tester) async {
-    const ilk = OgeOzet(id: 'k1', ad: 'Kürk Mantolu Madonna', guncelKonum: 59, toplam: 356, ilerleme: 0.17);
-    const ikinci = OgeOzet(id: 'k2', ad: 'Tutunamayanlar', guncelKonum: 120, toplam: 724, ilerleme: 0.17);
-    final vm = await yukle(
-      tester,
-      SahteApi(aliskanliklar: [
-        ornekAliskanlik(id: 'r', ad: 'Kitap oku', tur: AliskanlikTuru.raf, birim: 'sayfa', hedef: 30,
-            devamEdenler: const [ilk, ikinci]),
-      ]),
-    );
-    await goster(tester, vm);
-
-    // Only the chosen book's details are shown; the API sends the most recent one first.
-    expect(find.text('Kürk Mantolu Madonna'), findsOneWidget);
-    expect(find.text('Tutunamayanlar'), findsNothing);
-
-    await tester.tap(find.byTooltip('Tutunamayanlar'));
-    await tester.pump();
-    expect(find.text('Tutunamayanlar'), findsOneWidget);
-    expect(find.text('Kürk Mantolu Madonna'), findsNothing);
-    expect(find.text('Okumaya başla'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('last 7 days strip: day names under the card, hidden when offline', (tester) async {
-    // 25-31 October 2026, ending on the fixed "today" (a Saturday).
-    final gunler = [
-      for (var i = 6; i >= 0; i--)
-        Gun(tarih: sabitBugun.subtract(Duration(days: i)), miktar: i.isEven ? 8 : 0, deger: i.isEven ? 1 : 0, planli: true, guc: 0.5),
-    ];
-    final api = SahteApi(aliskanliklar: [ornekAliskanlik(id: 'a', ad: 'Su', miktar: 3)], gunler: {'a': gunler});
-    final vm = await yukle(tester, api);
-    await goster(tester, vm);
-
-    for (final ad in ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT']) {
-      expect(find.text(ad), findsOneWidget, reason: ad);
+  group('the habit strip', () {
+    Future<void> seritle(WidgetTester tester, List<dynamic> aliskanliklar, {String rol = 'Sahip'}) async {
+      ortam.api.aliskanliklar = [for (final a in aliskanliklar) a];
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler), rol: rol);
     }
-    expect(tester.takeException(), isNull);
 
-    // Offline the days cannot be fetched: a fresh screen shows no strip.
-    api.cevrimdisi = true;
-    final cevrimdisi = BugunViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
-    await tester.runAsync(cevrimdisi.yukle);
-    await goster(tester, cevrimdisi);
-    expect(find.text('CMT'), findsNothing);
+    testWidgets('a yes/no habit is ticked by a tap and the row shows "tamam"', (tester) async {
+      await seritle(tester, [ornekAliskanlik(id: 'y', ad: 'Spor', olcu: Olcu.evetHayir)]);
+
+      expect(find.text('bekliyor'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('serit-y')));
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.single.tur, BekleyenTur.gunYaz);
+      expect(satirlar.single.hedefId, 'y');
+      expect(find.text('tamam'), findsOneWidget);
+      expect(find.text('Spor: yapıldı'), findsOneWidget);
+    });
+
+    testWidgets('a counter gets one more on a tap; the label shows the total against the goal', (tester) async {
+      await seritle(tester, [ornekAliskanlik(id: 's', ad: 'Su', miktar: 5)]);
+
+      expect(find.text('5 / 8'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('serit-s')));
+      await bekle(tester);
+
+      expect(find.text('6 / 8'), findsOneWidget);
+      expect((await kuyruk(tester)).single.tur, BekleyenTur.gunYaz);
+    });
+
+    testWidgets('a long press on a counter types the total', (tester) async {
+      await seritle(tester, [ornekAliskanlik(id: 's', ad: 'Su', miktar: 5)]);
+
+      await tester.longPress(find.byKey(const ValueKey('serit-s')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), '8');
+      await tester.tap(find.text('Kaydet'));
+      await bekle(tester);
+
+      expect(find.text('8 / 8'), findsOneWidget);
+    });
+
+    testWidgets('a shelf habit opens the reading entry sheet; saving queues the session', (tester) async {
+      const kitap = OgeOzet(id: 'k1', ad: 'Sapiens', guncelKonum: 212, toplam: 412, ilerleme: 0.51);
+      await seritle(tester, [ornekAliskanlik(id: 'kitap', ad: 'Kitap oku', tur: AliskanlikTuru.raf, birim: 'sayfa', hedef: 30, devamEdenler: const [kitap])]);
+
+      await tester.tap(find.byKey(const ValueKey('serit-kitap')));
+      await tester.pumpAndSettle();
+      expect(find.text('Okuma kaydı'), findsOneWidget);
+      expect(find.text('Nereye kadar geldin? (212 / 412)'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('okuma-arti')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('okuma-kaydet')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      final satir = (await kuyruk(tester)).single;
+      expect(satir.tur, BekleyenTur.oturumEkle);
+      expect(satir.hedefId, 'k1');
+      expect(find.text('Okuma kaydı'), findsNothing);
+    });
+
+    testWidgets('a shelf habit with no book in progress still opens the sheet, with the way to the shelf', (tester) async {
+      await seritle(tester, [ornekAliskanlik(id: 'kitap', ad: 'Kitap oku', tur: AliskanlikTuru.raf, birim: 'sayfa')]);
+
+      await tester.tap(find.byKey(const ValueKey('serit-kitap')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Devam eden kitap yok'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('okuma-raf')));
+      await tester.pumpAndSettle();
+      expect(find.text('raf kitap'), findsOneWidget);
+    });
+
+    testWidgets('the Asistan sees the rings but they do not write', (tester) async {
+      await seritle(tester, [ornekAliskanlik(id: 's', ad: 'Su', miktar: 5)], rol: 'Asistan');
+
+      await tester.tap(find.byKey(const ValueKey('serit-s')));
+      await bekle(tester);
+
+      expect(await kuyruk(tester), isEmpty);
+    });
+
+    testWidgets('habits not planned today are not on the strip; with none planned there is no strip', (tester) async {
+      await seritle(tester, [ornekAliskanlik(id: 'x', ad: 'Pazartesi koşusu', planli: false)]);
+      expect(find.text('ALIŞKANLIKLAR'), findsNothing);
+      expect(find.text('Pazartesi koşusu'), findsNothing);
+    });
+  });
+
+  group('the row sheet', () {
+    Future<void> satirAc(WidgetTester tester, String baslik) async {
+      await tester.tap(find.text(baslik));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a reminder is set up for a plan item: one queued write with the chosen fields', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler));
+
+      await satirAc(tester, 'Vize slaytlarını oku');
+      await tester.tap(find.byKey(const ValueKey('oge-hatirlatici')));
+      await tester.pumpAndSettle();
+      Future<void> dokun(String anahtar) async {
+        await tester.ensureVisible(find.byKey(ValueKey(anahtar)));
+        await tester.tap(find.byKey(ValueKey(anahtar)));
+        await tester.pump();
+      }
+
+      await dokun('tekrar-haftalik');
+      await dokun('gun-sal');
+      await dokun('gun-per');
+      await dokun('once-1');
+      await dokun('hatirlatici-acil');
+      await dokun('oge-kaydet');
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      final satirlar = await kuyruk(tester);
+      expect(satirlar.single.tur, BekleyenTur.ogeHatirlaticiYaz);
+      expect(satirlar.single.hedefId, 'm:cc22dd');
+      expect(satirlar.single.govde, contains('"guncelle":false'));
+      expect(satirlar.single.govde, contains('"tekrar":"haftalik"'));
+      expect(satirlar.single.govde, contains('"gunler":["sal","per"]'));
+      expect(satirlar.single.govde, contains('"onceGun":1'));
+      expect(satirlar.single.govde, contains('"acil":true'));
+      expect(find.byIcon(Icons.notifications_none), findsNothing);
+    });
+
+    testWidgets('an existing reminder opens switched on with its values; switching it off queues the removal', (tester) async {
+      await goster(
+        tester,
+        gun: ornekGun(ogeler: [
+          ornekYapilacak(
+            kimlik: 'm:aa11bb',
+            baslik: 'Spor salonu',
+            saat: '18:30',
+            hatirlatici: const HatirlaticiOzet(id: 'r', saat: '18:30', tekrar: Tekrar.haftalik, gunler: [HaftaGunu.sal, HaftaGunu.per]),
+          ),
+        ]),
+      );
+
+      expect(find.text('haftalık Sal, Per'), findsOneWidget);
+      await satirAc(tester, 'Spor salonu');
+      expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('tekrar-haftalik'))).selected, isTrue);
+      expect(tester.widget<FilterChip>(find.byKey(const ValueKey('gun-sal'))).selected, isTrue);
+      expect(tester.widget<FilterChip>(find.byKey(const ValueKey('gun-car'))).selected, isFalse);
+
+      await tester.tap(find.byType(SwitchListTile).first);
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('oge-kaydet')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      expect((await kuyruk(tester)).single.tur, BekleyenTur.ogeHatirlaticiSil);
+    });
+
+    testWidgets('"Yarına devret" carries a plan item and the sheet closes', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler));
+
+      await satirAc(tester, 'Vize slaytlarını oku');
+      await tester.tap(find.byKey(const ValueKey('oge-devret')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      expect((await kuyruk(tester)).single.tur, BekleyenTur.gunDevret);
+      expect(find.byKey(const ValueKey('oge-devret')), findsNothing);
+      expect(find.text('Vize slaytlarını oku'), findsNothing);
+    });
+
+    testWidgets('a task can be split over days and carried; a plan item without a task cannot be split', (tester) async {
+      await goster(
+        tester,
+        gun: ornekGun(ogeler: [
+          ornekYapilacak(kimlik: 'g:rapor', baslik: 'Raporu yaz', tahminDk: 240),
+          ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Düz madde'),
+        ]),
+      );
+
+      await satirAc(tester, 'Düz madde');
+      expect(find.byKey(const ValueKey('oge-bol')), findsNothing);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      await satirAc(tester, 'Raporu yaz');
+      expect(find.byKey(const ValueKey('oge-devret')), findsOneWidget, reason: 'the one carry-over takes tasks too (sözleşme E2)');
+      await tester.tap(find.byKey(const ValueKey('oge-bol')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('bol-3')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      final satir = (await kuyruk(tester)).single;
+      expect(satir.tur, BekleyenTur.beyinGunlereBol);
+      expect(satir.hedefId, 'rapor');
+      expect(satir.govde, contains('"gunSayisi":3'));
+    });
+
+    testWidgets('a note on a plan item is queued', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler));
+
+      await satirAc(tester, 'Vize slaytlarını oku');
+      await tester.tap(find.byKey(const ValueKey('oge-not-ekle')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('oge-not')), 'Önce 3. üniteden başla');
+      await tester.tap(find.descendant(of: find.byType(AlertDialog), matching: find.text('Kaydet')));
+      await tester.pumpAndSettle();
+      await bekle(tester);
+
+      final satir = (await kuyruk(tester)).single;
+      expect(satir.tur, BekleyenTur.beyinMaddeNot);
+      expect(satir.govde, contains('Önce 3. üniteden başla'));
+    });
+
+    testWidgets('an event is only looked at; a reminder-only row goes to the reminder form', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: [ornekYapilacak(kimlik: 'e:1', baslik: 'BLM4581 dersi', saat: '09:00')]));
+
+      await satirAc(tester, 'BLM4581 dersi');
+      expect(find.textContaining('yalnız görülür'), findsOneWidget);
+      expect(find.byKey(const ValueKey('oge-hatirlatici')), findsNothing);
+    });
+
+    testWidgets('the Asistan sees the sheet without any action', (tester) async {
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler), rol: 'Asistan');
+
+      await satirAc(tester, 'Vize slaytlarını oku');
+
+      expect(find.byKey(const ValueKey('oge-hatirlatici')), findsNothing);
+      expect(find.byKey(const ValueKey('oge-devret')), findsNothing);
+      expect(find.byKey(const ValueKey('oge-kaydet')), findsNothing);
+      expect(tester.widget<Checkbox>(find.byKey(const ValueKey('yaptim-m:cc22dd'))).onChanged, isNull);
+    });
+  });
+
+  group('states', () {
+    testWidgets('a server error on the first load shows a Turkish message and a retry button', (tester) async {
+      ortam.api.sunucuHatasi = 500;
+      await goster(tester);
+
+      expect(find.textContaining('Gün alınamadı (sunucu hatası 500)'), findsOneWidget);
+      expect(find.text('Tekrar dene'), findsOneWidget);
+    });
+
+    testWidgets('offline with a cached day: the day shows and says so', (tester) async {
+      // Online first, so the day is kept on the phone.
+      ortam.api.gunGorunumleri['2026-10-31'] = ornekGun(ogeler: yedekIsler);
+      final ilk = GunViewModel(repo: ortam.gun, esitleyici: ortam.esitleyici);
+      await tester.runAsync(ilk.yukle);
+      ilk.dispose();
+
+      await goster(tester, yuklemedenOnce: true);
+
+      expect(find.text('Vize slaytlarını oku'), findsOneWidget);
+      expect(find.textContaining('Çevrimdışısın'), findsOneWidget);
+    });
+
+    testWidgets('offline with nothing cached: the message and a retry button', (tester) async {
+      await goster(tester, yuklemedenOnce: true);
+      expect(find.textContaining('Gün alınamadı'), findsOneWidget);
+    });
+
+    testWidgets('a plan the brain could not read is said, the rest of the day still shows', (tester) async {
+      final gun = ornekGun(ogeler: yedekIsler);
+      await goster(
+        tester,
+        gun: GunGorunum(tarih: gun.tarih, yuk: gun.yuk, ogeler: gun.ogeler, kaynaklar: const GunKaynaklari(plan: 'okunamadi')),
+      );
+      expect(find.textContaining('plan okunamadı'), findsOneWidget);
+      expect(find.text('BLM4581 dersi'), findsOneWidget);
+    });
+
+    testWidgets('"Bildirimler kapalı" tops the screen when the permission is off, and is not there when it is on', (tester) async {
+      final servis = SahteBildirimServisi()
+        ..izinli = false
+        ..izinVerilir = false;
+      final izin = BildirimIzni(servis: servis);
+      await tester.runAsync(izin.denetle);
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler), izin: izin);
+
+      expect(find.text('Bildirimler kapalı'), findsOneWidget);
+      servis.izinli = true;
+      await tester.runAsync(izin.denetle);
+      await tester.pump();
+      expect(find.text('Bildirimler kapalı'), findsNothing);
+    });
+
+    testWidgets('360 dp: nothing overflows; 1200 dp: the content is centred with a maximum width', (tester) async {
+      ortam.api.aliskanliklar = [ornekAliskanlik(id: 's', ad: 'Çok uzun bir alışkanlık adı taşmamalı', miktar: 5)];
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler, etkinlikDk: 60, dunden: [const DundenKalan(maddeId: 'ab12cd', baslik: 'Çok uzun bir iş adı sığmazsa satıra sarılmalı', tahminDk: 45)]));
+      expect(tester.takeException(), isNull);
+
+      tester.view.physicalSize = const Size(1200, 900);
+      await tester.pump();
+      final kart = tester.getRect(find.byType(Card).first);
+      expect(kart.width, lessThanOrEqualTo(640));
+      expect(kart.center.dx, closeTo(600, 1));
+    });
+
+    testWidgets('every tap target is at least 48 dp', (tester) async {
+      ortam.api.aliskanliklar = [ornekAliskanlik(id: 'y', ad: 'Spor', olcu: Olcu.evetHayir)];
+      await goster(tester, gun: ornekGun(ogeler: yedekIsler, dunden: [const DundenKalan(maddeId: 'ab12cd', baslik: 'Market')]));
+
+      for (final anahtar in ['yaptim-m:aa11bb', 'serit-y', 'dunden-al-ab12cd', 'dunden-birak-ab12cd']) {
+        final boy = tester.getSize(find.byKey(ValueKey(anahtar)));
+        expect(boy.width, greaterThanOrEqualTo(48), reason: anahtar);
+        expect(boy.height, greaterThanOrEqualTo(48), reason: anahtar);
+      }
+    });
   });
 }
