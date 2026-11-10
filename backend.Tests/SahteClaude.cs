@@ -32,6 +32,12 @@ public sealed class SahteClaude : IDisposable
             mailler = [{"kimlik": k, "onemli": k not in ayar.get("onemsiz", []), "gerekce": "kisa"} for k in re.findall(r"=== MAIL (\S+) ===", kayit["stdin"]) if k not in ayar.get("atla", [])]
             print(json.dumps({"type": "result", "is_error": False, "result": "tamam", "structured_output": {"mailler": mailler}, "usage": {"input_tokens": 10, "output_tokens": 5}}))
             sys.exit(0)
+        sirap = os.path.join(d, "sira.json")
+        if os.path.exists(sirap):
+            adimlar = json.load(open(sirap, encoding="utf-8"))
+            n = sum(1 for _ in open(os.path.join(d, "log.jsonl"), encoding="utf-8"))
+            print(adimlar[min(n, len(adimlar)) - 1])
+            sys.exit(0)
         print(open(os.path.join(d, "cikti.json"), encoding="utf-8").read())
         sys.exit(int(open(os.path.join(d, "cikis.txt")).read()) if os.path.exists(os.path.join(d, "cikis.txt")) else 0)
         """;
@@ -57,6 +63,12 @@ public sealed class SahteClaude : IDisposable
     // The envelope `claude -p --output-format json` prints, with a checked answer in structured_output.
     public void YapiliYanit(string structuredOutput, int girdiToken = 10, int cikisToken = 5) => Cikti(
         $$$"""{"type":"result","subtype":"success","is_error":false,"result":"tamam","structured_output":{{{structuredOutput}}},"usage":{"input_tokens":{{{girdiToken}}},"output_tokens":{{{cikisToken}}}}}""");
+
+    // The 1st call prints the 1st answer, the 2nd the 2nd... (the last one repeats). Each is the checked answer of a call (structured_output).
+    public void YapiliSirali(params string[] structuredOutputs) => File.WriteAllText(
+        Path.Combine(Klasor, "sira.json"),
+        JsonSerializer.Serialize(structuredOutputs.Select(o =>
+            $$$"""{"type":"result","subtype":"success","is_error":false,"result":"tamam","structured_output":{{{o}}},"usage":{"input_tokens":10,"output_tokens":5}}""")));
 
     // From now on the fake prints this text as is and exits with this code.
     public void Cikti(string metin, int cikis = 0)

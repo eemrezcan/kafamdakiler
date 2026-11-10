@@ -1,4 +1,5 @@
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Asistan;
 using Kafamdakiler.Ayarlar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Bildirimler;
@@ -48,6 +49,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<BildirimCihazi> BildirimCihazlari => Set<BildirimCihazi>();
     public DbSet<BirakilanMadde> BirakilanMaddeler => Set<BirakilanMadde>();
     public DbSet<GunAyarlari> GunAyarlari => Set<GunAyarlari>();
+    public DbSet<AsistanMesaji> AsistanMesajlari => Set<AsistanMesaji>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -281,6 +283,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             // One row for the whole app, always row 1.
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).ValueGeneratedNever();
+        });
+
+        builder.Entity<AsistanMesaji>(e =>
+        {
+            e.Property(x => x.Tur).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Metin).HasMaxLength(5000);
+            e.Property(x => x.Kaynak).HasMaxLength(30);
+            e.Property(x => x.SonuclarJson).HasColumnType("jsonb");
+            e.Property(x => x.SoruJson).HasColumnType("jsonb");
+            e.HasIndex(x => new { x.KullaniciId, x.Zaman });
+            e.HasIndex(x => new { x.KullaniciId, x.GirdiId }).HasDatabaseName("IX_AsistanMesajlari_KullaniciId_GirdiId");
+            // The first round of an input claims its client id: the same id again is a repeat, never a second run.
+            e.HasIndex(x => new { x.KullaniciId, x.GirdiId }).IsUnique().HasFilter("\"Tur\" = 'Kullanici' AND \"Kaynak\" <> 'cevap'")
+                .HasDatabaseName("IX_AsistanMesajlari_GirdiTalebi");
         });
 
         builder.Entity<Dosya>(e =>

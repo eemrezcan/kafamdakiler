@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kafamdakiler.Aliskanliklar;
+using Kafamdakiler.Asistan;
 using Kafamdakiler.Ayarlar;
 using Kafamdakiler.Beyin;
 using Kafamdakiler.Bildirimler;
@@ -112,6 +113,8 @@ builder.Services.AddEylemler();
 builder.Services.AddGelen(builder.Configuration);
 // Voice (K2.4): work out of dictated text, and rewriting it.
 builder.Services.AddSes();
+// The assistant's single entry and feed (K-0024): what a person says is worked out and applied at once; the feed holds all of it in one list.
+builder.Services.AddAsistan();
 // The morning briefing (K2.7): made once a day at the set hour, by Claude or, failing that, by fixed rules.
 builder.Services.AddBrifing(builder.Configuration);
 builder.Services.AddHaftalikOzet(builder.Configuration);
@@ -249,6 +252,7 @@ app.MapIsEndpoints();
 app.MapEylemEndpoints();
 app.MapGelenEndpoints();
 app.MapSesEndpoints();
+app.MapAsistanEndpoints();
 app.MapBrifingEndpoints();
 app.MapTakvimEndpoints();
 app.MapYonetimEndpoints();
