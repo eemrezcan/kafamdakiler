@@ -176,13 +176,17 @@ class KullaniciBalonu extends StatelessWidget {
 
 /// What the assistant did for an input: one row per result, each with its own "Geri al" and "Düzelt".
 class SonucKarti extends StatelessWidget {
-  const SonucKarti({super.key, required this.oge, required this.viewModel});
+  const SonucKarti({super.key, required this.oge, required this.viewModel, this.yazabilir = true});
 
   final AkisOgesi oge;
   final AsistanViewModel viewModel;
 
+  /// False hides the approval buttons of a result that waits (the account may not decide).
+  final bool yazabilir;
+
   /// Where "Düzelt" goes: the route the result names; a capture opens its edit page.
   static String? duzeltRotasi(AsistanSonucu s) {
+    if (s.onayda) return null; // nothing was made yet; there is nothing to fix
     if (s.hedefRota != null && s.hedefRota!.startsWith('/') && !s.hedefRota!.contains('://')) return s.hedefRota;
     if (s.tur == sonucTuruNot && s.hedefKimlik != null) return '/yakalama/${Uri.encodeComponent(s.hedefKimlik!)}/duzenle';
     return null;
@@ -192,14 +196,16 @@ class SonucKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final tamam = tamamRengi(context);
-    final sorunlu = oge.sonuclar.any((s) => !s.uygulandi);
-    final renk = sorunlu ? tema.colorScheme.error : tamam;
+    final sorunlu = oge.sonuclar.any((s) => s.sorunlu);
+    // What waits for approval is not a failure: the label says so and the card is not red.
+    final onayda = !sorunlu && oge.sonuclar.any((s) => s.onayda);
+    final renk = sorunlu ? tema.colorScheme.error : (onayda ? tema.colorScheme.secondary : tamam);
     return _Kart(
       renk: renk,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Etiket(sorunlu ? 'Yapamadım' : '✓ Yaptım', renk),
+          _Etiket(sorunlu ? 'Yapamadım' : (onayda ? 'Onayını bekliyor' : '✓ Yaptım'), renk),
           for (final s in oge.sonuclar)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
@@ -208,7 +214,25 @@ class SonucKarti extends StatelessWidget {
                 children: [
                   Text(s.baslik, style: const TextStyle(fontWeight: FontWeight.w600)),
                   if (s.ozet.isNotEmpty) Text(s.ozet, style: TextStyle(color: tema.colorScheme.onSurfaceVariant)),
-                  if (s.mesaj != null) Text(s.mesaj!, style: TextStyle(color: s.uygulandi ? tema.colorScheme.onSurfaceVariant : tema.colorScheme.error)),
+                  if (s.mesaj != null) Text(s.mesaj!, style: TextStyle(color: s.sorunlu ? tema.colorScheme.error : tema.colorScheme.onSurfaceVariant)),
+                  if (yazabilir && s.onayda && s.eylemId != null)
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        FilledButton(
+                          key: ValueKey('sonuc-onay-uygula-${s.eylemId}'),
+                          style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+                          onPressed: () => viewModel.sonucuOnayla(s),
+                          child: const Text('Ekle'),
+                        ),
+                        OutlinedButton(
+                          key: ValueKey('sonuc-onay-gec-${s.eylemId}'),
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+                          onPressed: () => viewModel.sonucuGec(s),
+                          child: const Text('Geç'),
+                        ),
+                      ],
+                    ),
                   if (s.durum == SonucDurumu.izinYok) Text('Bu işe iznin yok.', style: TextStyle(color: tema.colorScheme.error)),
                   if (s.geriAlinabilir || duzeltRotasi(s) != null)
                     Wrap(
@@ -240,10 +264,10 @@ class SonucKarti extends StatelessWidget {
   }
 }
 
-/// Opens [rota] from a feed item: a tab is switched to, a page is put on top.
+/// Opens [rota] from a feed item: a tab is switched to (`/gun/{tarih}` is Takvim on that day), a page is put on top.
 void rotayaGitAkis(BuildContext context, String rota) {
   const sekmeler = ['/', '/takvim', '/asistan', '/aliskanliklar', '/beyin'];
-  if (sekmeler.contains(rota)) {
+  if (sekmeler.contains(rota) || rota.startsWith('/gun/')) {
     context.go(rota);
   } else {
     context.push(rota);

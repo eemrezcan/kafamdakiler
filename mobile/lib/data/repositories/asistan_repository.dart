@@ -111,6 +111,8 @@ class AsistanRepository extends ChangeNotifier {
     final yolda = [for (final b in bekleyen) if (b.hata == null) b];
     final geriAlinanEylemler = {for (final b in yolda) if (b.tur == BekleyenTur.eylemGeriAl) b.hedefId};
     final silinenYakalamalar = {for (final b in yolda) if (b.tur == BekleyenTur.yakalamaSil) b.hedefId};
+    final onaylananlar = {for (final b in yolda) if (b.tur == BekleyenTur.eylemUygula) b.hedefId};
+    final gecilenler = {for (final b in yolda) if (b.tur == BekleyenTur.eylemReddet) b.hedefId};
     final cevaplar = {for (final b in yolda) if (b.tur == BekleyenTur.asistanCevap) b.hedefId: (jsonDecode(b.govde) as Map)['cevap'] as String};
 
     final sonuc = <AkisOgesi>[];
@@ -126,9 +128,18 @@ class AsistanRepository extends ChangeNotifier {
         case AkisTuru.not when o.yakalama != null && silinenYakalamalar.contains(o.yakalama!.id):
           continue;
         case AkisTuru.sonuc:
-          sonuc.add(o.sonuclar.any((s) => _geriAlindiMi(s, geriAlinanEylemler, silinenYakalamalar))
-              ? o.kopya(sonuclar: [for (final s in o.sonuclar) _geriAlindiMi(s, geriAlinanEylemler, silinenYakalamalar) ? s.geriAlindi() : s])
-              : o);
+          // A result waiting for approval (E7) follows the decision queued here: approved shows as done, passed leaves the card.
+          final sonuclar = [
+            for (final s in o.sonuclar)
+              if (!(s.onayda && gecilenler.contains(s.eylemId)))
+                s.onayda && onaylananlar.contains(s.eylemId)
+                    ? s.kopya(durum: SonucDurumu.uygulandi)
+                    : _geriAlindiMi(s, geriAlinanEylemler, silinenYakalamalar)
+                        ? s.geriAlindi()
+                        : s,
+          ];
+          if (sonuclar.isEmpty && o.sonuclar.isNotEmpty) continue;
+          sonuc.add(o.kopya(sonuclar: sonuclar));
         default:
           sonuc.add(o);
       }
@@ -201,6 +212,19 @@ class AsistanRepository extends ChangeNotifier {
 
   Future<void> reddet(Eylem eylem) async {
     await _esitleyici.eylemReddetKuyrugaAl(eylem.id);
+    notifyListeners();
+  }
+
+  /// The same two decisions from a result card that went to approval ([AsistanSonucu.onayda]).
+  Future<void> sonucuOnayla(AsistanSonucu sonuc) async {
+    if (sonuc.eylemId == null) return;
+    await _esitleyici.eylemUygulaKuyrugaAl(sonuc.eylemId!);
+    notifyListeners();
+  }
+
+  Future<void> sonucuGec(AsistanSonucu sonuc) async {
+    if (sonuc.eylemId == null) return;
+    await _esitleyici.eylemReddetKuyrugaAl(sonuc.eylemId!);
     notifyListeners();
   }
 

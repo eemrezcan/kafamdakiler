@@ -1,0 +1,89 @@
+{
+  "turetilmis": "AsistanGirdiApiTests.Girdi_EveryKindIsAppliedAtOnce (sunucu testinden)",
+  "durum": 200,
+  "govde": {
+    "girdiId": "019e3000-0000-7000-8000-0000000000b1",
+    "mesajId": "019e3000-0000-7000-8000-0000000000b2",
+    "sonuclar": [
+      {
+        "tur": "hatirlatici-kur",
+        "baslik": "Ali'yi ara",
+        "ozet": "yarın 09:00 · 🔔",
+        "durum": "uygulandi",
+        "eylemId": "019e3000-0000-7000-8000-000000000101",
+        "hedef": {
+          "kimlik": "h:019e3000-0000-7000-8000-0000000002a1",
+          "rota": "/gun/2026-11-11"
+        },
+        "geriAlinabilir": true,
+        "mesaj": null
+      },
+      {
+        "tur": "plan-ekle",
+        "baslik": "Raporu bitir",
+        "ozet": "bugün · plana eklendi · ~30 dk",
+        "durum": "uygulandi",
+        "eylemId": "019e3000-0000-7000-8000-000000000102",
+        "hedef": {
+          "kimlik": "m:a3f09c",
+          "rota": "/gun/2026-11-10"
+        },
+        "geriAlinabilir": false,
+        "mesaj": null
+      },
+      {
+        "tur": "gorev-ekle",
+        "baslik": "Üye girişi",
+        "ozet": "görev · kitap-kulubu · 20 Kas",
+        "durum": "uygulandi",
+        "eylemId": "019e3000-0000-7000-8000-000000000103",
+        "hedef": {
+          "kimlik": "g:yeni",
+          "rota": "/gun/2026-11-20"
+        },
+        "geriAlinabilir": true,
+        "mesaj": null
+      },
+      {
+        "tur": "takvim-ekle",
+        "baslik": "Toplantı",
+        "ozet": "yarın 14:00 · 📅",
+        "durum": "uygulandi",
+        "eylemId": "019e3000-0000-7000-8000-000000000104",
+        "hedef": {
+          "kimlik": "019e3000-0000-7000-8000-0000000002a4",
+          "rota": "/gun/2026-11-11"
+        },
+        "geriAlinabilir": true,
+        "mesaj": null
+      },
+      {
+        "tur": "not",
+        "baslik": "Kitap kulübü fikri",
+        "ozet": "Yakalamaya eklendi",
+        "durum": "uygulandi",
+        "eylemId": null,
+        "hedef": {
+          "kimlik": "019e3000-0000-7000-8000-0000000002a5",
+          "rota": "/asistan"
+        },
+        "geriAlinabilir": true,
+        "mesaj": null
+      },
+      {
+        "tur": "is",
+        "baslik": "Takvim sayfası",
+        "ozet": "İş kartı (kod)",
+        "durum": "uygulandi",
+        "eylemId": null,
+        "hedef": {
+          "kimlik": "takvim-sayfasi",
+          "rota": "/isler/takvim-sayfasi"
+        },
+        "geriAlinabilir": false,
+        "mesaj": null
+      }
+    ],
+    "soru": null
+  }
+}

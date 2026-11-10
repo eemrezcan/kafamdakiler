@@ -238,6 +238,50 @@ void main() {
     expect(find.byKey(const ValueKey('takvim-gorunum')), findsOneWidget);
   });
 
+  group('a day\'s address (E8)', () {
+    testWidgets('/gun/{tarih} opens Takvim on that day and shows that day\'s list', (tester) async {
+      ortam.api.gunGorunumleri['2026-11-11'] = ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Yarının işi', saat: '09:00')]);
+      await uygulamayiAc(tester);
+
+      router.go('/gun/2026-11-11');
+      await bekle(tester);
+
+      expect(secili(tester), 1);
+      expect(router.state.uri.path, '/takvim');
+      expect(find.text('Yarının işi'), findsOneWidget);
+    });
+
+    testWidgets('from the Asistan tab: a tap on a result lands on that day, and a second day moves it again', (tester) async {
+      ortam.api.gunGorunumleri['2026-11-11'] = ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Yarının işi')]);
+      ortam.api.gunGorunumleri['2026-11-12'] = ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:cc22dd', baslik: 'Öbür günün işi')]);
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Asistan');
+
+      router.go('/gun/2026-11-11');
+      await bekle(tester);
+      expect(find.text('Yarının işi'), findsOneWidget);
+
+      await sekme(tester, 'Asistan');
+      router.go('/gun/2026-11-12');
+      await bekle(tester);
+      expect(secili(tester), 1);
+      expect(find.text('Öbür günün işi'), findsOneWidget);
+      expect(find.text('Yarının işi'), findsNothing);
+    });
+
+    testWidgets('a date that is not a day opens Takvim on today', (tester) async {
+      ortam.api.gunGorunumleri['2026-10-31'] = ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Bugünün işi')]);
+      await uygulamayiAc(tester);
+
+      router.go('/gun/2026-02-30');
+      await bekle(tester);
+
+      expect(secili(tester), 1);
+      expect(router.state.uri.path, '/takvim');
+      expect(find.text('Bugünün işi'), findsOneWidget);
+    });
+  });
+
   group('the top bar', () {
     testWidgets('every tab has the bell and the profile button; search is in the top bar of none (it is on the Beyin tab itself)', (tester) async {
       await uygulamayiAc(tester);

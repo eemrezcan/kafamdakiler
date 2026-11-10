@@ -1,0 +1,23 @@
+{
+  "durum": 200,
+  "govde": {
+    "girdiId": "019e3000-0000-7000-8000-0000000000a1",
+    "mesajId": "01a1c7a0-7e9b-733f-90a2-d22847c02b77",
+    "sonuclar": [
+      {
+        "tur": "not",
+        "baslik": "Yarın 9'da Ali'yi ara. Kitap kulübü için bir fikir: aylık te",
+        "ozet": "Yakalamaya eklendi",
+        "durum": "uygulandi",
+        "eylemId": null,
+        "hedef": {
+          "kimlik": "01a1c7a0-7f33-72f6-b8db-13dc04afa7e7",
+          "rota": "/asistan"
+        },
+        "geriAlinabilir": true,
+        "mesaj": "Asistan şu an bağlı değil. Mesajın not olarak kaydedildi."
+      }
+    ],
+    "soru": null
+  }
+}

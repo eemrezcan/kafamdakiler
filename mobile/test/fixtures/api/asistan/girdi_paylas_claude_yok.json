@@ -1,0 +1,23 @@
+{
+  "durum": 200,
+  "govde": {
+    "girdiId": "4fcf1796-70f7-48c9-8c7c-8d7d266fc2a8",
+    "mesajId": "01a1c7a0-7fee-76bf-9b9a-ddfcdec332e3",
+    "sonuclar": [
+      {
+        "tur": "not",
+        "baslik": "Paylaşılan bir bağlantı https://ornek.example/makale",
+        "ozet": "Yakalamaya eklendi",
+        "durum": "uygulandi",
+        "eylemId": null,
+        "hedef": {
+          "kimlik": "01a1c7a0-7ff5-78a0-a325-054cae1f0ad2",
+          "rota": "/asistan"
+        },
+        "geriAlinabilir": true,
+        "mesaj": "Asistan şu an bağlı değil. Mesajın not olarak kaydedildi."
+      }
+    ],
+    "soru": null
+  }
+}

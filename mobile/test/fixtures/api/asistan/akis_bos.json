@@ -1,0 +1,302 @@
+{
+  "durum": 200,
+  "govde": [
+    {
+      "id": "brifing:2026-11-10",
+      "zaman": "2026-11-10T22:06:14.72151+00:00",
+      "tur": "brifing",
+      "metin": "İlk maddeler: Kitap, Saatsiz, Anahtarsız ve 1 tane daha.",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": {
+        "gun": "2026-11-10",
+        "uretimAni": "2026-11-10T22:06:14.72151+00:00",
+        "yontem": "hesap",
+        "kartlar": [
+          {
+            "sira": 0,
+            "tur": "plan",
+            "baslik": "Bugünün planında 4 açık madde",
+            "metin": "İlk maddeler: Kitap, Saatsiz, Anahtarsız ve 1 tane daha.",
+            "bagliKimlikler": [
+              "0f3d41",
+              "6e54e3",
+              "b311d7",
+              "g:bulusma-takvimi-sayfasi"
+            ],
+            "oy": 0
+          }
+        ],
+        "kalanYenileme": 3
+      },
+      "yakalama": null
+    },
+    {
+      "id": "not:01a1b25f-ce33-719e-9f81-9046b37a1931",
+      "zaman": "2026-11-06T19:39:45.589721+00:00",
+      "tur": "not",
+      "metin": "Soguk acilis denemesi",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1b25f-ce33-719e-9f81-9046b37a1931",
+        "metin": "Soguk acilis denemesi",
+        "fotografId": null,
+        "fotografUrl": null,
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-06T19:39:45.589721+00:00",
+        "olusturulma": "2026-11-06T19:39:46.443663+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1b124-de03-7194-96d6-0667ad5424c2",
+      "zaman": "2026-11-06T13:55:45.795234+00:00",
+      "tur": "not",
+      "metin": "Kat 1 f6 telefon denemesi",
+      "fotografUrl": "/api/dosyalar/01a1b124-db8e-721f-89ba-e9e5391e1073",
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1b124-de03-7194-96d6-0667ad5424c2",
+        "metin": "Kat 1 f6 telefon denemesi",
+        "fotografId": "01a1b124-db8e-721f-89ba-e9e5391e1073",
+        "fotografUrl": "/api/dosyalar/01a1b124-db8e-721f-89ba-e9e5391e1073",
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-06T13:55:45.795234+00:00",
+        "olusturulma": "2026-11-06T13:55:45.283664+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1ad88-07c1-7d7c-8f8c-9d3aaba6e9bd",
+      "zaman": "2026-11-05T21:05:35.681877+00:00",
+      "tur": "not",
+      "metin": "Deneme fotolu",
+      "fotografUrl": "/api/dosyalar/01a1ad88-0826-7f7b-9cbd-48170ae85e20",
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1ad88-07c1-7d7c-8f8c-9d3aaba6e9bd",
+        "metin": "Deneme fotolu",
+        "fotografId": "01a1ad88-0826-7f7b-9cbd-48170ae85e20",
+        "fotografUrl": "/api/dosyalar/01a1ad88-0826-7f7b-9cbd-48170ae85e20",
+        "hedef": "projects/kitap-kulubu",
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-05T21:05:35.681877+00:00",
+        "olusturulma": "2026-11-05T21:05:36.04009+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1acc0-1a0c-7bf4-adb1-2012a4e97de3",
+      "zaman": "2026-11-05T17:27:12+00:00",
+      "tur": "not",
+      "metin": null,
+      "fotografUrl": "/api/dosyalar/01a1acc0-188d-7da0-a258-ecd42eb88804",
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1acc0-1a0c-7bf4-adb1-2012a4e97de3",
+        "metin": null,
+        "fotografId": "01a1acc0-188d-7da0-a258-ecd42eb88804",
+        "fotografUrl": "/api/dosyalar/01a1acc0-188d-7da0-a258-ecd42eb88804",
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-05T17:27:12+00:00",
+        "olusturulma": "2026-11-05T17:27:13.164483+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1acc0-194a-70cd-8c97-910d0fa8c4ff",
+      "zaman": "2026-11-05T17:27:12+00:00",
+      "tur": "not",
+      "metin": "F2 deneme: metin yakalaması",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1acc0-194a-70cd-8c97-910d0fa8c4ff",
+        "metin": "F2 deneme: metin yakalaması",
+        "fotografId": null,
+        "fotografUrl": null,
+        "hedef": "projects/kitap-kulubu",
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-05T17:27:12+00:00",
+        "olusturulma": "2026-11-05T17:27:12.970382+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1a73d-c7c3-70fa-987c-7d4b57799fc5",
+      "zaman": "2026-11-04T15:46:46.341973+00:00",
+      "tur": "not",
+      "metin": "Emulatorden deneme",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1a73d-c7c3-70fa-987c-7d4b57799fc5",
+        "metin": "Emulatorden deneme",
+        "fotografId": null,
+        "fotografUrl": null,
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-04T15:46:46.341973+00:00",
+        "olusturulma": "2026-11-04T15:46:47.181535+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1a72b-1d83-7f18-a666-8e15c7ca6093",
+      "zaman": "2026-11-04T15:26:23.046+00:00",
+      "tur": "not",
+      "metin": "Web'den hızlı yakalama denemesi",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1a72b-1d83-7f18-a666-8e15c7ca6093",
+        "metin": "Web'den hızlı yakalama denemesi",
+        "fotografId": null,
+        "fotografUrl": null,
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-04T15:26:23.046+00:00",
+        "olusturulma": "2026-11-04T15:26:23.107212+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1a727-7acd-7903-9e05-e79d7fc3c400",
+      "zaman": "2026-11-04T15:22:24.832857+00:00",
+      "tur": "not",
+      "metin": "Uzun bir fikir: sabah brifinginde hava durumu, yaklaşan son tarihler ve dünden kalan işler tek kartta olsun. Akşam kapanışında da bugün ne bitti, ne kaldı diye üç soru sorsun ve cevaplar beyne günlük olarak yazılsın.",
+      "fotografUrl": "/api/dosyalar/01a1a727-7aca-7fb8-94a1-4c0367415695",
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1a727-7acd-7903-9e05-e79d7fc3c400",
+        "metin": "Uzun bir fikir: sabah brifinginde hava durumu, yaklaşan son tarihler ve dünden kalan işler tek kartta olsun. Akşam kapanışında da bugün ne bitti, ne kaldı diye üç soru sorsun ve cevaplar beyne günlük olarak yazılsın.",
+        "fotografId": "01a1a727-7aca-7fb8-94a1-4c0367415695",
+        "fotografUrl": "/api/dosyalar/01a1a727-7aca-7fb8-94a1-4c0367415695",
+        "hedef": "projects/kafamdakiler",
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-04T15:22:24.832857+00:00",
+        "olusturulma": "2026-11-04T15:22:24.845507+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1a727-7aae-78b7-be3d-782c27453f42",
+      "zaman": "2026-11-04T15:22:24.77455+00:00",
+      "tur": "not",
+      "metin": null,
+      "fotografUrl": "/api/dosyalar/01a1a727-7a9b-763d-914e-2d28e3a34858",
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1a727-7aae-78b7-be3d-782c27453f42",
+        "metin": null,
+        "fotografId": "01a1a727-7a9b-763d-914e-2d28e3a34858",
+        "fotografUrl": "/api/dosyalar/01a1a727-7a9b-763d-914e-2d28e3a34858",
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-04T15:22:24.77455+00:00",
+        "olusturulma": "2026-11-04T15:22:24.814107+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1a727-7a7a-7f27-9266-3ccec280e5d7",
+      "zaman": "2026-11-04T15:22:24.75514+00:00",
+      "tur": "not",
+      "metin": "Ali'ye kitabını perşembe vereceğim",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1a727-7a7a-7f27-9266-3ccec280e5d7",
+        "metin": "Ali'ye kitabını perşembe vereceğim",
+        "fotografId": null,
+        "fotografUrl": null,
+        "hedef": null,
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-04T15:22:24.75514+00:00",
+        "olusturulma": "2026-11-04T15:22:24.762394+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    },
+    {
+      "id": "not:01a1a727-7a09-74c8-b5e2-35d6cd11dece",
+      "zaman": "2026-11-04T15:22:24.611337+00:00",
+      "tur": "not",
+      "metin": "Takvimde buluşma günleri renkli olsun, geçmiş buluşmalar soluk görünsün.",
+      "fotografUrl": null,
+      "sonuclar": null,
+      "soru": null,
+      "eylem": null,
+      "is": null,
+      "brifing": null,
+      "yakalama": {
+        "id": "01a1a727-7a09-74c8-b5e2-35d6cd11dece",
+        "metin": "Takvimde buluşma günleri renkli olsun, geçmiş buluşmalar soluk görünsün.",
+        "fotografId": null,
+        "fotografUrl": null,
+        "hedef": "projects/kitap-kulubu",
+        "durum": "beyneGitti",
+        "yakalandiAt": "2026-11-04T15:22:24.611337+00:00",
+        "olusturulma": "2026-11-04T15:22:24.649878+00:00",
+        "denemeSayisi": 0,
+        "sonHata": null
+      }
+    }
+  ]
+}

@@ -457,7 +457,7 @@ class _Akis extends StatelessWidget {
             oge: o,
             onSil: o.gonderilemedi != null ? () => viewModel.girdiyiSil(o) : null,
           ),
-        AkisTuru.sonuc => SonucKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel),
+        AkisTuru.sonuc => SonucKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel, yazabilir: yazabilir),
         AkisTuru.soru when o.soru != null => SoruKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel, yazabilir: yazabilir),
         AkisTuru.onay when o.eylem != null => OnayKarti(key: ValueKey('akis-${o.id}'), oge: o, viewModel: viewModel, yazabilir: yazabilir),
         AkisTuru.isKarti when o.isKarti != null => IsKartiOgesi(key: ValueKey('akis-${o.id}'), oge: o),

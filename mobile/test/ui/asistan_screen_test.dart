@@ -82,6 +82,7 @@ void main() {
       GoRoute(path: '/yakalama/:id/duzenle', builder: (c, s) => Scaffold(body: Text('yakalama ${s.pathParameters['id']}'))),
       GoRoute(path: '/hatirlatici/:id/duzenle', builder: (c, s) => Scaffold(body: Text('hatırlatıcı ${s.pathParameters['id']}'))),
       GoRoute(path: '/gelen', builder: (c, s) => const Scaffold(body: Text('gelen sayfası'))),
+      GoRoute(path: '/gun/:tarih', builder: (c, s) => Scaffold(body: Text('gün ${s.pathParameters['tarih']}'))),
     ]);
     addTearDown(router.dispose);
     await tester.pumpWidget(testSarmalayici(ortam, kullanici, MaterialApp.router(routerConfig: router)));
@@ -217,6 +218,19 @@ void main() {
       expect(find.text('hatırlatıcı h5'), findsOneWidget);
     });
 
+    testWidgets('"Düzelt" on a result whose route is a day (E8) goes to that day, replacing the feed (a tab switch, not a page on top)', (tester) async {
+      ortam.api.akisOgeleri = [
+        ornekAkis('r', AkisTuru.sonuc, sonuclar: [ornekSonuc(eylemId: 'e1', hedefRota: '/gun/2026-11-11')]),
+      ];
+      await goster(tester);
+
+      await tester.tap(find.byKey(const ValueKey('sonuc-duzelt-e1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('gün 2026-11-11'), findsOneWidget);
+      expect(router.canPop(), isFalse, reason: 'go, not push: no page was put on top of the feed');
+    });
+
     testWidgets('a result with a route that is an address, not an in-app path, offers no "Düzelt"', (tester) async {
       ortam.api.akisOgeleri = [
         ornekAkis('r', AkisTuru.sonuc, sonuclar: [ornekSonuc(eylemId: 'e1', hedefRota: 'https://kotu.example/x')]),
@@ -224,6 +238,57 @@ void main() {
       await goster(tester);
 
       expect(find.byKey(const ValueKey('sonuc-duzelt-e1')), findsNothing);
+    });
+
+    testWidgets('a result that went to approval (E7): "Onayını bekliyor", not red, no "Geri al"/"Düzelt"; "Ekle" queues the approval and shows it done', (tester) async {
+      ortam.api.akisOgeleri = [
+        ornekAkis('r', AkisTuru.sonuc, sonuclar: [
+          ornekSonuc(baslik: 'Dışarıdan gelen plan', ozet: 'onay bekliyor', eylemId: 'e7', durum: SonucDurumu.onayda, geriAlinabilir: false, hedefRota: '/asistan'),
+        ]),
+      ];
+      await goster(tester);
+
+      expect(find.text('ONAYINI BEKLİYOR'), findsOneWidget);
+      expect(find.text('YAPAMADIM'), findsNothing);
+      expect(find.byKey(const ValueKey('sonuc-geri-al-e7')), findsNothing);
+      expect(find.byKey(const ValueKey('sonuc-duzelt-e7')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('sonuc-onay-uygula-e7')));
+      await bekle(tester);
+
+      final satir = (await kuyruk(tester)).single;
+      expect((satir.tur, satir.hedefId), (BekleyenTur.eylemUygula, 'e7'));
+      expect(find.text('✓ YAPTIM'), findsOneWidget);
+      expect(find.byKey(const ValueKey('sonuc-onay-uygula-e7')), findsNothing);
+    });
+
+    testWidgets('a result that went to approval: "Geç" queues the refusal and the row leaves the card', (tester) async {
+      ortam.api.akisOgeleri = [
+        ornekAkis('r', AkisTuru.sonuc, sonuclar: [
+          ornekSonuc(baslik: 'Dışarıdan gelen plan', eylemId: 'e7', durum: SonucDurumu.onayda, geriAlinabilir: false),
+        ]),
+      ];
+      await goster(tester);
+
+      await tester.tap(find.byKey(const ValueKey('sonuc-onay-gec-e7')));
+      await bekle(tester);
+
+      final satir = (await kuyruk(tester)).single;
+      expect((satir.tur, satir.hedefId), (BekleyenTur.eylemReddet, 'e7'));
+      expect(find.text('Dışarıdan gelen plan'), findsNothing);
+    });
+
+    testWidgets('a result row that waits for approval next to one that failed: the card says it could not do', (tester) async {
+      ortam.api.akisOgeleri = [
+        ornekAkis('r', AkisTuru.sonuc, sonuclar: [
+          ornekSonuc(baslik: 'Bekleyen', eylemId: 'e7', durum: SonucDurumu.onayda, geriAlinabilir: false),
+          ornekSonuc(baslik: 'Hatalı', eylemId: null, durum: SonucDurumu.hata, geriAlinabilir: false),
+        ]),
+      ];
+      await goster(tester);
+
+      expect(find.text('YAPAMADIM'), findsOneWidget);
+      expect(find.byKey(const ValueKey('sonuc-onay-uygula-e7')), findsOneWidget);
     });
 
     testWidgets('a question: its answers are buttons; one is sent through the queue and the question leaves, the answer shows', (tester) async {
@@ -659,8 +724,12 @@ void main() {
       ortam.api.akisOgeleri = [
         ornekAkis('q', AkisTuru.soru, zaman: bugun.add(const Duration(minutes: 1)), soru: const AsistanSorusu(id: 'q1', metin: 'Bir soru', secenekler: ['Evet'])),
         ornekAkis('o', AkisTuru.onay, eylem: ornekEylem(id: 'e1', ozet: 'Bir onay')),
+        ornekAkis('r', AkisTuru.sonuc, zaman: bugun.subtract(const Duration(minutes: 1)), sonuclar: [ornekSonuc(eylemId: 'e8', durum: SonucDurumu.onayda, geriAlinabilir: false)]),
       ];
       await goster(tester, rol: 'Asistan');
+
+      expect(find.text('ONAYINI BEKLİYOR'), findsNWidgets(2));
+      expect(find.byKey(const ValueKey('sonuc-onay-uygula-e8')), findsNothing);
 
       expect(find.text('Bir soru'), findsOneWidget);
       expect(find.text('Bir onay'), findsOneWidget);
@@ -687,12 +756,13 @@ void main() {
         ornekAkis('o', AkisTuru.onay, zaman: bugun.add(const Duration(minutes: 4)), eylem: ornekEylem(id: 'e1', ozet: 'Çok uzun bir onay özeti taşmamalı ekranda', disKaynak: true)),
         ornekAkis('q', AkisTuru.soru, zaman: bugun.add(const Duration(minutes: 3)), soru: const AsistanSorusu(id: 'q1', metin: 'Çok uzun bir soru metni satıra sarılmalı', secenekler: ['Birinci seçenek', 'İkinci seçenek', 'Üçüncü seçenek'])),
         ornekAkis('r', AkisTuru.sonuc, zaman: bugun.add(const Duration(minutes: 2)), sonuclar: [ornekSonuc(hedefRota: '/takvim')]),
+        ornekAkis('w', AkisTuru.sonuc, zaman: bugun.add(const Duration(minutes: 1)), sonuclar: [ornekSonuc(eylemId: 'e9', durum: SonucDurumu.onayda, geriAlinabilir: false)]),
         ornekAkis('k', AkisTuru.kullanici, zaman: bugun, metin: 'uzun bir mesaj ' * 12),
       ];
       await goster(tester, boyut: const Size(360, 2000));
 
       expect(tester.takeException(), isNull);
-      for (final k in ['onay-uygula-e1', 'onay-reddet-e1', 'soru-cevap-0', 'sonuc-geri-al-e1', 'sonuc-duzelt-e1', 'asistan-gonder', 'asistan-foto']) {
+      for (final k in ['onay-uygula-e1', 'onay-reddet-e1', 'soru-cevap-0', 'sonuc-geri-al-e1', 'sonuc-duzelt-e1', 'sonuc-onay-uygula-e9', 'sonuc-onay-gec-e9', 'asistan-gonder', 'asistan-foto']) {
         final boy = tester.getSize(find.byKey(ValueKey(k)));
         expect(boy.width, greaterThanOrEqualTo(48), reason: k);
         expect(boy.height, greaterThanOrEqualTo(48), reason: k);

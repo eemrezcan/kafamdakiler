@@ -1,0 +1,24 @@
+{
+  "turetilmis": "sözleşme E7 (sunucuda henüz yok: AsistanDurumu 4 değerli)",
+  "durum": 200,
+  "govde": {
+    "girdiId": "019e3000-0000-7000-8000-0000000000b1",
+    "mesajId": "019e3000-0000-7000-8000-0000000000b5",
+    "sonuclar": [
+      {
+        "tur": "plan-ekle",
+        "baslik": "Dışarıdan gelen plan",
+        "ozet": "onay bekliyor",
+        "durum": "onayda",
+        "eylemId": "019e3000-0000-7000-8000-000000000107",
+        "hedef": {
+          "kimlik": null,
+          "rota": "/asistan"
+        },
+        "geriAlinabilir": false,
+        "mesaj": null
+      }
+    ],
+    "soru": null
+  }
+}

@@ -52,6 +52,9 @@ abstract final class SonucDurumu {
   static const izinYok = 'izinYok';
   static const hata = 'hata';
   static const gecersiz = 'gecersiz';
+
+  /// Shared content (`kaynak: paylas`) that is not a note goes to the approval queue instead of being applied (sözleşme E7).
+  static const onayda = 'onayda';
 }
 
 /// `AsistanSonucuDto.tur` of a capture; its "Geri al" deletes the capture ([AsistanSonucu.hedefKimlik] is its id).
@@ -84,6 +87,24 @@ class AsistanSonucu {
   final String? mesaj;
 
   bool get uygulandi => durum == SonucDurumu.uygulandi;
+
+  /// Waits for the person's approval ([eylemId] is the action to approve).
+  bool get onayda => durum == SonucDurumu.onayda;
+
+  /// Could not be done: not allowed, failed or refused. Waiting for approval is not a problem.
+  bool get sorunlu => !uygulandi && !onayda;
+
+  AsistanSonucu kopya({String? durum, String? mesaj}) => AsistanSonucu(
+        tur: tur,
+        baslik: baslik,
+        ozet: ozet,
+        durum: durum ?? this.durum,
+        eylemId: eylemId,
+        hedefKimlik: hedefKimlik,
+        hedefRota: hedefRota,
+        geriAlinabilir: geriAlinabilir,
+        mesaj: mesaj ?? this.mesaj,
+      );
 
   AsistanSonucu geriAlindi() => AsistanSonucu(
         tur: tur,

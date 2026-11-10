@@ -1,0 +1,18 @@
+{
+  "turetilmis": "AsistanGirdiApiTests.Soru_WhenClaudeIsNotSure (sunucu testinden)",
+  "durum": 200,
+  "govde": {
+    "girdiId": "019e3000-0000-7000-8000-0000000000b1",
+    "mesajId": "019e3000-0000-7000-8000-0000000000b3",
+    "sonuclar": [],
+    "soru": {
+      "id": "019e3000-0000-7000-8000-0000000003a1",
+      "metin": "Bu bir hatırlatıcı mı, plan mı?",
+      "secenekler": [
+        "Hatırlatıcı",
+        "Plan",
+        "Not"
+      ]
+    }
+  }
+}

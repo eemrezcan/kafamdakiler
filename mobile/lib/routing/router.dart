@@ -81,6 +81,15 @@ import '../ui/yakalama/yakala_view_model.dart';
 import '../ui/yonetim/yonetim_screen.dart';
 import '../ui/yonetim/yonetim_view_model.dart';
 
+/// "2026-11-11" as a date-only UTC value; null when it is not a real date.
+DateTime? gunMetnindenTarih(String? metin) {
+  if (metin == null || !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(metin)) return null;
+  final g = DateTime.tryParse(metin);
+  if (g == null) return null;
+  final utc = DateTime.utc(g.year, g.month, g.day);
+  return utc.toIso8601String().startsWith(metin) ? utc : null;
+}
+
 abstract final class Rotalar {
   // The five bottom tabs, in the order they are shown: Bugün · Takvim · Asistan · Alışkanlıklar · Beyin (K-0024).
   static const bugun = '/';
@@ -225,7 +234,13 @@ GoRouter routerOlustur(
             GoRoute(
               path: Rotalar.takvim,
               builder: (context, state) => ChangeNotifierProvider(
-                create: (c) => TakvimViewModel(repo: c.read<GunRepository>(), esitleyici: c.read<Esitleyici>())..yukle(),
+                // A new day in the address (`?gun=`) makes a new view model, so the tab opens on that day.
+                key: ValueKey(state.uri.queryParameters['gun']),
+                create: (c) => TakvimViewModel(
+                  repo: c.read<GunRepository>(),
+                  esitleyici: c.read<Esitleyici>(),
+                  baslangicGunu: gunMetnindenTarih(state.uri.queryParameters['gun']),
+                )..yukle(),
                 child: Builder(
                   builder: (context) => TakvimScreen(
                     viewModel: context.read<TakvimViewModel>(),
@@ -292,6 +307,14 @@ GoRouter routerOlustur(
       ),
       // The old tabs' addresses lead to where their content went.
       GoRoute(path: Rotalar.eskiHatirlaticilar, redirect: (_, _) => Rotalar.takvim),
+      // A day's address (a result's or a notification's `/gun/{tarih}`, sözleşme E8): the Takvim tab on that day.
+      GoRoute(
+        path: '/gun/:tarih',
+        redirect: (_, state) {
+          final tarih = state.pathParameters['tarih'];
+          return gunMetnindenTarih(tarih) == null ? Rotalar.takvim : '${Rotalar.takvim}?gun=$tarih';
+        },
+      ),
       GoRoute(path: Rotalar.eskiDahaFazla, redirect: (_, _) => Rotalar.bugun),
       GoRoute(
         path: Rotalar.bildirimler,

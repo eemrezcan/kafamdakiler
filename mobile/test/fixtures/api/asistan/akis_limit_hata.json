@@ -1,0 +1,13 @@
+{
+  "durum": 400,
+  "govde": {
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+    "title": "One or more validation errors occurred.",
+    "status": 400,
+    "errors": {
+      "limit": [
+        "Satır sayısı 1 ile 100 arasında olmalı."
+      ]
+    }
+  }
+}

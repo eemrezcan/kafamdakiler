@@ -27,9 +27,10 @@ DateTime haftaBasi(DateTime gun) => DateTime.utc(gun.year, gun.month, gun.day - 
 /// The Takvim tab (K-0024): a week strip or a month grid with a dot per kind of thing on each day, the list of the chosen
 /// day (the same day view as Bugün, [gun]) and what comes up in the next days.
 class TakvimViewModel extends ChangeNotifier {
-  TakvimViewModel({required this._repo, required Esitleyici esitleyici})
-      : gun = GunViewModel(repo: _repo, esitleyici: esitleyici),
-        _secili = _repo.bugun {
+  /// [baslangicGunu]: the day the tab opens on (a result's `/gun/{tarih}` address); today when none is given.
+  TakvimViewModel({required this._repo, required Esitleyici esitleyici, DateTime? baslangicGunu})
+      : gun = GunViewModel(repo: _repo, esitleyici: esitleyici, tarih: baslangicGunu),
+        _secili = baslangicGunu ?? _repo.bugun {
     _repo.addListener(_araligiTazele);
   }
 

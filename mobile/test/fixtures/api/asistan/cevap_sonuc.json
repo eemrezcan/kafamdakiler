@@ -1,0 +1,24 @@
+{
+  "turetilmis": "AsistanGirdiApiTests.Soru_WhenClaudeIsNotSure, cevap",
+  "durum": 200,
+  "govde": {
+    "girdiId": "019e3000-0000-7000-8000-0000000000b1",
+    "mesajId": "019e3000-0000-7000-8000-0000000000b4",
+    "sonuclar": [
+      {
+        "tur": "hatirlatici-kur",
+        "baslik": "Ali'yi ara",
+        "ozet": "yarın 09:00 · 🔔",
+        "durum": "uygulandi",
+        "eylemId": "019e3000-0000-7000-8000-000000000101",
+        "hedef": {
+          "kimlik": "h:019e3000-0000-7000-8000-0000000002a1",
+          "rota": "/gun/2026-11-11"
+        },
+        "geriAlinabilir": true,
+        "mesaj": null
+      }
+    ],
+    "soru": null
+  }
+}
