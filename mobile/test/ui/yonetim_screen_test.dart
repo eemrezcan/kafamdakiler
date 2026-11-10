@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/models/yakalama.dart';
 import 'package:kafamdakiler/data/models/yonetim.dart';
-import 'package:kafamdakiler/data/models/zaman_cizelgesi.dart';
-import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
-import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
-import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
-import 'package:kafamdakiler/ui/profil/daha_fazla_screen.dart';
-import 'package:kafamdakiler/ui/profil/daha_fazla_view_model.dart';
 import 'package:kafamdakiler/ui/yonetim/izin_gruplari.dart';
 import 'package:kafamdakiler/ui/yonetim/yonetim_screen.dart';
 import 'package:kafamdakiler/ui/yonetim/yonetim_view_model.dart';
-import 'package:provider/provider.dart';
 
 import '../test_destek.dart';
 
@@ -427,56 +419,6 @@ void main() {
 
       expect(find.textContaining('Çevrimdışısın'), findsOneWidget);
       expect(find.byType(AlertDialog), findsOneWidget);
-    });
-  });
-
-  group('entry from Daha fazla', () {
-    Future<void> dahaFazla(WidgetTester tester, {required String rol}) async {
-      // Tall: the list builds only what is on screen.
-      tester.view.physicalSize = const Size(375, 1400);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final kullanici = KullaniciRepository(api: ortam.api, db: ortam.db);
-      ortam.api.ben_ = Ben(id: 'u', email: 'x@y.z', roller: [rol]);
-      await tester.runAsync(kullanici.yukle);
-      final vm = DahaFazlaViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
-      await tester.runAsync(vm.yukle);
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: kullanici),
-            // The briefing notification rows (K2.7).
-            Provider<BrifingRepository>.value(value: ortam.brifing),
-            Provider<HatirlaticiBildirimYoneticisi>.value(
-              value: HatirlaticiBildirimYoneticisi(
-                repo: ortam.hatirlaticilar,
-                esitleyici: ortam.esitleyici,
-                servis: SahteBildirimServisi(),
-                yazabilir: () => true,
-              ),
-            ),
-          ],
-          child: MaterialApp(home: DahaFazlaScreen(viewModel: vm)),
-        ),
-      );
-      await tester.pump();
-    }
-
-    testWidgets('the Sahip sees "Yönetim"', (tester) async {
-      await dahaFazla(tester, rol: 'Sahip');
-      expect(find.text('Yönetim'), findsOneWidget);
-    });
-
-    testWidgets('the Asistan does not', (tester) async {
-      await dahaFazla(tester, rol: 'Asistan');
-      expect(find.text('Yönetim'), findsNothing);
-    });
-
-    testWidgets('both roles can change their own password from here', (tester) async {
-      await dahaFazla(tester, rol: 'Sahip');
-      expect(find.text('Şifremi değiştir'), findsOneWidget);
-      await dahaFazla(tester, rol: 'Asistan');
-      expect(find.text('Şifremi değiştir'), findsOneWidget);
     });
   });
 }

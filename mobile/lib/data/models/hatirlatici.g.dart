@@ -26,6 +26,9 @@ Hatirlatici _$HatirlaticiFromJson(Map<String, dynamic> json) => Hatirlatici(
   israrAraligiDakika: (json['israrAraligiDakika'] as num?)?.toInt() ?? 15,
   israrEnCok: (json['israrEnCok'] as num?)?.toInt() ?? 3,
   acil: json['acil'] as bool? ?? false,
+  gunler: (json['gunler'] as List<dynamic>?)
+      ?.map((e) => $enumDecode(_$HaftaGunuEnumMap, e))
+      .toList(),
 );
 
 Map<String, dynamic> _$HatirlaticiToJson(Hatirlatici instance) =>
@@ -47,6 +50,7 @@ Map<String, dynamic> _$HatirlaticiToJson(Hatirlatici instance) =>
       'israrAraligiDakika': instance.israrAraligiDakika,
       'israrEnCok': instance.israrEnCok,
       'acil': instance.acil,
+      'gunler': instance.gunler?.map((e) => _$HaftaGunuEnumMap[e]!).toList(),
     };
 
 const _$HatirlaticiTuruEnumMap = {
@@ -67,6 +71,16 @@ const _$HatirlaticiDurumuEnumMap = {
   HatirlaticiDurumu.acik: 'acik',
   HatirlaticiDurumu.tamam: 'tamam',
   HatirlaticiDurumu.arsiv: 'arsiv',
+};
+
+const _$HaftaGunuEnumMap = {
+  HaftaGunu.pzt: 'pzt',
+  HaftaGunu.sal: 'sal',
+  HaftaGunu.car: 'car',
+  HaftaGunu.per: 'per',
+  HaftaGunu.cum: 'cum',
+  HaftaGunu.cmt: 'cmt',
+  HaftaGunu.paz: 'paz',
 };
 
 HatirlaticiYaz _$HatirlaticiYazFromJson(Map<String, dynamic> json) =>
@@ -90,6 +104,9 @@ HatirlaticiYaz _$HatirlaticiYazFromJson(Map<String, dynamic> json) =>
       israrAraligiDakika: (json['israrAraligiDakika'] as num?)?.toInt() ?? 15,
       israrEnCok: (json['israrEnCok'] as num?)?.toInt() ?? 3,
       acil: json['acil'] as bool? ?? false,
+      gunler: (json['gunler'] as List<dynamic>?)
+          ?.map((e) => $enumDecode(_$HaftaGunuEnumMap, e))
+          .toList(),
     );
 
 Map<String, dynamic> _$HatirlaticiYazToJson(HatirlaticiYaz instance) =>
@@ -108,4 +125,5 @@ Map<String, dynamic> _$HatirlaticiYazToJson(HatirlaticiYaz instance) =>
       'israrAraligiDakika': instance.israrAraligiDakika,
       'israrEnCok': instance.israrEnCok,
       'acil': instance.acil,
+      'gunler': ?instance.gunler?.map((e) => _$HaftaGunuEnumMap[e]!).toList(),
     };

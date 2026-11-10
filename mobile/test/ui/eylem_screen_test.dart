@@ -7,8 +7,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/eylem.dart';
 import 'package:kafamdakiler/data/repositories/kullanici_repository.dart';
-import 'package:kafamdakiler/ui/bugun/onay_bekleyen_karti.dart';
-import 'package:kafamdakiler/ui/bugun/onay_bekleyen_view_model.dart';
 import 'package:kafamdakiler/ui/eylemler/eylem_detay_screen.dart';
 import 'package:kafamdakiler/ui/eylemler/eylem_detay_view_model.dart';
 import 'package:kafamdakiler/ui/eylemler/eylem_liste_screen.dart';
@@ -300,53 +298,6 @@ void main() {
       await detayGoster(tester, 'yok');
 
       expect(find.textContaining('Eylem bulunamadı'), findsOneWidget);
-    });
-  });
-
-  group('"Onay bekleyen" card of the Today tab', () {
-    Future<OnayBekleyenViewModel> kartGoster(WidgetTester tester) async {
-      ekran(tester);
-      final vm = OnayBekleyenViewModel(repo: ortam.eylemler, esitleyici: ortam.esitleyici);
-      addTearDown(vm.dispose);
-      await tester.runAsync(vm.yukle);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: OnayBekleyenKarti(viewModel: vm))));
-      await tester.pump();
-      return vm;
-    }
-
-    testWidgets('shows how many wait', (tester) async {
-      ortam.api.eylemler = [ornekEylem(id: 'a'), ornekEylem(id: 'b'), ornekEylem(id: 'u', durum: EylemDurumu.uygulandi)];
-
-      await kartGoster(tester);
-
-      expect(find.text('Onay bekleyen 2'), findsOneWidget);
-    });
-
-    testWidgets('is not there when nothing waits', (tester) async {
-      ortam.api.eylemler = [ornekEylem(id: 'u', durum: EylemDurumu.uygulandi)];
-
-      await kartGoster(tester);
-
-      expect(find.textContaining('Onay bekleyen'), findsNothing);
-    });
-
-    testWidgets('is not there when the read is refused (no permission)', (tester) async {
-      ortam.api.sunucuHatasi = 403;
-
-      await kartGoster(tester);
-
-      expect(find.textContaining('Onay bekleyen'), findsNothing);
-    });
-
-    testWidgets('follows a decision made on the phone', (tester) async {
-      ortam.api.eylemler = [ornekEylem(id: 'a'), ornekEylem(id: 'b')];
-      await kartGoster(tester);
-      expect(find.text('Onay bekleyen 2'), findsOneWidget);
-
-      await tester.runAsync(() => ortam.eylemler.reddet('a'));
-      await gercekZaman(tester);
-
-      expect(find.text('Onay bekleyen 1'), findsOneWidget);
     });
   });
 

@@ -97,7 +97,7 @@ class AliskanlikDetayScreen extends StatelessWidget {
                       dugme: 'Tekrar dene',
                       onPressed: viewModel.yukle,
                     ))
-              : OrtaGenislik(child: _Icerik(aliskanlik: a, gunler: viewModel.gunler)),
+              : OrtaGenislik(child: _Icerik(aliskanlik: a, gunler: viewModel.gunler, oturumlar: viewModel.oturumlar)),
         );
       },
     );
@@ -105,10 +105,11 @@ class AliskanlikDetayScreen extends StatelessWidget {
 }
 
 class _Icerik extends StatelessWidget {
-  const _Icerik({required this.aliskanlik, required this.gunler});
+  const _Icerik({required this.aliskanlik, required this.gunler, required this.oturumlar});
 
   final Aliskanlik aliskanlik;
   final List<Gun>? gunler;
+  final List<OturumSatiri> oturumlar;
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +163,24 @@ class _Icerik extends StatelessWidget {
           )
         else
           _GunIzgarasi(gunler: gunler!, birim: a.birim, renk: renk, ilkGun: aliskanlikGunu(a.olusturulma)),
+        if (oturumlar.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text('Son oturumlar', style: tema.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Card(
+            key: const ValueKey('detay-oturumlar'),
+            child: Column(
+              children: [
+                for (final o in oturumlar)
+                  ListTile(
+                    minTileHeight: 56,
+                    title: Text('${o.ogeAd} · ${sayiMetni(o.oturum.baslangicKonum)} → ${sayiMetni(o.oturum.bitisKonum)}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text('${DateFormat('d MMMM', 'tr').format(o.oturum.tarih)}${o.oturum.dakika == null ? '' : ' · ${o.oturum.dakika} dk'}'),
+                  ),
+              ],
+            ),
+          ),
+        ],
         if (a.tur == AliskanlikTuru.raf) ...[
           const SizedBox(height: 24),
           OutlinedButton.icon(

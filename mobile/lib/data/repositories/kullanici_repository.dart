@@ -33,6 +33,12 @@ class KullaniciRepository extends ChangeNotifier {
 
   static const islerIzni = 'isler.oku';
 
+  /// The assistant (the feed and its one input) is used with the `asistan.kullan` permission; the Sahip always may. What each
+  /// thing it does needs is checked again by its own permission on the server.
+  bool get asistanKullanabilir => sahip || (_ben?.izinler.contains(asistanIzni) ?? false);
+
+  static const asistanIzni = 'asistan.kullan';
+
   /// Reads the cached answer (no network): called at app start.
   Future<void> baslat() async {
     final satir = await (_db.select(_db.kullaniciOnbellek)..where((t) => t.id.equals(1))).getSingleOrNull();

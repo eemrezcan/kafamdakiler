@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kafamdakiler/data/models/ben.dart';
 import 'package:kafamdakiler/data/models/beyin.dart';
-import 'package:kafamdakiler/data/models/brifing.dart';
+import 'package:kafamdakiler/data/models/asistan.dart';
+import 'package:kafamdakiler/data/models/gun_gorunum.dart';
 import 'package:kafamdakiler/data/repositories/aliskanlik_repository.dart';
+import 'package:kafamdakiler/data/repositories/asistan_repository.dart';
 import 'package:kafamdakiler/data/repositories/auth_repository.dart';
 import 'package:kafamdakiler/data/repositories/beyin_repository.dart';
 import 'package:kafamdakiler/data/repositories/bildirim_izni.dart';
+import 'package:kafamdakiler/data/repositories/bildirim_repository.dart';
 import 'package:kafamdakiler/data/repositories/brifing_repository.dart';
-import 'package:kafamdakiler/data/repositories/zaman_cizelgesi_repository.dart';
 import 'package:kafamdakiler/data/repositories/esitleyici.dart';
 import 'package:kafamdakiler/data/repositories/gun_plani_repository.dart';
+import 'package:kafamdakiler/data/repositories/gun_repository.dart';
 import 'package:kafamdakiler/data/repositories/eylem_repository.dart';
 import 'package:kafamdakiler/data/repositories/gelen_repository.dart';
 import 'package:kafamdakiler/data/repositories/hatirlatici_bildirim_yoneticisi.dart';
@@ -41,8 +45,8 @@ class _SahteDepo implements TokenDepo {
   Future<void> temizle() async {}
 }
 
-/// The real router and the real shell with in-memory data: the five tabs, the Yakala button, the search page, the briefing
-/// strip on Bugün, the Daha fazla screen and the pages above them.
+/// The real router and the real shell with in-memory data (K-0024): the five tabs, the bell and the profile sheet in their top
+/// bar, the doors of the Asistan and Beyin tabs and the pages above them.
 void main() {
   late TestOrtami ortam;
   late AuthRepository auth;
@@ -126,9 +130,11 @@ void main() {
             ),
           ),
           Provider<BrifingRepository>.value(value: ortam.brifing),
-          Provider<ZamanCizelgesiRepository>.value(value: ortam.zamanCizelgesi),
           Provider<BeyinRepository>.value(value: ortam.beyin),
           ChangeNotifierProvider<GunPlaniRepository>.value(value: ortam.gunPlani),
+          ChangeNotifierProvider<GunRepository>.value(value: ortam.gun),
+          ChangeNotifierProvider<BildirimRepository>.value(value: ortam.bildirimMerkezi),
+          ChangeNotifierProvider<AsistanRepository>.value(value: ortam.asistan),
           Provider<KronometreRepository>.value(value: KronometreRepository(db: ortam.db)),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -144,13 +150,16 @@ void main() {
 
   int secili(WidgetTester tester) => tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
 
-  const sekmeAdlari = ['Bugün', 'Alışkanlıklar', 'Gelen', 'Hatırlatıcılar', 'Daha fazla'];
+  const sekmeAdlari = ['Bugün', 'Takvim', 'Asistan', 'Alışkanlıklar', 'Beyin'];
 
-  testWidgets('five tabs in the agreed order; search and the project list are not among them', (tester) async {
+  testWidgets('five tabs in the agreed order; the Asistan is the round button in the middle', (tester) async {
     await uygulamayiAc(tester);
 
     final etiketler = tester.widgetList<NavigationDestination>(find.byType(NavigationDestination)).map((d) => d.label).toList();
     expect(etiketler, sekmeAdlari);
+    final orta = tester.widget<NavigationDestination>(find.byType(NavigationDestination).at(2));
+    expect(orta.icon, isNot(isA<Icon>()), reason: 'a round button, not a plain icon');
+    expect(tester.getSize(find.descendant(of: find.byType(NavigationBar), matching: find.byIcon(LucideIcons.sparkles)).first).width, lessThan(48));
   });
 
   testWidgets('at 360 dp the five labels fit and no tab overflows', (tester) async {
@@ -175,217 +184,230 @@ void main() {
 
   testWidgets('back on another tab goes to Bugün first', (tester) async {
     await uygulamayiAc(tester);
-    await sekme(tester, 'Daha fazla');
+    await sekme(tester, 'Beyin');
     expect(secili(tester), 4);
 
     await tester.binding.handlePopRoute();
     await bekle(tester);
 
     expect(secili(tester), 0);
-    expect(find.text('Gün planı'), findsOneWidget);
+    expect(find.text('BUGÜN'), findsNothing);
+    expect(find.byKey(const ValueKey('gun-bos')), findsOneWidget);
   });
 
-  testWidgets('the addresses of the tabs open the tab', (tester) async {
+  testWidgets('the addresses of the tabs open the tab; the old tabs\' addresses lead to where their content went', (tester) async {
     await uygulamayiAc(tester);
 
-    for (final (yol, sira) in [('/gelen', 2), ('/hatirlaticilar', 3), ('/daha-fazla', 4), ('/aliskanliklar', 1), ('/', 0)]) {
+    for (final (yol, sira) in [('/takvim', 1), ('/asistan', 2), ('/beyin', 4), ('/aliskanliklar', 1 + 2), ('/', 0)]) {
       router.go(yol);
       await bekle(tester);
       expect(secili(tester), sira, reason: yol);
     }
+    router.go('/hatirlaticilar');
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/takvim', reason: 'reminders live on the calendar now');
+    router.go('/daha-fazla');
+    await bekle(tester);
+    expect(router.state.matchedLocation, '/', reason: 'the profile is a sheet, so the address leads to Bugün');
   });
 
-  testWidgets('Bugün shows the brain plan and today\'s habit cards together', (tester) async {
+  testWidgets('Bugün shows the summary, the load and the rows of the day view', (tester) async {
+    ortam.api.gunGorunumleri['2026-10-31'] = ornekGun(
+      ozet: 'Bugün 2 iş var; ilki 14:00\'te.',
+      ogeler: [
+        ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'E-kampüsü kontrol et', saat: '14:00', tahminDk: 15),
+        ornekYapilacak(kimlik: 'm:cc22dd', baslik: 'Vize slaytlarını oku', tahminDk: 120),
+      ],
+    );
     await uygulamayiAc(tester);
 
-    expect(find.text('Gün planı'), findsOneWidget);
-    expect(find.text('Su iç'), findsOneWidget);
+    expect(find.text('Bugün 2 iş var; ilki 14:00\'te.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('gun-yuku')), findsOneWidget);
+    expect(find.text('E-kampüsü kontrol et'), findsOneWidget);
+    expect(find.text('Vize slaytlarını oku'), findsOneWidget);
+    expect(find.text('Su iç'), findsOneWidget, reason: 'today\'s habit on the strip');
   });
 
-  testWidgets('the Yakala button stays on every tab and opens the capture screen', (tester) async {
+  testWidgets('Takvim opens on today and shows its list', (tester) async {
+    ortam.api.gunGorunumleri['2026-10-31'] = ornekGun(ogeler: [ornekYapilacak(kimlik: 'm:aa11bb', baslik: 'Takvimdeki iş', saat: '10:00')]);
     await uygulamayiAc(tester);
 
-    for (final ad in sekmeAdlari) {
-      await sekme(tester, ad);
-      expect(find.text('Yakala'), findsOneWidget, reason: 'on the $ad tab');
-    }
+    await sekme(tester, 'Takvim');
 
-    await tester.tap(find.text('Yakala'));
-    await bekle(tester);
-    expect(find.text('Aklında ne var?'), findsOneWidget);
-    expect(find.text('Proje (isteğe bağlı)'), findsOneWidget);
+    expect(find.text('Takvimdeki iş'), findsOneWidget);
+    expect(find.byKey(const ValueKey('takvim-gorunum')), findsOneWidget);
   });
 
-  testWidgets('the Asistan role has no Yakala button on the tabs', (tester) async {
-    await uygulamayiAc(tester, rol: 'Asistan');
-
-    for (final ad in sekmeAdlari) {
-      await sekme(tester, ad);
-      expect(find.text('Yakala'), findsNothing, reason: 'on the $ad tab');
-    }
-  });
-
-  testWidgets('Projeler is the first row of Daha fazla: list -> detail -> back to the list', (tester) async {
-    await uygulamayiAc(tester);
-    await sekme(tester, 'Daha fazla');
-    await tester.tap(find.text('Projeler'));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/projeler');
-    expect(find.byType(NavigationBar), findsNothing, reason: 'a page above the tabs');
-    expect(find.text('Kitap Kulübü Sitesi'), findsOneWidget);
-
-    await tester.tap(find.text('Kitap Kulübü Sitesi'));
-    await bekle(tester);
-    expect(find.text('Okuma listesi bitti.'), findsOneWidget);
-    expect(find.text('Takvim sayfası.'), findsOneWidget);
-
-    router.pop();
-    await bekle(tester);
-    expect(find.text('Balkon Bahçesi Sulama'), findsOneWidget);
-  });
-
-  group('search', () {
-    testWidgets('the magnifier is in the top bar of Bugün, Gelen and Hatırlatıcılar, and not on Alışkanlıklar or Daha fazla', (tester) async {
+  group('the top bar', () {
+    testWidgets('every tab has the bell and the profile button; search is in the top bar of none (it is on the Beyin tab itself)', (tester) async {
       await uygulamayiAc(tester);
 
-      for (final ad in ['Bugün', 'Gelen', 'Hatırlatıcılar']) {
+      for (final ad in sekmeAdlari) {
         await sekme(tester, ad);
-        expect(find.byTooltip('Ara'), findsOneWidget, reason: 'on the $ad tab');
-      }
-      for (final ad in ['Alışkanlıklar', 'Daha fazla']) {
-        await sekme(tester, ad);
-        expect(find.byTooltip('Ara'), findsNothing, reason: 'on the $ad tab');
+        expect(find.byTooltip('Bildirimler'), findsOneWidget, reason: ad);
+        expect(find.byTooltip('Profil'), findsOneWidget, reason: ad);
+        expect(find.descendant(of: find.byType(AppBar), matching: find.byTooltip('Ara')), findsNothing, reason: ad);
       }
     });
 
-    testWidgets('the magnifier opens a full-screen page: query -> hit -> the note rendered -> back keeps the results', (tester) async {
+    testWidgets('the bell shows how many notifications are unread and opens the notification page', (tester) async {
+      ortam.api.okunmamisBildirim = 3;
       await uygulamayiAc(tester);
-      await sekme(tester, 'Gelen');
 
-      await tester.tap(find.byTooltip('Ara'));
-      await bekle(tester);
-      expect(router.state.matchedLocation, '/ara');
-      expect(find.byType(NavigationBar), findsNothing, reason: 'search is a page above the tabs, not a tab');
+      expect(find.text('3'), findsOneWidget);
+      expect(find.byTooltip('Bildirimler, 3 okunmamış'), findsOneWidget);
 
-      await tester.enterText(find.byType(TextField), 'takvim');
-      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.tap(find.byTooltip('Bildirimler, 3 okunmamış'));
       await bekle(tester);
-      expect(find.text('Takvim için kütüphane'), findsOneWidget);
+      expect(router.state.matchedLocation, '/bildirimler');
+      expect(find.byType(NavigationBar), findsNothing, reason: 'a page above the tabs');
+    });
 
-      await tester.tap(find.text('Takvim için kütüphane'));
-      await bekle(tester);
-      expect(find.textContaining('Hazır bir', findRichText: true), findsOneWidget);
-      expect(find.textContaining('**', findRichText: true), findsNothing);
+    testWidgets('no unread: no badge', (tester) async {
+      await uygulamayiAc(tester);
+      expect(find.byTooltip('Bildirimler'), findsOneWidget);
+      final zil = find.descendant(of: find.byTooltip('Bildirimler'), matching: find.byType(Badge));
+      expect(zil, findsOneWidget);
+      expect(tester.widget<Badge>(zil).isLabelVisible, isFalse);
+    });
 
-      router.pop();
-      await bekle(tester);
-      expect(find.text('Takvim için kütüphane'), findsOneWidget);
-      expect(find.text('Hazır bileşen.'), findsOneWidget);
+    testWidgets('a big number is shown as 99+', (tester) async {
+      ortam.api.okunmamisBildirim = 120;
+      await uygulamayiAc(tester);
 
-      // Back from the search page returns to the tab it was opened from.
-      router.pop();
-      await bekle(tester);
-      expect(secili(tester), 2, reason: 'Gelen');
+      expect(find.text('99+'), findsOneWidget);
     });
   });
 
-  testWidgets('the Yakalamalar page is gone: its address matches no route, and the Gelen tab shows the waiting captures', (tester) async {
-    // Offline, so the capture stays on the phone instead of being sent at once.
-    ortam.api.cevrimdisi = true;
-    await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'yoldaki yakalama'));
-    await uygulamayiAc(tester);
-
-    final yollar = router.configuration.routes.whereType<GoRoute>().map((r) => r.path);
-    expect(yollar, isNot(contains('/yakalamalar')));
-    // The edit route stays: a row of "Gönderiliyor" opens it.
-    expect(router.configuration.routes.whereType<GoRoute>().map((r) => r.path), contains('/yakalama/:id/duzenle'));
-
-    await sekme(tester, 'Gelen');
-    expect(find.text('GÖNDERİLİYOR  1'), findsOneWidget);
-    expect(find.text('yoldaki yakalama'), findsOneWidget);
-  });
-
-  testWidgets('Alışkanlıklar is a tab of its own: the list shows there, and the address opens the tab', (tester) async {
-    await uygulamayiAc(tester);
-    await sekme(tester, 'Alışkanlıklar');
-    expect(secili(tester), 1);
-    expect(find.text('Su iç'), findsOneWidget, reason: 'the habit list');
-
-    // The address works on its own too (an old link, a redirect).
-    router.go('/');
-    await bekle(tester);
-    router.go('/aliskanliklar');
-    await bekle(tester);
-    expect(secili(tester), 1);
-    expect(find.text('Su iç'), findsOneWidget);
-  });
-
-  testWidgets('Daha fazla has the account, Yönetim, the password and sign-out, and no tab entries', (tester) async {
-    await uygulamayiAc(tester);
-    tester.view.physicalSize = const Size(400, 1600);
-    await sekme(tester, 'Daha fazla');
-
-    for (final metin in ['x@y.z', 'Projeler', 'Yönetim', 'Şifremi değiştir', 'Çıkış yap', 'Sabah bildirimi']) {
-      expect(find.text(metin), findsOneWidget, reason: metin);
+  group('the profile sheet', () {
+    /// Real time for drift, a frame, and the sheet's slide-in.
+    Future<void> yerles(WidgetTester tester, [int ms = 150]) async {
+      await bekle(tester, ms);
+      await tester.pumpAndSettle();
     }
-    for (final metin in ['Onay kuyruğu', 'Gelen kutusu', 'Sabah brifingi', 'Yakalamalar']) {
-      expect(find.text(metin), findsNothing, reason: '$metin is not a row here');
+
+    Future<void> profilAc(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Profil'));
+      await yerles(tester);
     }
-    // "Hatırlatıcılar" and "Alışkanlıklar" are tab labels only, not rows.
-    expect(find.text('Hatırlatıcılar'), findsOneWidget);
-    expect(find.text('Alışkanlıklar'), findsOneWidget);
-    // Projeler is the first of the page rows.
-    expect(tester.getTopLeft(find.text('Projeler')).dy, lessThan(tester.getTopLeft(find.text('Yönetim')).dy));
 
-    await tester.tap(find.text('Yönetim'));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/yonetim');
-    expect(find.byType(NavigationBar), findsNothing, reason: 'a page above the tabs');
+    testWidgets('the account and the rows, in the order of the mock-up', (tester) async {
+      await uygulamayiAc(tester);
+      await profilAc(tester);
+
+      expect(find.text('x@y.z'), findsOneWidget);
+      final siralar = [for (final k in ['profil-yonetim', 'profil-kapasite', 'profil-bildirim', 'profil-sifre', 'profil-kuyruk', 'profil-cikis']) tester.getTopLeft(find.byKey(ValueKey(k))).dy];
+      expect(siralar, orderedEquals([...siralar]..sort()));
+      expect(find.text('0 bekleyen'), findsOneWidget);
+    });
+
+    testWidgets('the Asistan account has no management and no capacity row, but the password, the queue and sign-out', (tester) async {
+      await uygulamayiAc(tester, rol: 'Asistan');
+      await profilAc(tester);
+
+      expect(find.byKey(const ValueKey('profil-yonetim')), findsNothing);
+      expect(find.byKey(const ValueKey('profil-kapasite')), findsNothing);
+      expect(find.byKey(const ValueKey('profil-sifre')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profil-kuyruk')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profil-cikis')), findsOneWidget);
+      expect(find.text('Asistan hesabı'), findsOneWidget);
+    });
+
+    testWidgets('"Asistan izinleri ve yönetim" closes the sheet and opens the management page; back returns to the tab', (tester) async {
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Takvim');
+      await profilAc(tester);
+
+      await tester.tap(find.byKey(const ValueKey('profil-yonetim')));
+      await yerles(tester);
+
+      expect(router.state.matchedLocation, '/yonetim');
+      router.pop();
+      await yerles(tester);
+      expect(secili(tester), 1);
+      expect(find.byKey(const ValueKey('profil-yonetim')), findsNothing, reason: 'the sheet closed');
+    });
+
+    testWidgets('the password row opens the password page', (tester) async {
+      await uygulamayiAc(tester, rol: 'Asistan');
+      await profilAc(tester);
+
+      await tester.tap(find.byKey(const ValueKey('profil-sifre')));
+      await yerles(tester);
+
+      expect(router.state.matchedLocation, '/sifre');
+    });
+
+    testWidgets('the capacity row sets the weekday and weekend hours; the change is queued and sent', (tester) async {
+      ortam.api.gunAyariYaniti = const GunAyari(haftaIciDk: 360, haftaSonuDk: 180);
+      await uygulamayiAc(tester);
+      await profilAc(tester);
+
+      await tester.tap(find.byKey(const ValueKey('profil-kapasite')));
+      await yerles(tester);
+      expect(find.text('6 sa'), findsOneWidget);
+      expect(find.text('3 sa'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('hafta-ici-arttir')));
+      await tester.tap(find.byKey(const ValueKey('hafta-sonu-azalt')));
+      await tester.pump();
+      expect(find.text('6 sa 30 dk'), findsOneWidget);
+      expect(find.text('2 sa 30 dk'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('kapasite-kaydet')));
+      await yerles(tester, 300);
+
+      expect(ortam.api.gunAyariYaniti.haftaIciDk, 390);
+      expect(ortam.api.gunAyariYaniti.haftaSonuDk, 150);
+    });
+
+    testWidgets('the notification settings: the permission, and the morning notification can be turned off with its hour kept', (tester) async {
+      await uygulamayiAc(tester);
+      await profilAc(tester);
+
+      await tester.tap(find.byKey(const ValueKey('profil-bildirim')));
+      await yerles(tester);
+
+      expect(find.byKey(const ValueKey('bildirim-izni-acik')), findsOneWidget);
+      expect(find.text('Brifing hazır olunca haber verir'), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const ValueKey('brifing-saat')), matching: find.text('06:30')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('brifing-bildirim')));
+      await yerles(tester);
+      expect(find.text('Kapalı'), findsOneWidget);
+      expect(find.byKey(const ValueKey('brifing-saat')), findsNothing);
+      expect((await tester.runAsync(ortam.brifing.ayar))!.acik, isFalse);
+    });
+
+    testWidgets('the sending queue lists what waits and what the server refused', (tester) async {
+      ortam.api.cevrimdisi = true;
+      await uygulamayiAc(tester);
+      await tester.runAsync(() => ortam.esitleyici.gunYaptimKuyrugaAl(DateTime.utc(2026, 10, 31), 'm:aa11bb'));
+      await tester.runAsync(() => ortam.esitleyici.dundenBirakKuyrugaAl(DateTime.utc(2026, 10, 31), 'ab12cd'));
+      await profilAc(tester);
+
+      expect(find.text('2 bekleyen'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('profil-kuyruk')));
+      await yerles(tester);
+      expect(find.text('2 kayıt gönderilmeyi bekliyor'), findsOneWidget);
+    });
+
+    testWidgets('sign-out asks first and says how many unsent entries would be lost', (tester) async {
+      ortam.api.cevrimdisi = true;
+      await uygulamayiAc(tester);
+      await tester.runAsync(() => ortam.esitleyici.gunYaptimKuyrugaAl(DateTime.utc(2026, 10, 31), 'm:aa11bb'));
+      await profilAc(tester);
+
+      await tester.tap(find.byKey(const ValueKey('profil-cikis')));
+      await yerles(tester);
+
+      expect(find.text('Çıkış yapılsın mı?'), findsOneWidget);
+      expect(find.textContaining('1 kayıt henüz gönderilmedi'), findsOneWidget);
+      expect(auth.girisYapildi, isTrue, reason: 'nothing happens until the person confirms');
+    });
   });
 
-  testWidgets('the Yaklaşanlar card on Bugün switches to the Hatırlatıcılar tab', (tester) async {
-    ortam.api.hatirlaticilar = [
-      ornekHatirlatici(id: 'h', baslik: 'Yaklaşan iş', sonrakiAn: DateTime.now().toUtc().add(const Duration(days: 2))),
-    ];
-    await uygulamayiAc(tester);
-
-    expect(find.text('Yaklaşanlar'), findsOneWidget);
-    await tester.tap(find.text('Yaklaşanlar'));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/hatirlaticilar');
-    expect(secili(tester), 3);
-    expect(find.text('Yaklaşan iş'), findsOneWidget);
-
-    await tester.binding.handlePopRoute();
-    await bekle(tester);
-    expect(secili(tester), 0, reason: 'back goes to Bugün, it does not leave the app');
-  });
-
-  testWidgets('the "Onay bekleyen" card on Bugün and on Gelen both open the approval queue; a tap on a card opens its detail', (tester) async {
-    ortam.api.eylemler = [ornekEylem(id: 'e1', ozet: 'Ali\'yi ara'), ornekEylem(id: 'e2', ozet: 'Faturayı öde')];
-    await uygulamayiAc(tester);
-
-    expect(find.text('Onay bekleyen 2'), findsOneWidget);
-    await tester.tap(find.text('Onay bekleyen 2'));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/eylemler');
-    expect(find.text('Faturayı öde'), findsOneWidget);
-
-    await tester.tap(find.text('Faturayı öde'));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/eylem/e2');
-    expect(find.text('Yük'), findsOneWidget);
-
-    router.go('/');
-    await bekle(tester);
-    await sekme(tester, 'Gelen');
-    expect(find.text('Onay bekleyen 2'), findsOneWidget);
-    await tester.tap(find.text('Onay bekleyen 2'));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/eylemler');
-  });
-
-  group('the work cards', () {
+  group('the Asistan tab', () {
     IsKarti kart(String kimlik, {String asama = 'karar', String sahip = 'kullanici'}) => IsKarti(
           kimlik: kimlik,
           baslik: 'Kart $kimlik',
@@ -396,17 +418,99 @@ void main() {
           gecisler: const ['plan', 'iptal'],
         );
 
-    testWidgets('the Asistan card on Bugün opens the board, and a card on the board opens its detail', (tester) async {
+    Future<void> menuAc(WidgetTester tester, String ad) async {
+      await tester.tap(find.byKey(const ValueKey('asistan-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(ad));
+      await bekle(tester);
+    }
+
+    testWidgets('the tab is the feed with its input; the Sahip has the menu with the inbox, the queue, the cards and "Projeye yakala"', (tester) async {
+      ortam.api.akisOgeleri = [
+        AkisOgesi(id: 'k1', zaman: DateTime.utc(2026, 10, 31, 8), tur: AkisTuru.kullanici, metin: 'yarın e-kampüse bak'),
+      ];
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Asistan');
+
+      expect(find.text('yarın e-kampüse bak'), findsOneWidget);
+      expect(find.byKey(const ValueKey('asistan-metin')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('asistan-menu')));
+      await tester.pumpAndSettle();
+      for (final ad in ['Gelen kutusu', 'Onay kuyruğu', 'İş kartları', 'Projeye yakala']) {
+        expect(find.text(ad), findsOneWidget, reason: ad);
+      }
+    });
+
+    testWidgets('the badge on the tab is the number that waits on the person', (tester) async {
+      ortam.api.asistanBekleyenSayisi = 2;
+      await uygulamayiAc(tester);
+
+      expect(find.descendant(of: find.byType(NavigationBar), matching: find.text('2')), findsOneWidget);
+    });
+
+    testWidgets('"Projeye yakala" opens the capture screen with its project picker above the tabs', (tester) async {
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Asistan');
+
+      await menuAc(tester, 'Projeye yakala');
+
+      expect(find.text('Aklında ne var?'), findsOneWidget);
+      expect(find.text('Proje (isteğe bağlı)'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('the Asistan account (no assistant permission): the feed to read, no input, no capture entry', (tester) async {
+      await uygulamayiAc(tester, rol: 'Asistan');
+      await sekme(tester, 'Asistan');
+
+      expect(find.byKey(const ValueKey('asistan-metin')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('asistan-menu')));
+      await tester.pumpAndSettle();
+      expect(find.text('Projeye yakala'), findsNothing);
+      expect(find.text('Gelen kutusu'), findsOneWidget);
+    });
+
+    testWidgets('the inbox entry shows the waiting captures and has a back button', (tester) async {
+      // Offline, so the capture stays on the phone instead of being sent at once.
+      ortam.api.cevrimdisi = true;
+      await tester.runAsync(() => ortam.yakalamalar.yakala(metin: 'yoldaki yakalama'));
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Asistan');
+
+      await menuAc(tester, 'Gelen kutusu');
+
+      expect(router.state.matchedLocation, '/gelen');
+      expect(find.text('GÖNDERİLİYOR  1'), findsOneWidget);
+      expect(find.text('yoldaki yakalama'), findsOneWidget);
+      router.pop();
+      await bekle(tester);
+      expect(secili(tester), 2);
+    });
+
+    testWidgets('the approval queue opens, and a tap on an action opens its detail', (tester) async {
+      ortam.api.eylemler = [ornekEylem(id: 'e1', ozet: 'Ali\'yi ara'), ornekEylem(id: 'e2', ozet: 'Faturayı öde')];
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Asistan');
+
+      await menuAc(tester, 'Onay kuyruğu');
+      expect(router.state.matchedLocation, '/eylemler');
+
+      await tester.tap(find.text('Faturayı öde'));
+      await bekle(tester);
+      expect(router.state.matchedLocation, '/eylem/e2');
+      expect(find.text('Yük'), findsOneWidget);
+    });
+
+    testWidgets('the work cards entry opens the board, and a card opens its detail at the address notifications carry', (tester) async {
       ortam.api.isKartlari = [kart('takvim'), kart('liste', asama: 'plan', sahip: 'vps')];
       ortam.api.isAyrintilari = {
         'takvim': IsAyrinti(kart: kart('takvim'), talep: 'Buluşma takvimi', plan: '## Adımlar\n- Ay görünümü'),
       };
       await uygulamayiAc(tester);
+      await sekme(tester, 'Asistan');
 
-      expect(find.text('Asistan'), findsOneWidget);
-      await tester.tap(find.text('Asistan'));
-      await bekle(tester);
-      expect(router.state.matchedLocation, '/asistan');
+      await menuAc(tester, 'İş kartları');
+      expect(router.state.matchedLocation, '/isler');
       expect(find.text('Sende bekleyen · 1'), findsOneWidget);
 
       await tester.tap(find.text('Kart takvim'));
@@ -415,16 +519,26 @@ void main() {
       expect(find.text('Buluşma takvimi'), findsOneWidget);
     });
 
-    testWidgets('Daha fazla has "Asistan işleri", which opens the board', (tester) async {
-      ortam.api.isKartlari = [kart('takvim')];
+    testWidgets('a deep link to a work card still opens the card (the tab is /asistan, the card /asistan/:kimlik)', (tester) async {
+      ortam.api.isAyrintilari = {
+        'takvim': IsAyrinti(kart: kart('takvim'), talep: 'Buluşma takvimi', plan: '## Adımlar'),
+      };
       await uygulamayiAc(tester);
-      await sekme(tester, 'Daha fazla');
 
-      await tester.tap(find.text('Asistan işleri'));
+      router.push('/asistan/takvim');
       await bekle(tester);
 
-      expect(router.state.matchedLocation, '/asistan');
-      expect(find.text('Kart takvim'), findsOneWidget);
+      expect(find.text('Buluşma takvimi'), findsOneWidget);
+    });
+
+    testWidgets('someone without the cards permission has no "İş kartları" in the menu', (tester) async {
+      ortam.api.isKartlari = [kart('takvim')];
+      await uygulamayiAc(tester, rol: 'Asistan');
+      await sekme(tester, 'Asistan');
+
+      await tester.tap(find.byKey(const ValueKey('asistan-menu')));
+      await tester.pumpAndSettle();
+      expect(find.text('İş kartları'), findsNothing);
     });
 
     testWidgets('the Sahip can open the new card form from its address', (tester) async {
@@ -445,138 +559,89 @@ void main() {
 
       expect(router.state.matchedLocation, '/aliskanliklar');
     });
+  });
 
-    testWidgets('someone without the permission has no Asistan card on Bugün and no entry in Daha fazla', (tester) async {
-      ortam.api.isKartlari = [kart('takvim')];
-      await uygulamayiAc(tester, rol: 'Asistan');
+  group('the Beyin tab', () {
+    testWidgets('the projects are listed on the tab itself: a row opens the project, back returns to the tab', (tester) async {
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Beyin');
+      expect(find.text('Kitap Kulübü Sitesi'), findsOneWidget);
+      expect(find.text('Balkon Bahçesi Sulama'), findsOneWidget);
 
-      expect(find.text('Asistan'), findsNothing);
-      await sekme(tester, 'Daha fazla');
-      expect(find.text('Asistan işleri'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('beyin-proje-kitap-kulubu')));
+      await bekle(tester);
+      expect(router.state.matchedLocation, '/projeler/kitap-kulubu');
+      expect(find.text('Okuma listesi bitti.'), findsOneWidget);
+      expect(find.text('Takvim sayfası.'), findsOneWidget);
+
+      router.pop();
+      await bekle(tester);
+      expect(secili(tester), 4);
+      expect(find.text('Balkon Bahçesi Sulama'), findsOneWidget);
+    });
+
+    testWidgets('search is here only: words typed -> the results page already searched -> a hit opens the note -> back keeps the results', (tester) async {
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Beyin');
+
+      await tester.enterText(find.byKey(const ValueKey('beyin-ara')), 'takvim');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await bekle(tester);
+      expect(router.state.uri.toString(), '/ara?q=takvim');
+      expect(find.byType(NavigationBar), findsNothing, reason: 'search is a page above the tabs, not a tab');
+      expect(find.text('Takvim için kütüphane'), findsOneWidget, reason: 'the words typed on the tab are searched at once');
+
+      await tester.tap(find.text('Takvim için kütüphane'));
+      await bekle(tester);
+      expect(find.textContaining('Hazır bir', findRichText: true), findsOneWidget);
+      expect(find.textContaining('**', findRichText: true), findsNothing);
+
+      router.pop();
+      await bekle(tester);
+      expect(find.text('Takvim için kütüphane'), findsOneWidget);
+      expect(find.text('Hazır bileşen.'), findsOneWidget);
+
+      // Back from the search page returns to the tab it was opened from.
+      router.pop();
+      await bekle(tester);
+      expect(secili(tester), 4, reason: 'Beyin');
+    });
+
+    testWidgets('an empty box opens the results page empty, ready to type', (tester) async {
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Beyin');
+
+      await tester.tap(find.byKey(const ValueKey('beyin-ara-git')));
+      await bekle(tester);
+
+      expect(router.state.matchedLocation, '/ara');
+    });
+
+    testWidgets('offline with no kept list: the tab says so instead of an empty list', (tester) async {
+      ortam.api.beyinCevrimdisi = true;
+      await uygulamayiAc(tester);
+      await sekme(tester, 'Beyin');
+
+      expect(find.byKey(const ValueKey('beyin-proje-kitap-kulubu')), findsNothing);
+      expect(find.text('Tekrar dene'), findsOneWidget);
     });
   });
 
-  testWidgets('with a briefing the approval count is a badge on its header, not a card of its own; it opens the queue', (tester) async {
-    ortam.api.eylemler = [ornekEylem(id: 'e1'), ornekEylem(id: 'e2')];
-    ortam.api.brifingYaniti = Brifing(
-      gun: '2026-11-08',
-      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
-      yontem: Brifing.claudeYontemi,
-      kartlar: const [BrifingKarti(sira: 0, tur: BrifingTuru.plan, baslik: 'Bugün 3 iş var', metin: 'Rapor ve iki küçük iş.')],
-    );
+  testWidgets('the Yakalamalar page is gone: its address matches no route; the edit route of a waiting capture stays', (tester) async {
     await uygulamayiAc(tester);
 
-    expect(find.text('Onay bekleyen 2'), findsOneWidget, reason: 'one entry, in the briefing header');
-    expect(find.byKey(const ValueKey('brifing-onay')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('brifing-onay')));
-    await bekle(tester);
-    expect(router.state.matchedLocation, '/eylemler');
+    final yollar = router.configuration.routes.whereType<GoRoute>().map((r) => r.path);
+    expect(yollar, isNot(contains('/yakalamalar')));
+    expect(yollar, contains('/yakalama/:id/duzenle'));
   });
 
-  testWidgets('the last row of a tab\'s list stays clear of the floating Yakala button by its height plus 16 dp', (tester) async {
-    ortam.api.aliskanliklar = [for (var i = 0; i < 14; i++) ornekAliskanlik(id: 'h$i', ad: 'Alışkanlık $i', sira: i)];
+  testWidgets('Alışkanlıklar is a tab of its own: the list shows there with the top bar', (tester) async {
     await uygulamayiAc(tester);
+
     await sekme(tester, 'Alışkanlıklar');
 
-    final liste = find.descendant(of: find.byType(Scaffold).last, matching: find.byType(ListView));
-    await tester.drag(liste.first, const Offset(0, -5000));
-    await bekle(tester);
-
-    final son = find.ancestor(of: find.text('Alışkanlık 13'), matching: find.byType(Card)).first;
-    final dugme = tester.getRect(find.byType(FloatingActionButton));
-    expect(dugme.height, 56);
-    expect(dugme.top - tester.getRect(son).bottom, greaterThanOrEqualTo(16 - 0.01));
-  });
-
-  testWidgets('with nothing waiting neither Bugün nor Gelen has the "Onay bekleyen" card', (tester) async {
-    await uygulamayiAc(tester);
-    expect(find.textContaining('Onay bekleyen'), findsNothing);
-
-    await sekme(tester, 'Gelen');
-    expect(find.textContaining('Onay bekleyen'), findsNothing);
-  });
-
-  group('the briefing strip on Bugün', () {
-    final brifing = Brifing(
-      gun: '2026-11-08',
-      uretimAni: DateTime.utc(2026, 11, 8, 3, 30),
-      yontem: Brifing.claudeYontemi,
-      kartlar: const [
-        BrifingKarti(sira: 0, tur: BrifingTuru.kalan, baslik: 'Dünden 2 iş kaldı', metin: 'Rapor ve fatura.'),
-        BrifingKarti(sira: 1, tur: BrifingTuru.hatirlatici, baslik: 'Cuma: diş randevusu', metin: 'Üç gün sonra saat 10:00.'),
-      ],
-    );
-
-    testWidgets('the Sahip sees it above the plan, without the leftovers card; the writing box waits for the assistant', (tester) async {
-      ortam.api.brifingYaniti = brifing;
-      ortam.api.asistanBagli = false;
-      await uygulamayiAc(tester);
-
-      expect(find.text('Sabah brifingi'), findsOneWidget);
-      expect(find.text('Üç gün sonra saat 10:00.'), findsOneWidget, reason: 'closed: one line of the first card');
-      expect(find.text('Cuma: diş randevusu'), findsNothing, reason: 'closed: the cards are not drawn');
-      await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
-      await bekle(tester);
-      expect(find.text('Cuma: diş randevusu'), findsOneWidget);
-      expect(find.text('Dünden 2 iş kaldı'), findsNothing);
-      expect(find.byKey(const ValueKey('brifing-metin')), findsNothing, reason: 'the assistant is not connected');
-      expect(tester.getTopLeft(find.text('Su iç')).dy, lessThan(tester.getTopLeft(find.text('Sabah brifingi')).dy), reason: 'habits first');
-      expect(tester.getTopLeft(find.text('Sabah brifingi')).dy, lessThan(tester.getTopLeft(find.text('Gün planı')).dy));
-    });
-
-    testWidgets('with the assistant connected the writing box is in the strip', (tester) async {
-      ortam.api.brifingYaniti = brifing;
-      ortam.api.asistanBagli = true;
-      await uygulamayiAc(tester);
-
-      expect(find.byKey(const ValueKey('brifing-metin')), findsNothing, reason: 'closed');
-      await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
-      await bekle(tester);
-      expect(find.byKey(const ValueKey('brifing-metin')), findsOneWidget);
-    });
-
-    testWidgets('a card opens the reminders tab; there is no separate briefing page', (tester) async {
-      ortam.api.brifingYaniti = brifing;
-      await uygulamayiAc(tester);
-
-      await tester.tap(find.byKey(const ValueKey('brifing-baslik')));
-      await bekle(tester);
-      await tester.tap(find.text('Cuma: diş randevusu'));
-      await bekle(tester);
-      expect(secili(tester), 3);
-    });
-
-    testWidgets('someone without the briefing permission has no strip and Bugün never asks for the briefing', (tester) async {
-      ortam.api.brifingYaniti = brifing;
-      await uygulamayiAc(tester, rol: 'Asistan');
-
-      expect(find.text('Sabah brifingi'), findsNothing);
-      expect(ortam.api.cagrilar, isNot(contains('brifingBugun')));
-    });
-  });
-
-  testWidgets('Daha fazla: the morning notification can be turned off and its hour is kept', (tester) async {
-    await uygulamayiAc(tester);
-    tester.view.physicalSize = const Size(400, 1600);
-    await sekme(tester, 'Daha fazla');
-
-    expect(find.text('Brifing hazır olunca haber verir'), findsOneWidget);
-    expect(find.descendant(of: find.byKey(const ValueKey('brifing-saat')), matching: find.text('06:30')), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('brifing-bildirim')));
-    await bekle(tester);
-    expect(find.text('Kapalı'), findsOneWidget);
-    expect(find.byKey(const ValueKey('brifing-saat')), findsNothing);
-    expect((await tester.runAsync(ortam.brifing.ayar))!.acik, isFalse);
-  });
-
-  testWidgets('Daha fazla has no briefing rows and no Yönetim for a user without the permission', (tester) async {
-    await uygulamayiAc(tester, rol: 'Asistan');
-    await sekme(tester, 'Daha fazla');
-
-    expect(find.text('Sabah bildirimi'), findsNothing);
-    expect(find.text('Yönetim'), findsNothing);
-    expect(find.text('Şifremi değiştir'), findsOneWidget);
+    expect(find.text('Su iç'), findsOneWidget);
+    expect(find.byTooltip('Profil'), findsOneWidget);
   });
 
   testWidgets('a note path with slashes and spaces survives the route', (tester) async {

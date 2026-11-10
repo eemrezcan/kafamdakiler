@@ -103,6 +103,46 @@ enum BekleyenTur {
 
   /// `DELETE /api/gelen/{hedefId}`; [hedefId] is the card name.
   gelenSil,
+
+  // The day view of the UI revision (K-0024, `/api/gun`). The queue id doubles as the `Idempotency-Key` where the server
+  // takes one; [BekleyenIslemler.tarih] is the day of the route. Appended last.
+
+  /// `POST /api/gun/{tarih}/yaptim` with `{"kimlik", "geri"}`; [hedefId] is the row's typed id (`m:`, `g:`, `h:`).
+  gunYaptim,
+
+  /// `POST /api/gun/{tarih}/ogeler` with a `YeniOgeYaz` body; [hedefId] is the queue id (the new row has no id yet).
+  gunOgeEkle,
+
+  /// `POST` or `PUT /api/gun/{tarih}/ogeler/{hedefId}/hatirlatici` with a `HatirlaticiGovde` body (`guncelle` says which).
+  ogeHatirlaticiYaz,
+
+  /// `DELETE /api/gun/{tarih}/ogeler/{hedefId}/hatirlatici`.
+  ogeHatirlaticiSil,
+
+  /// `POST /api/gun/{tarih}/dunden/{hedefId}/birak`; [tarih] is today, [hedefId] the plan item id.
+  dundenBirak,
+
+  /// `PUT /api/ayarlar/gun` with a `GunAyari` body; [hedefId] is the queue id.
+  ayarGunYaz,
+
+  /// `POST /api/gun/{tarih}/devret` with `{"kimlik"}` (sözleşme E2: one carry-over for plan items, tasks and reminders);
+  /// [hedefId] is the row's typed id. The body keeps what the next day's list needs to show the row before it is sent.
+  gunDevret,
+
+  // The assistant and the notification centre (M2). Appended last.
+
+  /// `POST /api/asistan/girdi` with an `AsistanGirdisi` body; the queue id is the input id, [hedefId] too. A photo waits as a
+  /// local path in `fotografYolu` and is uploaded first.
+  asistanGirdi,
+
+  /// `POST /api/asistan/sorular/{hedefId}/cevap` with `{"cevap"}`.
+  asistanCevap,
+
+  /// `POST /api/bildirimler/{hedefId}/okundu`.
+  bildirimOkundu,
+
+  /// `POST /api/bildirimler/okundu` (all of them).
+  bildirimHepsiOkundu,
 }
 
 /// Cache of `GET /api/yakalamalar` (`YakalamaDto` JSON, newest first), replaced as a whole.
@@ -195,16 +235,46 @@ class BrifingOnbellek extends Table {
   Set<Column> get primaryKey => {gun};
 }
 
-/// The timeline the phone read (`ZamanCizelgesiDto` JSON per day, K2.3c), so the Today tab shows the last one offline. Only the
-/// days read lately are kept.
-class ZamanCizelgesiOnbellek extends Table {
-  /// "2026-11-08".
-  TextColumn get gun => text()();
+/// The last `GET /api/gun/{tarih}` answer per day (`GunGorunumDto` JSON), so Bugün and the calendar's day list show offline.
+/// Only the days read lately are kept.
+class GunGorunumOnbellek extends Table {
+  /// "2026-11-10".
+  TextColumn get tarih => text()();
   TextColumn get govde => text()();
   DateTimeColumn get okunma => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {gun};
+  Set<Column> get primaryKey => {tarih};
+}
+
+/// The last `GET /api/takvim` answer per range (`TakvimAraligiDto` JSON), keyed "2026-11-09/2026-11-15".
+class TakvimOnbellek extends Table {
+  TextColumn get aralik => text()();
+  TextColumn get govde => text()();
+  DateTimeColumn get okunma => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {aralik};
+}
+
+/// The newest page of `GET /api/asistan/akis` (`AkisOgesi` JSON, newest first), replaced as a whole, so the feed shows offline.
+class AsistanAkisOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The newest page of `GET /api/bildirimler` (`BildirimOgesi` JSON, newest first), replaced as a whole.
+class BildirimOnbellek extends Table {
+  TextColumn get id => text()();
+  IntColumn get sira => integer()();
+  TextColumn get govde => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 /// The phone's own settings, one text value per key (the briefing hour, K2.7). Not synced.
@@ -278,14 +348,17 @@ class BekleyenIslemler extends Table {
     GelenOnbellek,
     BrifingOnbellek,
     AyarKayitlari,
-    ZamanCizelgesiOnbellek,
+    GunGorunumOnbellek,
+    TakvimOnbellek,
+    AsistanAkisOnbellek,
+    BildirimOnbellek,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'kafamdakiler'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -319,8 +392,17 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(brifingOnbellek);
             await m.createTable(ayarKayitlari);
           }
-          if (from < 10) {
-            await m.createTable(zamanCizelgesiOnbellek);
+          if (from >= 10 && from < 12) {
+            // The timeline cache of the old Bugün; the day view replaced it.
+            await m.database.customStatement('DROP TABLE IF EXISTS zaman_cizelgesi_onbellek');
+          }
+          if (from < 11) {
+            await m.createTable(gunGorunumOnbellek);
+            await m.createTable(takvimOnbellek);
+          }
+          if (from < 12) {
+            await m.createTable(asistanAkisOnbellek);
+            await m.createTable(bildirimOnbellek);
           }
         },
       );
@@ -341,6 +423,9 @@ class AppDatabase extends _$AppDatabase {
         await delete(gelenOnbellek).go();
         await delete(brifingOnbellek).go();
         await delete(ayarKayitlari).go();
-        await delete(zamanCizelgesiOnbellek).go();
+        await delete(gunGorunumOnbellek).go();
+        await delete(takvimOnbellek).go();
+        await delete(asistanAkisOnbellek).go();
+        await delete(bildirimOnbellek).go();
       });
 }

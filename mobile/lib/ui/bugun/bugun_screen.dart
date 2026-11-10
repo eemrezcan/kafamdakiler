@@ -1,63 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/models/aliskanlik.dart';
+import '../../data/models/gun_gorunum.dart';
 import '../../data/repositories/bildirim_izni.dart';
-import '../../utils/aliskanlik_gunu.dart';
-import '../ara/ara_dugmesi.dart';
-import '../asistan/asistan_ozet_karti.dart';
-import '../asistan/asistan_pano_view_model.dart';
-import '../brifing/brifing_seridi.dart';
-import '../brifing/brifing_view_model.dart';
-import '../core/renkler.dart';
-import '../core/widgets.dart';
+import '../../routing/router.dart';
 import '../../utils/metin.dart';
-import '../yakalama/ses_view_model.dart';
-import 'aliskanlik_karti.dart';
+import '../core/widgets.dart';
+import '../gun/gun_view_model.dart';
+import '../oturum/okuma_kaydi_sheet.dart';
+import '../gun/oge_sheet.dart';
+import '../gun/yapilacak_satiri.dart';
+import '../shell/ust_sag.dart';
+import 'aliskanlik_seridi.dart';
 import 'bildirim_kapali_uyarisi.dart';
 import 'bugun_view_model.dart';
-import 'gun_plani_karti.dart';
-import 'gun_plani_view_model.dart';
-import 'onay_bekleyen_karti.dart';
-import 'onay_bekleyen_view_model.dart';
+import 'devret_sheet.dart';
+import 'dunden_bandi.dart';
+import 'gun_ozeti_karti.dart';
 import 'sayi_giris_dialog.dart';
-import 'yaklasanlar_karti.dart';
-import 'yaklasanlar_view_model.dart';
-import 'zaman_cizelgesi_karti.dart';
-import 'zaman_cizelgesi_view_model.dart';
 
+/// The Bugün tab (K-0024): the assistant's summary with the day's load, what yesterday left, today's habits as rings and the
+/// one list of things to do (plan items, tasks, reminders and events), each with its own "yaptım".
 class BugunScreen extends StatelessWidget {
-  const BugunScreen({super.key, required this.viewModel, this.gunPlani, this.yaklasanlar, this.onayBekleyen, this.asistanOzet, this.zamanCizelgesi, this.brifing, this.brifingSes, this.bildirimIzni, this.onAliskanlikEkle});
+  const BugunScreen({super.key, required this.viewModel, required this.gun, this.bildirimIzni, this.yazabilir = true});
 
+  /// The habit strip's data and writes.
   final BugunViewModel viewModel;
 
-  /// Opens the new habit form from the "no habits today" card; null (not the Sahip) leaves the card as plain text.
-  final VoidCallback? onAliskanlikEkle;
+  /// The day view: the summary, the load, the left-overs and the list.
+  final GunViewModel gun;
 
-  /// The "Bildirimler kapalı" warning at the very top; without it (tests) there is no warning.
+  /// The "Bildirimler kapalı" warning near the top; without it (tests) there is no warning.
   final BildirimIzni? bildirimIzni;
 
-  /// The morning briefing strip (K2.7), closed until opened; null for someone who may not read it. Needs [brifingSes] too.
-  final BrifingViewModel? brifing;
-
-  /// Behind the strip's "Brifinge yaz" box (shown only while the assistant is connected).
-  final SesViewModel? brifingSes;
-
-  /// The approval queue count: a badge on the briefing's header (its own card only when there is no briefing); hidden when nothing waits.
-  final OnayBekleyenViewModel? onayBekleyen;
-
-  /// The "Asistan" card (work cards: waiting on the person, at the VPS, finished this week); null for someone who may not read them.
-  final AsistanOzetViewModel? asistanOzet;
-
-  /// Today's timeline, under the upcoming reminders; there only when something has an hour.
-  final ZamanCizelgesiViewModel? zamanCizelgesi;
-
-  /// The brain's plan for the day, under the habit cards and the briefing. Without it the screen is habits only.
-  final GunPlaniViewModel? gunPlani;
-
-  /// Upcoming reminders, shown under the plan card. Without it the card is not there.
-  final YaklasanlarViewModel? yaklasanlar;
+  /// False (the Asistan account) hides the write buttons.
+  final bool yazabilir;
 
   Future<void> _tik(BuildContext context, Aliskanlik a) async {
     final mesaj = ScaffoldMessenger.of(context);
@@ -71,125 +50,70 @@ class BugunScreen extends StatelessWidget {
   }
 
   Future<void> _sayiGir(BuildContext context, Aliskanlik a) async {
-    final yeni = await sayiGirisDialogu(
-      context,
-      baslik: a.ad,
-      mevcut: a.bugun?.miktar ?? 0,
-      birim: a.birim,
-    );
+    final yeni = await sayiGirisDialogu(context, baslik: a.ad, mevcut: a.bugun?.miktar ?? 0, birim: a.birim);
     if (yeni != null) await viewModel.miktarYaz(a, yeni);
+  }
+
+  Future<void> _yaptim(BuildContext context, Yapilacak oge) async {
+    final mesaj = ScaffoldMessenger.of(context);
+    final geriAlinabilir = oge.tur != YapilacakTuru.gorev;
+    final yapiliyordu = oge.yapildi;
+    if (!await gun.yaptim(oge)) return;
+    mesaj
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(yapiliyordu ? '${oge.baslik}: işaret kaldırıldı' : '${oge.baslik}: yapıldı'),
+        // A finished task cannot be reopened from here (the server answers 409 "gorev-geri-alinamaz").
+        action: yapiliyordu || !geriAlinabilir
+            ? null
+            : SnackBarAction(label: 'Geri al', onPressed: () => gun.yaptim(oge.copyWith(durum: 'yapildi'))),
+      ));
   }
 
   @override
   Widget build(BuildContext context) {
+    final bugun = gun.tarih;
     return Scaffold(
-      appBar: AppBar(title: const Text('Bugün'), actions: const [AraDugmesi()]),
+      appBar: AppBar(
+        toolbarHeight: 64,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              trBuyuk(DateFormat('EEEE, d MMMM', 'tr').format(bugun)),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 0.8),
+            ),
+            const Text('Bugün'),
+          ],
+        ),
+        actions: const [UstSagDugmeleri()],
+      ),
       body: ListenableBuilder(
-        listenable: viewModel,
+        listenable: Listenable.merge([viewModel, gun]),
         builder: (context, _) {
-          final plan = gunPlani;
-          // Without the plan card (the habits-only screen) a failed or loading first read fills the whole screen.
-          if (plan == null && viewModel.liste == null) {
-            if (viewModel.yukleniyor) return const YuklemeIskeleti();
-            return BosDurum(
-              metin: viewModel.hata ?? 'Alışkanlıklar alınamadı.',
-              dugme: 'Tekrar dene',
-              onPressed: viewModel.yukle,
-            );
+          final g = gun.gun;
+          if (g == null) {
+            if (gun.yukleniyor) return const YuklemeIskeleti();
+            return BosDurum(metin: gun.hata ?? 'Gün alınamadı.', dugme: 'Tekrar dene', onPressed: gun.yukle);
           }
-          // Every part in one scroll: a failing side never hides the others.
           return RefreshIndicator(
-            onRefresh: () => Future.wait([
-              viewModel.yukle(),
-              if (plan != null) plan.yukle(),
-              if (yaklasanlar != null) yaklasanlar!.yukle(),
-              if (onayBekleyen != null) onayBekleyen!.yukle(),
-              if (asistanOzet != null) asistanOzet!.yukle(),
-              if (zamanCizelgesi != null) zamanCizelgesi!.yukle(),
-              if (brifing != null) brifing!.yukle(),
-            ]),
-            child: OrtaGenislik(child: _liste(context, plan: plan)),
+            onRefresh: () => Future.wait([gun.yukle(), viewModel.yukle()]),
+            child: OrtaGenislik(child: _liste(context, g)),
           );
         },
       ),
     );
   }
 
-  /// The habit part when the list is not there (yet): a skeleton, or the error with a retry.
-  List<Widget> _aliskanlikDurumu(BuildContext context) {
+  Widget _liste(BuildContext context, GunGorunum g) {
     final tema = Theme.of(context);
-    if (viewModel.yukleniyor) {
-      return [
-        for (var i = 0; i < 2; i++)
-          Container(
-            height: 88,
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(color: tema.colorScheme.outlineVariant, borderRadius: BorderRadius.circular(12)),
-          ),
-      ];
-    }
-    return [
-      BosKart(metin: viewModel.hata ?? 'Alışkanlıklar alınamadı.'),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton(onPressed: viewModel.yukle, child: const Text('Tekrar dene')),
-      ),
-    ];
-  }
-
-  /// Today's habits first: the heading, the summary bar and the cards; or one card that says there are none (and, for the
-  /// Sahip, opens the new habit form).
-  List<Widget> _aliskanliklar(BuildContext context) {
-    final tema = Theme.of(context);
-    final liste = viewModel.liste;
     final planli = viewModel.planli;
-    final plansiz = viewModel.plansiz;
-    Widget kart(Aliskanlik a) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: AliskanlikKarti(
-            aliskanlik: a,
-            sonGunler: viewModel.sonGunler(a.id),
-            onTik: () => _tik(context, a),
-            onMiktar: (a, yeni) => viewModel.miktarYaz(a, yeni),
-            onSayiGir: () => _sayiGir(context, a),
-          ),
-        );
-    if (liste == null) return _aliskanlikDurumu(context);
-    if (liste.isEmpty) {
-      return [
-        BosKart(
-          key: const ValueKey('aliskanlik-yok'),
-          ikon: onAliskanlikEkle == null ? null : LucideIcons.plus,
-          metin: onAliskanlikEkle == null ? 'Bugün için alışkanlık yok' : 'Bugün için alışkanlık yok · + Alışkanlık ekle',
-          onTap: onAliskanlikEkle,
-        ),
-      ];
-    }
-    return [
-      const Padding(padding: EdgeInsets.only(bottom: 8), child: KartBasligi('Bugünün alışkanlıkları')),
-      if (planli.isEmpty) const BosKart(metin: 'Bugün planlı alışkanlık yok.') else _BugunOzeti(planli: planli),
-      for (final a in planli) kart(a),
-      if (plansiz.isNotEmpty) ...[
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 12),
-          child: Text(
-            'Bugün planlı değil',
-            style: tema.textTheme.titleSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant),
-          ),
-        ),
-        for (final a in plansiz) Opacity(opacity: 0.55, child: kart(a)),
-      ],
-    ];
-  }
-
-  Widget _liste(BuildContext context, {GunPlaniViewModel? plan}) {
-    final tema = Theme.of(context);
+    final devretAday = devredilecekler(g);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      // Room for the floating "Yakala" button under the last card.
-      padding: listeKenarlari(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        if (viewModel.cevrimdisi)
+        if (gun.cevrimdisi || viewModel.cevrimdisi)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
@@ -198,78 +122,75 @@ class BugunScreen extends StatelessWidget {
             ),
           ),
         if (bildirimIzni != null) BildirimKapaliUyarisi(izin: bildirimIzni!),
-        const _Tarih(),
-        ..._aliskanliklar(context),
-        if (asistanOzet != null) AsistanOzetKarti(viewModel: asistanOzet!),
-        // The approval queue's entry is the badge on the briefing's header; without a briefing it is its own card.
-        if (brifing != null && brifingSes != null)
-          BrifingSeridi(viewModel: brifing!, sesViewModel: brifingSes!, onayBekleyen: onayBekleyen)
-        else if (onayBekleyen != null)
-          OnayBekleyenKarti(viewModel: onayBekleyen!),
-        if (plan != null) Padding(padding: const EdgeInsets.only(bottom: kartAraligi), child: GunPlaniKarti(viewModel: plan)),
-        // Hidden until it has an answer, so a failing reminders read leaves no gap.
-        if (yaklasanlar != null) ...[
-          YaklasanlarKarti(viewModel: yaklasanlar!),
-          if (yaklasanlar!.liste != null) const SizedBox(height: kartAraligi),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: GunOzetiKarti(
+            gun: g,
+            onDevret: yazabilir && devretAday.isNotEmpty ? () => devretAc(context, viewModel: gun) : null,
+            onYarinaBak: () => context.go(Rotalar.takvim),
+          ),
+        ),
+        for (final d in g.dundenKalanlar)
+          DundenBandi(
+            dunden: d,
+            onAl: yazabilir ? () => gun.bugunAl(d) : null,
+            onBirak: yazabilir ? () => gun.dundenBirak(d) : null,
+          ),
+        if (planli.isNotEmpty) ...[
+          _Baslik('Alışkanlıklar', eylem: 'Tümü', onEylem: () => context.go(Rotalar.aliskanliklar)),
+          AliskanlikSeridi(
+            aliskanliklar: planli,
+            yazabilir: yazabilir,
+            onTik: (a) => _tik(context, a),
+            onArti: (a) => viewModel.miktarYaz(a, (a.bugun?.miktar ?? 0) + 1),
+            onSayiGir: (a) => _sayiGir(context, a),
+            onRafAc: (a) => okumaKaydiAc(context, aliskanlik: a),
+          ),
         ],
-        // Only when something has an hour; what has none is on the plan card already.
-        if (zamanCizelgesi != null) ZamanCizelgesiKarti(viewModel: zamanCizelgesi!),
+        _Baslik('Yapılacaklar · ${g.acikSayi}', eylem: 'Takvim', onEylem: () => context.go(Rotalar.takvim)),
+        if (g.ogeler.isEmpty)
+          const BosKart(key: ValueKey('gun-bos'), metin: 'Bugün için yapılacak yok.')
+        else ...[
+          YapilacakListesi(
+            ogeler: g.ogeler,
+            onAc: (o) => ogeAc(context, viewModel: gun, oge: o, yazabilir: yazabilir),
+            onYaptim: yazabilir ? (o) => _yaptim(context, o) : null,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Bir işe dokun: hatırlatıcı, devret, böl, not',
+              textAlign: TextAlign.center,
+              style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
       ],
     );
   }
 }
 
-/// "Bugün 2 alışkanlıktan 1 tanesi tamam" and a thin bar, above the cards.
-/// A habit counts as done when today's value reached 1 (for a limit habit:
-/// still under the limit).
-class _BugunOzeti extends StatelessWidget {
-  const _BugunOzeti({required this.planli});
+class _Baslik extends StatelessWidget {
+  const _Baslik(this.metin, {this.eylem, this.onEylem});
 
-  final List<Aliskanlik> planli;
+  final String metin;
+  final String? eylem;
+  final VoidCallback? onEylem;
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final tamam = planli.where((a) => (a.bugun?.deger ?? 0) >= 1).length;
-    final hepsi = tamam == planli.length;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            hepsi
-                ? 'Bugün hepsi tamam: $tamam / ${planli.length}'
-                : 'Bugün ${planli.length} alışkanlıktan $tamam tanesi tamam',
-            style: tema.textTheme.bodyMedium?.copyWith(color: tema.colorScheme.onSurfaceVariant),
+            trBuyuk(metin),
+            style: tema.textTheme.labelMedium?.copyWith(color: tema.colorScheme.onSurfaceVariant, letterSpacing: 0.8, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: tamam / planli.length,
-            minHeight: 4,
-            borderRadius: BorderRadius.circular(2),
-            color: hepsi ? tamamRengi(context) : null,
-          ),
+          if (eylem != null) TextButton(onPressed: onEylem, style: TextButton.styleFrom(minimumSize: const Size(48, 48)), child: Text(eylem!)),
         ],
-      ),
-    );
-  }
-}
-
-/// "PAZARTESİ · 2 KASIM 2026" above the list, like the web page's eyebrow.
-/// The habit day starts at 05:00, so just after midnight it is still yesterday.
-class _Tarih extends StatelessWidget {
-  const _Tarih();
-
-  @override
-  Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final buyuk = trBuyuk(DateFormat('EEEE · d MMMM y', 'tr').format(aliskanlikGunu(DateTime.now())));
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        buyuk,
-        style: tema.textTheme.labelSmall?.copyWith(color: tema.colorScheme.onSurfaceVariant, letterSpacing: 0.8),
       ),
     );
   }

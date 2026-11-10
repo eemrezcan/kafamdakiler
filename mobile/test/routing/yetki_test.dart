@@ -31,6 +31,11 @@ const _herkesinRotalari = [
   '/hatirlaticilar',
   '/gelen',
   '/daha-fazla',
+  '/takvim',
+  '/asistan',
+  '/beyin',
+  '/bildirimler',
+  '/isler',
   '/eylemler',
   '/sifre',
   '/aliskanlik/a1/raf',
@@ -82,7 +87,7 @@ void main() {
       final kullanici = KullaniciRepository(api: ortam.api, db: ortam.db);
       ortam.api.ben_ = Ben(id: 'u', email: 'x@y.z', roller: [rol]);
       await tester.runAsync(kullanici.yukle);
-      final vm = AliskanlikListeViewModel(repo: ortam.repo);
+      final vm = AliskanlikListeViewModel(repo: ortam.repo, esitleyici: ortam.esitleyici);
       await tester.runAsync(vm.yukle);
       await tester.pumpWidget(
         ChangeNotifierProvider.value(

@@ -7,7 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../utils/aliskanlik_gunu.dart';
+import '../models/asistan.dart';
 import '../models/gelen.dart';
+import '../models/gun_gorunum.dart';
 import '../models/gun.dart';
 import '../models/hatirlatici.dart';
 import '../models/oturum.dart';
@@ -219,7 +221,7 @@ class Esitleyici extends ChangeNotifier {
             if (!kalici || _gonderiliyor(e)) break;
             await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
                 .write(BekleyenIslemlerCompanion(
-                    hata: Value(_beyinTuru(islem.tur) || _gelenTuru(islem.tur) ? _ayrinti(e) : '$kod: ${e.response?.data}')));
+                    hata: Value(_beyinTuru(islem.tur) || _gelenTuru(islem.tur) || _gunTuru(islem.tur) ? _ayrinti(e) : '$kod: ${e.response?.data}')));
             degisti = true;
             continue;
           }
@@ -366,6 +368,78 @@ class Esitleyici extends ChangeNotifier {
   Future<String> gelenSilKuyrugaAl(String kart) =>
       _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.gelenSil, hedefId: kart, govde: const {});
 
+  // The day view of the UI revision (`/api/gun`, `/api/ayarlar/gun`). Each write is its own entry; the entry id is the
+  // `Idempotency-Key` where the server takes one. [govde]`['istek']` is the request body, the other keys are what the
+  // screens need to show the write before it is sent ([gunGorunumuneBekleyenleriUygula]).
+
+  /// Queues "done" (or, with [geri], "not done") for the row [kimlik] of [tarih].
+  Future<String> gunYaptimKuyrugaAl(DateTime tarih, String kimlik, {bool geri = false}) => _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.gunYaptim,
+        hedefId: kimlik,
+        tarih: tarihMetni(tarih),
+        govde: {'geri': geri},
+      );
+
+  /// Queues a new "yapılacak" on [tarih].
+  Future<String> gunOgeEkleKuyrugaAl(DateTime tarih, YeniOgeYaz yaz) {
+    final id = _uuid.v7();
+    return _kuyrugaAl(id: id, tur: BekleyenTur.gunOgeEkle, hedefId: id, tarih: tarihMetni(tarih), govde: yaz.toJson());
+  }
+
+  /// Queues the reminder of the row [kimlik]: set up, or with [guncelle] changed.
+  Future<String> ogeHatirlaticiYazKuyrugaAl(DateTime tarih, String kimlik, HatirlaticiGovde govde, {required bool guncelle}) => _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.ogeHatirlaticiYaz,
+        hedefId: kimlik,
+        tarih: tarihMetni(tarih),
+        govde: {'guncelle': guncelle, 'istek': govde.toJson()},
+      );
+
+  Future<String> ogeHatirlaticiSilKuyrugaAl(DateTime tarih, String kimlik) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.ogeHatirlaticiSil, hedefId: kimlik, tarih: tarihMetni(tarih), govde: const {});
+
+  /// Queues "let go of [maddeId], left open on yesterday's plan"; [tarih] is today.
+  Future<String> dundenBirakKuyrugaAl(DateTime tarih, String maddeId) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.dundenBirak, hedefId: maddeId, tarih: tarihMetni(tarih), govde: const {});
+
+  /// Queues the new day capacity.
+  Future<String> ayarGunYazKuyrugaAl(GunAyari ayar) {
+    final id = _uuid.v7();
+    return _kuyrugaAl(id: id, tur: BekleyenTur.ayarGunYaz, hedefId: id, govde: ayar.toJson());
+  }
+
+  /// Queues "carry [kimlik] of [tarih] to the next day" (sözleşme E2). [baslik], [bolum] and [tahminDk] are kept so the next
+  /// day's list can show the row before it is sent.
+  Future<String> gunDevretKuyrugaAl(DateTime tarih, String kimlik, {required String baslik, String? bolum, int? tahminDk}) => _kuyrugaAl(
+        id: _uuid.v7(),
+        tur: BekleyenTur.gunDevret,
+        hedefId: kimlik,
+        tarih: tarihMetni(tarih),
+        govde: {'baslik': baslik, 'bolum': ?bolum, 'tahminDk': ?tahminDk},
+      );
+
+  // The assistant's one input and the notification marks (M2).
+
+  /// Queues an input for the assistant. [girdi]`.id` is the queue id; [fotografYolu] is the local copy of a photo, uploaded when
+  /// the entry is sent (the photo id then goes into the body).
+  Future<String> asistanGirdiKuyrugaAl(AsistanGirdisi girdi, {String? fotografYolu}) => _kuyrugaAl(
+        id: girdi.id,
+        tur: BekleyenTur.asistanGirdi,
+        hedefId: girdi.id,
+        govde: {'girdi': girdi.toJson(), 'fotografYolu': ?fotografYolu},
+      );
+
+  /// Queues the answer to the assistant's question [soruId].
+  Future<String> asistanCevapKuyrugaAl(String soruId, String cevap) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.asistanCevap, hedefId: soruId, govde: {'cevap': cevap});
+
+  Future<String> bildirimOkunduKuyrugaAl(String id) =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.bildirimOkundu, hedefId: id, govde: const {});
+
+  Future<String> bildirimHepsiOkunduKuyrugaAl() =>
+      _kuyrugaAl(id: _uuid.v7(), tur: BekleyenTur.bildirimHepsiOkundu, hedefId: 'hepsi', govde: const {});
+
   /// Sent entries the user should still look at (an unclear answer, a split that stopped half way), oldest first.
   Future<List<BekleyenIslemlerData>> uyarilar() {
     return (_db.select(_db.bekleyenIslemler)
@@ -387,6 +461,23 @@ class Esitleyici extends ChangeNotifier {
       };
 
   static bool _gelenTuru(BekleyenTur t) => t == BekleyenTur.gelenIsle || t == BekleyenTur.gelenSil;
+
+  /// The writes of the day view: their refusals are ProblemDetails of the new API too.
+  static bool _gunTuru(BekleyenTur t) => switch (t) {
+        BekleyenTur.gunYaptim ||
+        BekleyenTur.gunOgeEkle ||
+        BekleyenTur.ogeHatirlaticiYaz ||
+        BekleyenTur.ogeHatirlaticiSil ||
+        BekleyenTur.dundenBirak ||
+        BekleyenTur.ayarGunYaz ||
+        BekleyenTur.gunDevret ||
+        BekleyenTur.asistanGirdi ||
+        BekleyenTur.asistanCevap ||
+        BekleyenTur.bildirimOkundu ||
+        BekleyenTur.bildirimHepsiOkundu =>
+          true,
+        _ => false,
+      };
 
   /// The reason in a refusal of the brain API (a ProblemDetails): its `detail`, else its `title`, else the status.
   static String _ayrinti(DioException e) {
@@ -480,6 +571,51 @@ class Esitleyici extends ChangeNotifier {
           // A 400 (the path or a tag broke the rules) or 403 is shown as a refused entry on the profile screen.
           if (e.response?.statusCode != 404) rethrow;
         }
+      case BekleyenTur.gunYaptim:
+        await _api.gunYaptim(islem.tarih!, islem.hedefId, geri: govde['geri'] == true, anahtar: islem.id);
+      case BekleyenTur.gunOgeEkle:
+        await _api.gunOgeEkle(islem.tarih!, YeniOgeYaz.fromJson(govde), anahtar: islem.id);
+      case BekleyenTur.ogeHatirlaticiYaz:
+        await _api.ogeHatirlaticiYaz(
+          islem.tarih!,
+          islem.hedefId,
+          HatirlaticiGovde.fromJson(Map<String, dynamic>.from(govde['istek'] as Map)),
+          guncelle: govde['guncelle'] == true,
+        );
+      case BekleyenTur.ogeHatirlaticiSil:
+        try {
+          await _api.ogeHatirlaticiSil(islem.tarih!, islem.hedefId);
+        } on DioException catch (e) {
+          if (e.response?.statusCode != 404) rethrow; // already gone
+        }
+      case BekleyenTur.dundenBirak:
+        try {
+          await _api.dundenBirak(islem.tarih!, islem.hedefId);
+        } on DioException catch (e) {
+          if (e.response?.statusCode != 404) rethrow; // the item is gone from yesterday's list already
+        }
+      case BekleyenTur.ayarGunYaz:
+        await _api.gunAyariYaz(GunAyari.fromJson(govde));
+      case BekleyenTur.gunDevret:
+        await _api.gunDevret(islem.tarih!, islem.hedefId, anahtar: islem.id);
+      case BekleyenTur.asistanGirdi:
+        await _asistanGonder(islem, govde);
+      case BekleyenTur.asistanCevap:
+        try {
+          await _api.asistanSoruCevap(islem.hedefId, govde['cevap'] as String);
+        } on DioException catch (e) {
+          // 404 or 409: the question is gone or was answered elsewhere. Nothing left to do.
+          final kod = e.response?.statusCode;
+          if (kod != 404 && kod != 409) rethrow;
+        }
+      case BekleyenTur.bildirimOkundu:
+        try {
+          await _api.bildirimOkundu(islem.hedefId);
+        } on DioException catch (e) {
+          if (e.response?.statusCode != 404) rethrow; // gone already
+        }
+      case BekleyenTur.bildirimHepsiOkundu:
+        await _api.bildirimlerinHepsiOkundu();
       case BekleyenTur.beyinMaddeEkle ||
             BekleyenTur.beyinMaddeIsaretle ||
             BekleyenTur.beyinMaddeDevret ||
@@ -521,6 +657,23 @@ class Esitleyici extends ChangeNotifier {
   /// The title of the brain API's 409 for "the first request under this Idempotency-Key is still running"
   /// (backend/Beyin/TekrarGuvenligi.cs): the entry works a moment later. A test on the mobile side keeps the words.
   static const _isleniyor = 'İstek işleniyor';
+
+  /// The assistant's input: uploads the photo first (once, its id goes into the queued body), then sends the input. A retry after
+  /// a failed send finds the photo id in the body and does not upload again; the input id is the same, so the server answers a
+  /// repeated send with the same answer.
+  Future<void> _asistanGonder(BekleyenIslemlerData islem, Map<String, dynamic> govde) async {
+    final girdi = Map<String, dynamic>.from(govde['girdi'] as Map);
+    final yol = govde['fotografYolu'] as String?;
+    if (yol != null && girdi['fotografId'] == null) {
+      if (!File(yol).existsSync()) throw const _KaliciHata('Fotoğraf dosyası telefonda bulunamadı.');
+      final yuklenen = await _api.dosyaYukle(yol);
+      girdi['fotografId'] = yuklenen.id;
+      await (_db.update(_db.bekleyenIslemler)..where((t) => t.id.equals(islem.id)))
+          .write(BekleyenIslemlerCompanion(govde: Value(jsonEncode({...govde, 'girdi': girdi}))));
+    }
+    await _api.asistanGirdi(AsistanGirdisi.fromJson(girdi));
+    yerelDosyaSil(yol); // the server has the photo now
+  }
 
   /// Uploads the photo first (once), writes the returned id into the queued
   /// body, then sends the capture. A retry after a failed send finds the id in

@@ -3816,16 +3816,16 @@ class AyarKayitlariCompanion extends UpdateCompanion<AyarKayitlariData> {
   }
 }
 
-class $ZamanCizelgesiOnbellekTable extends ZamanCizelgesiOnbellek
-    with TableInfo<$ZamanCizelgesiOnbellekTable, ZamanCizelgesiOnbellekData> {
+class $GunGorunumOnbellekTable extends GunGorunumOnbellek
+    with TableInfo<$GunGorunumOnbellekTable, GunGorunumOnbellekData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $ZamanCizelgesiOnbellekTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _gunMeta = const VerificationMeta('gun');
+  $GunGorunumOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _tarihMeta = const VerificationMeta('tarih');
   @override
-  late final GeneratedColumn<String> gun = GeneratedColumn<String>(
-    'gun',
+  late final GeneratedColumn<String> tarih = GeneratedColumn<String>(
+    'tarih',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -3850,26 +3850,26 @@ class $ZamanCizelgesiOnbellekTable extends ZamanCizelgesiOnbellek
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [gun, govde, okunma];
+  List<GeneratedColumn> get $columns => [tarih, govde, okunma];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'zaman_cizelgesi_onbellek';
+  static const String $name = 'gun_gorunum_onbellek';
   @override
   VerificationContext validateIntegrity(
-    Insertable<ZamanCizelgesiOnbellekData> instance, {
+    Insertable<GunGorunumOnbellekData> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('gun')) {
+    if (data.containsKey('tarih')) {
       context.handle(
-        _gunMeta,
-        gun.isAcceptableOrUnknown(data['gun']!, _gunMeta),
+        _tarihMeta,
+        tarih.isAcceptableOrUnknown(data['tarih']!, _tarihMeta),
       );
     } else if (isInserting) {
-      context.missing(_gunMeta);
+      context.missing(_tarihMeta);
     }
     if (data.containsKey('govde')) {
       context.handle(
@@ -3891,17 +3891,14 @@ class $ZamanCizelgesiOnbellekTable extends ZamanCizelgesiOnbellek
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {gun};
+  Set<GeneratedColumn> get $primaryKey => {tarih};
   @override
-  ZamanCizelgesiOnbellekData map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
+  GunGorunumOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ZamanCizelgesiOnbellekData(
-      gun: attachedDatabase.typeMapping.read(
+    return GunGorunumOnbellekData(
+      tarih: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}gun'],
+        data['${effectivePrefix}tarih'],
       )!,
       govde: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -3915,46 +3912,46 @@ class $ZamanCizelgesiOnbellekTable extends ZamanCizelgesiOnbellek
   }
 
   @override
-  $ZamanCizelgesiOnbellekTable createAlias(String alias) {
-    return $ZamanCizelgesiOnbellekTable(attachedDatabase, alias);
+  $GunGorunumOnbellekTable createAlias(String alias) {
+    return $GunGorunumOnbellekTable(attachedDatabase, alias);
   }
 }
 
-class ZamanCizelgesiOnbellekData extends DataClass
-    implements Insertable<ZamanCizelgesiOnbellekData> {
-  /// "2026-11-08".
-  final String gun;
+class GunGorunumOnbellekData extends DataClass
+    implements Insertable<GunGorunumOnbellekData> {
+  /// "2026-11-10".
+  final String tarih;
   final String govde;
   final DateTime okunma;
-  const ZamanCizelgesiOnbellekData({
-    required this.gun,
+  const GunGorunumOnbellekData({
+    required this.tarih,
     required this.govde,
     required this.okunma,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['gun'] = Variable<String>(gun);
+    map['tarih'] = Variable<String>(tarih);
     map['govde'] = Variable<String>(govde);
     map['okunma'] = Variable<DateTime>(okunma);
     return map;
   }
 
-  ZamanCizelgesiOnbellekCompanion toCompanion(bool nullToAbsent) {
-    return ZamanCizelgesiOnbellekCompanion(
-      gun: Value(gun),
+  GunGorunumOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return GunGorunumOnbellekCompanion(
+      tarih: Value(tarih),
       govde: Value(govde),
       okunma: Value(okunma),
     );
   }
 
-  factory ZamanCizelgesiOnbellekData.fromJson(
+  factory GunGorunumOnbellekData.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ZamanCizelgesiOnbellekData(
-      gun: serializer.fromJson<String>(json['gun']),
+    return GunGorunumOnbellekData(
+      tarih: serializer.fromJson<String>(json['tarih']),
       govde: serializer.fromJson<String>(json['govde']),
       okunma: serializer.fromJson<DateTime>(json['okunma']),
     );
@@ -3963,26 +3960,24 @@ class ZamanCizelgesiOnbellekData extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'gun': serializer.toJson<String>(gun),
+      'tarih': serializer.toJson<String>(tarih),
       'govde': serializer.toJson<String>(govde),
       'okunma': serializer.toJson<DateTime>(okunma),
     };
   }
 
-  ZamanCizelgesiOnbellekData copyWith({
-    String? gun,
+  GunGorunumOnbellekData copyWith({
+    String? tarih,
     String? govde,
     DateTime? okunma,
-  }) => ZamanCizelgesiOnbellekData(
-    gun: gun ?? this.gun,
+  }) => GunGorunumOnbellekData(
+    tarih: tarih ?? this.tarih,
     govde: govde ?? this.govde,
     okunma: okunma ?? this.okunma,
   );
-  ZamanCizelgesiOnbellekData copyWithCompanion(
-    ZamanCizelgesiOnbellekCompanion data,
-  ) {
-    return ZamanCizelgesiOnbellekData(
-      gun: data.gun.present ? data.gun.value : this.gun,
+  GunGorunumOnbellekData copyWithCompanion(GunGorunumOnbellekCompanion data) {
+    return GunGorunumOnbellekData(
+      tarih: data.tarih.present ? data.tarih.value : this.tarih,
       govde: data.govde.present ? data.govde.value : this.govde,
       okunma: data.okunma.present ? data.okunma.value : this.okunma,
     );
@@ -3990,8 +3985,8 @@ class ZamanCizelgesiOnbellekData extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('ZamanCizelgesiOnbellekData(')
-          ..write('gun: $gun, ')
+    return (StringBuffer('GunGorunumOnbellekData(')
+          ..write('tarih: $tarih, ')
           ..write('govde: $govde, ')
           ..write('okunma: $okunma')
           ..write(')'))
@@ -3999,58 +3994,58 @@ class ZamanCizelgesiOnbellekData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(gun, govde, okunma);
+  int get hashCode => Object.hash(tarih, govde, okunma);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is ZamanCizelgesiOnbellekData &&
-          other.gun == this.gun &&
+      (other is GunGorunumOnbellekData &&
+          other.tarih == this.tarih &&
           other.govde == this.govde &&
           other.okunma == this.okunma);
 }
 
-class ZamanCizelgesiOnbellekCompanion
-    extends UpdateCompanion<ZamanCizelgesiOnbellekData> {
-  final Value<String> gun;
+class GunGorunumOnbellekCompanion
+    extends UpdateCompanion<GunGorunumOnbellekData> {
+  final Value<String> tarih;
   final Value<String> govde;
   final Value<DateTime> okunma;
   final Value<int> rowid;
-  const ZamanCizelgesiOnbellekCompanion({
-    this.gun = const Value.absent(),
+  const GunGorunumOnbellekCompanion({
+    this.tarih = const Value.absent(),
     this.govde = const Value.absent(),
     this.okunma = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  ZamanCizelgesiOnbellekCompanion.insert({
-    required String gun,
+  GunGorunumOnbellekCompanion.insert({
+    required String tarih,
     required String govde,
     required DateTime okunma,
     this.rowid = const Value.absent(),
-  }) : gun = Value(gun),
+  }) : tarih = Value(tarih),
        govde = Value(govde),
        okunma = Value(okunma);
-  static Insertable<ZamanCizelgesiOnbellekData> custom({
-    Expression<String>? gun,
+  static Insertable<GunGorunumOnbellekData> custom({
+    Expression<String>? tarih,
     Expression<String>? govde,
     Expression<DateTime>? okunma,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (gun != null) 'gun': gun,
+      if (tarih != null) 'tarih': tarih,
       if (govde != null) 'govde': govde,
       if (okunma != null) 'okunma': okunma,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  ZamanCizelgesiOnbellekCompanion copyWith({
-    Value<String>? gun,
+  GunGorunumOnbellekCompanion copyWith({
+    Value<String>? tarih,
     Value<String>? govde,
     Value<DateTime>? okunma,
     Value<int>? rowid,
   }) {
-    return ZamanCizelgesiOnbellekCompanion(
-      gun: gun ?? this.gun,
+    return GunGorunumOnbellekCompanion(
+      tarih: tarih ?? this.tarih,
       govde: govde ?? this.govde,
       okunma: okunma ?? this.okunma,
       rowid: rowid ?? this.rowid,
@@ -4060,8 +4055,8 @@ class ZamanCizelgesiOnbellekCompanion
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (gun.present) {
-      map['gun'] = Variable<String>(gun.value);
+    if (tarih.present) {
+      map['tarih'] = Variable<String>(tarih.value);
     }
     if (govde.present) {
       map['govde'] = Variable<String>(govde.value);
@@ -4077,10 +4072,794 @@ class ZamanCizelgesiOnbellekCompanion
 
   @override
   String toString() {
-    return (StringBuffer('ZamanCizelgesiOnbellekCompanion(')
-          ..write('gun: $gun, ')
+    return (StringBuffer('GunGorunumOnbellekCompanion(')
+          ..write('tarih: $tarih, ')
           ..write('govde: $govde, ')
           ..write('okunma: $okunma, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TakvimOnbellekTable extends TakvimOnbellek
+    with TableInfo<$TakvimOnbellekTable, TakvimOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TakvimOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _aralikMeta = const VerificationMeta('aralik');
+  @override
+  late final GeneratedColumn<String> aralik = GeneratedColumn<String>(
+    'aralik',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _okunmaMeta = const VerificationMeta('okunma');
+  @override
+  late final GeneratedColumn<DateTime> okunma = GeneratedColumn<DateTime>(
+    'okunma',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [aralik, govde, okunma];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'takvim_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TakvimOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('aralik')) {
+      context.handle(
+        _aralikMeta,
+        aralik.isAcceptableOrUnknown(data['aralik']!, _aralikMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_aralikMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    if (data.containsKey('okunma')) {
+      context.handle(
+        _okunmaMeta,
+        okunma.isAcceptableOrUnknown(data['okunma']!, _okunmaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_okunmaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {aralik};
+  @override
+  TakvimOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TakvimOnbellekData(
+      aralik: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aralik'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+      okunma: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}okunma'],
+      )!,
+    );
+  }
+
+  @override
+  $TakvimOnbellekTable createAlias(String alias) {
+    return $TakvimOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class TakvimOnbellekData extends DataClass
+    implements Insertable<TakvimOnbellekData> {
+  final String aralik;
+  final String govde;
+  final DateTime okunma;
+  const TakvimOnbellekData({
+    required this.aralik,
+    required this.govde,
+    required this.okunma,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['aralik'] = Variable<String>(aralik);
+    map['govde'] = Variable<String>(govde);
+    map['okunma'] = Variable<DateTime>(okunma);
+    return map;
+  }
+
+  TakvimOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return TakvimOnbellekCompanion(
+      aralik: Value(aralik),
+      govde: Value(govde),
+      okunma: Value(okunma),
+    );
+  }
+
+  factory TakvimOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TakvimOnbellekData(
+      aralik: serializer.fromJson<String>(json['aralik']),
+      govde: serializer.fromJson<String>(json['govde']),
+      okunma: serializer.fromJson<DateTime>(json['okunma']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'aralik': serializer.toJson<String>(aralik),
+      'govde': serializer.toJson<String>(govde),
+      'okunma': serializer.toJson<DateTime>(okunma),
+    };
+  }
+
+  TakvimOnbellekData copyWith({
+    String? aralik,
+    String? govde,
+    DateTime? okunma,
+  }) => TakvimOnbellekData(
+    aralik: aralik ?? this.aralik,
+    govde: govde ?? this.govde,
+    okunma: okunma ?? this.okunma,
+  );
+  TakvimOnbellekData copyWithCompanion(TakvimOnbellekCompanion data) {
+    return TakvimOnbellekData(
+      aralik: data.aralik.present ? data.aralik.value : this.aralik,
+      govde: data.govde.present ? data.govde.value : this.govde,
+      okunma: data.okunma.present ? data.okunma.value : this.okunma,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TakvimOnbellekData(')
+          ..write('aralik: $aralik, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(aralik, govde, okunma);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TakvimOnbellekData &&
+          other.aralik == this.aralik &&
+          other.govde == this.govde &&
+          other.okunma == this.okunma);
+}
+
+class TakvimOnbellekCompanion extends UpdateCompanion<TakvimOnbellekData> {
+  final Value<String> aralik;
+  final Value<String> govde;
+  final Value<DateTime> okunma;
+  final Value<int> rowid;
+  const TakvimOnbellekCompanion({
+    this.aralik = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.okunma = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TakvimOnbellekCompanion.insert({
+    required String aralik,
+    required String govde,
+    required DateTime okunma,
+    this.rowid = const Value.absent(),
+  }) : aralik = Value(aralik),
+       govde = Value(govde),
+       okunma = Value(okunma);
+  static Insertable<TakvimOnbellekData> custom({
+    Expression<String>? aralik,
+    Expression<String>? govde,
+    Expression<DateTime>? okunma,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (aralik != null) 'aralik': aralik,
+      if (govde != null) 'govde': govde,
+      if (okunma != null) 'okunma': okunma,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TakvimOnbellekCompanion copyWith({
+    Value<String>? aralik,
+    Value<String>? govde,
+    Value<DateTime>? okunma,
+    Value<int>? rowid,
+  }) {
+    return TakvimOnbellekCompanion(
+      aralik: aralik ?? this.aralik,
+      govde: govde ?? this.govde,
+      okunma: okunma ?? this.okunma,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (aralik.present) {
+      map['aralik'] = Variable<String>(aralik.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (okunma.present) {
+      map['okunma'] = Variable<DateTime>(okunma.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TakvimOnbellekCompanion(')
+          ..write('aralik: $aralik, ')
+          ..write('govde: $govde, ')
+          ..write('okunma: $okunma, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AsistanAkisOnbellekTable extends AsistanAkisOnbellek
+    with TableInfo<$AsistanAkisOnbellekTable, AsistanAkisOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AsistanAkisOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'asistan_akis_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AsistanAkisOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AsistanAkisOnbellekData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AsistanAkisOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+    );
+  }
+
+  @override
+  $AsistanAkisOnbellekTable createAlias(String alias) {
+    return $AsistanAkisOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class AsistanAkisOnbellekData extends DataClass
+    implements Insertable<AsistanAkisOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  const AsistanAkisOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    return map;
+  }
+
+  AsistanAkisOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return AsistanAkisOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+    );
+  }
+
+  factory AsistanAkisOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AsistanAkisOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+    };
+  }
+
+  AsistanAkisOnbellekData copyWith({String? id, int? sira, String? govde}) =>
+      AsistanAkisOnbellekData(
+        id: id ?? this.id,
+        sira: sira ?? this.sira,
+        govde: govde ?? this.govde,
+      );
+  AsistanAkisOnbellekData copyWithCompanion(AsistanAkisOnbellekCompanion data) {
+    return AsistanAkisOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AsistanAkisOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AsistanAkisOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde);
+}
+
+class AsistanAkisOnbellekCompanion
+    extends UpdateCompanion<AsistanAkisOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<int> rowid;
+  const AsistanAkisOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AsistanAkisOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<AsistanAkisOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AsistanAkisOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<int>? rowid,
+  }) {
+    return AsistanAkisOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AsistanAkisOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BildirimOnbellekTable extends BildirimOnbellek
+    with TableInfo<$BildirimOnbellekTable, BildirimOnbellekData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BildirimOnbellekTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _siraMeta = const VerificationMeta('sira');
+  @override
+  late final GeneratedColumn<int> sira = GeneratedColumn<int>(
+    'sira',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _govdeMeta = const VerificationMeta('govde');
+  @override
+  late final GeneratedColumn<String> govde = GeneratedColumn<String>(
+    'govde',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sira, govde];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bildirim_onbellek';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BildirimOnbellekData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('sira')) {
+      context.handle(
+        _siraMeta,
+        sira.isAcceptableOrUnknown(data['sira']!, _siraMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_siraMeta);
+    }
+    if (data.containsKey('govde')) {
+      context.handle(
+        _govdeMeta,
+        govde.isAcceptableOrUnknown(data['govde']!, _govdeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_govdeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BildirimOnbellekData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BildirimOnbellekData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sira: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sira'],
+      )!,
+      govde: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}govde'],
+      )!,
+    );
+  }
+
+  @override
+  $BildirimOnbellekTable createAlias(String alias) {
+    return $BildirimOnbellekTable(attachedDatabase, alias);
+  }
+}
+
+class BildirimOnbellekData extends DataClass
+    implements Insertable<BildirimOnbellekData> {
+  final String id;
+  final int sira;
+  final String govde;
+  const BildirimOnbellekData({
+    required this.id,
+    required this.sira,
+    required this.govde,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['sira'] = Variable<int>(sira);
+    map['govde'] = Variable<String>(govde);
+    return map;
+  }
+
+  BildirimOnbellekCompanion toCompanion(bool nullToAbsent) {
+    return BildirimOnbellekCompanion(
+      id: Value(id),
+      sira: Value(sira),
+      govde: Value(govde),
+    );
+  }
+
+  factory BildirimOnbellekData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BildirimOnbellekData(
+      id: serializer.fromJson<String>(json['id']),
+      sira: serializer.fromJson<int>(json['sira']),
+      govde: serializer.fromJson<String>(json['govde']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sira': serializer.toJson<int>(sira),
+      'govde': serializer.toJson<String>(govde),
+    };
+  }
+
+  BildirimOnbellekData copyWith({String? id, int? sira, String? govde}) =>
+      BildirimOnbellekData(
+        id: id ?? this.id,
+        sira: sira ?? this.sira,
+        govde: govde ?? this.govde,
+      );
+  BildirimOnbellekData copyWithCompanion(BildirimOnbellekCompanion data) {
+    return BildirimOnbellekData(
+      id: data.id.present ? data.id.value : this.id,
+      sira: data.sira.present ? data.sira.value : this.sira,
+      govde: data.govde.present ? data.govde.value : this.govde,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BildirimOnbellekData(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sira, govde);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BildirimOnbellekData &&
+          other.id == this.id &&
+          other.sira == this.sira &&
+          other.govde == this.govde);
+}
+
+class BildirimOnbellekCompanion extends UpdateCompanion<BildirimOnbellekData> {
+  final Value<String> id;
+  final Value<int> sira;
+  final Value<String> govde;
+  final Value<int> rowid;
+  const BildirimOnbellekCompanion({
+    this.id = const Value.absent(),
+    this.sira = const Value.absent(),
+    this.govde = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BildirimOnbellekCompanion.insert({
+    required String id,
+    required int sira,
+    required String govde,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sira = Value(sira),
+       govde = Value(govde);
+  static Insertable<BildirimOnbellekData> custom({
+    Expression<String>? id,
+    Expression<int>? sira,
+    Expression<String>? govde,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sira != null) 'sira': sira,
+      if (govde != null) 'govde': govde,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BildirimOnbellekCompanion copyWith({
+    Value<String>? id,
+    Value<int>? sira,
+    Value<String>? govde,
+    Value<int>? rowid,
+  }) {
+    return BildirimOnbellekCompanion(
+      id: id ?? this.id,
+      sira: sira ?? this.sira,
+      govde: govde ?? this.govde,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sira.present) {
+      map['sira'] = Variable<int>(sira.value);
+    }
+    if (govde.present) {
+      map['govde'] = Variable<String>(govde.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BildirimOnbellekCompanion(')
+          ..write('id: $id, ')
+          ..write('sira: $sira, ')
+          ..write('govde: $govde, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4117,8 +4896,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $AyarKayitlariTable ayarKayitlari = $AyarKayitlariTable(this);
-  late final $ZamanCizelgesiOnbellekTable zamanCizelgesiOnbellek =
-      $ZamanCizelgesiOnbellekTable(this);
+  late final $GunGorunumOnbellekTable gunGorunumOnbellek =
+      $GunGorunumOnbellekTable(this);
+  late final $TakvimOnbellekTable takvimOnbellek = $TakvimOnbellekTable(this);
+  late final $AsistanAkisOnbellekTable asistanAkisOnbellek =
+      $AsistanAkisOnbellekTable(this);
+  late final $BildirimOnbellekTable bildirimOnbellek = $BildirimOnbellekTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4138,7 +4923,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     gelenOnbellek,
     brifingOnbellek,
     ayarKayitlari,
-    zamanCizelgesiOnbellek,
+    gunGorunumOnbellek,
+    takvimOnbellek,
+    asistanAkisOnbellek,
+    bildirimOnbellek,
   ];
 }
 
@@ -6724,32 +7512,32 @@ typedef $$AyarKayitlariTableProcessedTableManager =
       AyarKayitlariData,
       PrefetchHooks Function()
     >;
-typedef $$ZamanCizelgesiOnbellekTableCreateCompanionBuilder =
-    ZamanCizelgesiOnbellekCompanion Function({
-      required String gun,
+typedef $$GunGorunumOnbellekTableCreateCompanionBuilder =
+    GunGorunumOnbellekCompanion Function({
+      required String tarih,
       required String govde,
       required DateTime okunma,
       Value<int> rowid,
     });
-typedef $$ZamanCizelgesiOnbellekTableUpdateCompanionBuilder =
-    ZamanCizelgesiOnbellekCompanion Function({
-      Value<String> gun,
+typedef $$GunGorunumOnbellekTableUpdateCompanionBuilder =
+    GunGorunumOnbellekCompanion Function({
+      Value<String> tarih,
       Value<String> govde,
       Value<DateTime> okunma,
       Value<int> rowid,
     });
 
-class $$ZamanCizelgesiOnbellekTableFilterComposer
-    extends Composer<_$AppDatabase, $ZamanCizelgesiOnbellekTable> {
-  $$ZamanCizelgesiOnbellekTableFilterComposer({
+class $$GunGorunumOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $GunGorunumOnbellekTable> {
+  $$GunGorunumOnbellekTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get gun => $composableBuilder(
-    column: $table.gun,
+  ColumnFilters<String> get tarih => $composableBuilder(
+    column: $table.tarih,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6764,17 +7552,17 @@ class $$ZamanCizelgesiOnbellekTableFilterComposer
   );
 }
 
-class $$ZamanCizelgesiOnbellekTableOrderingComposer
-    extends Composer<_$AppDatabase, $ZamanCizelgesiOnbellekTable> {
-  $$ZamanCizelgesiOnbellekTableOrderingComposer({
+class $$GunGorunumOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $GunGorunumOnbellekTable> {
+  $$GunGorunumOnbellekTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get gun => $composableBuilder(
-    column: $table.gun,
+  ColumnOrderings<String> get tarih => $composableBuilder(
+    column: $table.tarih,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -6789,17 +7577,17 @@ class $$ZamanCizelgesiOnbellekTableOrderingComposer
   );
 }
 
-class $$ZamanCizelgesiOnbellekTableAnnotationComposer
-    extends Composer<_$AppDatabase, $ZamanCizelgesiOnbellekTable> {
-  $$ZamanCizelgesiOnbellekTableAnnotationComposer({
+class $$GunGorunumOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GunGorunumOnbellekTable> {
+  $$GunGorunumOnbellekTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get gun =>
-      $composableBuilder(column: $table.gun, builder: (column) => column);
+  GeneratedColumn<String> get tarih =>
+      $composableBuilder(column: $table.tarih, builder: (column) => column);
 
   GeneratedColumn<String> get govde =>
       $composableBuilder(column: $table.govde, builder: (column) => column);
@@ -6808,70 +7596,64 @@ class $$ZamanCizelgesiOnbellekTableAnnotationComposer
       $composableBuilder(column: $table.okunma, builder: (column) => column);
 }
 
-class $$ZamanCizelgesiOnbellekTableTableManager
+class $$GunGorunumOnbellekTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $ZamanCizelgesiOnbellekTable,
-          ZamanCizelgesiOnbellekData,
-          $$ZamanCizelgesiOnbellekTableFilterComposer,
-          $$ZamanCizelgesiOnbellekTableOrderingComposer,
-          $$ZamanCizelgesiOnbellekTableAnnotationComposer,
-          $$ZamanCizelgesiOnbellekTableCreateCompanionBuilder,
-          $$ZamanCizelgesiOnbellekTableUpdateCompanionBuilder,
+          $GunGorunumOnbellekTable,
+          GunGorunumOnbellekData,
+          $$GunGorunumOnbellekTableFilterComposer,
+          $$GunGorunumOnbellekTableOrderingComposer,
+          $$GunGorunumOnbellekTableAnnotationComposer,
+          $$GunGorunumOnbellekTableCreateCompanionBuilder,
+          $$GunGorunumOnbellekTableUpdateCompanionBuilder,
           (
-            ZamanCizelgesiOnbellekData,
+            GunGorunumOnbellekData,
             BaseReferences<
               _$AppDatabase,
-              $ZamanCizelgesiOnbellekTable,
-              ZamanCizelgesiOnbellekData
+              $GunGorunumOnbellekTable,
+              GunGorunumOnbellekData
             >,
           ),
-          ZamanCizelgesiOnbellekData,
+          GunGorunumOnbellekData,
           PrefetchHooks Function()
         > {
-  $$ZamanCizelgesiOnbellekTableTableManager(
+  $$GunGorunumOnbellekTableTableManager(
     _$AppDatabase db,
-    $ZamanCizelgesiOnbellekTable table,
+    $GunGorunumOnbellekTable table,
   ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$ZamanCizelgesiOnbellekTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
+              $$GunGorunumOnbellekTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$ZamanCizelgesiOnbellekTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
+              $$GunGorunumOnbellekTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$ZamanCizelgesiOnbellekTableAnnotationComposer(
+              $$GunGorunumOnbellekTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
           updateCompanionCallback:
               ({
-                Value<String> gun = const Value.absent(),
+                Value<String> tarih = const Value.absent(),
                 Value<String> govde = const Value.absent(),
                 Value<DateTime> okunma = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => ZamanCizelgesiOnbellekCompanion(
-                gun: gun,
+              }) => GunGorunumOnbellekCompanion(
+                tarih: tarih,
                 govde: govde,
                 okunma: okunma,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                required String gun,
+                required String tarih,
                 required String govde,
                 required DateTime okunma,
                 Value<int> rowid = const Value.absent(),
-              }) => ZamanCizelgesiOnbellekCompanion.insert(
-                gun: gun,
+              }) => GunGorunumOnbellekCompanion.insert(
+                tarih: tarih,
                 govde: govde,
                 okunma: okunma,
                 rowid: rowid,
@@ -6879,14 +7661,13 @@ class $$ZamanCizelgesiOnbellekTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<
-                    $ZamanCizelgesiOnbellekTable,
-                    ZamanCizelgesiOnbellekData
-                  >(table),
+                  e.readTable<$GunGorunumOnbellekTable, GunGorunumOnbellekData>(
+                    table,
+                  ),
                   BaseReferences<
                     _$AppDatabase,
-                    $ZamanCizelgesiOnbellekTable,
-                    ZamanCizelgesiOnbellekData
+                    $GunGorunumOnbellekTable,
+                    GunGorunumOnbellekData
                   >(db, table, e),
                 ),
               )
@@ -6896,25 +7677,575 @@ class $$ZamanCizelgesiOnbellekTableTableManager
       );
 }
 
-typedef $$ZamanCizelgesiOnbellekTableProcessedTableManager =
+typedef $$GunGorunumOnbellekTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $ZamanCizelgesiOnbellekTable,
-      ZamanCizelgesiOnbellekData,
-      $$ZamanCizelgesiOnbellekTableFilterComposer,
-      $$ZamanCizelgesiOnbellekTableOrderingComposer,
-      $$ZamanCizelgesiOnbellekTableAnnotationComposer,
-      $$ZamanCizelgesiOnbellekTableCreateCompanionBuilder,
-      $$ZamanCizelgesiOnbellekTableUpdateCompanionBuilder,
+      $GunGorunumOnbellekTable,
+      GunGorunumOnbellekData,
+      $$GunGorunumOnbellekTableFilterComposer,
+      $$GunGorunumOnbellekTableOrderingComposer,
+      $$GunGorunumOnbellekTableAnnotationComposer,
+      $$GunGorunumOnbellekTableCreateCompanionBuilder,
+      $$GunGorunumOnbellekTableUpdateCompanionBuilder,
       (
-        ZamanCizelgesiOnbellekData,
+        GunGorunumOnbellekData,
         BaseReferences<
           _$AppDatabase,
-          $ZamanCizelgesiOnbellekTable,
-          ZamanCizelgesiOnbellekData
+          $GunGorunumOnbellekTable,
+          GunGorunumOnbellekData
         >,
       ),
-      ZamanCizelgesiOnbellekData,
+      GunGorunumOnbellekData,
+      PrefetchHooks Function()
+    >;
+typedef $$TakvimOnbellekTableCreateCompanionBuilder =
+    TakvimOnbellekCompanion Function({
+      required String aralik,
+      required String govde,
+      required DateTime okunma,
+      Value<int> rowid,
+    });
+typedef $$TakvimOnbellekTableUpdateCompanionBuilder =
+    TakvimOnbellekCompanion Function({
+      Value<String> aralik,
+      Value<String> govde,
+      Value<DateTime> okunma,
+      Value<int> rowid,
+    });
+
+class $$TakvimOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $TakvimOnbellekTable> {
+  $$TakvimOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get aralik => $composableBuilder(
+    column: $table.aralik,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TakvimOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $TakvimOnbellekTable> {
+  $$TakvimOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get aralik => $composableBuilder(
+    column: $table.aralik,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get okunma => $composableBuilder(
+    column: $table.okunma,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TakvimOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TakvimOnbellekTable> {
+  $$TakvimOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get aralik =>
+      $composableBuilder(column: $table.aralik, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get okunma =>
+      $composableBuilder(column: $table.okunma, builder: (column) => column);
+}
+
+class $$TakvimOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TakvimOnbellekTable,
+          TakvimOnbellekData,
+          $$TakvimOnbellekTableFilterComposer,
+          $$TakvimOnbellekTableOrderingComposer,
+          $$TakvimOnbellekTableAnnotationComposer,
+          $$TakvimOnbellekTableCreateCompanionBuilder,
+          $$TakvimOnbellekTableUpdateCompanionBuilder,
+          (
+            TakvimOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $TakvimOnbellekTable,
+              TakvimOnbellekData
+            >,
+          ),
+          TakvimOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$TakvimOnbellekTableTableManager(
+    _$AppDatabase db,
+    $TakvimOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TakvimOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TakvimOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TakvimOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> aralik = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<DateTime> okunma = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TakvimOnbellekCompanion(
+                aralik: aralik,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String aralik,
+                required String govde,
+                required DateTime okunma,
+                Value<int> rowid = const Value.absent(),
+              }) => TakvimOnbellekCompanion.insert(
+                aralik: aralik,
+                govde: govde,
+                okunma: okunma,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TakvimOnbellekTable, TakvimOnbellekData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $TakvimOnbellekTable,
+                    TakvimOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TakvimOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TakvimOnbellekTable,
+      TakvimOnbellekData,
+      $$TakvimOnbellekTableFilterComposer,
+      $$TakvimOnbellekTableOrderingComposer,
+      $$TakvimOnbellekTableAnnotationComposer,
+      $$TakvimOnbellekTableCreateCompanionBuilder,
+      $$TakvimOnbellekTableUpdateCompanionBuilder,
+      (
+        TakvimOnbellekData,
+        BaseReferences<_$AppDatabase, $TakvimOnbellekTable, TakvimOnbellekData>,
+      ),
+      TakvimOnbellekData,
+      PrefetchHooks Function()
+    >;
+typedef $$AsistanAkisOnbellekTableCreateCompanionBuilder =
+    AsistanAkisOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<int> rowid,
+    });
+typedef $$AsistanAkisOnbellekTableUpdateCompanionBuilder =
+    AsistanAkisOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<int> rowid,
+    });
+
+class $$AsistanAkisOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $AsistanAkisOnbellekTable> {
+  $$AsistanAkisOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AsistanAkisOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $AsistanAkisOnbellekTable> {
+  $$AsistanAkisOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AsistanAkisOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AsistanAkisOnbellekTable> {
+  $$AsistanAkisOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+}
+
+class $$AsistanAkisOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AsistanAkisOnbellekTable,
+          AsistanAkisOnbellekData,
+          $$AsistanAkisOnbellekTableFilterComposer,
+          $$AsistanAkisOnbellekTableOrderingComposer,
+          $$AsistanAkisOnbellekTableAnnotationComposer,
+          $$AsistanAkisOnbellekTableCreateCompanionBuilder,
+          $$AsistanAkisOnbellekTableUpdateCompanionBuilder,
+          (
+            AsistanAkisOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $AsistanAkisOnbellekTable,
+              AsistanAkisOnbellekData
+            >,
+          ),
+          AsistanAkisOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$AsistanAkisOnbellekTableTableManager(
+    _$AppDatabase db,
+    $AsistanAkisOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AsistanAkisOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AsistanAkisOnbellekTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$AsistanAkisOnbellekTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AsistanAkisOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<int> rowid = const Value.absent(),
+              }) => AsistanAkisOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $AsistanAkisOnbellekTable,
+                    AsistanAkisOnbellekData
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AsistanAkisOnbellekTable,
+                    AsistanAkisOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AsistanAkisOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AsistanAkisOnbellekTable,
+      AsistanAkisOnbellekData,
+      $$AsistanAkisOnbellekTableFilterComposer,
+      $$AsistanAkisOnbellekTableOrderingComposer,
+      $$AsistanAkisOnbellekTableAnnotationComposer,
+      $$AsistanAkisOnbellekTableCreateCompanionBuilder,
+      $$AsistanAkisOnbellekTableUpdateCompanionBuilder,
+      (
+        AsistanAkisOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $AsistanAkisOnbellekTable,
+          AsistanAkisOnbellekData
+        >,
+      ),
+      AsistanAkisOnbellekData,
+      PrefetchHooks Function()
+    >;
+typedef $$BildirimOnbellekTableCreateCompanionBuilder =
+    BildirimOnbellekCompanion Function({
+      required String id,
+      required int sira,
+      required String govde,
+      Value<int> rowid,
+    });
+typedef $$BildirimOnbellekTableUpdateCompanionBuilder =
+    BildirimOnbellekCompanion Function({
+      Value<String> id,
+      Value<int> sira,
+      Value<String> govde,
+      Value<int> rowid,
+    });
+
+class $$BildirimOnbellekTableFilterComposer
+    extends Composer<_$AppDatabase, $BildirimOnbellekTable> {
+  $$BildirimOnbellekTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BildirimOnbellekTableOrderingComposer
+    extends Composer<_$AppDatabase, $BildirimOnbellekTable> {
+  $$BildirimOnbellekTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sira => $composableBuilder(
+    column: $table.sira,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get govde => $composableBuilder(
+    column: $table.govde,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BildirimOnbellekTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BildirimOnbellekTable> {
+  $$BildirimOnbellekTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get sira =>
+      $composableBuilder(column: $table.sira, builder: (column) => column);
+
+  GeneratedColumn<String> get govde =>
+      $composableBuilder(column: $table.govde, builder: (column) => column);
+}
+
+class $$BildirimOnbellekTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BildirimOnbellekTable,
+          BildirimOnbellekData,
+          $$BildirimOnbellekTableFilterComposer,
+          $$BildirimOnbellekTableOrderingComposer,
+          $$BildirimOnbellekTableAnnotationComposer,
+          $$BildirimOnbellekTableCreateCompanionBuilder,
+          $$BildirimOnbellekTableUpdateCompanionBuilder,
+          (
+            BildirimOnbellekData,
+            BaseReferences<
+              _$AppDatabase,
+              $BildirimOnbellekTable,
+              BildirimOnbellekData
+            >,
+          ),
+          BildirimOnbellekData,
+          PrefetchHooks Function()
+        > {
+  $$BildirimOnbellekTableTableManager(
+    _$AppDatabase db,
+    $BildirimOnbellekTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BildirimOnbellekTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BildirimOnbellekTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BildirimOnbellekTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> sira = const Value.absent(),
+                Value<String> govde = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BildirimOnbellekCompanion(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int sira,
+                required String govde,
+                Value<int> rowid = const Value.absent(),
+              }) => BildirimOnbellekCompanion.insert(
+                id: id,
+                sira: sira,
+                govde: govde,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BildirimOnbellekTable, BildirimOnbellekData>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $BildirimOnbellekTable,
+                    BildirimOnbellekData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BildirimOnbellekTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BildirimOnbellekTable,
+      BildirimOnbellekData,
+      $$BildirimOnbellekTableFilterComposer,
+      $$BildirimOnbellekTableOrderingComposer,
+      $$BildirimOnbellekTableAnnotationComposer,
+      $$BildirimOnbellekTableCreateCompanionBuilder,
+      $$BildirimOnbellekTableUpdateCompanionBuilder,
+      (
+        BildirimOnbellekData,
+        BaseReferences<
+          _$AppDatabase,
+          $BildirimOnbellekTable,
+          BildirimOnbellekData
+        >,
+      ),
+      BildirimOnbellekData,
       PrefetchHooks Function()
     >;
 
@@ -6949,9 +8280,12 @@ class $AppDatabaseManager {
       $$BrifingOnbellekTableTableManager(_db, _db.brifingOnbellek);
   $$AyarKayitlariTableTableManager get ayarKayitlari =>
       $$AyarKayitlariTableTableManager(_db, _db.ayarKayitlari);
-  $$ZamanCizelgesiOnbellekTableTableManager get zamanCizelgesiOnbellek =>
-      $$ZamanCizelgesiOnbellekTableTableManager(
-        _db,
-        _db.zamanCizelgesiOnbellek,
-      );
+  $$GunGorunumOnbellekTableTableManager get gunGorunumOnbellek =>
+      $$GunGorunumOnbellekTableTableManager(_db, _db.gunGorunumOnbellek);
+  $$TakvimOnbellekTableTableManager get takvimOnbellek =>
+      $$TakvimOnbellekTableTableManager(_db, _db.takvimOnbellek);
+  $$AsistanAkisOnbellekTableTableManager get asistanAkisOnbellek =>
+      $$AsistanAkisOnbellekTableTableManager(_db, _db.asistanAkisOnbellek);
+  $$BildirimOnbellekTableTableManager get bildirimOnbellek =>
+      $$BildirimOnbellekTableTableManager(_db, _db.bildirimOnbellek);
 }
