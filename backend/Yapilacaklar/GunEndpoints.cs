@@ -88,6 +88,32 @@ public static class GunEndpoints
                 () => islemler.YaptimAsync(gun, parca.Onek, parca.Deger, kimlik, girdi.Geri, BildirimEndpoints.KullaniciId(kullanici), ct), CancellationToken.None);
         });
 
+        // Carry an item to the next day: a plan item (the brain's devret), a task (an item for it tomorrow), a reminder (snoozed to tomorrow).
+        girisli.MapPost("/devret", async (string tarih, DevretGirdisi girdi, [FromHeader(Name = Anahtar)] string? anahtar, ClaimsPrincipal kullanici,
+            TekrarGuvenligi tekrar, GunIslemleri islemler, TimeProvider saat, CancellationToken ct) =>
+        {
+            if (GunCoz(tarih, saat) is not { } gun)
+                return TarihHatasi;
+
+            var kimlik = girdi.Kimlik!.Trim();
+            if (Ayir(kimlik) is not { } parca)
+                return Sorun("kimlik", "Kimlik m:<madde>, g:<görev> ya da h:<hatırlatıcı> biçiminde olmalı.");
+
+            switch (parca.Onek)
+            {
+                case EtkinlikOneki:
+                    return Sorun("kimlik", "Takvim etkinliği ertelenemez.");
+                case PlanOneki or GorevOneki when !IzinVar(kullanici, BeyinPolicies.PlanYaz):
+                case HatirlaticiOneki when !IzinVar(kullanici, HatirlaticiPolicies.Yaz):
+                    return Yasak();
+                case HatirlaticiOneki when !Guid.TryParse(parca.Deger, out _):
+                    return Sorun("kimlik", "Hatırlatıcı kimliği geçerli bir Guid olmalı.");
+            }
+
+            return await tekrar.CalistirAsync(kullanici, anahtar, "gun-devret", new { tarih, girdi },
+                () => islemler.DevretAsync(gun, parca.Onek, parca.Deger, kimlik, BildirimEndpoints.KullaniciId(kullanici), ct), CancellationToken.None);
+        });
+
         // "Bırak" on a leftover of yesterday: nothing goes to the brain, the item just leaves today's list. Repeating it changes nothing.
         girisli.MapPost("/dunden/{maddeId}/birak", async (string tarih, string maddeId, ClaimsPrincipal kullanici, AppDbContext db, TimeProvider saat, CancellationToken ct) =>
         {

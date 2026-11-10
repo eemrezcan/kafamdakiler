@@ -32,7 +32,7 @@ public class GunIslemleri(
                 var zincirSonucu = geri
                     ? ZincirSonucu.Bos
                     : await HatirlaticiZinciri.MaddeIsaretlendiAsync(db, dto.Tarih, deger, dto, ayar.VarsayilanSaat, simdi, log, ct);
-                var oge = await OgeAlAsync(gun, kimlik, kullaniciId, () => MaddedenOge(dto.Madde, kimlik), ct);
+                var oge = await OgeAlAsync(gun, kimlik, kullaniciId, () => MaddedenOge(dto.Madde, kimlik, gun), ct);
                 return YazmaYaniti.Tamam(new YaptimYanitiDto(oge, zincirSonucu.Kimlikler, zincirSonucu.Hata));
             }
 
@@ -45,7 +45,7 @@ public class GunIslemleri(
                     return yanit;
 
                 var zincirSonucu = await HatirlaticiZinciri.GorevBitirildiAsync(db, deger, ayar.VarsayilanSaat, simdi, log, ct);
-                var oge = (onceki ?? GorevOgesi(kimlik, deger)) with { Durum = YapilacakDurumu.Yapildi };
+                var oge = (onceki ?? GorevOgesi(kimlik, deger, gun)) with { Durum = YapilacakDurumu.Yapildi };
                 return YazmaYaniti.Tamam(new YaptimYanitiDto(oge, zincirSonucu.Kimlikler, zincirSonucu.Hata));
             }
 
@@ -69,7 +69,7 @@ public class GunIslemleri(
                         db.HatirlaticiOlaylari.Remove(olay);
                     await db.SaveChangesAsync(ct);
                     return YazmaYaniti.Tamam(new YaptimYanitiDto(
-                        await OgeAlAsync(gun, kimlik, kullaniciId, () => HatirlaticidanOge(h, YapilacakDurumu.Acik), ct), [], null));
+                        await OgeAlAsync(gun, kimlik, kullaniciId, () => HatirlaticidanOge(h, YapilacakDurumu.Acik, gun), ct), [], null));
                 }
 
                 // The turn that is being done, read before the reminder moves on to the next one.
@@ -83,8 +83,66 @@ public class GunIslemleri(
                 // The reminder is saved first: a failed step of the chain does not undo it.
                 await db.SaveChangesAsync(ct);
                 var zincirSonucu = await zincir.HatirlaticiYapildiAsync(h, hedefAn, ct);
-                var oge = await OgeAlAsync(gun, kimlik, kullaniciId, () => HatirlaticidanOge(h, YapilacakDurumu.Yapildi), ct);
+                var oge = await OgeAlAsync(gun, kimlik, kullaniciId, () => HatirlaticidanOge(h, YapilacakDurumu.Yapildi, gun), ct);
                 return YazmaYaniti.Tamam(new YaptimYanitiDto(oge, zincirSonucu.Kimlikler, zincirSonucu.Hata));
+            }
+        }
+    }
+
+    // Carry an item to the next day (E2). A plan item goes through the brain's own `gun devret`; a task that has no item is added to the next
+    // day's plan as an item linked to it (`gun ekle --gorev`, with the task's title); a reminder is snoozed to tomorrow (its own "yarin").
+    // The answer is the item as it is on its new day.
+    public async Task<YazmaYaniti> DevretAsync(DateOnly gun, char onek, string deger, string kimlik, Guid? kullaniciId, CancellationToken ct)
+    {
+        var simdi = saat.GetUtcNow();
+        switch (onek)
+        {
+            case 'm':
+            {
+                var yanit = await BeyinYazma.MaddeDevret($"{gun:yyyy-MM-dd}", new MaddeDevretGirdi(deger), beyin, log, ct);
+                if (!yanit.Basarili)
+                    return yanit;
+
+                var dto = (MaddeDevredildiDto)yanit.Veri!;
+                var yeniKimlik = $"m:{dto.Madde.Id}";
+                var oge = await OgeAlAsync(dto.DevredilenGun, yeniKimlik, kullaniciId, () => MaddedenOge(dto.Madde, yeniKimlik, dto.DevredilenGun), ct);
+                return YazmaYaniti.Tamam(new DevretYanitiDto(oge));
+            }
+
+            case 'g':
+            {
+                var gorev = await OgeAlAsync(gun, kimlik, kullaniciId, () => null, ct);
+                if (gorev is null)
+                    return YazmaYaniti.Red(StatusCodes.Status404NotFound, "Bulunamadı", "Görev o günün listesinde yok.");
+
+                var yarin = gun.AddDays(1);
+                var metin = Kisalt(YapilacakYardimcisi.BaslikTemizle(gorev.Baslik), BeyinYazma.EnUzunMetin);
+                var yanit = await BeyinYazma.MaddeEkle($"{yarin:yyyy-MM-dd}", new MaddeEkleGirdi(metin, null, deger), beyin, log, ct);
+                if (!yanit.Basarili)
+                    return yanit;
+
+                var dto = (MaddeEklendiDto)yanit.Veri!;
+                var yeniKimlik = $"m:{dto.Madde.Id}";
+                var oge = await OgeAlAsync(yarin, yeniKimlik, kullaniciId, () => MaddedenOge(dto.Madde, yeniKimlik, yarin), ct);
+                return YazmaYaniti.Tamam(new DevretYanitiDto(oge));
+            }
+
+            default:
+            {
+                var h = await db.Hatirlaticilar.FindAsync([Guid.Parse(deger)], ct);
+                if (h is null)
+                    return YazmaYaniti.Red(StatusCodes.Status404NotFound, "Bulunamadı", "Hatırlatıcı bulunamadı.");
+
+                var sonuc = HatirlaticiIslemleri.Ertele(db, h, "yarin", ayar.VarsayilanSaat, simdi);
+                if (!sonuc.Basarili)
+                    return sonuc.Alan is null
+                        ? YazmaYaniti.Red(StatusCodes.Status409Conflict, "Çakışma", sonuc.Mesaj!)
+                        : YazmaYaniti.Sorun(sonuc.Alan, sonuc.Mesaj!);
+
+                await db.SaveChangesAsync(ct);
+                var yeniGun = GunSiniri.Bugun(h.EtkinAn);
+                var oge = await OgeAlAsync(yeniGun, kimlik, kullaniciId, () => HatirlaticidanOge(h, YapilacakDurumu.Acik, yeniGun), ct);
+                return YazmaYaniti.Tamam(new DevretYanitiDto(oge));
             }
         }
     }
@@ -126,7 +184,7 @@ public class GunIslemleri(
             await db.SaveChangesAsync(ct);
         }
 
-        var oge = await OgeAlAsync(gun, kimlik, kullaniciId, () => MaddedenOge(dto.Madde, kimlik), ct);
+        var oge = await OgeAlAsync(gun, kimlik, kullaniciId, () => MaddedenOge(dto.Madde, kimlik, gun), ct);
         return YazmaYaniti.Tamam(oge);
     }
 
@@ -252,22 +310,22 @@ public class GunIslemleri(
         return yedek()!;
     }
 
-    private static YapilacakDto MaddedenOge(YazilanMaddeDto m, string kimlik)
+    private static YapilacakDto MaddedenOge(YazilanMaddeDto m, string kimlik, DateOnly tarih)
     {
         var (baslik, bolunmus) = YapilacakYardimcisi.BaslikAyir(m.Baslik);
         return new YapilacakDto(
             kimlik, YapilacakTuru.Plan, baslik, null, null, false, m.TahminDk, m.SureDk is > 0 ? m.SureDk : null,
             BeyinGorunum.Yapildi(m.Durum) ? YapilacakDurumu.Yapildi : YapilacakDurumu.Acik, m.Proje, m.Bolum, null, bolunmus, null,
-            m.Id, m.Gorev, null, null, null);
+            m.Id, m.Gorev, null, null, null, tarih);
     }
 
-    private static YapilacakDto GorevOgesi(string kimlik, string slug) => new(
+    private static YapilacakDto GorevOgesi(string kimlik, string slug, DateOnly tarih) => new(
         kimlik, YapilacakTuru.Gorev, slug, null, null, false, null, null, YapilacakDurumu.Acik, null, null, null, null, null,
-        null, slug, null, null, null);
+        null, slug, null, null, null, tarih);
 
-    private static YapilacakDto HatirlaticidanOge(Hatirlatici h, YapilacakDurumu durum) => new(
+    private static YapilacakDto HatirlaticidanOge(Hatirlatici h, YapilacakDurumu durum, DateOnly tarih) => new(
         $"h:{h.Id}", YapilacakTuru.Hatirlatici, h.Baslik, YapilacakYardimcisi.HatirlaticiSaati(h), null, false, null, null, durum, null, null, null, null,
-        YapilacakYardimcisi.Ozet(h), h.MaddeId, h.GorevKimligi, h.Id, null, null);
+        YapilacakYardimcisi.Ozet(h), h.MaddeId, h.GorevKimligi, h.Id, null, null, tarih);
 
     private static string Kisalt(string metin, int enUzun) => metin.Length <= enUzun ? metin : metin[..enUzun].TrimEnd();
 }

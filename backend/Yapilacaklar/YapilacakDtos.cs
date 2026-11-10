@@ -18,10 +18,12 @@ public record BolunmusDto(int Sira, int Toplam);
 public record HatirlaticiOzetDto(Guid Id, string? Saat, Tekrar Tekrar, List<Gunler>? Gunler, bool Acil, bool Israrli, int OnceGun);
 
 // `Kimlik` is typed and unique: "m:<maddeId>", "g:<gorevKimligi>", "h:<hatirlaticiGuid>", "e:<etkinlikGuid>".
+// `Tarih` is the day of the item (E1): the day of the list for a plan item and an event, the moment's day for a reminder, the due day
+// for a task (a late one keeps its old day: `GecikmeGun` says how late), and the day it is coming on for a row of `yaklasan`.
 public record YapilacakDto(
     string Kimlik, YapilacakTuru Tur, string Baslik, string? Saat, string? BitisSaati, bool TumGun, int? TahminDk, int? SureDk,
     YapilacakDurumu Durum, string? Proje, string? Bolum, int? GecikmeGun, BolunmusDto? Bolunmus, HatirlaticiOzetDto? Hatirlatici,
-    string? MaddeId, string? GorevKimligi, Guid? HatirlaticiId, Guid? EtkinlikId, string? Yer);
+    string? MaddeId, string? GorevKimligi, Guid? HatirlaticiId, Guid? EtkinlikId, string? Yer, DateOnly Tarih);
 
 public record GunYukuDto(int AcikTahminDk, int EtkinlikDk, int KapasiteDk, int AsimDk, int BosDk, int TahminsizSayi);
 
@@ -52,7 +54,17 @@ public class YaptimGirdisi
     public bool Geri { get; set; }
 }
 
+public class DevretGirdisi
+{
+    [Required(ErrorMessage = "Kimlik zorunlu.")]
+    [StringLength(140, ErrorMessage = "Kimlik en çok 140 karakter olabilir.")]
+    public string? Kimlik { get; set; }
+}
+
 public record YaptimYanitiDto(YapilacakDto Oge, List<string> Zincir, string? ZincirHatasi);
+
+// Carrying an item to another day (E2): the item as it is on its new day.
+public record DevretYanitiDto(YapilacakDto Oge);
 
 // The reminder part of a new item and of the "set a reminder on this item" shortcut (§2, §4). Same words as the reminder itself.
 public class OgeHatirlaticiDto : IValidatableObject

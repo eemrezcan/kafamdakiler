@@ -163,7 +163,7 @@ public class GunGorunumuServisi(
                     ogeler.Add(new YapilacakDto(
                         kimlik, tur, baslik, null, null, false, m.TahminDk, m.SureDk is > 0 ? m.SureDk : null,
                         BeyinGorunum.Yapildi(m.Durum) ? YapilacakDurumu.Yapildi : YapilacakDurumu.Acik, m.Proje, bolum.Ad, null, bolunmus,
-                        null, maddeId, gorev, null, null, null));
+                        null, maddeId, gorev, null, null, null, tarih));
                 }
             }
 
@@ -182,7 +182,7 @@ public class GunGorunumuServisi(
                     var (baslik, bolunmus) = YapilacakYardimcisi.BaslikAyir(g.Baslik);
                     ogeler.Add(new YapilacakDto(
                         $"g:{g.Kimlik}", YapilacakTuru.Gorev, baslik, null, null, false, null, null, YapilacakDurumu.Acik, g.Proje, null, g.Gun,
-                        bolunmus, null, null, g.Kimlik, null, null, null));
+                        bolunmus, null, null, g.Kimlik, null, null, null, g.Bitis ?? tarih));
                 }
             }
         }
@@ -198,7 +198,7 @@ public class GunGorunumuServisi(
             etkinlikSatirlari.Add(new YapilacakDto(
                 $"e:{e.Id}", YapilacakTuru.Etkinlik, e.Baslik, e.TumGun ? null : TakvimZamani.SaatMetni(e.Baslangic),
                 e.TumGun ? null : TakvimZamani.SaatMetni(e.Bitis), e.TumGun, null, sure, YapilacakDurumu.Acik, null, null, null, null, null,
-                null, null, null, e.Id, string.IsNullOrWhiteSpace(e.Yer) ? null : e.Yer));
+                null, null, null, e.Id, string.IsNullOrWhiteSpace(e.Yer) ? null : e.Yer, tarih));
         }
 
         // Reminders: the ones tied to an item of this list join it; the rest are rows of their own when one of their moments is in the day
@@ -254,7 +254,7 @@ public class GunGorunumuServisi(
             ogeler.Add(new YapilacakDto(
                 $"h:{h.Id}", YapilacakTuru.Hatirlatici, h.Baslik, saatli ? TakvimZamani.SaatMetni(an) : null, null, false, null, null,
                 yapildi ? YapilacakDurumu.Yapildi : YapilacakDurumu.Acik, null, null, gecikmeGun, null, YapilacakYardimcisi.Ozet(h),
-                h.MaddeId, h.GorevKimligi, h.Id, null, null));
+                h.MaddeId, h.GorevKimligi, h.Id, null, null, GunSiniri.Bugun(an)));
         }
 
         ogeler.AddRange(etkinlikSatirlari);

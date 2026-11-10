@@ -32,6 +32,13 @@ public record BildirimDto(
     Guid Id, string Baslik, string Metin, string? Rota, string? HedefKimligi, string KaynakTuru, DateTimeOffset OlusmaAni, string? Anahtar,
     List<BildirimSecenegiDto>? Secenekler = null);
 
+// A row of the notification center: what a notification says, and whether it was read. No buttons here (they are worked out from the card
+// as it is now, when one notification is opened with GET /api/bildirimler/{id}).
+public record BildirimSatiriDto(
+    Guid Id, string Baslik, string Metin, string? Rota, string? HedefKimligi, string KaynakTuru, DateTimeOffset OlusmaAni, string? Anahtar, bool Okundu);
+
+public record OkunmamisSayisiDto(int Okunmamis);
+
 public record PushDurumDto(bool Acik, int CihazSayisi, SonGonderim? SonGonderim);
 
 public record TestSonucuDto(Guid BildirimId, int Hedef, int Giden, int Silinen, int Hatali);
@@ -40,6 +47,9 @@ public record TestSonucuDto(Guid BildirimId, int Hedef, int Giden, int Silinen, 
 // reads the text here. Any signed-in user may register devices and read their own notifications; the test send is the Sahip's.
 public static class BildirimEndpoints
 {
+    public const int VarsayilanSatir = 30;
+    public const int EnCokSatir = 100;
+
     public static void MapBildirimEndpoints(this IEndpointRouteBuilder app)
     {
         var girisli = app.MapGroup("/api").WithTags("Bildirimler")
@@ -63,6 +73,61 @@ public static class BildirimEndpoints
 
             // Idempotent: a token that is already gone is not an error (the app signs out whatever happened before).
             await servis.CihazSilAsync(id, dto.Token!.Trim(), ct);
+            return Results.NoContent();
+        });
+
+        // The notification center (K-0024, §6): the person's own rows, newest first, `once` is the moment to continue from (the oldest row
+        // of the page before), 30 rows unless `limit` says otherwise (1 to 100).
+        girisli.MapGet("/bildirimler", async (AppDbContext db, ClaimsPrincipal kullanici, CancellationToken ct, DateTimeOffset? once = null, int limit = VarsayilanSatir) =>
+        {
+            if (KullaniciId(kullanici) is not { } kullaniciId)
+                return Results.Unauthorized();
+            if (limit is < 1 or > EnCokSatir)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["limit"] = [$"Satır sayısı 1 ile {EnCokSatir} arasında olmalı."] });
+
+            var sorgu = db.Bildirimler.AsNoTracking().Where(b => b.KullaniciId == kullaniciId);
+            if (once is { } sinir)
+                sorgu = sorgu.Where(b => b.OlusmaAni < sinir);
+
+            var satirlar = await sorgu.OrderByDescending(b => b.OlusmaAni).ThenByDescending(b => b.Id).Take(limit)
+                .Select(b => new BildirimSatiriDto(b.Id, b.Baslik, b.Metin, b.Rota, b.HedefKimligi, b.KaynakTuru, b.OlusmaAni, b.Anahtar, b.OkunmaAni != null))
+                .ToListAsync(ct);
+            return Results.Ok(satirlar);
+        });
+
+        girisli.MapGet("/bildirimler/sayi", async (AppDbContext db, ClaimsPrincipal kullanici, CancellationToken ct) =>
+            KullaniciId(kullanici) is not { } kullaniciId
+                ? Results.Unauthorized()
+                : Results.Ok(new OkunmamisSayisiDto(await db.Bildirimler.CountAsync(b => b.KullaniciId == kullaniciId && b.OkunmaAni == null, ct))));
+
+        // Marks one as read (its first reading stays: reading it again changes nothing). Somebody else's is a 404, as for the single read.
+        girisli.MapPost("/bildirimler/{id:guid}/okundu", async (Guid id, AppDbContext db, ClaimsPrincipal kullanici, TimeProvider saat, CancellationToken ct) =>
+        {
+            if (KullaniciId(kullanici) is not { } kullaniciId)
+                return Results.Unauthorized();
+
+            var b = await db.Bildirimler.FirstOrDefaultAsync(x => x.Id == id && x.KullaniciId == kullaniciId, ct);
+            if (b is null)
+                return Results.NotFound();
+
+            if (b.OkunmaAni is null)
+            {
+                b.OkunmaAni = saat.GetUtcNow();
+                await db.SaveChangesAsync(ct);
+            }
+
+            return Results.NoContent();
+        });
+
+        // Marks all of the person's unread rows as read.
+        girisli.MapPost("/bildirimler/okundu", async (AppDbContext db, ClaimsPrincipal kullanici, TimeProvider saat, CancellationToken ct) =>
+        {
+            if (KullaniciId(kullanici) is not { } kullaniciId)
+                return Results.Unauthorized();
+
+            var an = saat.GetUtcNow();
+            await db.Bildirimler.Where(b => b.KullaniciId == kullaniciId && b.OkunmaAni == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(b => b.OkunmaAni, an), ct);
             return Results.NoContent();
         });
 

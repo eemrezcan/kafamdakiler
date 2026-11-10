@@ -378,6 +378,76 @@ public sealed class IsApiTests(UygulamaFabrikasi uygulama) : IClassFixture<Uygul
         Assert.Contains("--gerekce=Vazgeçtim", cagrilar[2]);
     }
 
+    [Theory]
+    [InlineData("kod-onayi")]
+    [InlineData("karar")]
+    [InlineData("yapim")]
+    public async Task ARevisionNeedsANote_ThatIsAskedForBeforeTheBrainIsCalled(string asama)
+    {
+        _beyin.Cikti("is goster", SahteIsKarti.Ayrinti("kart-bir", asama: asama));
+        _beyin.Cikti("is asama", SahteIsKarti.Kart("kart-bir", asama: "plan"));
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta);
+
+        foreach (var govde in new object[] { new { asama = "plan" }, new { asama = "plan", not = "   " } })
+        {
+            var (durum, sorun, ham) = await OkuAsync(await GonderAsync(HttpMethod.Post, "/api/isler/kart-bir/asama", sahip, govde));
+            Assert.Equal(HttpStatusCode.BadRequest, durum);
+            Assert.Equal("Revizyon için kısa bir not yaz.", Assert.Single(sorun.GetProperty("errors").GetProperty("not-gerekli").EnumerateArray()).GetString());
+            Assert.DoesNotContain("projects/", ham);
+        }
+
+        Assert.Empty(Cagrilar("asama"));
+
+        // With a note the brain is asked, and gets the note.
+        Assert.Equal(HttpStatusCode.OK, (await GonderAsync(HttpMethod.Post, "/api/isler/kart-bir/asama", sahip, new { asama = "plan", not = "Daha dar olsun" })).StatusCode);
+        Assert.Contains("--not=Daha dar olsun", Assert.Single(Cagrilar("asama")));
+    }
+
+    [Fact]
+    public async Task ANewCardMovesToPlanWithoutANote_ItIsNotARevision_AndClosedAndOtherMovesNeedNone()
+    {
+        _beyin.Cikti("is goster", SahteIsKarti.Ayrinti("kart-bir", asama: "talep"));
+        _beyin.Cikti("is asama", SahteIsKarti.Kart("kart-bir", asama: "plan"));
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta);
+
+        Assert.Equal(HttpStatusCode.OK, (await GonderAsync(HttpMethod.Post, "/api/isler/kart-bir/asama", sahip, new { asama = "plan" })).StatusCode);
+
+        // A closed card is refused for being closed (the brain says so), not for the missing note.
+        _beyin.Cikti("is goster", SahteIsKarti.Ayrinti("kart-iki", asama: "bitti"));
+        _beyin.Cikti("is asama", SahteIsKarti.Hata("kapali", "kapalı"), cikis: 1);
+        var (durum, sorun, _) = await OkuAsync(await GonderAsync(HttpMethod.Post, "/api/isler/kart-iki/asama", sahip, new { asama = "plan" }));
+        Assert.Equal((HttpStatusCode.Conflict, "Kart kapalı"), (durum, sorun.GetProperty("title").GetString()));
+    }
+
+    [Fact]
+    public async Task WhenTheBrainAsksForTheNoteItself_TheAnswerIsTheSameSentence()
+    {
+        // The card looks like an early one to the server (so it does not stop it), and the brain still wants the note.
+        _beyin.Cikti("is goster", SahteIsKarti.Ayrinti("kart-bir", asama: "talep"));
+        _beyin.Cikti("is asama", SahteIsKarti.Hata("not-gerekli", "revizyonda --not şart: projects/x/isler/kart-bir.md"), cikis: 1);
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta);
+
+        var (durum, sorun, ham) = await OkuAsync(await GonderAsync(HttpMethod.Post, "/api/isler/kart-bir/asama", sahip, new { asama = "plan" }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, durum);
+        Assert.Equal("Revizyon için kısa bir not yaz.", Assert.Single(sorun.GetProperty("errors").GetProperty("not-gerekli").EnumerateArray()).GetString());
+        Assert.DoesNotContain("projects/", ham);
+    }
+
+    [Fact]
+    public async Task AFreeAnswer_ThatIsNotAmongTheOptions_IsWrittenAsItIs()
+    {
+        _beyin.Cikti("is goster", SahteIsKarti.Ayrinti("kart-bir", sorular: [new(1, "Hangi kütüphane?", ["a", "b"])]));
+        _beyin.Cikti("is cevapla", SahteIsKarti.Kart("kart-bir"));
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta);
+
+        var yanit = await GonderAsync(HttpMethod.Post, "/api/isler/kart-bir/cevap", sahip, new { soruNo = 1, cevap = "İkisi de olmasın; kendimiz yazalım" });
+
+        Assert.Equal(HttpStatusCode.OK, yanit.StatusCode);
+        var a = Assert.Single(Cagrilar("cevapla"));
+        Assert.Equal(["kart-bir", "1", "İkisi de olmasın; kendimiz yazalım"], a[(Array.IndexOf(a, "--") + 1)..]);
+    }
+
     [Fact]
     public async Task AnApproval_IsNeverTakenFromTheRequest_AndOtherStagesCarryNone()
     {

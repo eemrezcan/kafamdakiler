@@ -182,6 +182,10 @@ public sealed class TakvimAraligiApiTests(UygulamaFabrikasi uygulama) : GunTestT
         var tatil = yaklasan.First(o => o.GetProperty("tur").GetString() == "etkinlik");
         Assert.Equal("Tatil", tatil.GetProperty("baslik").GetString());
         Assert.True(tatil.GetProperty("tumGun").GetBoolean());
+        // Every row says the day it is coming on (E1): the day of its moment, its due day, the day the event starts in the window.
+        Assert.Equal(
+            ["2026-11-10", "2026-11-10", "2026-11-12", "2026-11-18", "2026-11-20"],
+            yaklasan.Select(o => o.GetProperty("tarih").GetString()));
         // The ones that are not on the list are really not in it (the daily reminder shows its next turn, the 10th).
         Assert.Equal(5, yaklasan.Count);
     }

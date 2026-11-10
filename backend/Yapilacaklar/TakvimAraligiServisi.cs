@@ -117,7 +117,7 @@ public class TakvimAraligiServisi(
             var (baslik, bolunmus) = YapilacakYardimcisi.BaslikAyir(g.Baslik);
             satirlar.Add((g.Bitis!.Value, bagli is null ? "" : YapilacakYardimcisi.HatirlaticiSaati(bagli) ?? "", new YapilacakDto(
                 $"g:{g.Kimlik}", YapilacakTuru.Gorev, baslik, bagli is null ? null : YapilacakYardimcisi.HatirlaticiSaati(bagli), null, false, null, null,
-                YapilacakDurumu.Acik, g.Proje, null, null, bolunmus, bagli is null ? null : YapilacakYardimcisi.Ozet(bagli), null, g.Kimlik, null, null, null)));
+                YapilacakDurumu.Acik, g.Proje, null, null, bolunmus, bagli is null ? null : YapilacakYardimcisi.Ozet(bagli), null, g.Kimlik, null, null, null, g.Bitis.Value)));
         }
 
         // Open reminders: the next moment of each from tomorrow on (a repeating one shows its next turn, the rest of its turns are the grid's).
@@ -140,7 +140,7 @@ public class TakvimAraligiServisi(
             var saatli = h.Saat is not null || (h.ErteleAn is not null && an == h.ErteleAn);
             satirlar.Add((gun, saatli ? TakvimZamani.SaatMetni(an) : "", new YapilacakDto(
                 $"h:{h.Id}", YapilacakTuru.Hatirlatici, h.Baslik, saatli ? TakvimZamani.SaatMetni(an) : null, null, false, null, null,
-                YapilacakDurumu.Acik, null, null, null, null, YapilacakYardimcisi.Ozet(h), h.MaddeId, h.GorevKimligi, h.Id, null, null)));
+                YapilacakDurumu.Acik, null, null, null, null, YapilacakYardimcisi.Ozet(h), h.MaddeId, h.GorevKimligi, h.Id, null, null, gun)));
         }
 
         var tumGunler = await db.TakvimEtkinlikleri.AsNoTracking()
@@ -151,7 +151,7 @@ public class TakvimAraligiServisi(
             var gun = e.BaslangicGunu > ilk ? e.BaslangicGunu : ilk;
             satirlar.Add((gun, "", new YapilacakDto(
                 $"e:{e.Id}", YapilacakTuru.Etkinlik, e.Baslik, null, null, true, null, null, YapilacakDurumu.Acik, null, null, null, null, null,
-                null, null, null, e.Id, string.IsNullOrWhiteSpace(e.Yer) ? null : e.Yer)));
+                null, null, null, e.Id, string.IsNullOrWhiteSpace(e.Yer) ? null : e.Yer, gun)));
         }
 
         return satirlar.OrderBy(s => s.Gun).ThenBy(s => s.Saat, StringComparer.Ordinal).ThenBy(s => s.Oge.Kimlik, StringComparer.Ordinal)

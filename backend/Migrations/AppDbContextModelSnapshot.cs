@@ -304,6 +304,9 @@ namespace Kafamdakiler.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<DateTimeOffset?>("OkunmaAni")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("OlusmaAni")
                         .HasColumnType("timestamp with time zone");
 
@@ -318,6 +321,8 @@ namespace Kafamdakiler.Migrations
                     b.HasIndex("KullaniciId", "Anahtar")
                         .IsUnique()
                         .HasFilter("\"Anahtar\" IS NOT NULL");
+
+                    b.HasIndex("KullaniciId", "OlusmaAni");
 
                     b.ToTable("Bildirimler");
                 });

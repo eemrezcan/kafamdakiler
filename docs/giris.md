@@ -167,6 +167,11 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Gün kapasitesi ayarı: `backend/Ayarlar/` (`GunAyarlari`, `GunKapasitesi`, uçlar, `ayarlar.http`); `BeyinOkuma`, `ZamanCizelgesi` ve `BrifingGirdiOkuyucu` bu ayarı okur.
   - `Program.cs` kayıtları, `AppDbContext` ayarları.
   - Testler: `backend.Tests/GunTestTabani.cs`, `GunGorunumuApiTests`, `GunYaptimApiTests`, `GunOgeApiTests`, `TakvimAraligiApiTests`, `HatirlaticiCokGunluTests`, `HatirlaticiZinciriTests`, `HatirlaticiBagiApiTests`, `OpenApiUclariTests`, `SahteBeyin.cs` eklemesi (`CiktiTarihli`).
+- UI revizyonu, Faz A2 (backend; 2026-11-11, K-0024, aynı düzen): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Bildirim merkezi: `backend/Bildirimler/` (`Bildirim.OkunmaAni`, `BildirimEndpoints` içindeki liste, sayı, okundu uçları, `bildirimler.http`), migration `BildirimOkunma`, `backend.Tests/BildirimMerkeziApiTests.cs`.
+  - Sözleşme ekleri: `YapilacakDto.Tarih` (E1), tek devret ucu `POST /api/gun/{tarih}/devret` (`GunIslemleri.DevretAsync`, `GunEndpoints`; E2), iş kartında revizyon notu zorunluluğu ve `not-gerekli` hatası (`Isler/IsKartlari.cs`, `OpenApi/HataAnahtarlari.cs`; E6), serbest cevabın testle sabitlenmesi (`IsApiTests`).
+  - Zincir kuralı değişikliği: biten görev, bağlı tekrarlı hatırlatıcıyı da kapatır (`HatirlaticiZinciri`, `HatirlaticiIslemleri.Kapat`).
+  - `GercekBeyinIsTests` beynin 2026-11-11 kuralına göre güncellendi (son cevap kartı plana döndürür, revizyonda not şart).
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

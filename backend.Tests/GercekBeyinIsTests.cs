@@ -109,19 +109,43 @@ public sealed class GercekBeyinIsTests : IDisposable
         Assert.DoesNotContain("/", reddedilen.Ayrinti);
         Assert.Equal("karar", (await Ayrinti(beyin, Kimlik)).Asama);
 
-        // Answer it; a second, different answer is refused (the brain would have overwritten); the same one again is fine.
-        var cevaplanan = Kart(await IsKartlari.Cevapla(Kimlik, new(1, "a"), beyin, Gunluk, Ct));
+        // Answer it with words of the person's own, which are not among the options: the brain takes it as it is. A second, different answer is
+        // refused (the brain would have overwritten); the same one again is fine.
+        const string Serbest = "İkisi de olmasın, kendimiz yazalım";
+        var cevaplanan = Kart(await IsKartlari.Cevapla(Kimlik, new(1, Serbest), beyin, Gunluk, Ct));
         Assert.Equal(0, cevaplanan.BekleyenSoru);
         Assert.Equal(409, (await IsKartlari.Cevapla(Kimlik, new(1, "b"), beyin, Gunluk, Ct)).Durum);
-        Assert.True((await IsKartlari.Cevapla(Kimlik, new(1, "a"), beyin, Gunluk, Ct)).Basarili);
-        Assert.Equal("a", Assert.Single((await Ayrinti(beyin, Kimlik)).Sorular).Cevap);
+        Assert.True((await IsKartlari.Cevapla(Kimlik, new(1, Serbest), beyin, Gunluk, Ct)).Basarili);
+        Assert.Equal(Serbest, Assert.Single((await Ayrinti(beyin, Kimlik)).Sorular).Cevap);
 
-        // On to the code gate; its notification offers approve and back to plan. The phone shows "Onayla" only when the card's own list
-        // of next stages (read off the real brain here) has the stage the gate leads to.
+        // The brain's rule since 2026-11-11: the last question answered sends the card back to the plan session (the VPS), in the same write.
+        var yenidenPlan = await Ayrinti(beyin, Kimlik);
+        Assert.Equal(("plan", "vps"), (yenidenPlan.Asama, yenidenPlan.Sahip));
+        Assert.Contains(yenidenPlan.Gecmis, g => g.Olay.Contains("yeniden planlama istendi: bütün sorular cevaplandı"));
+        // Nothing to ask the person while the card is with the VPS, and it cannot go to the gate from the plan stage.
+        Assert.Empty(IsKartlari.BildirimSecenekleri(yenidenPlan));
+        Assert.Equal(409, (await Asama(beyin, Kimlik, "kod-onayi")).Durum);
+
+        // The VPS plans again and hands the card back at the decision, which has no open question now; the person moves it on to the gate.
+        await Vps(beyin, ["is", "asama", "--sahip=kullanici"], Kimlik, "karar");
         var kodKapisi = Kart(await Asama(beyin, Kimlik, "kod-onayi"));
         Assert.Equal("kod-onayi", kodKapisi.Asama);
+
+        // On the code gate; its notification offers approve and back to plan. The phone shows "Onayla" only when the card's own list
+        // of next stages (read off the real brain here) has the stage the gate leads to.
         Assert.All(new[] { "yapim", "plan", "iptal" }, sonraki => Assert.Contains(sonraki, kodKapisi.Gecisler));
         Assert.Equal(["Onayla", "Plana dön"], IsKartlari.BildirimSecenekleri(await Ayrinti(beyin, Kimlik)).Select(b => b.Etiket));
+
+        // Sending the card back to the plan is a revision, and a revision needs a note: the API asks for it before the brain is called
+        // (the card stays where it is), and with a note the brain files it and the card is with the VPS again.
+        var notsuz = await Asama(beyin, Kimlik, "plan");
+        Assert.Equal(400, notsuz.Durum);
+        Assert.Equal("kod-onayi", (await Ayrinti(beyin, Kimlik)).Asama);
+        var revizyon = Kart(await IsKartlari.AsamaDegistir(Kimlik, new("plan", null, "Kapsamı daralt"), beyin, Gunluk, TimeProvider.System, Ct));
+        Assert.Equal(("plan", "vps"), (revizyon.Asama, revizyon.Sahip));
+        Assert.Contains((await Ayrinti(beyin, Kimlik)).Gecmis, g => g.Olay.Contains("revizyon: Kapsamı daralt"));
+        await Vps(beyin, ["is", "asama", "--sahip=kullanici"], Kimlik, "karar");
+        Assert.Equal("kod-onayi", Kart(await Asama(beyin, Kimlik, "kod-onayi")).Asama);
 
         // Leaving the gate forward: the server adds the approval, the brain accepts it and writes it into the history.
         var yapim = Kart(await Asama(beyin, Kimlik, "yapim"));

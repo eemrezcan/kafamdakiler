@@ -1,0 +1,47 @@
+### Notification center scenario (K-0024): the person's own notifications, newest first, with a read mark.
+### Run the requests top to bottom (VS Code REST Client or Rider HTTP Client).
+### Fill the seed account values from user-secrets: Seed:SahipEmail / Seed:SahipPassword. Do not commit real values.
+### Any signed-in account may use these; nobody sees another account's rows.
+
+@host = http://localhost:5051
+@sahipEmail = <Seed:SahipEmail>
+@sahipSifre = <Seed:SahipPassword>
+
+### 1. Log in as Sahip
+# @name login
+POST {{host}}/api/hesap/login
+Content-Type: application/json
+
+{ "email": "{{sahipEmail}}", "password": "{{sahipSifre}}" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### 2. The unread count (for the badge) -> { "okunmamis": 3 }
+GET {{host}}/api/bildirimler/sayi
+Authorization: Bearer {{token}}
+
+### 3. The list, newest first, 30 rows (`limit` 1 to 100). Each row has `okundu`.
+# @name liste
+GET {{host}}/api/bildirimler
+Authorization: Bearer {{token}}
+
+### 3b. The next page: `once` is the `olusmaAni` of the oldest row of the page before
+GET {{host}}/api/bildirimler?once=2026-11-10T08:00:00%2B00:00&limit=30
+Authorization: Bearer {{token}}
+
+### 3c. Refused: a limit outside 1..100 -> 400 { errors: { limit } }
+GET {{host}}/api/bildirimler?limit=500
+Authorization: Bearer {{token}}
+
+### 4. Open one (unchanged: the buttons of a work card come with it; reading it does not mark it)
+GET {{host}}/api/bildirimler/{{liste.response.body.$[0].id}}
+Authorization: Bearer {{token}}
+
+### 5. Mark one as read -> 204 (again: still 204, the first reading stays; somebody else's -> 404)
+POST {{host}}/api/bildirimler/{{liste.response.body.$[0].id}}/okundu
+Authorization: Bearer {{token}}
+
+### 6. Mark all as read -> 204
+POST {{host}}/api/bildirimler/okundu
+Authorization: Bearer {{token}}

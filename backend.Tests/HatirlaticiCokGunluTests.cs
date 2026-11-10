@@ -204,7 +204,7 @@ public class HatirlaticiCokGunluTests
     // The day's weight
 
     private static YapilacakDto Oge(YapilacakTuru tur, YapilacakDurumu durum, int? tahmin) => new(
-        "x", tur, "x", null, null, false, tahmin, null, durum, null, null, null, null, null, null, null, null, null, null);
+        "x", tur, "x", null, null, false, tahmin, null, durum, null, null, null, null, null, null, null, null, null, null, new DateOnly(2026, 11, 9));
 
     [Fact]
     public void Yuk_CountsOpenPlanAndTaskItems_ByTheirEstimate_AndTheRestApart()
