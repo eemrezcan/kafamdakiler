@@ -13,6 +13,11 @@
     </div>
 </div>
 
+@if (Model.YazmaHatasi is not null)
+{
+    <div class="kd-alert" role="alert">@Model.YazmaHatasi</div>
+}
+
 <partial name="~/Pages/Beyin/_BeyinHata.cshtml" model="Model" />
 
 @if (Model.Kart is { } kart)
@@ -68,6 +73,29 @@
                         <p class="kd-capture-meta"><span>Neden: @s.Neden</span></p>
                     }
                     <p class="kd-capture-meta mt-1"><span>@(s.Cevap is null ? "Cevap bekliyor" : "Cevap: " + s.Cevap)</span></p>
+                    @if (s.Cevap is null && kart.Acik)
+                    {
+                        @* The options are one tap each; the person's own words are always offered next to them. *@
+                        @if (s.Secenekler.Count > 0)
+                        {
+                            <div class="kd-gun-actions">
+                                @foreach (var secenek in s.Secenekler)
+                                {
+                                    <form method="post" asp-page-handler="Cevap" asp-route-kimlik="@kart.Kimlik">
+                                        <input type="hidden" name="soruNo" value="@s.No" />
+                                        <input type="hidden" name="cevap" value="@secenek" />
+                                        <button type="submit" class="btn btn-sm @(secenek == s.Onerilen ? "btn-primary" : "btn-outline-primary")">@secenek</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        <form method="post" asp-page-handler="Cevap" asp-route-kimlik="@kart.Kimlik" class="kd-gun-form">
+                            <input type="hidden" name="soruNo" value="@s.No" />
+                            <label class="visually-hidden" for="kendi-cevap-@s.No">Kendi cevabım</label>
+                            <input class="form-control" id="kendi-cevap-@s.No" name="cevap" maxlength="@IsKartlari.EnUzunCevap" placeholder="Kendi cevabım" required />
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Cevabımı gönder</button>
+                        </form>
+                    }
                 </div>
             </article>
         }
@@ -89,6 +117,19 @@
             </article>
         }
     </section>
+
+    @if (kart.Acik && kart.Gecisler.Contains("plan"))
+    {
+        <section class="kd-yonetim-blok" aria-labelledby="revizyon-baslik">
+            <h2 class="kd-eyebrow kd-section-title" id="revizyon-baslik">Plana geri gönder</h2>
+            <p class="kd-muted">Plan olmadıysa kısa bir not yaz; plan oturumu notu girdi olarak okur.</p>
+            <form method="post" asp-page-handler="PlanaGeri" asp-route-kimlik="@kart.Kimlik" class="kd-gun-form">
+                <label class="visually-hidden" for="revizyon-not">Revizyon notu</label>
+                <input class="form-control" id="revizyon-not" name="not" maxlength="@IsKartlari.EnUzunNot" placeholder="Neyi değiştirsin?" required />
+                <button type="submit" class="btn btn-outline-primary">Plana geri gönder</button>
+            </form>
+        </section>
+    }
 
     <p><a asp-page="/Isler/Index">← Bütün kartlar</a></p>
 }

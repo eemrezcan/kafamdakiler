@@ -1,5 +1,4 @@
-﻿@inject Kafamdakiler.Eylemler.EylemServisi EylemServisi
-@inject Kafamdakiler.Data.AppDbContext KayitDb
+﻿@inject Kafamdakiler.Data.AppDbContext KayitDb
 @{
     var currentPage = ViewContext.RouteData.Values["page"] as string ?? "";
     // Which menu entry a page belongs to (K-0024: Bugün · Takvim · Asistan · Alışkanlıklar · Beyin). The old assistant pages (inbox,
@@ -13,13 +12,19 @@
     var ayarAktif = currentPage.StartsWith("/Ayarlar");
     // Signed-out visitors only see the sign-in page, so the app chrome (top bar, settings, footer) is hidden for them.
     var showChrome = User.Identity?.IsAuthenticated == true;
-    // The assistant badge: placement suggestions waiting in the inbox (counting the cards would start the brain on every page).
-    var bekleyenGelen = 0;
-    if (showChrome)
+    // The badge on "Asistan": questions the assistant asked that wait for an answer, and actions waiting for approval (two cheap counts of the
+    // database: the menu is on every page, so it never starts the brain). The Asistan page's "Bekleyen" chip adds the work cards with a
+    // question open, which only the brain knows. A failing count leaves the number out.
+    var bekleyenAsistan = 0;
+    if (showChrome && Kafamdakiler.Eylemler.EylemEndpoints.KullaniciId(User) is { } asistanKimligi)
     {
         try
         {
-            bekleyenGelen = await EylemServisi.BekleyenSayisiAsync(Kafamdakiler.Eylemler.YerlestirTuru.Anahtar, Context.RequestAborted);
+            bekleyenAsistan =
+                await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+                    KayitDb.AsistanMesajlari, m => m.KullaniciId == asistanKimligi && m.Tur == Kafamdakiler.Asistan.AsistanMesajTuru.Soru && m.CevaplandiAni == null, Context.RequestAborted)
+                + await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+                    KayitDb.Eylemler, e => e.Durum == Kafamdakiler.Eylemler.EylemDurumu.Bekliyor, Context.RequestAborted);
         }
         catch (Exception)
         {
@@ -70,12 +75,11 @@
             <div class="kd-nav-links">
                 <a class="kd-nav-link @(bugunAktif ? "active" : "")" asp-area="" asp-page="/Index">Bugün</a>
                 <a class="kd-nav-link @(takvimAktif ? "active" : "")" asp-area="" asp-page="/Takvim/Index">Takvim</a>
-                @* The Asistan stream is the next phase (W2); until then this entry opens the inbox, where the assistant's old pages are reached. *@
-                <a class="kd-nav-link @(asistanAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
+                <a class="kd-nav-link @(asistanAktif ? "active" : "")" asp-area="" asp-page="/Asistan/Index">
                     Asistan
-                    @if (bekleyenGelen > 0)
+                    @if (bekleyenAsistan > 0)
                     {
-                        <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
+                        <span class="kd-badge" aria-label="@bekleyenAsistan bekleyen şey">@bekleyenAsistan</span>
                     }
                 </a>
                 <a class="kd-nav-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">Alışkanlıklar</a>
@@ -147,12 +151,12 @@
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-calendar"></use></svg>
                     Takvim
                 </a>
-                <a class="kd-drawer-link @(asistanAktif ? "active" : "")" asp-area="" asp-page="/Gelen/Index">
+                <a class="kd-drawer-link @(asistanAktif ? "active" : "")" asp-area="" asp-page="/Asistan/Index">
                     <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
                     Asistan
-                    @if (bekleyenGelen > 0)
+                    @if (bekleyenAsistan > 0)
                     {
-                        <span class="kd-badge" aria-label="@bekleyenGelen bekleyen öneri">@bekleyenGelen</span>
+                        <span class="kd-badge" aria-label="@bekleyenAsistan bekleyen şey">@bekleyenAsistan</span>
                     }
                 </a>
                 <a class="kd-drawer-link @(aliskanlikAktif ? "active" : "")" asp-area="" asp-page="/Aliskanliklar/Index">

@@ -157,12 +157,12 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
         Assert.Contains("name=\"etiketler\" value=\"okul\"", ham);
         Assert.DoesNotContain("finans", ham);
         Assert.DoesNotContain("kisisel", ham);
-        // The page is called "Gelen", like the menu entry, and the entry has its badge (the waiting placement suggestions).
+        // The page is called "Gelen"; the Asistan entry has the badge of what waits (the actions to approve, the questions asked).
         Assert.Contains("<h1 class=\"kd-page-title\">Gelen</h1>", ham);
         Assert.DoesNotContain("Gelen kutusu</", ham);
         using var db = uygulama.YeniDb();
-        var bekleyen = (await db.Eylemler.ToListAsync(Ct)).Count(e => e.Tur == "yerlestir" && e.Durum == EylemDurumu.Bekliyor);
-        var rozet = Regex.Match(ham, "<span [^>]*class=\"kd-badge\"[^>]*aria-label=\"[0-9]+ bekleyen öneri\"[^>]*>[^<]*</span>");
+        var bekleyen = (await db.Eylemler.ToListAsync(Ct)).Count(e => e.Durum == EylemDurumu.Bekliyor);
+        var rozet = Regex.Match(ham, "<span [^>]*class=\"kd-badge\"[^>]*aria-label=\"[0-9]+ bekleyen şey\"[^>]*>[^<]*</span>");
         Assert.True(rozet.Success);
         Assert.Contains($">{bekleyen}</span>", rozet.Value);
     }
@@ -535,7 +535,7 @@ public sealed partial class GelenSayfalariTests(UygulamaFabrikasi uygulama) : IC
 
         Assert.DoesNotContain("asp-page=\"/Yakalamalar/Index\"", ham);
         Assert.DoesNotContain("href=\"/Yakalamalar\"", ham);
-        Assert.Matches("kd-nav-link active\"[^>]*href=\"/Gelen\"", ham);
+        Assert.Matches("kd-nav-link active\"[^>]*href=\"/Asistan\"", ham);
     }
 
     // Work out of text on the web

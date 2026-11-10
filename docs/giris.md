@@ -177,6 +177,10 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Bildirimler: `backend/Pages/Bildirimler/Index.cshtml(.cs)` (liste, okundu, tümü okundu, sayfalama, hatırlatıcı bildiriminde Yaptım/Ertele), `_Layout.cshtml` içindeki 🔔 ve okunmamış sayısı, `site.css` sonu.
   - `GunSayfasi.cs` devreti A2'nin `GunIslemleri.DevretAsync` servisine geçti; Takvim yaklaşanları `YapilacakDto.Tarih`'i kullanır (veritabanından gün bulan geçici kod kalktı).
   - Testler: `GunSayfalariTests` içine bildirim ve zil testleri eklendi.
+- UI revizyonu, Faz W2 (web; 2026-11-11, K-0024, kullanıcının "sen yaz, ben inceleyeyim" isteğiyle): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
+  - Asistan sayfası: `backend/Pages/Asistan/Index.cshtml(.cs)` (giriş kutusu, akış, süzgeçler ve sayıları, sonuç/soru/onay/iş/brifing/not kartları, geri al), `Pages/SonucMetni.cs`, `_Layout.cshtml` (Asistan öğesi `/Asistan`'a gider, yanında bekleyen sayısı: cevapsız soru + onay bekleyen eylem, yalnız veritabanından), `site.css` sonu.
+  - İş kartı (E6): `backend/Pages/Isler/Detay.cshtml(.cs)` (açık soruya seçenek düğmeleri ve her zaman "Kendi cevabım", "Plana geri gönder" notla, `not-gerekli` anlaşılır).
+  - Testler: `backend.Tests/AsistanSayfalariTests.cs` (yeni), `IsSayfalariTests` içine E6 testleri.
 - UI revizyonu, Faz A2 (backend; 2026-11-11, K-0024, aynı düzen): Claude'un açtığı Sonnet işçisi yazdı; ana oturum denetleyecek, kullanıcı inceleyecek.
   - Bildirim merkezi: `backend/Bildirimler/` (`Bildirim.OkunmaAni`, `BildirimEndpoints` içindeki liste, sayı, okundu uçları, `bildirimler.http`), migration `BildirimOkunma`, `backend.Tests/BildirimMerkeziApiTests.cs`.
   - Sözleşme ekleri: `YapilacakDto.Tarih` (E1), tek devret ucu `POST /api/gun/{tarih}/devret` (`GunIslemleri.DevretAsync`, `GunEndpoints`; E2), iş kartında revizyon notu zorunluluğu ve `not-gerekli` hatası (`Isler/IsKartlari.cs`, `OpenApi/HataAnahtarlari.cs`; E6), serbest cevabın testle sabitlenmesi (`IsApiTests`).
