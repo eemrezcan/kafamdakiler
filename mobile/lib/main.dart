@@ -327,9 +327,20 @@ class _KafamdakilerAppState extends State<KafamdakilerApp> {
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         routerConfig: _router,
         scaffoldMessengerKey: _mesajAnahtari,
-        builder: (context, child) => Consumer<SurumDenetcisi>(
-          builder: (context, surum, _) =>
-              surum.guncellemeGerekli ? const GuncellemeGerekliScreen() : child!,
+        debugShowCheckedModeBanner: false,
+        // Android 15 draws the app under the system navigation bar; keeping every screen and bottom sheet above it
+        // stops their last buttons from hiding behind the phone's own keys.
+        builder: (context, child) => ColoredBox(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            child: Consumer<SurumDenetcisi>(
+              builder: (context, surum, _) =>
+                  surum.guncellemeGerekli ? const GuncellemeGerekliScreen() : child!,
+            ),
+          ),
         ),
       ),
     );
