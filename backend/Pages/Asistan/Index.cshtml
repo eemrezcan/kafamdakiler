@@ -17,11 +17,13 @@
     {
         AsistanDurumu.Uygulandi => "Yapıldı",
         AsistanDurumu.IzinYok => "İzin yok",
+        AsistanDurumu.Onayda => "Onayını bekliyor",
         AsistanDurumu.Hata => "Olmadı",
         _ => "Geçersiz",
     };
 }
 
+<div class="kd-asistan-kolon">
 <div class="kd-page-head kd-rise kd-c-violet">
     <div>
         <p class="kd-eyebrow">Söyle</p>
@@ -41,21 +43,19 @@
 }
 
 @* The one input: the assistant works out what it is (a reminder, a plan item, a task, an event, a note or a work card) and does it. *@
-<form method="post" asp-page-handler="Girdi" class="kd-composer kd-c-violet" data-kd-asistan-girdi>
+<form method="post" asp-page-handler="Girdi" class="kd-asistan-girdi kd-c-violet" data-kd-asistan-girdi>
     <input type="hidden" name="girdiId" value="@Model.GirdiId" />
     <input type="hidden" name="suzgec" value="@Model.Suzgec" />
     <label class="visually-hidden" for="asistan-metin">Asistana söyle</label>
-    <textarea class="kd-composer-input" id="asistan-metin" name="metin" rows="2" maxlength="@AsistanGirdisiDto.EnUzunMetin" required
+    <textarea class="kd-asistan-girdi-alan" id="asistan-metin" name="metin" rows="2" maxlength="@AsistanGirdisiDto.EnUzunMetin" required
               placeholder="Aklında ne var? Yarın 9'da Ali'yi ara, raporu bugün bitir, kitap kulübü için bir fikir…"></textarea>
-    <div class="kd-composer-bar">
-        <button type="submit" class="btn btn-primary">Gönder</button>
-    </div>
+    <button type="submit" class="btn btn-primary kd-asistan-gonder">Gönder</button>
 </form>
 
 <nav class="kd-akis-suzgec" aria-label="Akış süzgeçleri">
     @foreach (var (ad, etiket, sayi) in filtreler)
     {
-        <a class="kd-filter-chip @(Model.Suzgec == ad ? "active" : "")" asp-page="/Asistan/Index" asp-route-suzgec="@(ad == "hepsi" ? null : ad)"
+        <a class="kd-filter-chip @(Model.Suzgec == ad ? "is-active" : "")" asp-page="/Asistan/Index" asp-route-suzgec="@(ad == "hepsi" ? null : ad)"
            aria-current="@(Model.Suzgec == ad ? "true" : null)">@etiket@if (sayi is { } s) { <span class="kd-akis-sayi">@IndexModel.SayiMetni(s)</span> }</a>
     }
 </nav>
@@ -77,7 +77,9 @@
                     <p class="kd-akis-metin">@oge.Metin</p>
                     @if (oge.FotografUrl is not null)
                     {
-                        <img class="kd-akis-foto" src="@oge.FotografUrl" alt="" loading="lazy" />
+                        <a class="kd-akis-foto-baglanti" href="@oge.FotografUrl" target="_blank" rel="noopener" aria-label="Fotoğrafı tam boy aç">
+                            <img class="kd-akis-foto" src="@oge.FotografUrl" alt="Gönderilen fotoğraf" loading="lazy" />
+                        </a>
                     }
                     <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
                 </article>
@@ -87,7 +89,7 @@
                 <div class="kd-akis-grup" data-kd-akis="sonuc">
                     @foreach (var sonuc in oge.Sonuclar ?? [])
                     {
-                        var onayda = sonuc.Durum.ToString() == "Onayda";
+                        var onayda = sonuc.Durum == AsistanDurumu.Onayda;
                         var adres = Model.HedefAdresi(sonuc.Hedef);
                         <article class="kd-akis-oge kd-akis-kart @(sonuc.Durum == AsistanDurumu.Uygulandi ? "is-ok" : onayda ? "is-onay" : "is-sorun")" data-kd-sonuc="@sonuc.Tur">
                             <p class="kd-akis-tur">@IsimAdi(sonuc.Tur)</p>
@@ -229,6 +231,11 @@
                             </div>
                         </div>
                     }
+                    <form method="post" asp-page-handler="BrifingYenile" class="kd-akis-brifing-yenile">
+                        <input type="hidden" name="suzgec" value="@Model.Suzgec" />
+                        <button type="submit" class="btn btn-outline-primary btn-sm" disabled="@(brifing.KalanYenileme <= 0)">Yenile</button>
+                        <small class="kd-muted">Bugün @brifing.KalanYenileme yenileme hakkı kaldı.</small>
+                    </form>
                 </details>
                 break;
 
@@ -238,7 +245,9 @@
                     <p class="kd-akis-baslik"><a asp-page="/Yakalamalar/Duzenle" asp-route-id="@y.Id">@(string.IsNullOrWhiteSpace(y.Metin) ? "Fotoğraf" : y.Metin)</a></p>
                     @if (oge.FotografUrl is not null)
                     {
-                        <img class="kd-akis-foto" src="@oge.FotografUrl" alt="" loading="lazy" />
+                        <a class="kd-akis-foto-baglanti" href="@oge.FotografUrl" target="_blank" rel="noopener" aria-label="Fotoğrafı tam boy aç">
+                            <img class="kd-akis-foto" src="@oge.FotografUrl" alt="Not fotoğrafı" loading="lazy" />
+                        </a>
                     }
                     <time class="kd-akis-zaman" datetime="@oge.Zaman.ToString("o")">@YakalamaGorunum.Zaman(oge.Zaman)</time>
                 </article>
@@ -251,6 +260,8 @@
 {
     <p class="kd-footnote"><a asp-page="/Asistan/Index" asp-route-suzgec="@(Model.Suzgec == "hepsi" ? null : Model.Suzgec)" asp-route-once="@sonraki.ToString("o")">Daha eskiler</a></p>
 }
+
+</div>
 
 @functions {
     // The kind of a result as a person says it.

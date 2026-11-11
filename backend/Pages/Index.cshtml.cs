@@ -1,7 +1,6 @@
 using System.Globalization;
 using Kafamdakiler.Aliskanliklar;
 using Kafamdakiler.Beyin;
-using Kafamdakiler.Brifing;
 using Kafamdakiler.Data;
 using Kafamdakiler.Hatirlaticilar;
 using Kafamdakiler.Yapilacaklar;
@@ -14,11 +13,11 @@ namespace Kafamdakiler.Pages;
 // The home page, "Bugün" (K-0024): the one view of a day (GunGorunumuServisi, the same as GET /api/gun/{tarih}) with its writes
 // (GunSayfasi). On top the assistant's short summary and the weight of the day, then what yesterday left, the habits and the one list of
 // plan items, tasks, reminders and calendar events with one "yaptım". No date means today by the brain's own day-turn rule (05:00);
-// another day is just that day's list. The briefing and the habits belong to today's page only; neither depends on the plan, and a
-// failing one only drops its own part.
+// another day is just that day's list. The habits (a compact strip) belong to today's page only; they do not depend on the plan, and a failing
+// read only drops them. The briefing lives in the Asistan stream (Bugün keeps only the assistant's one-line summary).
 public class IndexModel(
     BeyinIstemcisi beyin, ILogger<BeyinIstemcisi> gunluk, GunGorunumuServisi gunServisi, GunIslemleri islemler, AppDbContext db,
-    HatirlaticiAyari hatirlaticiAyari, TimeProvider saat, BrifingHazirlayici brifingler)
+    HatirlaticiAyari hatirlaticiAyari, TimeProvider saat)
     : GunSayfasi(beyin, gunluk, gunServisi, islemler, db, hatirlaticiAyari, saat)
 {
     // The day asked for; always a real date once the page is shown.
@@ -44,9 +43,6 @@ public class IndexModel(
     public List<ProjeOzetDto> Projeler { get; private set; } = [];
 
     public string ProjeAdi(string kimlik) => Projeler.FirstOrDefault(p => p.Kimlik == kimlik)?.Baslik ?? kimlik;
-
-    // Today's briefing; null when it could not be had or this is another day.
-    public BrifingPaneli? Brifing { get; private set; }
 
     // The habits planned for today, as the same cards as the habits page (tick, −/+, "Nereye kadar geldin?" work here too).
     public List<Aliskanliklar.IndexModel.Kart> BugunkuAliskanliklar { get; private set; } = [];
@@ -83,35 +79,10 @@ public class IndexModel(
 
         if (BugunSayfasi)
         {
-            await BrifingYukleAsync(ct);
             await AliskanliklariYukleAsync(ct);
         }
 
         return Page();
-    }
-
-    private async Task BrifingYukleAsync(CancellationToken ct)
-    {
-        try
-        {
-            var sonuc = await brifingler.BugunAsync(ct);
-            Brifing = sonuc.Basarili
-                ? KalanKartsiz(await brifingler.DtoYapAsync(sonuc.Brifing!, ct))
-                : new BrifingPaneli(null, sonuc.Durum == BrifingDurumu.HenuzHazirDegil ? sonuc.Mesaj : "Bugünün brifingi şu an hazırlanamadı.");
-        }
-        catch (Exception e) when (e is not OperationCanceledException)
-        {
-            Gunluk.LogError(e, "The briefing panel of the home page failed.");
-            Brifing = new BrifingPaneli(null, "Bugünün brifingi şu an hazırlanamadı.");
-        }
-    }
-
-    // The "kalan" card (what yesterday left open) repeats the "Dünden kalanlar" section just below, so the strip leaves it out;
-    // the card order numbers (votes) stay as they are. With no card left there is no strip at all.
-    public static BrifingPaneli? KalanKartsiz(BrifingDto brifing)
-    {
-        var kartlar = brifing.Kartlar.Where(k => k.Tur != "kalan").ToList();
-        return kartlar.Count == 0 ? null : new BrifingPaneli(brifing with { Kartlar = kartlar }, null);
     }
 
     private async Task AliskanliklariYukleAsync(CancellationToken ct)
@@ -133,28 +104,6 @@ public class IndexModel(
         {
             Gunluk.LogError(e, "The habits of the home page failed.");
         }
-    }
-
-    // A vote on a card of today's briefing: 1, -1, or 0 to take it back.
-    public async Task<IActionResult> OnPostBrifingOyAsync(int sira, int oy, CancellationToken ct)
-    {
-        var sonuc = await brifingler.OyVerAsync(brifingler.Bugun, sira, oy, ct);
-        if (!sonuc.Basarili)
-            YazmaHatasi = sonuc.Mesaj;
-
-        return RedirectToPage("/Index", null, null, "brifing");
-    }
-
-    // The Sahip asks for a new briefing (at most three times a day).
-    public async Task<IActionResult> OnPostBrifingYenileAsync(CancellationToken ct)
-    {
-        var sonuc = await brifingler.YenileAsync(ct);
-        if (sonuc.Basarili)
-            Bildirim = "Brifing yenilendi";
-        else
-            YazmaHatasi = sonuc.Mesaj;
-
-        return RedirectToPage("/Index", null, null, "brifing");
     }
 
     // "Taşı" on a leftover of yesterday carries it to today in the brain.

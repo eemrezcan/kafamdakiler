@@ -308,41 +308,51 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
         Assert.DoesNotContain("<script>alert(1)", await WebOturumu.HamAsync(yanit, Ct));
     }
 
-    // The briefing (home page)
+    // The briefing (the Asistan stream; Bugün keeps only the assistant's summary)
 
     [Fact]
-    public async Task Home_ShowsTodaysBriefing_AVoteIsStored_AndItCanBeMadeAgain()
+    public async Task Asistan_ShowsTodaysStoredBriefing_AVoteIsStored_AndItCanBeMadeAgain()
     {
         await TemizleAsync();
+        await using (var db = YeniDb())
+        {
+            db.Brifingler.Add(new Kafamdakiler.Brifing.GunlukBrifing
+            {
+                Gun = Bugun, UretimAni = Sabah.ToUniversalTime().AddMinutes(-1), Yontem = Kafamdakiler.Brifing.BrifingYontemi.Hesap,
+                Kartlar = System.Text.Json.JsonSerializer.Serialize(
+                    new[] { new Kafamdakiler.Brifing.BrifingKarti("plan", "Bugün", "Bugün sakin bir gün.", []) }, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)),
+            });
+            await db.SaveChangesAsync(Ct);
+        }
+
         var tarayici = await SahipAsync(WebFabrika());
 
-        var sayfa = await MetinAsync(tarayici, "/");
+        var sayfa = await MetinAsync(tarayici, "/Asistan");
         Assert.Contains("Bugünün brifingi", sayfa);
         Assert.Contains("Bugün sakin bir gün", sayfa);
-        Assert.Contains("kurallarla hazırlandı", sayfa);
         Assert.DoesNotContain("aria-pressed=\"true\"", sayfa);
 
-        var oy = await PostAsync(tarayici, "/", "/?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "1" });
+        var oy = await PostAsync(tarayici, "/Asistan", "/Asistan?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "1" });
         Assert.Equal(HttpStatusCode.Redirect, oy.StatusCode);
         await using (var db = YeniDb())
             Assert.Equal(1, Assert.Single(await db.BrifingOylari.ToListAsync(Ct)).Oy);
-        Assert.Contains("aria-pressed=\"true\"", await MetinAsync(tarayici, "/"));
+        Assert.Contains("aria-pressed=\"true\"", await MetinAsync(tarayici, "/Asistan"));
 
         // Pressing the same thumb again sends 0 and takes the vote back.
-        var geri = await PostAsync(tarayici, "/", "/?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "0" });
+        var geri = await PostAsync(tarayici, "/Asistan", "/Asistan?handler=BrifingOy", new() { ["sira"] = "0", ["oy"] = "0" });
         Assert.Equal(HttpStatusCode.Redirect, geri.StatusCode);
         await using (var db = YeniDb())
             Assert.Empty(await db.BrifingOylari.ToListAsync(Ct));
 
-        var yenile = await PostAsync(tarayici, "/", "/?handler=BrifingYenile");
+        var yenile = await PostAsync(tarayici, "/Asistan", "/Asistan?handler=BrifingYenile");
         Assert.Equal(HttpStatusCode.Redirect, yenile.StatusCode);
         await using (var db = YeniDb())
             Assert.Equal(1, Assert.Single(await db.Brifingler.ToListAsync(Ct)).YenilemeSayisi);
-        Assert.Contains("Bugün 2 yenileme hakkı kaldı.", await MetinAsync(tarayici, "/"));
+        Assert.Contains("Bugün 2 yenileme hakkı kaldı.", await MetinAsync(tarayici, "/Asistan"));
     }
 
     [Fact]
-    public async Task Home_BriefingStrip_LeavesOutTheKalanCard_BecauseTheSectionBelowSaysTheSame()
+    public async Task Home_HasNoBriefingCard_OnlyTheAssistantsSummary_AndTheLeftoversSectionStays()
     {
         await TemizleAsync();
         var beyin = Beyin(b => b.Cikti("gun goster", GunPlani));
@@ -350,40 +360,11 @@ public sealed partial class KatIkiWebSayfalariTests(UygulamaFabrikasi uygulama) 
 
         var sayfa = await MetinAsync(tarayici, "/");
 
-        // The fake brain answers yesterday's card with the same plan, so the section is there and the rules made a "kalan" card.
+        // The fake brain answers yesterday's card with the same plan, so the section is there; the briefing is not (it is in the Asistan stream).
         Assert.Contains("Dünden kalanlar", sayfa);
-        Assert.Contains("Bugünün brifingi", sayfa);
-        Assert.DoesNotContain("Dünden kalan 1 madde", sayfa);
-    }
-
-    [Fact]
-    public void BriefingStrip_IsNotDrawnAtAll_WhenOnlyTheKalanCardWasThere()
-    {
-        Kafamdakiler.Brifing.BrifingKartDto Kart(int sira, string tur) => new(sira, tur, "Başlık " + tur, "Metin", [], 0);
-        var brifing = new Kafamdakiler.Brifing.BrifingDto(new DateOnly(2026, 11, 7), IstAn(2026, 11, 7, 8), Kafamdakiler.Brifing.BrifingYontemi.Hesap,
-            [Kart(0, "kalan")], 3);
-        Assert.Null(Kafamdakiler.Pages.IndexModel.KalanKartsiz(brifing));
-
-        var karisik = Kafamdakiler.Pages.IndexModel.KalanKartsiz(brifing with { Kartlar = [Kart(0, "kalan"), Kart(1, "plan")] });
-        // The remaining card keeps its original number, so a vote still lands on the right card.
-        var kalan = Assert.Single(karisik!.Brifing!.Kartlar);
-        Assert.Equal((1, "plan"), (kalan.Sira, kalan.Tur));
-    }
-
-    [Fact]
-    public async Task Home_BeforeTheBriefingHour_SaysWhenItComes_AndTheHabitsStillShow()
-    {
-        await TemizleAsync();
-        var tarayici = await SahipAsync(WebFabrika(an: IstAn(2026, 11, 7, 5, 30)));
-
-        var sayfa = await MetinAsync(tarayici, "/");
-
-        Assert.Contains("Bugünün brifingi", sayfa);
-        Assert.Contains("hazırlanır", sayfa);
-        // The page does not depend on the brain: the briefing note is there, and an empty timeline takes no room.
-        Assert.DoesNotContain("id=\"zaman-cizelgesi\"", sayfa);
-        await using var db = YeniDb();
-        Assert.Empty(await db.Brifingler.ToListAsync(Ct));
+        Assert.Contains("Asistanın özeti", sayfa);
+        Assert.DoesNotContain("Bugünün brifingi", sayfa);
+        Assert.DoesNotContain("id=\"brifing\"", sayfa);
     }
 
     // The day's list (home page and day page): events, reminders and the plan are rows of one list (K-0024)

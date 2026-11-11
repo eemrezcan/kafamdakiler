@@ -1,0 +1,19 @@
+@using Kafamdakiler.Aliskanliklar
+@model Kafamdakiler.Pages.Aliskanliklar.IndexModel.Kart
+@{
+    var a = Model.Aliskanlik;
+    var (oran, _) = Gorunum.Ilerleme(a);
+    var yuzde = (int)Math.Round(Math.Clamp(oran, 0, 1) * 100);
+    var tikla = a.Tur != AliskanlikTuru.Raf && a.Olcu == Olcu.Sayili;
+}
+<span class="kd-serit-halka" style="--p:@yuzde" aria-hidden="true">
+    <svg class="kd-icon"><use href="/img/icons.svg#@Gorunum.Ikon(a.Ikon)"></use></svg>
+</span>
+<span class="kd-serit-metin">
+    <span class="kd-serit-ad">@a.Ad</span>
+    <span class="kd-serit-deger">@Gorunum.BugunMetni(a)</span>
+</span>
+@if (tikla)
+{
+    <svg class="kd-icon kd-serit-arti" aria-hidden="true"><use href="/img/icons.svg#lucide-plus"></use></svg>
+}

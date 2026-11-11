@@ -44,6 +44,12 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         return Regex.Matches(menu, "<(?:a|button) [^>]*class=\"dropdown-item[^\"]*\"[^>]*>(.*?)</(?:a|button)>", RegexOptions.Singleline).Select(m => Duz(m.Groups[1].Value)).ToList();
     }
 
+    private async Task<Oge> db_OgeAsync(string ad)
+    {
+        await using var db = uygulama.YeniDb();
+        return await db.Ogeler.AsNoTracking().SingleAsync(o => o.Ad == ad, Ct);
+    }
+
     private async Task BekleyenEylemAsync(string baslik)
     {
         using var kapsam = uygulama.Services.CreateScope();
@@ -142,7 +148,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     }
 
     [Fact]
-    public async Task Home_IsTodaysPage_WithTheBriefingStrip_AndSaysTheBrainIsOffInsteadOfFailing()
+    public async Task Home_IsTodaysPage_WithTheAssistantsSummary_AndSaysTheBrainIsOffInsteadOfFailing()
     {
         var tarayici = await SahipAsync();
 
@@ -151,32 +157,30 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         Assert.Equal(HttpStatusCode.OK, yanit.StatusCode);
         var metin = await WebOturumu.MetinAsync(yanit, Ct);
         Assert.Contains("<title>Bugün - Kafamdakiler", metin);
-        Assert.Contains("Bugünün brifingi", metin);
+        // The briefing is in the Asistan stream; Bugün has only the assistant's summary and the weight of the day.
+        Assert.Contains("Asistanın özeti", metin);
+        Assert.DoesNotContain("Bugünün brifingi", metin);
         // No brain on this machine: the page says so and still stands (reminders, events, habits).
         Assert.Contains("Beyin bağlı değil", metin);
     }
 
     [Fact]
-    public async Task Home_ShowsTheApprovalCard_OnlyWhileSomethingWaits_AndTheInboxShowsItToo()
+    public async Task TheApprovalPointer_IsOnTheInboxOnlyWhileSomethingWaits_AndNoLongerOnBugun()
     {
         var tarayici = await SahipAsync();
         await using (var db = uygulama.YeniDb())
             await db.Eylemler.Where(e => e.Durum == EylemDurumu.Bekliyor).ExecuteDeleteAsync(Ct);
 
-        Assert.DoesNotContain("kd-onay-karti", await HamAsync(tarayici, "/"));
         Assert.DoesNotContain("kd-onay-karti", await HamAsync(tarayici, "/Gelen"));
 
         await BekleyenEylemAsync("Onay kartı " + Guid.NewGuid().ToString("N"));
 
-        foreach (var yol in new[] { "/", "/Gelen" })
-        {
-            var ham = await HamAsync(tarayici, yol);
-            Assert.Contains("kd-onay-karti", ham);
-            Assert.Contains("Onay bekleyen 1", Metin(ham));
-            Assert.Contains("href=\"/Eylemler\"", ham);
-        }
-
-        // Another day's page is only that day's plan.
+        var ham = await HamAsync(tarayici, "/Gelen");
+        Assert.Contains("kd-onay-karti", ham);
+        Assert.Contains("Onay bekleyen 1", Metin(ham));
+        Assert.Contains("href=\"/Eylemler\"", ham);
+        // What waits for approval is in the Asistan stream (and on the menu's badge); Bugün does not repeat it.
+        Assert.DoesNotContain("kd-onay-karti", await HamAsync(tarayici, "/"));
         Assert.DoesNotContain("kd-onay-karti", await HamAsync(tarayici, "/2026-11-03"));
     }
 
@@ -210,9 +214,12 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
         Assert.Contains("gün gecikti", metin);
         Assert.Contains("Bugünün alışkanlıkları", metin);
         Assert.Contains(aliskanlik, metin);
-        // The habit is the full card, usable here: its forms post to the habits page and come back to Bugün.
-        Assert.Contains("class=\"kd-habit ", ham);
+        // The habit is a compact strip item here, usable with one tap: its form posts to the habits page and comes back to Bugün.
+        // The big card is on the habits page only.
+        Assert.Contains("class=\"kd-serit-oge", ham);
+        Assert.DoesNotContain("class=\"kd-habit ", ham);
         Assert.Contains("name=\"donus\" value=\"bugun\"", ham);
+        Assert.Contains("class=\"kd-habit ", await HamAsync(tarayici, "/Aliskanliklar"));
 
         var baskaGun = Metin(await HamAsync(tarayici, "/2026-11-03"));
         Assert.DoesNotContain(aliskanlik, baskaGun);
@@ -275,7 +282,7 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
     }
 
     [Fact]
-    public async Task AShelfHabit_WithABookInProgress_RendersOnBugun_AndItsProgressFormComesBack()
+    public async Task AShelfHabit_WithABookInProgress_OpensTheReadingLogFromBugun_AndComesBackToBugun()
     {
         var tarayici = await SahipAsync();
         var kitap = "Kitap " + Guid.NewGuid().ToString("N");
@@ -293,12 +300,25 @@ public sealed class BugunSayfasiTests(UygulamaFabrikasi uygulama) : IClassFixtur
 
         var yanit = await tarayici.GetAsync("/", Ct);
 
-        // The card's own parts (cover, progress form) are found from Bugün too, not only from the habits page.
+        // The strip item opens the reading log (a modal with the book, the page and the time) and posts it back to Bugün.
         Assert.Equal(HttpStatusCode.OK, yanit.StatusCode);
         var ham = await WebOturumu.HamAsync(yanit, Ct);
         Assert.Contains(kitap, ham);
-        Assert.Contains("handler=Ilerleme", ham);
+        Assert.Contains("data-bs-target=\"#okuma-", ham);
+        Assert.Contains("handler=Okuma", ham);
+        Assert.Contains("name=\"bitisKonum\"", ham);
         Assert.Contains("name=\"donus\" value=\"bugun\"", ham);
+
+        var oge = await db_OgeAsync(kitap);
+        var token = Regex.Match(ham, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
+        var kayit = await tarayici.PostAsync($"/Aliskanliklar/Detay/{oge.AliskanlikId}?handler=Okuma", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token, ["ogeId"] = oge.Id.ToString(), ["bitisKonum"] = "25", ["dakika"] = "30", ["donus"] = "bugun",
+        }), Ct);
+        Assert.Equal(HttpStatusCode.Redirect, kayit.StatusCode);
+        Assert.StartsWith("/#h-", kayit.Headers.Location!.OriginalString);
+        await using var db2 = uygulama.YeniDb();
+        Assert.Equal(25m, Assert.Single(await db2.Oturumlar.Where(o => o.OgeId == oge.Id).ToListAsync(Ct)).BitisKonum);
     }
 
     [Theory]

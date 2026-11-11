@@ -46,6 +46,9 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
 
     private static string Metin(string ham) => WebUtility.HtmlDecode(ham);
 
+    // The words of a piece of HTML, one space between them.
+    private static string Duz(string html) => Regex.Replace(Regex.Replace(Metin(html), "<[^>]+>", " "), "\\s+", " ").Trim();
+
     // Posts the fields to the handler of a page; the token comes from that page. The answer is the redirect, not followed.
     private async Task<HttpResponseMessage> PostAsync(HttpClient tarayici, string sayfa, string islem, Dictionary<string, string> alanlar)
     {
@@ -844,5 +847,129 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
 
         Assert.Equal("/Takvim", yerel.Headers.Location!.OriginalString);
         Assert.Equal("/Bildirimler", yabanci.Headers.Location!.OriginalString);
+    }
+
+    // W3: the row folds as one piece, the habit strip, the primary button
+
+    [Fact]
+    public async Task ARow_OpensItsDetailAsAWhole_TheTickStaysOutsideIt_AndThereIsNoAyrintiLink()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+        BugunPlani([Madde("a3f09c", "Rapor yaz")]);
+
+        var ham = await HamAsync(tarayici, "/");
+        var satir = Satir(ham, "m:a3f09c");
+
+        // The tick form is before the folding part, so tapping the row never ticks it, and ticking never folds it.
+        Assert.True(satir.IndexOf("handler=Yaptim", StringComparison.Ordinal) < satir.IndexOf("<details class=\"kd-oge-detay\"", StringComparison.Ordinal));
+        var ozet = Regex.Match(satir, "<summary class=\"kd-oge-ozet\">.*?</summary>", RegexOptions.Singleline).Value;
+        Assert.Contains("Rapor yaz", ozet);
+        Assert.Contains("kd-oge-ok", ozet);
+        Assert.DoesNotContain("<form", ozet);
+        Assert.DoesNotContain("<summary>Ayrıntı</summary>", ham);
+        Assert.DoesNotContain("Ayrıntı", Metin(ozet));
+        // The forms are inside the detail.
+        var detay = satir[satir.IndexOf("</summary>", StringComparison.Ordinal)..];
+        Assert.Contains("handler=Devret", detay);
+        Assert.Contains("handler=HatirlaticiKur", detay);
+    }
+
+    [Fact]
+    public async Task ARowWithNothingToOpen_IsPlain_NoDetailNoChevron()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var etkinlik = await TumGunEtkinligiEkleAsync("Konferans", BugunGunu, BugunGunu);
+
+        var satir = Satir(await HamAsync(tarayici, "/"), $"e:{etkinlik.Id}");
+        satir = satir[..satir.IndexOf("</article>", StringComparison.Ordinal)];
+
+        Assert.Contains("Konferans", satir);
+        Assert.DoesNotContain("<details", satir);
+        Assert.DoesNotContain("kd-oge-ok", satir);
+    }
+
+    private async Task<Aliskanlik> AliskanlikEkleAsync(string ad, AliskanlikTuru tur, Olcu olcu, decimal? hedef = null, string? birim = null, bool kitap = false)
+    {
+        await using var db = YeniDb();
+        var a = new Aliskanlik
+        {
+            Ad = ad, Tur = tur, Ikon = "book", Renk = "blue", Olcu = olcu, HedefYonu = HedefYonu.EnAz, GunlukHedef = hedef, Birim = birim,
+            OgeEtiketi = tur == AliskanlikTuru.Raf ? "Kitap" : null, Siklik = Siklik.HerGun,
+        };
+        if (kitap)
+            a.Ogeler.Add(new Oge { Ad = "Suç ve Ceza", Toplam = 600, Durum = OgeDurumu.Devam });
+        db.Aliskanliklar.Add(a);
+        await db.SaveChangesAsync(Ct);
+        return a;
+    }
+
+    [Fact]
+    public async Task TheHabitStrip_ShowsRingNameAndValue_AndEachKindHasItsOwnTap_AndTheBigCardsStayOnTheHabitsPage()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var evet = await AliskanlikEkleAsync("Egzersiz", AliskanlikTuru.Sayac, Olcu.EvetHayir, 1);
+        var sayi = await AliskanlikEkleAsync("Su", AliskanlikTuru.Sayac, Olcu.Sayili, 8, "bardak");
+        var raf = await AliskanlikEkleAsync("Okuma", AliskanlikTuru.Raf, Olcu.Sayili, 20, "sayfa", kitap: true);
+        var bosRaf = await AliskanlikEkleAsync("Boş raf", AliskanlikTuru.Raf, Olcu.Sayili, 20, "sayfa");
+
+        var ham = await HamAsync(tarayici, "/");
+
+        Assert.DoesNotContain("class=\"kd-habit ", ham);
+        Assert.Contains("class=\"kd-habit ", await HamAsync(tarayici, "/Aliskanliklar"));
+        // Ring, name and today's value on each; the ring carries the progress.
+        var metin = Duz(ham[ham.IndexOf("class=\"kd-serit\"", StringComparison.Ordinal)..]);
+        Assert.Contains("Egzersiz Henüz yapılmadı", metin);
+        Assert.Contains("Su 0 / 8 bardak", metin);
+        Assert.Contains("Okuma 0 / 20 sayfa", metin);
+        Assert.Contains("style=\"--p:0\"", ham);
+        // Yes/no: a tick form; counter: +1 step; shelf with a book: the reading log modal; shelf without one: the shelf page.
+        Assert.Contains($"/Aliskanliklar?id={evet.Id}&amp;handler=Tik", ham);
+        Assert.Contains($"/Aliskanliklar?id={sayi.Id}&amp;handler=Sayi", ham);
+        Assert.Contains("name=\"delta\" value=\"1\"", ham);
+        Assert.Contains($"data-bs-target=\"#okuma-{raf.Id}\"", ham);
+        Assert.Contains($"id=\"okuma-{raf.Id}\"", ham);
+        Assert.Contains($"href=\"/Aliskanliklar/Detay/{bosRaf.Id}\"", ham);
+        Assert.DoesNotContain($"id=\"okuma-{bosRaf.Id}\"", ham);
+        // Each tap is at least a button of its own size class (44px is checked in the browser); none of them is a bare icon.
+        Assert.Equal(4, Regex.Matches(ham, "class=\"kd-serit-dugme\"").Count);
+    }
+
+    [Fact]
+    public async Task TheHabitStrip_TheTapsWork_TheCounterGoesUpAndTheTickIsMade_BothBackOnBugun()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+        BugunPlani([]);
+        var evet = await AliskanlikEkleAsync("Egzersiz", AliskanlikTuru.Sayac, Olcu.EvetHayir, 1);
+        var sayi = await AliskanlikEkleAsync("Su", AliskanlikTuru.Sayac, Olcu.Sayili, 8, "bardak");
+
+        var arti = await PostAsync(tarayici, $"/Aliskanliklar?id={sayi.Id}", "Sayi", new() { ["delta"] = "1", ["donus"] = "bugun" });
+        var tik = await PostAsync(tarayici, $"/Aliskanliklar?id={evet.Id}", "Tik", new() { ["donus"] = "bugun" });
+
+        Assert.Equal($"/#h-{sayi.Id}", arti.Headers.Location!.OriginalString);
+        Assert.Equal($"/#h-{evet.Id}", tik.Headers.Location!.OriginalString);
+        await using (var db = YeniDb())
+        {
+            Assert.Equal(1m, Assert.Single(await db.AliskanlikKayitlari.Where(k => k.AliskanlikId == sayi.Id).ToListAsync(Ct)).Miktar);
+            Assert.True(await db.AliskanlikKayitlari.AnyAsync(k => k.AliskanlikId == evet.Id && k.Miktar > 0, Ct));
+        }
+
+        var metin = Duz(await HamAsync(tarayici, "/"));
+        Assert.Contains("Su 1 / 8 bardak", metin);
+        Assert.Contains("Egzersiz Yapıldı", metin);
+        // A done habit's ring is full and says so.
+        Assert.Contains("is-tam", await HamAsync(tarayici, "/"));
+    }
+
+    [Fact]
+    public async Task TheHabitsPage_NewHabit_IsThePrimaryButton()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+
+        var ham = await HamAsync(tarayici, "/Aliskanliklar");
+
+        Assert.Matches("<button class=\"btn btn-primary kd-btn-add\"[^>]*>\\s*<svg[^>]*>.*?</svg>\\s*Yeni alışkanlık", ham.Replace("\n", " "));
+        Assert.DoesNotContain("btn-secondary", Regex.Match(ham, "<button class=\"btn [^\"]*kd-btn-add\"").Value);
     }
 }

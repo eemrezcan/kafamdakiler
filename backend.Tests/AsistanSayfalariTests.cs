@@ -588,4 +588,71 @@ public sealed partial class AsistanSayfalariTests(UygulamaFabrikasi uygulama) : 
         Assert.Matches("Bekleyen\\s*<span class=\"kd-akis-sayi\">1</span>", sayfa);
         Assert.Contains("class=\"kd-nav-link active\"", sayfa);
     }
+
+    // W3: what came from the share menu waits for approval (E7), the box is one row, a photo is a small preview
+
+    [Fact]
+    public async Task SharedContent_WaitsForApproval_AsAResultCardAndAnApprovalCard_AndEkleAppliesIt()
+    {
+        var (fabrika, tarayici) = await SayfaHazirlaAsync();
+        var sahip = await GirisAsync(UygulamaFabrikasi.SahipEposta, fabrika);
+        AsistanClaude.YapiliYanit(Cevap(Oneri("plan-ekle", "Raporu bitir", gun: BugunMetni, kaynakParca: "Raporu bugün bitir.")));
+        var yanit = await GirdiGonderAsync(fabrika, sahip, Guid.NewGuid(), "Başka uygulamadan: Raporu bugün bitir.", "paylas");
+        Assert.Equal(HttpStatusCode.OK, yanit.StatusCode);
+        // Nothing was written to the plan: it is an action in the queue.
+        Assert.Equal(0, BeyinCagrisi("gun", "ekle"));
+
+        var ham = await HamAsync(tarayici);
+        var sonuc = Assert.Single(Regex.Matches(Ogeler(ham, "sonuc")[0], "<article class=\"kd-akis-oge kd-akis-kart ([^\"]*)\" data-kd-sonuc=\"plan-ekle\".*?</article>", RegexOptions.Singleline));
+        Assert.Contains("is-onay", sonuc.Groups[1].Value);
+        Assert.Contains("Onayını bekliyor", Duz(sonuc.Value));
+        Assert.DoesNotContain("handler=GeriAl", sonuc.Value);
+        var onay = Assert.Single(Ogeler(ham, "onay"));
+        Assert.Contains("Dış kaynak", Duz(onay));
+        var id = Regex.Match(onay, "id=([0-9a-f-]{36})&amp;handler=Uygula").Groups[1].Value;
+        Assert.NotEmpty(id);
+
+        var sonraki = await SonrakiAsync(tarayici, await PostAsync(tarayici, "Uygula", new() { ["id"] = id }));
+
+        Assert.Contains("Eklendi", sonraki);
+        Assert.Equal(1, BeyinCagrisi("gun", "ekle"));
+        Assert.Empty(Ogeler(await HamAsync(tarayici), "onay"));
+    }
+
+    [Fact]
+    public async Task TheBox_IsOneRow_TheTextFirstAndSendAfterIt_InTheSameColumnAsTheStream()
+    {
+        var (_, tarayici) = await SayfaHazirlaAsync();
+
+        var ham = await HamAsync(tarayici);
+
+        // One column holds the head, the box, the chips and the stream, so they share a width.
+        var kolon = ham[ham.IndexOf("class=\"kd-asistan-kolon\"", StringComparison.Ordinal)..];
+        Assert.True(kolon.IndexOf("kd-asistan-girdi-alan", StringComparison.Ordinal) < kolon.IndexOf("kd-asistan-gonder", StringComparison.Ordinal));
+        Assert.True(kolon.IndexOf("kd-asistan-gonder", StringComparison.Ordinal) < kolon.IndexOf("kd-akis-suzgec", StringComparison.Ordinal));
+        Assert.True(kolon.IndexOf("kd-akis-suzgec", StringComparison.Ordinal) < kolon.IndexOf("aria-label=\"Akış\"", StringComparison.Ordinal));
+        var form = Regex.Match(kolon, "<form[^>]*kd-asistan-girdi.*?</form>", RegexOptions.Singleline).Value;
+        Assert.Contains("<textarea", form);
+        Assert.Contains(">Gönder</button>", form);
+        Assert.Contains("is-active", Regex.Match(ham, "<a class=\"kd-filter-chip [^\"]*\"[^>]*>Hepsi", RegexOptions.Singleline).Value);
+    }
+
+    [Fact]
+    public async Task APhotoNote_IsASmallPreview_ThatOpensFullSize()
+    {
+        var (_, tarayici) = await SayfaHazirlaAsync();
+        var foto = await FotografEkleAsync();
+        await using (var db = YeniDb())
+        {
+            db.Yakalamalar.Add(new Yakalama { Metin = "Fotoğraflı not", FotografId = foto, YakalandiAt = Pazartesi.ToUniversalTime().AddMinutes(-5), Durum = YakalamaDurumu.Bekliyor });
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var not = Assert.Single(Ogeler(await HamAsync(tarayici), "not"));
+
+        var baglanti = Regex.Match(not, "<a class=\"kd-akis-foto-baglanti\" href=\"([^\"]+)\" target=\"_blank\" rel=\"noopener\"[^>]*>\\s*<img class=\"kd-akis-foto\" src=\"([^\"]+)\"", RegexOptions.Singleline);
+        Assert.True(baglanti.Success);
+        Assert.Equal(baglanti.Groups[1].Value, baglanti.Groups[2].Value);
+        Assert.Contains(foto.ToString(), baglanti.Groups[1].Value);
+    }
 }
