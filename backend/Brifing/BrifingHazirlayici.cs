@@ -286,7 +286,7 @@ public class BrifingHazirlayici(
             "Veride işlerin satırları id=<kimlik> ile başlar. Kart türleri (tur):\n" +
             "- plan: bugünün planındaki açık maddeler. bagliKimlikler: o maddelerin kimlikleri.\n" +
             "- kalan: dünden kalan açık maddeler. bagliKimlikler: o maddelerin kimlikleri.\n" +
-            "- hatirlatici: yaklaşan bir hatırlatıcı. bagliKimlikler: hatırlatıcının kimliği.\n" +
+            "- hatirlatici: bugünün bir hatırlatıcısı. bagliKimlikler: hatırlatıcının kimliği.\n" +
             "- onay: onay bekleyen eylemler. bagliKimlikler: o eylemlerin kimlikleri.\n" +
             "- takvim: bugünün takvim etkinlikleri. bagliKimlikler: o etkinliklerin kimlikleri.\n" +
             "- kapasite: açık işler güne sığmıyor uyarısı. bagliKimlikler boş dizi olsun.\n" +

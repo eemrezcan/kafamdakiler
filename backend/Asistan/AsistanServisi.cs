@@ -289,6 +289,9 @@ public class AsistanServisi(
         // The permission of what the kind does, then the kind's mode: `Yasak` is the person's own "never", and holds here too.
         if (!await IzinliMi(kullanici, IsCikarServisi.TurIzni(o.Tur)!))
             return Sonuc(AsistanDurumu.IzinYok, "Bu işlem için izniniz yok.");
+        // A plan item that opens a new task also writes a task.
+        if (o.GorevAcar && !await IzinliMi(kullanici, BeyinPolicies.GorevYaz))
+            return Sonuc(AsistanDurumu.IzinYok, "Bu işlem için izniniz yok.");
         var izin = await db.EylemIzinleri.AsNoTracking().FirstOrDefaultAsync(i => i.Tur == o.Tur, ct);
         if (izin?.Kip == EylemKipi.Yasak)
             return Sonuc(AsistanDurumu.IzinYok, "Bu tür asistan için yasak olarak ayarlı.");
@@ -318,7 +321,7 @@ public class AsistanServisi(
             new(o.Tur, o.Baslik, ozet, durum, eylemId, new AsistanHedefiDto(null, "/asistan"), false, mesaj);
 
         var izin = isKarti ? IsPolicies.Yaz : IsCikarServisi.TurIzni(o.Tur)!;
-        if (!await IzinliMi(kullanici, izin))
+        if (!await IzinliMi(kullanici, izin) || (o.GorevAcar && !await IzinliMi(kullanici, BeyinPolicies.GorevYaz)))
             return Sonuc(AsistanDurumu.IzinYok, "Bu işlem için izniniz yok.");
 
         var turAdi = isKarti ? IsAcTuru.Anahtar : o.Tur;

@@ -15,7 +15,7 @@ public record ProjeDto(
 public record ProjeGorevDto(string Kimlik, string Baslik, string? Durum, DateOnly? Bitis, string? Oncelik, string? SonrakiAdim);
 
 // An open task the screens may offer (not hidden, not from a closed folder): for the pick lists of the day page.
-public record AcikGorevDto(string Kimlik, string Baslik, string? Proje, string? Alan, DateOnly? Bitis);
+public record AcikGorevDto(string Kimlik, string Baslik, string? Proje, string? Alan, DateOnly? Bitis, string? SonrakiAdim = null);
 
 public record GunlukSatiriDto(string? Zaman, string? Baslik, string? Metin);
 

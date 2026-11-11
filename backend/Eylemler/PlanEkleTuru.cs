@@ -6,8 +6,12 @@ using Kafamdakiler.Beyin;
 namespace Kafamdakiler.Eylemler;
 
 // The payload of "plan-ekle": one item for one day's plan. `Gun` is yyyy-MM-dd. `TahminDk` becomes the `~45dk` the brain reads
-// as the estimate of the item.
-public record PlanEkleYuku(string Gun, string Metin, string? Bolum = null, int? TahminDk = null);
+// as the estimate of the item. `Gorev` links the item to an open task; `GorevAc` opens a new task (titled `Metin`) first and links to that.
+// At most one of the two. Old payloads (the voice path never sends them) still parse.
+public record PlanEkleYuku(string Gun, string Metin, string? Bolum = null, int? TahminDk = null, string? Gorev = null, PlanGorevAcYuku? GorevAc = null);
+
+// Where a new task goes: exactly one of Proje and Alan (the same rule as "gorev-ekle").
+public record PlanGorevAcYuku(string? Proje = null, string? Alan = null);
 
 // "plan-ekle": adds an item to a day's plan (`gun ekle`). The brain has no command that takes a plan item out again
 // (a tick can be undone, a carry-over moves it, but nothing removes it), so this kind cannot be undone, and so it is
@@ -37,18 +41,37 @@ public class PlanEkleTuru(BeyinIstemcisi beyin, ILogger<PlanEkleTuru> gunluk) : 
         if (!sonuc.Basarili)
             throw new InvalidOperationException(sonuc.Mesaj);
 
+        // A new task first (titled like the item), then the item linked to it.
+        var gorev = y!.Gorev?.Trim();
+        var gorevAcildi = false;
+        if (y.GorevAc is { } ac)
+        {
+            var gorevYaniti = await BeyinYazma.GorevEkle(new GorevEkleGirdi(y.Metin, ac.Proje, ac.Alan, null, null, null), beyin, gunluk, ct);
+            if (!gorevYaniti.Basarili)
+            {
+                gunluk.LogWarning("Opening a task for a plan item did not succeed ({Tur}): {Baslik} {Ayrinti}", gorevYaniti.Tur, gorevYaniti.Baslik, gorevYaniti.Ayrinti);
+                throw new InvalidOperationException($"Beyin görevi açmadı ({gorevYaniti.Tur}).");
+            }
+
+            gorev = ((GorevEklendiDto)gorevYaniti.Veri!).Kimlik;
+            gorevAcildi = true;
+        }
+
         // The same entry point as the plan page: its checks run again, and the date goes to the brain explicitly.
         var yanit = await BeyinYazma.MaddeEkle(
-            $"{gun:yyyy-MM-dd}", new MaddeEkleGirdi(MaddeMetni(y!), y!.Bolum, null), beyin, gunluk, ct);
+            $"{gun:yyyy-MM-dd}", new MaddeEkleGirdi(MaddeMetni(y), y.Bolum, gorev), beyin, gunluk, ct);
         if (!yanit.Basarili)
         {
             // An uncertain answer may have written: the queue shows a fixed text, the log says which it was.
             gunluk.LogWarning("Adding a plan item for {Gun} did not succeed ({Tur}): {Baslik} {Ayrinti}", y.Gun, yanit.Tur, yanit.Baslik, yanit.Ayrinti);
-            throw new InvalidOperationException($"Beyin maddeyi yazmadı ({yanit.Tur}).");
+            throw new InvalidOperationException(gorevAcildi
+                ? $"Görev açıldı ({gorev}) ama beyin maddeyi yazmadı ({yanit.Tur})."
+                : $"Beyin maddeyi yazmadı ({yanit.Tur}).");
         }
 
         var eklenen = (MaddeEklendiDto)yanit.Veri!;
-        return JsonSerializer.SerializeToElement(new { tarih = $"{eklenen.Tarih:yyyy-MM-dd}", madde = eklenen.Madde.Id }, JsonSerializerOptions.Web);
+        return JsonSerializer.SerializeToElement(
+            new { tarih = $"{eklenen.Tarih:yyyy-MM-dd}", madde = eklenen.Madde.Id, gorev }, JsonSerializerOptions.Web);
     }
 
     public Task GeriAlAsync(JsonElement geriAlmaBilgisi, EylemBaglami baglam, CancellationToken ct) =>
@@ -84,6 +107,14 @@ public class PlanEkleTuru(BeyinIstemcisi beyin, ILogger<PlanEkleTuru> gunluk) : 
             return bolumHatasi;
         if (bolum is not null && bolum.Equals("Kapanış", StringComparison.OrdinalIgnoreCase))
             return Sonuc.Gecersiz("bolum", "Kapanış bölümüne madde eklenmez.");
+
+        if (y.Gorev is not null && y.GorevAc is not null)
+            return Sonuc.Gecersiz("gorev", "Görev ya da yeni görev, ikisi birden değil.");
+        if (y.Gorev is not null && !BeyinYazma.GorevKimligiGecerli(y.Gorev.Trim()))
+            return Sonuc.Gecersiz("gorev", "Görev kimliği küçük harf, rakam ve tire olmalı.");
+        if (y.GorevAc is { } ac
+            && EylemDogrulama.Sonuca(BeyinYazma.GorevEkleKomutu(new GorevEkleGirdi(y.Metin, ac.Proje, ac.Alan, null, null, null), out _)) is { } acHatasi)
+            return acHatasi;
 
         return Sonuc.Tamam;
     }

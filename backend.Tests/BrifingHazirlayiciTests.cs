@@ -624,28 +624,27 @@ public class BrifingHazirlayiciTests : IAsyncLifetime
     // The input
 
     [Fact]
-    public async Task Input_Reminders_AreThoseOfTheDayAndTheThreeAfter_ByTheFiveOClockDay()
+    public async Task Input_Reminders_AreOnlyThoseOfTheDay_ByTheFiveOClockDay()
     {
         var bugun = await HatirlaticiEkleAsync("Bugün sabah", Ist(2026, 11, 7, 9, 0));
-        var uc = await HatirlaticiEkleAsync("Üç gün sonra akşam", Ist(2026, 11, 10, 20, 0));
-        // 04:00 on the 11th still belongs to the 10th.
-        var gece = await HatirlaticiEkleAsync("Gece yarısından sonra", Ist(2026, 11, 11, 4, 0));
-        var fazla = await HatirlaticiEkleAsync("Dört gün sonra", Ist(2026, 11, 11, 6, 0));
+        // 04:00 on the 8th still belongs to the 7th.
+        var gece = await HatirlaticiEkleAsync("Gece yarısından sonra", Ist(2026, 11, 8, 4, 0));
+        var yarin = await HatirlaticiEkleAsync("Yarın sabah", Ist(2026, 11, 8, 9, 0));
         var dun = await HatirlaticiEkleAsync("Dün akşam", Ist(2026, 11, 6, 20, 0));
-        var tamam = await HatirlaticiEkleAsync("Yapılmış", Ist(2026, 11, 8, 9, 0), HatirlaticiDurumu.Tamam);
-        var ertelenmis = await HatirlaticiEkleAsync("Ertelenmiş", Ist(2026, 11, 20, 9, 0), erteleAn: Ist(2026, 11, 8, 10, 0));
-        // Snoozed away from the window: its rule says the 8th, its snooze says the 20th.
-        var uzaga = await HatirlaticiEkleAsync("Uzağa ertelenmiş", Ist(2026, 11, 8, 9, 0), erteleAn: Ist(2026, 11, 20, 9, 0));
+        var tamam = await HatirlaticiEkleAsync("Yapılmış", Ist(2026, 11, 7, 11, 0), HatirlaticiDurumu.Tamam);
+        var ertelenmis = await HatirlaticiEkleAsync("Ertelenmiş", Ist(2026, 11, 20, 9, 0), erteleAn: Ist(2026, 11, 7, 10, 0));
+        // Snoozed away from the day: its rule says the 7th, its snooze says the 20th.
+        var uzaga = await HatirlaticiEkleAsync("Uzağa ertelenmiş", Ist(2026, 11, 7, 9, 30), erteleAn: Ist(2026, 11, 20, 9, 0));
         var t = Kur(beyinBagli: false);
 
         var girdi = (await t.Okuyucu.OkuAsync(Gun, Ct)).Girdi!;
 
         Assert.Equal(
-            [bugun.Id.ToString(), ertelenmis.Id.ToString(), uc.Id.ToString(), gece.Id.ToString()],
+            [bugun.Id.ToString(), ertelenmis.Id.ToString(), gece.Id.ToString()],
             girdi.Hatirlaticilar.Select(x => x.Kimlik));
-        Assert.Equal([0, 1, 3, 3], girdi.Hatirlaticilar.Select(x => x.KalanGun));
-        Assert.Equal(["09:00", "10:00", "20:00", "04:00"], girdi.Hatirlaticilar.Select(x => x.Saat));
-        Assert.DoesNotContain(girdi.Hatirlaticilar, x => x.Kimlik == fazla.Id.ToString() || x.Kimlik == dun.Id.ToString()
+        Assert.All(girdi.Hatirlaticilar, x => Assert.Equal(0, x.KalanGun));
+        Assert.Equal(["09:00", "10:00", "04:00"], girdi.Hatirlaticilar.Select(x => x.Saat));
+        Assert.DoesNotContain(girdi.Hatirlaticilar, x => x.Kimlik == yarin.Id.ToString() || x.Kimlik == dun.Id.ToString()
             || x.Kimlik == tamam.Id.ToString() || x.Kimlik == uzaga.Id.ToString());
     }
 

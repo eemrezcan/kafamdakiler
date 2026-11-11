@@ -17,8 +17,8 @@ public record GirdiSonucu(BrifingGirdisi? Girdi, string? Mesaj = null);
 // a briefing that says nothing about the plan because the plan could not be read would look like an empty day.
 public class BrifingGirdiOkuyucu(AppDbContext db, BeyinIstemcisi beyin, GunAyari gunAyari, ILogger<BrifingGirdiOkuyucu> gunluk)
 {
-    // "The next 3 days": the briefing's own day and the three after it.
-    public const int HatirlaticiGunSayisi = 3;
+    // Only the briefing's own day: a reminder of tomorrow or later read as "today" in the morning (2026-11-11 feedback).
+    public const int HatirlaticiGunSayisi = 0;
 
     // The most things one list holds; the rest is left out of the input.
     public const int EnCokMadde = 15;
