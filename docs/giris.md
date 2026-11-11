@@ -226,6 +226,7 @@ Proje kuralları yapay zekâ kullanımına izin veriyor; bu kısımlar açıkça
   - Gizlilik süzgeci (E9): `BeyinOkuma.IzinliGorevlerAl` ve `GunAl` / `SabahAl` içindeki `izinliGorevler` süzgeci; `Yapilacaklar/` servisleri ve `GunIslemleri` içindeki madde denetimi.
   - Devret yanıtı (E10): `GunIslemleri.DevretAsync` yeni günün gerçek öğesini kurar. `appsettings.json`: `Claude:Modeller:asistan-girdi`.
   - Testler: `backend.Tests/GizlilikApiTests.cs`, `AsistanPaylasApiTests.cs`, `GunYaptimApiTests` (devret kimliği) ve güncellenen gün testleri.
+- Asistan plan-ekle: ham yapılacaklar listesini gün planına çevirme (2026-11-11): `backend/Asistan/AsistanSiniflandirici.cs` (plan bağlamı, talimat, `Cevir` kuralları), `AsistanServisi` (görev açan öneri için `gorev.yaz` izni), `backend/Eylemler/PlanEkleTuru.cs` (`gorev`, `gorevAc`), `AcikGorevDto.SonrakiAdim`, `backend.Tests/AsistanGunPlaniApiTests.cs`: Claude'un açtığı Sonnet işçisi yazdı.
 - Planlanan: `mobile/packages/mobilite/`, `mcp/`.
 
 ## Ders kaynakları

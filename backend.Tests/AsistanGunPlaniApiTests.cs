@@ -98,19 +98,28 @@ public sealed class AsistanGunPlaniApiTests(UygulamaFabrikasi uygulama) : Asista
     }
 
     [Fact]
-    public async Task APlanItemThatOpensATask_NeedsThePermissionToWriteTasks()
+    public async Task APlanItemThatOpensATask_NeedsThePermissionToWriteTasks_AsWellAsThePlanOne()
     {
         var (fabrika, sahip) = await HazirlaAsync();
         BeyinHazirla();
-        await IzinKapatAsync(sahip, "gorev.yaz", fabrika);
+        var asistan = await GirisAsync(UygulamaFabrikasi.AsistanEposta, fabrika);
+        foreach (var izin in new[] { "asistan.kullan", "plan.yaz" })
+            await IzinAsync(sahip, izin, fabrika);
         AsistanClaude.YapiliYanit(Cevap(PlanOnerisi("Yoga ödevi: taslak", yeniGorev: true, alan: "ogrenme", tahmin: 60), PlanOnerisi("Video", gorev: Video, tahmin: 30)));
 
-        var yanit = await GirdiAsync(fabrika, sahip, Guid.NewGuid(), "yoga ödevi\nvideo");
+        var yanit = await GirdiAsync(fabrika, asistan, Guid.NewGuid(), "yoga ödevi\nvideo");
 
-        var sonuclar = yanit.GetProperty("sonuclar").EnumerateArray().ToList();
-        Assert.Equal(["uygulandi", "izinyok"], sonuclar.Select(s => s.GetProperty("durum").GetString()).Select(d => d == "uygulandi" ? d : d!.ToLowerInvariant()));
+        // The plan permission alone: the linked item goes in, the one that would open a task is told as not allowed, and no task is made.
+        Assert.Equal(
+            [("plan-ekle", "izinYok", "Yoga ödevi: taslak"), ("plan-ekle", "uygulandi", "Video")],
+            yanit.GetProperty("sonuclar").EnumerateArray().Select(s => (s.GetProperty("tur").GetString()!, s.GetProperty("durum").GetString()!, s.GetProperty("baslik").GetString()!)));
         Assert.Empty(BeyinKomutlari("gorev", "ekle"));
         Assert.Single(BeyinKomutlari("gun", "ekle"));
+
+        await IzinAsync(sahip, "gorev.yaz", fabrika);
+        var yeniden = await GirdiAsync(fabrika, asistan, Guid.NewGuid(), "yoga ödevi\nvideo");
+        Assert.Equal(["uygulandi", "uygulandi"], yeniden.GetProperty("sonuclar").EnumerateArray().Select(s => s.GetProperty("durum").GetString()));
+        Assert.Single(BeyinKomutlari("gorev", "ekle"));
     }
 
     // Cevir: the rules of one suggestion
