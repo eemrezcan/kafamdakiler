@@ -80,24 +80,35 @@ public class DetayModel(AppDbContext db) : PageModel
     }
 
     // The reading log of the modal: which book, where the person got to, and how long it took. The same rules as the item page's progress form.
-    public async Task<IActionResult> OnPostOkumaAsync(Guid id, Guid ogeId, decimal? bitisKonum, int? dakika, CancellationToken ct)
+    public async Task<IActionResult> OnPostOkumaAsync(Guid id, Guid ogeId, decimal? bitisKonum, int? dakika, string? donus, CancellationToken ct)
     {
         var oge = await AliskanlikIslemleri.OgeSorgu(db).FirstOrDefaultAsync(o => o.Id == ogeId && o.AliskanlikId == id, ct);
         if (oge is null)
             return NotFound();
 
+        string? hata = null;
         if (bitisKonum is null)
         {
-            Hata = "Nereye kadar geldiğini yaz.";
-            return RedirectToPage(null, null, new { id }, "raf");
+            hata = "Nereye kadar geldiğini yaz.";
+        }
+        else
+        {
+            var (sonuc, _) = await AliskanlikIslemleri.OturumEkleAsync(db, oge, new OturumEkleDto { BitisKonum = bitisKonum.Value, Dakika = dakika }, ct);
+            if (sonuc.Basarili)
+                Bildirim = "Okuma kaydedildi";
+            else
+                hata = sonuc.Mesaj;
         }
 
-        var (sonuc, _) = await AliskanlikIslemleri.OturumEkleAsync(db, oge, new OturumEkleDto { BitisKonum = bitisKonum.Value, Dakika = dakika }, ct);
-        if (sonuc.Basarili)
-            Bildirim = "Okuma kaydedildi";
-        else
-            Hata = sonuc.Mesaj;
+        // The modal on Bugün says "donus=bugun" (nothing else is read from it): back to Bugün, which shows its own error line.
+        if (donus == "bugun")
+        {
+            if (hata is not null)
+                TempData["YazmaHatasi"] = hata;
+            return RedirectToPage("/Index", null, null, "h-" + id);
+        }
 
+        Hata = hata;
         return RedirectToPage(null, null, new { id }, "raf");
     }
 }

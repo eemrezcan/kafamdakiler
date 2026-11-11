@@ -173,6 +173,17 @@ public partial class IndexModel(
         return Don();
     }
 
+    // The Sahip asks for a new briefing (at most three times a day).
+    public async Task<IActionResult> OnPostBrifingYenileAsync()
+    {
+        var sonuc = await brifingler.YenileAsync(CancellationToken.None);
+        if (!sonuc.Basarili)
+            return Reddet(sonuc.Mesaj ?? "Brifing yenilenemedi.");
+
+        Bildirim = "Brifing yenilendi";
+        return Don();
+    }
+
     // A vote on a card of today's briefing: 1, -1, or 0 to take it back.
     public async Task<IActionResult> OnPostBrifingOyAsync(int sira, int oy)
     {

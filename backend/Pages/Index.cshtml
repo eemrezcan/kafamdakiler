@@ -75,8 +75,8 @@ else
     var toplamDk = yuk.AcikTahminDk + yuk.EtkinlikDk;
     var doluluk = Math.Min(100, (int)Math.Round(100.0 * toplamDk / Math.Max(1, yuk.KapasiteDk)));
 
-    @* Two columns from 992px (main: leftovers, the list, the new-item form; side: summary and weight, briefing, habits); one column below, where
-       `order` puts the summary first and the list last. The wrappers vanish (display: contents) on a phone so their children can be ordered together. *@
+    @* Two columns from 992px (main: leftovers, the list, the new-item form; side: summary and weight, the habit strip); one column below, where
+       `order` puts the summary first, the leftovers and the habit strip next, the list last. The wrappers vanish (display: contents) on a phone so their children can be ordered together. *@
     <div class="kd-bugun">
         <div class="kd-bugun-ana">
             @if (gorunum.DundenKalanlar.Count > 0)
@@ -199,26 +199,11 @@ else
 
             @if (Model.BugunSayfasi)
             {
-                if (Model.Brifing is { } brifingPaneli)
-                {
-                    <partial name="_Brifing" model="brifingPaneli" />
-                }
-                else
-                {
-                    <partial name="_OnayKarti" />
-                }
-
-                var kartVerisi = new ViewDataDictionary(ViewData) { ["Donus"] = "bugun" };
                 <section class="kd-blok kd-bugun-aliskanlik" aria-labelledby="aliskanlik-baslik">
                     <h2 class="kd-eyebrow kd-section-title" id="aliskanlik-baslik">Bugünün alışkanlıkları @if (Model.BugunkuAliskanliklar.Count > 0) { <span>@Model.BugunkuAliskanliklar.Count</span> }</h2>
                     @if (Model.BugunkuAliskanliklar.Count > 0)
                     {
-                        <div class="kd-habits">
-                            @foreach (var kart in Model.BugunkuAliskanliklar)
-                            {
-                                <partial name="~/Pages/Aliskanliklar/_Kart.cshtml" model="kart" view-data="kartVerisi" />
-                            }
-                        </div>
+                        <partial name="_AliskanlikSeridi" model="Model.BugunkuAliskanliklar" />
                         <p class="kd-footnote"><a asp-page="/Aliskanliklar/Index">Tüm alışkanlıklar</a></p>
                     }
                     else

@@ -1,0 +1,90 @@
+@using Kafamdakiler.Aliskanliklar
+@model List<Kafamdakiler.Pages.Aliskanliklar.IndexModel.Kart>
+@* Today's habits as a compact strip (K-0024): a ring with the habit's icon, its name and today's value. One tap does the habit's own thing:
+   a yes/no habit is ticked (and un-ticked), a counter goes up by one step, a shelf habit opens the reading log (book, page, time). The big
+   cards are on the habits page. The forms post to the habits page and come back to Bugün ("donus=bugun"). *@
+<div class="kd-serit" role="list">
+    @foreach (var kart in Model)
+    {
+        var a = kart.Aliskanlik;
+        var (oran, durum) = Gorunum.Ilerleme(a);
+        var yuzde = (int)Math.Round(Math.Clamp(oran, 0, 1) * 100);
+        var yapildi = a.Bugun.Miktar > 0;
+        var raf = a.Tur == AliskanlikTuru.Raf;
+        var evetHayir = !raf && a.Olcu == Olcu.EvetHayir;
+        <div class="kd-serit-oge @Gorunum.RenkSinifi(a.Renk) @(durum != "" ? "is-" + durum : "") @(yuzde >= 100 ? "is-tam" : "")" role="listitem" id="h-@a.Id">
+            @if (raf && a.DevamEdenler.Count > 0)
+            {
+                <button type="button" class="kd-serit-dugme" data-bs-toggle="modal" data-bs-target="#okuma-@a.Id" aria-label="@a.Ad: okuma kaydı ekle">
+                    <partial name="_AliskanlikSeridiIcerik" model="kart" />
+                </button>
+            }
+            else if (raf)
+            {
+                <a class="kd-serit-dugme" asp-page="/Aliskanliklar/Detay" asp-route-id="@a.Id" aria-label="@a.Ad: rafa git">
+                    <partial name="_AliskanlikSeridiIcerik" model="kart" />
+                </a>
+            }
+            else if (evetHayir)
+            {
+                <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Tik" asp-route-id="@a.Id">
+                    <input type="hidden" name="donus" value="bugun" />
+                    <button type="submit" class="kd-serit-dugme" aria-pressed="@(yapildi ? "true" : "false")" aria-label="@a.Ad: @(yapildi ? "yapıldı, geri almak için dokun" : "yaptım olarak işaretle")">
+                        <partial name="_AliskanlikSeridiIcerik" model="kart" />
+                    </button>
+                </form>
+            }
+            else
+            {
+                var adim = Gorunum.Adim(a);
+                <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Sayi" asp-route-id="@a.Id">
+                    <input type="hidden" name="donus" value="bugun" />
+                    <input type="hidden" name="delta" value="@Gorunum.Girdi(adim)" />
+                    <button type="submit" class="kd-serit-dugme" aria-label="@a.Ad: @Gorunum.Sayi(adim) @a.Birim ekle">
+                        <partial name="_AliskanlikSeridiIcerik" model="kart" />
+                    </button>
+                </form>
+            }
+        </div>
+    }
+</div>
+
+@* The reading log of each shelf habit that has a book in progress: the same form as the habit page's modal, back to Bugün afterwards. *@
+@foreach (var kart in Model.Where(k => k.Aliskanlik.Tur == AliskanlikTuru.Raf && k.Aliskanlik.DevamEdenler.Count > 0))
+{
+    var a = kart.Aliskanlik;
+    <div class="modal fade kd-modal" id="okuma-@a.Id" tabindex="-1" aria-labelledby="okuma-baslik-@a.Id" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="post" asp-page="/Aliskanliklar/Detay" asp-page-handler="Okuma" asp-route-id="@a.Id">
+                <input type="hidden" name="donus" value="bugun" />
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="okuma-baslik-@a.Id">Okuma kaydı · @a.Ad</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body kd-okuma-form">
+                    <label class="kd-hat-alan">
+                        <span>@(a.OgeEtiketi ?? "Kitap")</span>
+                        <select class="form-select" name="ogeId" required>
+                            @foreach (var o in a.DevamEdenler)
+                            {
+                                <option value="@o.Id">@o.Ad (şu an @Gorunum.Sayi(o.GuncelKonum)@(string.IsNullOrWhiteSpace(a.Birim) ? "" : " " + a.Birim))</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="kd-hat-alan">
+                        <span>Nereye kadar geldin? (@(string.IsNullOrWhiteSpace(a.Birim) ? "konum" : a.Birim))</span>
+                        <input class="form-control" name="bitisKonum" type="number" step="any" inputmode="decimal" required />
+                    </label>
+                    <label class="kd-hat-alan">
+                        <span>Süre (dakika, isteğe bağlı)</span>
+                        <input class="form-control" name="dakika" type="number" min="0" max="1440" inputmode="numeric" />
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
