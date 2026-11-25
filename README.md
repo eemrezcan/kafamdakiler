@@ -1,13 +1,14 @@
 # Kafamdakiler
 
 Personal tracking app: training, tasks and promises, reminders, reading, weight, notes.
-ASP.NET Core Razor Pages + Web API (.NET 10), PostgreSQL, EF Core. A Flutter (Android) client will follow.
+ASP.NET Core Razor Pages + Web API (.NET 10), PostgreSQL, EF Core, and a Flutter (Android) client in `mobile/`.
 
 Course project for BLM4581 (web) and BLM4587 (mobile).
 
 ## Requirements
 - .NET 10 SDK
 - Docker with Compose
+- Flutter 3.47 (stable, Dart 3.12) for the mobile app
 
 ## Project layout
 | Path | What |

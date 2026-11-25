@@ -493,6 +493,8 @@ docs/planlar/
 docs/kararlar/K-0005-veri-sahipligi.md
 docs/kararlar/K-0023-beyin-baglantisi.md
 docs/gundem.md
+docs/yz-kayitlari.md
+docs/kararlar/K-0021-web-gorunum-claude.md
 
 # Secrets for Docker Compose (K-0012)
 .env

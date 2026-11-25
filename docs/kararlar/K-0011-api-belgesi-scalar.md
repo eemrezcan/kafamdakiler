@@ -13,7 +13,7 @@ tags: [karar]
 Belgeyi framework'ün kendi aracı üretir; .NET 9'dan beri şablonun yolu budur. Kullanıcı Scalar'ı kendi projelerinde kullanıyor ve daha pratik buluyor. Scalar aynı OpenAPI belgesini okur; uçlar tarayıcıdan denenebilir, yani T05'in işlevi karşılanır.
 
 ## Reddedilenler
-- Microsoft belgesi + Swashbuckle Swagger UI (Claude'un önerisi): T05'i adıyla karşılar ama kullanıcı Scalar'ı tercih etti.
+- Microsoft belgesi + Swashbuckle Swagger UI (ilk öneri): T05'i adıyla karşılar ama kullanıcı Scalar'ı tercih etti.
 - Tam Swashbuckle: şablonun hazır belge üreticisini söküp yerine eskisini koymak demek.
 - Scalar + Swagger UI birlikte: T05 riskini sıfırlar, ama kullanıcı tek arayüz istedi.
 

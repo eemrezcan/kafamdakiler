@@ -16,7 +16,7 @@ Kullanıcı, 2026-11-10. Maket: `docs/planlar/maket/index.html`, gerekçeli tasl
 5. **Asistan tek akıştır.** Yakala, Gelen, onay kuyruğu, iş kartları ve brifing aynı ekranda. Kullanıcının kendi girdisinden doğan, geri alınabilir işleri (görev, hatırlatıcı, not, takvim girdisi) **sormadan yapar** ve Geri al / Düzelt gösterir. Dış kaynaktan gelen içerik (mail vb.), silme, kod, push ve deploy onaya düşer (K-0009 izin kipi bunun üstünde çalışır). Emin olmadığında tek soru sorar; seçenek listesi sunmaz.
 6. **Alışkanlıklar.** Raflı alışkanlığın detayı rafı içerir. "Okudum" kaydı tek alt sayfada: kitap, sayfa, süre.
 7. **Projeler** şimdilik Beyin sekmesinde yalnız okunur; işlevli hali ayrı iş.
-8. **Tema korunur.** Renkler, yazı tipi ve genel görünüş (K-0021, K-0022) değişmez; değişen deneyim ve yapıdır.
+8. **Tema korunur.** Renkler, yazı tipi ve genel görünüş (K-0022) değişmez; değişen deneyim ve yapıdır.
 9. **Uygulama.** Dört faz (arayüz, görev-hatırlatıcı verisi, asistan akışı, web) birlikte yazılır; `h/ui-yeniden` dalında, Sonnet işçileri yazar, Opus denetler ve arayüzü son elden geçirir. Main'e birleştirme kullanıcı telefonda denedikten sonra, onayıyla.
 
 ## Gerekçe
