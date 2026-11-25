@@ -21,3 +21,6 @@ Belgeyi framework'ün kendi aracı üretir; .NET 9'dan beri şablonun yolu budur
 Hoca T05 için Swagger UI'ı adıyla isterse: `UseSwaggerUI` aynı `/openapi/v1.json` dosyasına bağlanarak birkaç satırla eklenir.
 
 Kaybolan: T05 metnindeki "Swagger" kelimesiyle birebir eşleşme; gösterimde Scalar'ın aynı OpenAPI belgesini okuduğu söylenir.
+
+## Ek (2026-11-25)
+Sunucuda da açılabilir: `ApiBelgesi:Acik` true ise (compose'da `API_BELGESI_ACIK=true`) belge ve Scalar Development dışında da açılır. Neden: gösterimde telefon, web ve Scalar aynı sunucu verisini göstersin. Sunucuya yalnız tailnet içinden ulaşılır; uçlar yine token ve policy ister.

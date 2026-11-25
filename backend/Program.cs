@@ -227,7 +227,9 @@ app.MapRazorPages()
 
 app.MapHealthChecks("/saglik");
 
-if (app.Environment.IsDevelopment())
+// API reference (OpenAPI + Scalar): always in Development; elsewhere only when ApiBelgesi:Acik is true
+// (the server is reachable only inside the tailnet).
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("ApiBelgesi:Acik"))
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
