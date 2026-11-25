@@ -20,6 +20,7 @@
     var saatMetni = Kafamdakiler.Pages.GunMetinleri.SaatAraligi(oge);
 }
 @{
+    var tekrarVar = oge.Hatirlatici is { } hh && hh.Tekrar != Kafamdakiler.Hatirlaticilar.Tekrar.Yok;
     Func<object?, Microsoft.AspNetCore.Html.IHtmlContent> govde = @<div class="kd-satir-govde">
             <p class="kd-satir-baslik">
                 @if (saatMetni is not null)
@@ -29,42 +30,49 @@
                 <span class="@(yapildi ? "kd-beyin-yapildi" : "")">@oge.Baslik</span>
             </p>
             <div class="kd-satir-meta">
-                <span class="kd-oge-tur">@Kafamdakiler.Pages.GunMetinleri.TurAdi(oge.Tur)</span>
                 @if (yapildi)
                 {
-                    <span class="kd-status is-bitti">Yapıldı</span>
-                }
-                @if (oge.GecikmeGun is { } kac)
-                {
-                    <span class="kd-status is-hata">@(kac > 0 ? $"{kac} gün gecikti" : "Gecikti")</span>
-                }
-                @if (oge.Bolunmus is { } b)
-                {
-                    <span>@b.Toplam günden @b.Sira.</span>
-                }
-                @if (oge.Proje is not null)
-                {
-                    <span>@Model.ProjeAdi(oge.Proje)</span>
-                }
-                @if (oge.TahminDk is { } dk && !etkinlik)
-                {
-                    <span>@BeyinGorunum.Dakika(dk)</span>
+                    <span>Yapıldı</span>
                 }
                 @if (oge.Yer is not null)
                 {
                     <span>@oge.Yer</span>
                 }
+                @if (oge.Proje is not null)
+                {
+                    <span>@Model.ProjeAdi(oge.Proje)</span>
+                }
+                @if (oge.Bolunmus is { } b)
+                {
+                    <span>@b.Toplam günden @b.Sira.</span>
+                }
+                @if (oge.GecikmeGun is { } kac)
+                {
+                    <span class="kd-oge-gecikme">@(kac > 0 ? $"{kac} gün gecikti" : "Gecikti")</span>
+                }
+                @if (oge.TahminDk is { } dk && !etkinlik)
+                {
+                    <span>@BeyinGorunum.Dakika(dk)</span>
+                }
                 @if (oge.Hatirlatici is { } hat)
                 {
-                    <span class="kd-oge-hat" title="Hatırlatıcı">
-                        <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-bell"></use></svg>
-                        @Kafamdakiler.Pages.GunMetinleri.HatirlaticiMetni(hat)
-                    </span>
+                    <span>@Kafamdakiler.Pages.GunMetinleri.HatirlaticiMetni(hat)</span>
                 }
             </div>
         </div>;
+    Func<object?, Microsoft.AspNetCore.Html.IHtmlContent> simgeler = @<span class="kd-oge-simgeler" title="@(etkinlik ? "Takvim etkinliği" : oge.Hatirlatici is not null ? "Hatırlatıcı" : null)">
+            @if (etkinlik)
+            {
+                <svg class="kd-icon" role="img" aria-label="Takvim etkinliği"><use href="/img/icons.svg#lucide-calendar"></use></svg>
+            }
+            else if (oge.Hatirlatici is not null)
+            {
+                <svg class="kd-icon" role="img" aria-label="Hatırlatıcı var"><use href="/img/icons.svg#@(tekrarVar ? "lucide-repeat" : "lucide-bell")"></use></svg>
+            }
+        </span>;
 }
-<article class="kd-satir kd-oge @Kafamdakiler.Pages.GunMetinleri.TurRengi(oge.Tur) @(yapildi ? "is-yapildi" : "")" data-kd-oge="@oge.Kimlik">
+<article class="kd-satir kd-oge @(yapildi ? "is-yapildi" : "")" data-kd-oge="@oge.Kimlik">
+    @* The box sits at the right, before the chevron; it is outside the folding part, so ticking never folds the row. *@
     @if (yaptimVar)
     {
         <form method="post" asp-page-handler="Yaptim" asp-route-tarih="@t" class="kd-satir-islem">
@@ -72,17 +80,14 @@
             <input type="hidden" name="geri" value="@(yapildi ? "true" : "false")" />
             <input type="hidden" name="donus" value="@Model.Donus" />
             <button type="submit" class="kd-yaptim @(yapildi ? "is-yapildi" : "")" aria-label="@(yapildi ? "Geri al" : "Yaptım"): @oge.Baslik" title="@(yapildi ? "Geri al" : "Yaptım")">
-                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
+                <span class="kd-yaptim-kutu"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg></span>
             </button>
         </form>
     }
-    else
+    else if (yapildi)
     {
-        <span class="kd-yaptim kd-yaptim--pasif @(yapildi ? "is-yapildi" : "")" title="@(etkinlik ? "Takvim etkinliği" : "Biten görev buradan yeniden açılamaz")" aria-hidden="true">
-            @if (yapildi)
-            {
-                <svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg>
-            }
+        <span class="kd-yaptim kd-yaptim--pasif is-yapildi" title="@(etkinlik ? "Takvim etkinliği" : "Biten görev buradan yeniden açılamaz")" aria-hidden="true">
+            <span class="kd-yaptim-kutu"><svg class="kd-icon" aria-hidden="true"><use href="/img/icons.svg#lucide-check"></use></svg></span>
         </span>
     }
     @* The whole row opens its detail (it folds); a small chevron at the right says so. A row with nothing to open is plain. *@
@@ -91,6 +96,7 @@
         <details class="kd-oge-detay">
             <summary class="kd-oge-ozet">
                 @govde(null)
+                @simgeler(null)
                 <span class="kd-oge-ok" aria-hidden="true"><svg class="kd-icon"><use href="/img/icons.svg#lucide-chevron-left"></use></svg></span>
             </summary>
             <div class="kd-oge-ayrinti-govde">
@@ -159,6 +165,6 @@
     }
     else
     {
-        <div class="kd-oge-detay">@govde(null)</div>
+        <div class="kd-oge-detay">@govde(null)@simgeler(null)</div>
     }
 </article>

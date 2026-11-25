@@ -3690,43 +3690,6 @@ textarea.form-control {
   color: var(--kd-danger);
 }
 
-/* A row of the day list: the round "yaptım" on the left, the hour in front of the title. */
-.kd-oge .kd-satir-islem {
-  flex: 0 0 auto;
-}
-
-.kd-yaptim {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 1.5px solid var(--kd-line-strong);
-  border-radius: 50%;
-  background: transparent;
-  color: transparent;
-}
-
-button.kd-yaptim:hover {
-  border-color: var(--kd-ok);
-  color: var(--kd-ok);
-}
-
-.kd-yaptim.is-yapildi {
-  border-color: var(--kd-ok);
-  background: var(--kd-ok);
-  color: var(--kd-bg);
-}
-
-.kd-yaptim--pasif {
-  border-style: dashed;
-}
-
-.kd-yaptim--pasif.is-yapildi {
-  border-style: solid;
-}
-
 .kd-oge.is-yapildi {
   opacity: 0.7;
 }
@@ -3742,17 +3705,6 @@ button.kd-yaptim:hover {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.7rem;
-}
-
-.kd-oge-hat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.kd-oge-hat .kd-icon {
-  width: 0.9rem;
-  height: 0.9rem;
 }
 
 .kd-oge-ayrinti-govde {
@@ -4307,12 +4259,6 @@ button.kd-yaptim:hover {
   color: var(--kd-text-muted);
 }
 
-/* Asistan: the box and the stream are one column, centered on a wide screen. */
-.kd-asistan-kolon {
-  max-width: 760px;
-  margin-inline: auto;
-}
-
 .kd-akis {
   max-width: none;
 }
@@ -4496,4 +4442,150 @@ button.kd-yaptim:hover {
   .kd-habit-name a {
     min-width: 44px;
   }
+}
+
+/* ---------- Web, inspired by the phone app: one list card, a small check box on the right ---------- */
+
+/* The day list is one card; the rows are told apart by a hairline, like the phone's list. */
+.kd-gun-liste {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--kd-line);
+  border-radius: 0.75rem;
+  background: var(--kd-surface-solid);
+  overflow: hidden;
+}
+
+.kd-gun-liste > .kd-oge {
+  position: relative;
+  align-items: stretch;
+  gap: 0;
+  min-height: 3.5rem;
+  margin: 0;
+  padding: 0 0.5rem 0 0.85rem;
+  border: 0;
+  border-top: 1px solid var(--kd-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.kd-gun-liste > .kd-oge:first-child {
+  border-top: 0;
+}
+
+.kd-gun-liste .kd-oge-ozet {
+  min-height: 3.5rem;
+}
+
+.kd-gun-liste .kd-satir-meta {
+  gap: 0.05rem 0.5rem;
+}
+
+/* Soft red text, not a pill. */
+.kd-oge-gecikme {
+  color: var(--kd-danger);
+}
+
+.kd-oge-saat {
+  margin-right: 0.5rem;
+  color: var(--kd-violet);
+  font-weight: 600;
+}
+
+/* The bell, the repeat sign or the calendar: small, left of the box. The room for the box is always kept, so rows line up. */
+.kd-oge-simgeler {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-right: 2.5rem;
+  color: var(--kd-text-muted);
+}
+
+.kd-oge-simgeler .kd-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The box: 40px to tap, a 22px square with 4px corners inside. It is outside the folding part, over the room kept for it. */
+.kd-oge > .kd-satir-islem,
+.kd-oge > .kd-yaptim--pasif {
+  position: absolute;
+  top: 0;
+  right: 0.5rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+  margin: 0;
+}
+
+.kd-oge:has(> .kd-oge-detay > .kd-oge-ozet) > .kd-satir-islem,
+.kd-oge:has(> .kd-oge-detay > .kd-oge-ozet) > .kd-yaptim--pasif {
+  right: 2.5rem;
+}
+
+.kd-yaptim {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.kd-yaptim-kutu {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 2px solid var(--kd-line-strong);
+  border-radius: 4px;
+  color: transparent;
+}
+
+.kd-yaptim .kd-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+button.kd-yaptim:hover .kd-yaptim-kutu {
+  border-color: var(--kd-ok);
+  color: var(--kd-ok);
+}
+
+button.kd-yaptim:focus-visible {
+  outline: 2px solid var(--kd-violet);
+  outline-offset: -2px;
+  border-radius: 0.4rem;
+}
+
+.kd-yaptim.is-yapildi .kd-yaptim-kutu {
+  border-color: var(--kd-ok);
+  background: var(--kd-ok);
+  color: var(--kd-bg);
+}
+
+.kd-yaptim--pasif {
+  opacity: 0.55;
+}
+
+/* The chevron is a bare arrow now. */
+.kd-gun-liste .kd-oge-ok {
+  width: 2rem;
+  border: 0;
+}
+
+/* Shelf item on a habit card: the cover, then name, author, bar, position and the "Okudum" button; the form is in a modal. */
+.kd-shelf-body .kd-bar {
+  margin-top: 0.35rem;
+}
+
+.kd-okudum {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+/* Asistan: the page head spans the container like every page; only the box and the stream keep a readable column. */
+.kd-asistan-kolon > :not(.kd-page-head) {
+  max-width: 760px;
 }

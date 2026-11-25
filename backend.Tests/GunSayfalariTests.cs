@@ -108,11 +108,11 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
             .Select(k => ham.IndexOf($"data-kd-oge=\"{k}", StringComparison.Ordinal)).ToList();
         Assert.All(sira, i => Assert.True(i >= 0));
         Assert.Equal(sira.Order().ToList(), sira);
-        // A reminder tied to an item is not a row of its own: it is a chip on the item.
+        // A reminder tied to an item is not a row of its own: it is a bell (or repeat sign) on the item.
         Assert.DoesNotContain($"data-kd-oge=\"h:{bagli.Id}\"", ham);
         var rapor = Satir(ham, "m:a3f09c");
         Assert.Contains("14:00", rapor);
-        Assert.Contains("title=\"Hatırlatıcı\"", rapor);
+        Assert.Contains("title=\"Hatırlatıcı\"", Metin(rapor));
         // An event has no "yaptım".
         Assert.DoesNotContain("handler=Yaptim", Satir(ham, ham[ham.IndexOf("data-kd-oge=\"e:", StringComparison.Ordinal)..].Split('"')[1]));
     }
@@ -529,6 +529,27 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
     }
 
     [Fact]
+    public async Task ShelfCard_ShowsTheBookWithABarAndAnOkudumButton_AndItsFormIsInAModal()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+        var (_, ogeId) = await RafAliskanligiAsync();
+
+        var ham = await HamAsync(tarayici, "/Aliskanliklar");
+
+        // The card holds no input row any more: a button opens the modal, and the modal holds the same form (same handler).
+        Assert.Contains($"data-bs-target=\"#okudum-{ogeId}\"", ham);
+        var modal = ham[ham.IndexOf($"id=\"okudum-{ogeId}\"", StringComparison.Ordinal)..];
+        modal = modal[..modal.IndexOf("</form>", StringComparison.Ordinal)];
+        Assert.Contains("handler=Ilerleme", modal);
+        Assert.Contains($"name=\"ogeId\" value=\"{ogeId}\"", modal);
+        Assert.Contains("name=\"bitisKonum\"", modal);
+        Assert.Contains("name=\"dakika\"", modal);
+        Assert.DoesNotContain("kd-progress-form", ham[..ham.IndexOf($"id=\"okudum-{ogeId}\"", StringComparison.Ordinal)]);
+        Assert.Contains("0 / 600 sayfa", Metin(ham));
+        Assert.Contains("role=\"progressbar\"", ham[..ham.IndexOf($"id=\"okudum-{ogeId}\"", StringComparison.Ordinal)]);
+    }
+
+    [Fact]
     public async Task ShelfHabit_ShowsItsShelfOnItsOwnPage_AndTheOldShelfAddressRedirectsThere()
     {
         var (_, tarayici) = await HazirlaAsync();
@@ -872,6 +893,29 @@ public sealed partial class GunSayfalariTests(UygulamaFabrikasi uygulama) : GunT
         var detay = satir[satir.IndexOf("</summary>", StringComparison.Ordinal)..];
         Assert.Contains("handler=Devret", detay);
         Assert.Contains("handler=HatirlaticiKur", detay);
+    }
+
+    [Fact]
+    public async Task ARow_HasItsTickAtTheRight_AndAQuietMetaLineWithoutTypeLabelOrBadge()
+    {
+        var (_, tarayici) = await HazirlaAsync();
+        BugunPlani([], geciken: "[" + Geciken("uye-girisi", "Üye girişi", "2026-11-07", 2) + "]");
+
+        var ham = await HamAsync(tarayici, "/");
+        var satir = Satir(ham, "g:uye-girisi");
+
+        // One list card; the tick is a small square box (the form is still the one "Yaptim" post), not the old round button on the left.
+        Assert.Contains("kd-gun-liste", ham);
+        Assert.Contains("class=\"kd-yaptim-kutu\"", satir);
+        Assert.Contains("handler=Yaptim", satir);
+        Assert.DoesNotContain("kd-yaptim--pasif", satir);
+        // The meta line is plain text: the delay is a soft-red word, there is no pill and no TASK/REMINDER label.
+        var meta = Regex.Match(satir, "<div class=\"kd-satir-meta\">.*?</div>", RegexOptions.Singleline).Value;
+        Assert.Contains("<span class=\"kd-oge-gecikme\">", meta);
+        Assert.Contains("2 gün gecikti", Metin(meta));
+        Assert.DoesNotContain("kd-status", meta);
+        Assert.DoesNotContain("kd-oge-tur", satir);
+        Assert.DoesNotContain("Görev</span>", satir);
     }
 
     [Fact]

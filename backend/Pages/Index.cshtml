@@ -141,9 +141,14 @@ else
                             <p class="kd-empty-title">Bu gün için bir şey yok.</p>
                         </div>
                     }
-                    @foreach (var oge in gorunum.Ogeler)
+                    @if (gorunum.Ogeler.Count > 0)
                     {
-                        <partial name="_GunSatiri" model="new GunSatiriModeli(oge, tarih, donus, yazilabilir, projeAdlari)" />
+                        <div class="kd-gun-liste">
+                            @foreach (var oge in gorunum.Ogeler)
+                            {
+                                <partial name="_GunSatiri" model="new GunSatiriModeli(oge, tarih, donus, yazilabilir, projeAdlari)" />
+                            }
+                        </div>
                     }
                     @if (isSayisi > 0)
                     {

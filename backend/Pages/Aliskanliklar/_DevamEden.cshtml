@@ -4,24 +4,50 @@
     var a = Model.Aliskanlik;
     var o = Model.Oge;
 }
-@* An item in progress on the habit card: title, position and the "Nereye kadar geldin?" form. *@
+@* An item in progress on the habit card: title, author, a progress bar, the position and an "Okudum" button that opens the
+   "Nereye kadar geldin?" form in a modal (the form is too wide for a card). *@
+@{
+    var modalId = "okudum-" + o.Id;
+}
 <div class="kd-shelf-body">
     <a class="kd-shelf-title" asp-page="/Aliskanliklar/Oge" asp-route-id="@o.Id">@o.Ad</a>
     @if (!string.IsNullOrEmpty(o.AltBaslik))
     {
         <span class="kd-muted">@o.AltBaslik</span>
     }
+    @if (o.Ilerleme is { } oran)
+    {
+        <div class="kd-bar kd-bar--thin" role="progressbar" aria-label="@o.Ad: okuma ilerlemesi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Round(oran * 100)">
+            <span style="width:@Gorunum.Genislik(oran)"></span>
+        </div>
+    }
     <p class="kd-readout">
         @Gorunum.Sayi(o.GuncelKonum)@(o.Toplam is { } toplam ? " / " + Gorunum.Sayi(toplam) : "") @a.Birim@(o.Ilerleme is { } ilerleme ? " · " + Gorunum.Yuzde(ilerleme) : "")
     </p>
-    <form method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Ilerleme" class="kd-progress-form">
-        @if (ViewData["Donus"] is string donus) { <input type="hidden" name="donus" value="@donus" /> }
-        <input type="hidden" name="ogeId" value="@o.Id" />
-        <label class="visually-hidden" for="p-@o.Id">Nereye kadar geldin?</label>
-        <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
-               class="form-control" placeholder="@(string.IsNullOrWhiteSpace(a.Birim) ? "Konum" : a.Birim)" title="Nereye kadar geldin?" required />
-        <label class="visually-hidden" for="d-@o.Id">Dakika</label>
-        <input id="d-@o.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control kd-minute" placeholder="dk" />
-        <button type="submit" class="btn kd-btn-hue">Kaydet</button>
-    </form>
+    <button type="button" class="btn kd-btn-hue kd-okudum" data-bs-toggle="modal" data-bs-target="#@modalId">Okudum</button>
+</div>
+<div class="modal fade kd-modal" id="@modalId" tabindex="-1" aria-labelledby="@modalId-baslik" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="post" asp-page="/Aliskanliklar/Index" asp-page-handler="Ilerleme">
+            @if (ViewData["Donus"] is string donus) { <input type="hidden" name="donus" value="@donus" /> }
+            <input type="hidden" name="ogeId" value="@o.Id" />
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="@modalId-baslik">@o.Ad</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body kd-okuma-form">
+                <label class="kd-hat-alan" for="p-@o.Id">
+                    <span>Nereye kadar geldin? (@(string.IsNullOrWhiteSpace(a.Birim) ? "konum" : a.Birim))</span>
+                </label>
+                <input id="p-@o.Id" name="bitisKonum" type="number" step="any" inputmode="decimal" min="@Gorunum.Girdi(o.GuncelKonum)"
+                       class="form-control" required />
+                <label class="kd-hat-alan" for="d-@o.Id"><span>Süre (dakika, isteğe bağlı)</span></label>
+                <input id="d-@o.Id" name="dakika" type="number" min="0" max="1440" inputmode="numeric" class="form-control" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Vazgeç</button>
+                <button type="submit" class="btn kd-btn-hue">Kaydet</button>
+            </div>
+        </form>
+    </div>
 </div>

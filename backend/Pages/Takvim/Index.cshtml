@@ -126,9 +126,14 @@
                         <p class="kd-empty-title">Bu gün için bir şey yok.</p>
                     </div>
                 }
-                @foreach (var oge in seciliGorunum.Ogeler)
+                @if (seciliGorunum.Ogeler.Count > 0)
                 {
-                    <partial name="_GunSatiri" model="new GunSatiriModeli(oge, Model.Secili, donus, !seciliGorunum.Kapandi, Model.ProjeAdlari)" />
+                    <div class="kd-gun-liste">
+                        @foreach (var oge in seciliGorunum.Ogeler)
+                        {
+                            <partial name="_GunSatiri" model="new GunSatiriModeli(oge, Model.Secili, donus, !seciliGorunum.Kapandi, Model.ProjeAdlari)" />
+                        }
+                    </div>
                 }
 
                 @if (seciliGorunum.Kapandi)
