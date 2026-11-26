@@ -517,3 +517,15 @@ deploy/yedek/restic.env
 
 # Firebase config (project id, app id); kept out of the public repo
 mobile/android/app/google-services.json
+
+# Secrets: never commit
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+credentials.json
+secrets.json
+.npmrc
+token.json
