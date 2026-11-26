@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      nuget:
+        patterns:
+          - "*"
+  - package-ecosystem: "nuget"
+    directory: "/backend.Tests"
+    schedule:
+      interval: "weekly"
+    groups:
+      nuget:
+        patterns:
+          - "*"
+  - package-ecosystem: "pub"
+    directory: "/mobile"
+    schedule:
+      interval: "weekly"
+    groups:
+      pub:
+        patterns:
+          - "*"
