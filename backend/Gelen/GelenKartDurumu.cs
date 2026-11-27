@@ -7,7 +7,7 @@ public class GelenKartDurumu
     // The card's name in the brain without ".md" (e.g. "2026-11-03-1840-kitap-onerisi").
     public string Kart { get; set; } = "";
 
-    // Set only on cards marked before a new tag could be suggested (K-0023, 2026-11-09): they wait for the laptop until
+    // Set only on cards marked before a new tag could be suggested (K-0033/m03, 2026-11-09): they wait for the laptop until
     // "suggest again" queues a suggestion, which clears it. Nothing sets it any more.
     public bool LaptoptaIslenecek { get; set; }
 

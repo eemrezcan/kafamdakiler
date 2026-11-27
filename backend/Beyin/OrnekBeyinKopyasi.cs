@@ -1,6 +1,6 @@
 namespace Kafamdakiler.Beyin;
 
-// Development only: the app works on a Git-ignored copy of ornek-beyin/, never on the template itself (K-0023 eki).
+// Development only: the app works on a Git-ignored copy of ornek-beyin/, never on the template itself (K-0034/m02).
 public static class OrnekBeyinKopyasi
 {
     // Copies the template when the vault folder does not exist yet. Returns true when it copied.

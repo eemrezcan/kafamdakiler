@@ -42,7 +42,7 @@ public class HatirlaticiYazDto : IValidatableObject
 
     public bool Acil { get; set; }
 
-    // The link to the plan (K-0024). A plan item is named by its permanent id and the day of its plan file; a task by its slug.
+    // The link to the plan (K-0037). A plan item is named by its permanent id and the day of its plan file; a task by its slug.
     [StringLength(120, ErrorMessage = "Madde kimliği en çok 120 karakter olabilir.")]
     public string? MaddeId { get; set; }
 

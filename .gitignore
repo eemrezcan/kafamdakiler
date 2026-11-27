@@ -492,6 +492,12 @@ docs/adimlar/
 docs/planlar/
 docs/kararlar/K-0005-veri-sahipligi.md
 docs/kararlar/K-0023-beyin-baglantisi.md
+docs/kararlar/K-0025-sunucu-isletimi-ve-erisim.md
+docs/kararlar/K-0026-acik-ve-ozel-dosyalar.md
+docs/kararlar/K-0033-yakalamanin-beyne-islenmesi.md
+docs/kararlar/K-0034-ornek-beyin-ve-gosterim.md
+docs/kararlar/K-0035-beynin-evi-ve-iki-yazan.md
+docs/kararlar/K-0036-sunucuda-claude-ve-repo-klonlari.md
 docs/gundem.md
 docs/yz-kayitlari.md
 docs/kararlar/K-0021-web-gorunum-claude.md
@@ -502,7 +508,7 @@ docs/kararlar/K-0021-web-gorunum-claude.md
 # Uploaded files in development (K-0015)
 .dosyalar/
 
-# Sample brain: the committed copy is a read-only template; the API works on a copy (K-0023)
+# Sample brain: the committed copy is a read-only template; the API works on a copy (K-0034)
 ornek-beyin/.beyin/
 .ornek-beyin-calisma/
 

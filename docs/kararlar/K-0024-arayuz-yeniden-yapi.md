@@ -2,13 +2,15 @@
 kimlik: K-0024
 baslik: "Arayüzün yeniden yapısı (mobil ve web)"
 tur: karar
-soru: "Uygulamanın bilgi mimarisi, görev ile hatırlatıcı ilişkisi ve asistanın yetkisi nasıl olsun?"
+soru: "Uygulamanın bilgi mimarisi ve gezinmesi nasıl olsun?"
 sonuc: kabul
-kavramlar: [arayüz, bilgi-mimarisi, gezinme, görev, hatırlatıcı, asistan, bugün, takvim]
+kavramlar: [arayüz, bilgi-mimarisi, gezinme, bugün, takvim, asistan, alışkanlık]
 tags: [karar]
 ---
 
 # K-0024 - Arayüzün yeniden yapısı (mobil ve web)
+
+Kapsamı bölündü, devamı K-0037, K-0038. Bu kayıtta kalan maddeler yerinde durur; taşınan maddelerin metni yeni kayıtlardadır (2026-11-27).
 
 Kullanıcı, 2026-11-10. Maket: `docs/planlar/maket/index.html`, gerekçeli taslak: `docs/planlar/ui-vizyon.md` (iş bitince silinir; özü bu karardadır).
 
@@ -37,13 +39,13 @@ karar-veren: kullanici
 ## m03 - Hatırlatıcı görevin özelliğidir, yaptım ikisini birlikte kapatır
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 kavramlar: [yaptım, veri-sahipliği, birleşik-liste]
 karar-veren: kullanici
 ```
-**Görev ile hatırlatıcı: hatırlatıcı görevin özelliğidir.** Görev beyinde durur (K-0023); saat, tekrar ve bildirim uygulamanın veritabanında, göreve bağlı. "Yaptım" görevi bitirir, hatırlatıcı susar; görev bitince hatırlatıcı da kapanır. Bugün ve Takvim'de plan maddesi, görev, hatırlatıcı ve takvim etkinliği tek listede, tek "yaptım" ile görünür. Hatırlatıcı elle (işin sayfasından, yeni iş formundan) ya da asistanla kurulur.
+Kapsamı bölündü: bu madde K-0037/m01 olarak taşındı.
 
 ## m04 - Bugün asistan özeti, gün yükü ve birleşik yapılacaklar listesini taşır
 ```yaml
@@ -59,13 +61,13 @@ karar-veren: kullanici
 ## m05 - Asistan tek akıştır, kullanıcının girdisinden doğan geri alınabilir işleri sormadan yapar
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 kavramlar: [geri-al, onay-kuyruğu, yakala, gelen, brifing, izin-kipi, dış-kaynak]
 karar-veren: kullanici
 ```
-**Asistan tek akıştır.** Yakala, Gelen, onay kuyruğu, iş kartları ve brifing aynı ekranda. Kullanıcının kendi girdisinden doğan, geri alınabilir işleri (görev, hatırlatıcı, not, takvim girdisi) **sormadan yapar** ve Geri al / Düzelt gösterir. Dış kaynaktan gelen içerik (mail vb.), silme, kod, push ve deploy onaya düşer (K-0009 izin kipi bunun üstünde çalışır). Emin olmadığında tek soru sorar; seçenek listesi sunmaz.
+Kapsamı bölündü: bu madde K-0038/m01 olarak taşındı.
 
 ## m06 - Raflı alışkanlığın detayı rafı içerir, okudum kaydı tek alt sayfadadır
 ```yaml
@@ -114,10 +116,10 @@ karar-veren: kullanici
 ## k01 - Görev ile hatırlatıcı zincirinin testleri
 ```yaml
 tur: k
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 ```
-m03: `backend.Tests/HatirlaticiZinciriTests.cs` (görevi bitirmenin her yolu hatırlatıcıları kapatır), `backend.Tests/GunYaptimApiTests.cs` (günün tek "yaptım"ı ve görev ile hatırlatıcı arasındaki zincir), `backend.Tests/HatirlaticiBagiApiTests.cs` (hatırlatıcının plan maddesine ya da göreve bağı).
+Kapsamı bölündü: bu madde K-0037/k01 olarak taşındı.
 
 ## k02 - Bugün ve Takvim görünümlerinin testleri
 ```yaml
@@ -130,10 +132,10 @@ m02 ve m04: `backend.Tests/GunGorunumuApiTests.cs` (gün görünümü ve dünden
 ## k03 - Asistan akışının testleri
 ```yaml
 tur: k
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 ```
-m05: `backend.Tests/AsistanGirdiApiTests.cs` (asistanın tek girişi), `backend.Tests/AsistanAkisApiTests.cs` (akış ve rozet), `backend.Tests/AsistanPaylasApiTests.cs` (paylaşım menüsünden gelen metin yalnız not olur, gerisi onay kuyruğunda bekler), `backend.Tests/AsistanSayfalariTests.cs` (web Asistan sayfası).
+Kapsamı bölündü: bu madde K-0038/k01 olarak taşındı.
 
 ## g01 - Kullanıcı uygulamayı kullanması zor buldu
 ```yaml
@@ -157,35 +159,35 @@ Kök nedenler: modül modül büyüyüp ekran tasarımı yapılmaması, K-0023't
 ## r01 - Görev ile hatırlatıcının yalnız görünümde birleşmesi
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-"Yaptım" iki kayda yazılır, ayrışma sürer.
+Kapsamı bölündü: bu madde K-0037/r01 olarak taşındı.
 
 ## r02 - Hatırlatıcıyı beyne taşımak
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-İnternetsiz bildirim zorlaşır, iş büyür.
+Kapsamı bölündü: bu madde K-0037/r02 olarak taşındı.
 
 ## r03 - Hepsini uygulamanın veritabanına taşımak
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-K-0023'te reddedildi.
+Kapsamı bölündü: bu madde K-0037/r03 olarak taşındı.
 
 ## r04 - Sol üstte hamburger çekmeceyle ana gezinme
 ```yaml
@@ -212,24 +214,24 @@ M04 (mobilden CRUD) ve M08 (ekranlar arası gezinme) gösterilemez, asistan hata
 ## r06 - Asistanın her şeyi onaya sorması
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 yeniden-ac: "Kullanıcı yeni yapıyı telefonda bir hafta kullandıktan sonra bir fiilin yerini yanlış bulursa ya da asistanın sormadan yaptığı işlerde geri alma sık gerekiyorsa (yetki sınırı yeniden konuşulur)."
 karar-veren: kullanici
 ```
-Kullanıcının şikâyet ettiği seçim yorgunluğu sürer.
+Kapsamı bölündü: bu madde K-0038/r01 olarak taşındı.
 
 ## r07 - Asistanın dış kaynak dahil tam özerk olması
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-10
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Dışarıdan gelen metin asistanı yanlış işe yönlendirebilir.
+Kapsamı bölündü: bu madde K-0038/r02 olarak taşındı.
 
 ## r08 - Projeleri şimdi işlevli yapmak ya da tamamen kaldırmak
 ```yaml

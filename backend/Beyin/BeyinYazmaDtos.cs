@@ -1,7 +1,7 @@
 namespace Kafamdakiler.Beyin;
 
 // What the write endpoints take and return (K2.3a). The plan item is named by its permanent id (`a3f09c`), never by its
-// place in the list: a new item can come in between and the tick would land on the wrong one (K-0023 eki).
+// place in the list: a new item can come in between and the tick would land on the wrong one (K-0035/m04).
 
 // Requests
 

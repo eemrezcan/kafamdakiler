@@ -57,7 +57,7 @@ public class IndexModel(AppDbContext db, HatirlaticiAyari ayar, TimeProvider saa
         {
             await db.SaveChangesAsync(ct);
             Bildirim = h.Durum == HatirlaticiDurumu.Tamam ? "Tamamlandı" : "Sıradaki tekrara geçti";
-            // The item or task tied to the reminder is done with it (the chain of K-0024); a failed step is said, the reminder stays done.
+            // The item or task tied to the reminder is done with it (the chain of K-0037); a failed step is said, the reminder stays done.
             var bagli = await zincir.HatirlaticiYapildiAsync(h, hedefAn, CancellationToken.None);
             if (bagli.Hata is { } zincirHatasi)
                 Hata = zincirHatasi;

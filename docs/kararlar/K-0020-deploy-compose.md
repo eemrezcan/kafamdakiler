@@ -10,6 +10,8 @@ tags: [karar]
 
 # K-0020 - Deploy tek VPS üzerinde Docker Compose
 
+Kapsamı bölündü, devamı K-0030. Bu kayıtta kalan maddeler yerinde durur; taşınan maddelerin metni yeni kayıtlardadır (2026-11-27).
+
 ## m01 - Tek bir VPS üzerinde Docker Compose kullanılır: uygulama, Postgres ve Caddy
 ```yaml
 tur: m
@@ -100,13 +102,13 @@ Ek (2026-11-03): Gecelik yedekler Cloud Storage'a gider.
 ## m09 - Sesi yazıya çevirmede Google Speech-to-Text aday, kullanıcının sesiyle denenip seçilir
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-11-03
 dayanak: kullanici
 kavramlar: [ses, speech-to-text]
 karar-veren: kullanici
 ```
-Ek (2026-11-03): Sesi yazıya çevirmede Google Speech-to-Text (Chirp 3, `tr-TR`) aday; OpenAI gpt-4o-transcribe ile kullanıcının kendi sesiyle denenip seçilir.
+Kapsamı bölündü: bu madde K-0030/m01 olarak taşındı.
 
 ## m10 - İlk iş 10 dolarlık bütçe uyarısıdır, veri ABD bölgesinde durur
 ```yaml

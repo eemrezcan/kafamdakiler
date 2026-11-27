@@ -29,7 +29,7 @@ cd mobile && flutter pub get && flutter run --dart-define=API_URL=http://localho
 - `backend.Tests/`: xUnit testleri (K-0016)
 - `compose.yaml`: geliştirmede Postgres (K-0012, K-0020)
 - `deploy/`: sunucuya özgü dosyalar: Dockerfile, Compose, gece yedeği (K-0020)
-- `ornek-beyin/`: uydurma notlardan örnek ikinci beyin; geliştirme ve testler için (K-0023). Repodaki kopya şablondur, API Git dışı `.ornek-beyin-calisma/` kopyasında çalışır
+- `ornek-beyin/`: uydurma notlardan örnek ikinci beyin; geliştirme ve testler için (K-0034). Repodaki kopya şablondur, API Git dışı `.ornek-beyin-calisma/` kopyasında çalışır
 
 ## Ders kaynakları
 Hocaların slaytları, kaynak kodları ve notları (repo dışında, yalnız okunur). Bunlar referanstır; birebir izlenmez (K-0006).
