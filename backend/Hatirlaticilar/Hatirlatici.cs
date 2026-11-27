@@ -31,7 +31,7 @@ public class Hatirlatici
     public int IsrarEnCok { get; set; } = VarsayilanIsrarEnCok;
     // Urgent: the phone lets it through silent mode.
     public bool Acil { get; set; }
-    // The link to the plan (K-0024): a reminder is a property of the item it is about. The plan item is named by its permanent id and the
+    // The link to the plan (K-0037): a reminder is a property of the item it is about. The plan item is named by its permanent id and the
     // day of its plan file (an id is unique inside one day file only); the task by its slug. Both may be set (an item linked to a task).
     public string? MaddeId { get; set; }
     public DateOnly? MaddeTarihi { get; set; }

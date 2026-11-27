@@ -21,7 +21,7 @@ public record GmailSecimCevabi(List<GmailSecimi> Mailler);
 public record GmailTurOzeti(int Islenen, int Atlanan, int Basarisiz, int Onerilen, ErisimDurumu? ErisimSorunu = null, bool SinirDoldu = false);
 
 // One round of the Gmail scan: list the new mail of the primary inbox, read the ones not seen before, ask Claude what in each of them
-// needs doing, and put the answers in the approval queue. A mail is someone else's text (K-0004 ek, kat 2 karar 7): it goes to Claude as
+// needs doing, and put the answers in the approval queue. A mail is someone else's text (K-0028/m06, kat 2 karar 7): it goes to Claude as
 // data only, Claude has no tools, every answer is checked by the very same rules as a spoken one (IsCikarServisi.Cevir), and what survives
 // is queued with DisKaynak = true, so nothing a mail says is ever applied by itself, whatever the kind's mode.
 public partial class GmailTarayici(

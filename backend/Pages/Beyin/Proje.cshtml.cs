@@ -33,7 +33,7 @@ public class ProjeModel(
     public async Task<IActionResult> OnPostGorevEkleAsync(string kimlik, string? baslik, string? bitis) =>
         Don(await BeyinYazma.GorevEkle(new(baslik, kimlik, null, bitis, null, null), Istemci, Gunluk, CancellationToken.None), "Görev eklendi");
 
-    // Finishing a task closes the reminder tied to it too (HatirlaticiZinciri, the chain of K-0024); a step of it that fails is said, the task stays finished.
+    // Finishing a task closes the reminder tied to it too (HatirlaticiZinciri, the chain of K-0037); a step of it that fails is said, the task stays finished.
     public async Task<IActionResult> OnPostGorevBitirAsync(string? gorev)
     {
         var yanit = await BeyinYazma.GorevBitir(gorev ?? "", Istemci, Gunluk, saat, CancellationToken.None);

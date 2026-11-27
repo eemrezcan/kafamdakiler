@@ -1,4 +1,4 @@
-// Neuron background scene (K-0022).
+// Neuron background scene (K-0032).
 // Any <canvas class="kd-synapse"> becomes a microscope view of living neurons:
 // fluorescent cells on the dark theme, stained tissue on the light theme.
 // Each neuron has a soma, branching dendrites and an axon that reaches toward

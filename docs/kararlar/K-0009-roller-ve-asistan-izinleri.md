@@ -10,6 +10,8 @@ tags: [karar]
 
 # K-0009 - Roller Sahip ve Asistan, izinler claim ile
 
+Kapsamı bölündü, devamı K-0029. Bu kayıtta kalan maddeler yerinde durur; taşınan maddelerin metni yeni kayıtlardadır (2026-11-27).
+
 ## m01 - İki rol vardır: Sahip ve Asistan
 ```yaml
 tur: m
@@ -88,24 +90,24 @@ Ek (2026-10-30): Bearer token izinlerin kopyasını taşır ve 1 saat geçerlidi
 ## m08 - T07 gösterimi izin açıp kapatarak yapılır
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 kavramlar: [gösterim]
 karar-veren: kullanici
 ```
-Ek (2026-10-30): T07 gösterimi: Sahip panelden Asistan'ın bir iznini açar, Asistan (1. gösterimde Scalar'dan, 2. gösterimde MCP üzerinden Claude) veriye erişir; izni kapatınca aynı istek 403 alır.
+Kapsamı bölündü: bu madde K-0029/m01 olarak taşındı.
 
 ## m09 - Derste hocaya iki rol şartının karşılanıp karşılanmadığı sorulur
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 kavramlar: [hoca]
 karar-veren: kullanici
 ```
-Ek (2026-10-30): Kullanıcıya öneri: derste hocaya "ikinci rol yapay zekâ asistanı, izinleri yönetici panelinden veriliyor; iki rol şartını karşılar mı?" diye sorulacak.
+Kapsamı bölündü: bu madde K-0029/m02 olarak taşındı.
 
 ## k01 - Asistan izinlerinin veritabanından okunması ve Yönetim ucunun yalnız Sahip'e açıklığı test edilir
 ```yaml

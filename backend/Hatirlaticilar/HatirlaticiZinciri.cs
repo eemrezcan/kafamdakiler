@@ -11,7 +11,7 @@ public record ZincirSonucu(List<string> Kimlikler, string? Hata)
     public static ZincirSonucu Bos => new([], null);
 }
 
-// The chain between a task (or a plan item) and the reminder tied to it (K-0024, madde 3), in both directions. It lives here, apart from
+// The chain between a task (or a plan item) and the reminder tied to it (K-0037/m01), in both directions. It lives here, apart from
 // the endpoints, so every way of finishing an item goes through the same rules: the day plan and task endpoints, "yaptım" of the day
 // view, "yaptım" of a reminder (the app, the notification button) and the approval queue's task closing.
 //

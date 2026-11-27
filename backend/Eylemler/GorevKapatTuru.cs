@@ -47,7 +47,7 @@ public partial class GorevKapatTuru(BeyinIstemcisi beyin, ILogger<GorevKapatTuru
             throw new EylemHatasi($"Beyin görevi kapatmadı ({yanit.Durum}).");
         }
 
-        // The reminders tied to the task close with it (K-0024). They are changed in the context; the queue saves it with the action.
+        // The reminders tied to the task close with it (K-0037). They are changed in the context; the queue saves it with the action.
         // The task's slug is its file name.
         await HatirlaticiZinciri.YapildiAsync(
             baglam.Db, null, null, Path.GetFileNameWithoutExtension(y.Yol), (hatirlaticiAyari ?? new HatirlaticiAyari()).VarsayilanSaat, baglam.Simdi, ct);

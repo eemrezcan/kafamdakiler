@@ -1,14 +1,16 @@
 ---
 kimlik: K-0022
-baslik: "Web teması: açık/koyu mod, mor-pembe vurgu, Canvas sinaps sahnesi"
+baslik: "Web teması: açık/koyu mod, mor-pembe vurgu, tek yazı tipi"
 tur: karar
-soru: "Web arayüzünün renkleri, açık/koyu modu ve animasyonları nasıl yapılır?"
+soru: "Web arayüzünün renkleri, açık/koyu modu ve yazı tipi nasıl olur?"
 sonuc: kabul
-kavramlar: [web, tema, açık-koyu-mod, mikroskop, animasyon, synapse-canvas, yazı-tipi, vurgu-rengi]
+kavramlar: [web, tema, açık-koyu-mod, mikroskop, yazı-tipi, vurgu-rengi]
 tags: [karar]
 ---
 
-# K-0022 - Web teması: açık/koyu mod, mor-pembe vurgu, Canvas sinaps sahnesi
+# K-0022 - Web teması: açık/koyu mod, mor-pembe vurgu, tek yazı tipi
+
+Kapsamı bölündü, devamı K-0031, K-0032. Bu kayıtta kalan maddeler yerinde durur; taşınan maddelerin metni yeni kayıtlardadır (2026-11-27).
 
 2026-10-30, kullanıcı. Tema beyin temalıdır.
 
@@ -48,13 +50,13 @@ karar-veren: kullanici
 ## m04 - Arayüz ince çizgili şeffaf üst bar, profil-beyin logosu ve lamel gibi giriş paneliyle kurulur
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 kavramlar: [logo, giriş-paneli, ikon]
 karar-veren: kullanici
 ```
-**Arayüz:** üst bar ince bir çizgiyle ayrılan şeffaf şerit. Logo profilden bir baş ve içinde beyin (kullanıcının seçtiği SVG, `wwwroot/img/logo.svg`; ikon setinde `brain`). Giriş paneli lamel gibi yarı saydam, üstte küçük bir mono etiket ("Oturum aç"); panelde logo, köşe işareti, "canlı" göstergesi ve dipnot yok. Form hataları yerinde gösterilir ve kartın boyunu değiştirmez: her alanın altında hata için bir satır baştan ayrılır, genel hata ("E-posta ya da şifre yanlış.") alt yazının yerine geçer. Giriş yapmamış ziyaretçide üst bar, ayarlar ve alt bilgi gösterilmez; yalnız sahne ve giriş paneli. Sahnenin kenarlarında göz merceği vinyeti. İkonlar tek bir SVG dosyasında (`wwwroot/img/icons.svg`).
+Kapsamı bölündü: bu madde K-0031/m01 olarak taşındı.
 
 ## m05 - Vurgu mordur, pembe yalnız nöron sinyallerindedir
 ```yaml
@@ -70,13 +72,13 @@ karar-veren: kullanici
 ## m06 - Giriş sayfasının arka planında Canvas ile canlı nöron sahnesi çalışır
 ```yaml
 tur: m
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 kavramlar: [nöron, aksiyon-potansiyeli, hareketi-azalt, css]
 karar-veren: kullanici
 ```
-**Animasyon:** giriş sayfası gibi sahnelerde arka planda mikroskop altında canlı nöronlar: koyu modda floresan (parlayan mor hücreler, pembe ışıma), açık modda boyanmış doku kesiti. Her nöronun gövdesi, dallanan dendritleri ve başka bir nörona uzanan aksonu var; aksiyon potansiyeli akson boyunca akar, sinaps ucunda vezikül parçacıkları boşluğu geçer, alıcı hücre parlar ve zincirleme ateşleyebilir. Üç derinlik katmanı (arkadakiler bulanık), yavaş kayma ve fareyle derinlik kayması; tıklayınca en yakın nöron ateşlenir. Kendi Canvas 2D betiğimizle yapılır (`wwwroot/js/theme/synapse.js`); hücreler bir kez çizilip resim olarak saklanır, her karede yalnız kopyalanır. Arayüz geçişleri (kartın belirmesi, düğme parlaması) CSS ile yapılır. "Hareketi azalt" ayarında animasyon durur, sabit görüntü kalır; sekme arka plandayken çizim durur.
+Kapsamı bölündü: bu madde K-0032/m01 olarak taşındı.
 
 ## m07 - Mobil aynı renkleri ve ThemeMode.system ile kullanıcı seçimini kullanır
 ```yaml
@@ -163,21 +165,21 @@ Bootstrap'in renk modu şablonda hazır gelir (K-0006, K-0018).
 ## g04 - Sinaps atımı hiçbir parçacık kütüphanesinde hazır değil, tek dosyalık betik yeter
 ```yaml
 tur: g
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: cikarim
 ```
-İstenen sinaps atımı hiçbir parçacık kütüphanesinde hazır değil; tek dosyalık Canvas betiği bağımlılık eklemeden işi görür (K-0008).
+Kapsamı bölündü: bu madde K-0032/g01 olarak taşındı.
 
 ## g05 - Claude Motion yalnız video üretir, canlı arka plan için uygun değildir
 ```yaml
 tur: g
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kaynak
 kavramlar: [claude-motion]
 ```
-Claude Motion (Anthropic, 2026-10 beta) yalnız video/açıklayıcı animasyon üretir, sitenin canlı arka planı için uygun değildir; haftalık videolarda kullanılabilir.
+Kapsamı bölündü: bu madde K-0032/g02 olarak taşındı.
 
 ## r01 - Parlak mor-pembe gradyanlı arayüz (yüzen hap üst bar, dönen gradyan kenarlı kart, gradyan düğme; 2026-10-30)
 ```yaml
@@ -193,46 +195,46 @@ Kullanıcı "cırtlak" ve gerçekçi sahneyle uyumsuz buldu.
 ## r02 - Form hatalarını sağ altta açılan pop-up (toast) ile göstermek
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Kendiliğinden kaybolur, hatalı alandan uzak kalır, erişilebilirliği zayıf; kart oynamasın sorunu sabit alanla çözüldü.
+Kapsamı bölündü: bu madde K-0031/r01 olarak taşındı.
 
 ## r03 - Sahne köşelerinde ölçek çubuğu (50 µm) ve görüntüleme notu ("Floresan · 40× · 488 nm")
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Kullanıcı istemedi.
+Kapsamı bölündü: bu madde K-0031/r02 olarak taşındı.
 
 ## r04 - Giriş kartında logo, köşe vizör işaretleri, "Canlı" göstergesi ve "Kayıt kapalı" dipnotu
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Kullanıcı istemedi.
+Kapsamı bölündü: bu madde K-0031/r03 olarak taşındı.
 
 ## r05 - Tek nöron çizimi ve elle çizilmiş orta hat beyin kesiti logoları, hazır ikon kütüphanelerindeki yukarıdan bakış beyinler
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Hazır ikon kütüphaneleri: Material, Phosphor, Tabler, Lucide, Remix, Iconoir, Font Awesome. Kullanıcı kendi bulduğu profil-beyin SVG'sini seçti.
+Kapsamı bölündü: bu madde K-0031/r04 olarak taşındı.
 
 ## r06 - Tema düğmesinin üst barda durması (ilk sürüm)
 ```yaml
@@ -248,57 +250,57 @@ Kullanıcı ayarlar alanında olmasını istedi.
 ## r07 - Nokta-çizgi parçacık ağı (ilk sürüm, 2026-10-30)
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Kullanıcı daha gerçekçi bir şey istedi; nöron yapısına benzemiyordu.
+Kapsamı bölündü: bu madde K-0032/r01 olarak taşındı.
 
 ## r08 - tsParticles
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Büyük paket, sinaps atımı hazır gelmiyor, üstüne yine kod gerekir.
+Kapsamı bölündü: bu madde K-0032/r02 olarak taşındı.
 
 ## r09 - Three.js ile 3D beyin
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "Animasyon telefonlarda takılırsa sahne sadeleştirilir."
 karar-veren: kullanici
 ```
-Etkileyici ama ağır; telefonda pil ve ısınma, giriş sayfası için fazla.
+Kapsamı bölündü: bu madde K-0032/r03 olarak taşındı.
 
 ## r10 - GSAP
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "Analiz ekranlarında zengin, sıralı geçişler gerekirse GSAP."
 karar-veren: kullanici
 ```
-Arayüz geçişleri CSS ile karşılanıyor; zengin sıralı geçiş gerekirse yeniden düşünülür.
+Kapsamı bölündü: bu madde K-0032/r04 olarak taşındı.
 
 ## r11 - Yalnız CSS/SVG
 ```yaml
 tur: r
-durum: guncel
+durum: yerini-aldi
 tarih: 2026-10-30
 dayanak: kullanici
 yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
-Nöronlar sabit kalır, atım ve etkileşim kısıtlı.
+Kapsamı bölündü: bu madde K-0032/r05 olarak taşındı.
 
 ## r12 - Turkuaz-mavi ve turuncu-mercan vurgular
 ```yaml
@@ -322,4 +324,4 @@ Belgede yazılmamış.
 
 ## Yeniden açma koşulu
 
-Analiz ekranlarında zengin, sıralı geçişler gerekirse GSAP; animasyon telefonlarda takılırsa sahne sadeleştirilir.
+Kapsamı bölündü: bu bölüm K-0032 kaydına taşındı.

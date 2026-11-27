@@ -103,7 +103,7 @@ class GelenKarti {
   final String? hedef;
   final String? yakalandi;
 
-  /// Only on cards marked before a new tag could be suggested (K-0023): asking again replaces the mark with a suggestion.
+  /// Only on cards marked before a new tag could be suggested (K-0033/m03): asking again replaces the mark with a suggestion.
   final bool laptoptaIslenecek;
   final String? laptopNotu;
   final GelenOneri? oneri;
