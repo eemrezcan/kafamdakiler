@@ -4,7 +4,7 @@ baslik: "Özellik kapsamı ve fazlar"
 tur: karar
 soru: "Uygulama hangi özellikleri hangi fazda yapar?"
 sonuc: kabul
-kavramlar: [kapsam, fazlar, ikinci-beyin, sekreter, kat-planı, yakala, onay-kuyruğu, entegrasyon]
+kavramlar: [kapsam, fazlar, ikinci-beyin, sekreter, kat-planı, yakalama, onay-kuyruğu, entegrasyon]
 tags: [karar]
 ---
 
