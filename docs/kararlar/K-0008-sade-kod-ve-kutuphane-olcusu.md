@@ -87,7 +87,7 @@ tur: r
 durum: guncel
 tarih: 2026-10-16
 dayanak: kullanici
-yeniden-ac: "Aynı kural ya da çapraz iş (log, yetki, işlem) birçok uçta tekrar ederse MediatR gibi bir kalıp yeniden konuşulur."
+yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
 K-0006 ile çelişir, güvenlik riski.

@@ -76,7 +76,7 @@ tur: r
 durum: guncel
 tarih: 2026-10-29
 dayanak: kullanici
-yeniden-ac: "API uçlarının (policy, 401/403) testi gerektiğinde `WebApplicationFactory` ve gerçek Postgres için Testcontainers eklenir; bu yeni bir karar olur."
+yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
 8. sürümden beri ticari lisans ister, `Assert` yeterlidir.
@@ -100,3 +100,7 @@ tarih: 2026-10-29
 dayanak: bilinmiyor
 ```
 Belgede yazılmamış.
+
+## Yeniden açma koşulu
+
+API uçlarının (policy, 401/403) testi gerektiğinde `WebApplicationFactory` ve gerçek Postgres için Testcontainers eklenir; bu yeni bir karar olur.

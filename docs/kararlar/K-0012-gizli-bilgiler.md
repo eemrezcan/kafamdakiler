@@ -121,7 +121,7 @@ tur: r
 durum: guncel
 tarih: 2026-10-26
 dayanak: kullanici
-yeniden-ac: "Birden fazla sunucu ya da ortam olursa veya gizli bilgi döndürme (rotation) gerekirse."
+yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
 Dosya proje klasöründe durduğu için sızma riski taşır; framework'ün zaten yaptığı iş için ek kütüphane gerekir.

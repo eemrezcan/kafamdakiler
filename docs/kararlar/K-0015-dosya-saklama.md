@@ -100,7 +100,7 @@ tur: r
 durum: guncel
 tarih: 2026-10-29
 dayanak: kullanici
-yeniden-ac: "Diskteki dosyalar için ayrı yedek gerekirse ya da tek sunucu yetmezse nesne depolama yeniden düşünülür."
+yeniden-ac: "belgede yazılmamış"
 karar-veren: kullanici
 ```
 Policy atlanır.
